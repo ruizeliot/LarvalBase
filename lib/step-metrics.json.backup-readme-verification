@@ -1,0 +1,759 @@
+{
+  "version": "1.0",
+  "description": "Step-specific metrics definitions for pipeline analysis",
+  "steps": {
+    "0a": {
+      "name": "Brainstorm & User Stories",
+      "purpose": "Explore app idea and formalize into user stories through interactive collaboration",
+      "mode": "interactive",
+      "inputs": [
+        "User's rough idea"
+      ],
+      "outputs": [
+        "docs/brainstorm-notes.md",
+        "docs/user-stories.md"
+      ],
+      "metrics": {
+        "outputs": {
+          "brainstorm_notes_exists": {
+            "type": "bool",
+            "measure": "file_exists:docs/brainstorm-notes.md",
+            "target": true,
+            "weight": 0.1
+          },
+          "user_stories_exists": {
+            "type": "bool",
+            "measure": "file_exists:docs/user-stories.md",
+            "target": true,
+            "weight": 0.15
+          }
+        },
+        "story_quality": {
+          "story_count": {
+            "type": "int",
+            "measure": "count_pattern:### US-",
+            "target": ">=3",
+            "weight": 0.1
+          },
+          "epic_count": {
+            "type": "int",
+            "measure": "count_pattern:## Epic",
+            "target": ">=1",
+            "weight": 0.05
+          },
+          "avg_acceptance_criteria": {
+            "type": "float",
+            "measure": "total_criteria/story_count",
+            "target": ">=3.0",
+            "weight": 0.1
+          },
+          "stories_have_format": {
+            "type": "percent",
+            "measure": "stories_with_as_a_i_want_so_that",
+            "target": 100,
+            "weight": 0.1
+          },
+          "criteria_are_testable": {
+            "type": "percent",
+            "measure": "criteria_specific_not_vague",
+            "target": ">=80",
+            "weight": 0.1
+          }
+        },
+        "scope": {
+          "scope_sections_exist": {
+            "type": "bool",
+            "measure": "has_in_scope_and_out_of_scope",
+            "target": true,
+            "weight": 0.05
+          }
+        },
+        "interactive_quality": {
+          "questions_asked": {
+            "type": "int",
+            "measure": "count_assistant_questions",
+            "target": ">=5",
+            "weight": 0.1
+          },
+          "suggestions_made": {
+            "type": "int",
+            "measure": "count_have_you_considered",
+            "target": ">=2",
+            "weight": 0.05
+          },
+          "user_confirmations": {
+            "type": "int",
+            "measure": "count_user_confirms_per_story",
+            "target": ">=story_count",
+            "weight": 0.1
+          }
+        }
+      },
+      "quality_formula": "0.25*(outputs) + 0.20*(story_coverage) + 0.20*(acceptance_quality) + 0.15*(format_compliance) + 0.10*(interactive_quality) + 0.10*(scope_defined)"
+    },
+    "0b": {
+      "name": "Technical Specifications",
+      "purpose": "Generate E2E test specs and define tech stack from user stories",
+      "mode": "autonomous",
+      "inputs": [
+        "docs/brainstorm-notes.md",
+        "docs/user-stories.md"
+      ],
+      "outputs": [
+        "docs/e2e-test-specs.md",
+        "docs/tech-stack.md",
+        "docs/requirements.md"
+      ],
+      "metrics": {
+        "outputs": {
+          "e2e_specs_exists": {
+            "type": "bool",
+            "measure": "file_exists:docs/e2e-test-specs.md",
+            "target": true,
+            "weight": 0.07
+          },
+          "tech_stack_exists": {
+            "type": "bool",
+            "measure": "file_exists:docs/tech-stack.md",
+            "target": true,
+            "weight": 0.07
+          },
+          "requirements_exists": {
+            "type": "bool",
+            "measure": "file_exists:docs/requirements.md",
+            "target": true,
+            "weight": 0.06
+          }
+        },
+        "e2e_quality": {
+          "test_count": {
+            "type": "int",
+            "measure": "count_pattern:### E2E-",
+            "target": ">=story_count",
+            "weight": 0.1
+          },
+          "edge_case_count": {
+            "type": "int",
+            "measure": "script:lib/verify-edge-cases.sh | grep \"Edge case variants:\" | awk \"{print \\$4}\"",
+            "target": ">=test_count",
+            "weight": 0.05
+          },
+          "coverage_matrix_exists": {
+            "type": "bool",
+            "measure": "has_coverage_matrix_section",
+            "target": true,
+            "weight": 0.05
+          },
+          "criteria_coverage": {
+            "type": "percent",
+            "measure": "criteria_in_covers_section",
+            "target": 100,
+            "weight": 0.15
+          },
+          "tests_have_steps": {
+            "type": "percent",
+            "measure": "tests_with_steps_section",
+            "target": 100,
+            "weight": 0.05
+          },
+          "tests_have_edge_cases": {
+            "type": "percent",
+            "measure": "tests_with_edge_cases_section",
+            "target": 100,
+            "weight": 0.05
+          },
+          "orphan_tests": {
+            "type": "int",
+            "measure": "tests_without_matching_story",
+            "target": 0,
+            "weight": 0.05
+          }
+        },
+        "review_process": {
+          "review_dispatched": {
+            "type": "bool",
+            "measure": "subagent_spawned_for_review",
+            "target": true,
+            "weight": 0.05
+          },
+          "review_passed": {
+            "type": "bool",
+            "measure": "review_completed_successfully",
+            "target": true,
+            "weight": 0.1
+          },
+          "review_iterations": {
+            "type": "int",
+            "measure": "review_cycle_count",
+            "target": "<=2",
+            "weight": 0.05
+          }
+        },
+        "tech_stack_quality": {
+          "rationale_exists": {
+            "type": "bool",
+            "measure": "has_rationale_section",
+            "target": true,
+            "weight": 0.05
+          },
+          "nfr_sections_complete": {
+            "type": "percent",
+            "measure": "has_performance_security_accessibility",
+            "target": 100,
+            "weight": 0.05
+          }
+        }
+      },
+      "quality_formula": "0.20*(outputs) + 0.25*(e2e_coverage) + 0.20*(e2e_completeness) + 0.15*(review_quality) + 0.10*(tech_stack_quality) + 0.10*(nfr_complete)"
+    },
+    "1": {
+      "name": "Bootstrap",
+      "purpose": "Deploy skeleton app with all E2E tests failing (RED state)",
+      "mode": "autonomous",
+      "inputs": [
+        "docs/user-stories.md",
+        "docs/e2e-test-specs.md",
+        "docs/tech-stack.md",
+        "docs/requirements.md"
+      ],
+      "outputs": [
+        "Deployed skeleton",
+        "Implemented E2E tests (all failing)"
+      ],
+      "metrics": {
+        "project_structure": {
+          "project_structure_valid": {
+            "type": "bool",
+            "measure": "has_src_cypress_package",
+            "target": true,
+            "weight": 0.03
+          },
+          "frontend_builds": {
+            "type": "bool",
+            "measure": "npm_build_exits_0",
+            "target": true,
+            "weight": 0.03
+          },
+          "backend_runs": {
+            "type": "bool",
+            "measure": "server_starts_no_error",
+            "target": true,
+            "weight": 0.02
+          },
+          "database_schema_exists": {
+            "type": "bool",
+            "measure": "schema_file_exists",
+            "target": true,
+            "weight": 0.02
+          }
+        },
+        "e2e_tests": {
+          "tests_implemented": {
+            "type": "int",
+            "measure": "count_it_e2e_in_cypress",
+            "target": "=spec_count",
+            "weight": 0.05
+          },
+          "tests_match_specs": {
+            "type": "percent",
+            "measure": "e2e_ids_in_code_vs_specs",
+            "target": 100,
+            "weight": 0.05
+          },
+          "tests_grouped_by_epic": {
+            "type": "bool",
+            "measure": "separate_cy_ts_per_epic",
+            "target": true,
+            "weight": 0.03
+          },
+          "tests_use_data_testid": {
+            "type": "percent",
+            "measure": "selectors_using_data_testid",
+            "target": ">=90",
+            "weight": 0.02
+          },
+          "tests_have_meaningful_assertions": {
+            "type": "percent",
+            "measure": "tests_with_should_assertions",
+            "target": 100,
+            "weight": 0.03
+          }
+        },
+        "deployment": {
+          "vite_config_dev_exists": {
+            "type": "bool",
+            "measure": "file_exists:vite.config.dev.ts",
+            "target": true,
+            "weight": 0.02
+          },
+          "ecosystem_config_exists": {
+            "type": "bool",
+            "measure": "file_exists:ecosystem.config.cjs",
+            "target": true,
+            "weight": 0.02
+          },
+          "deploy_script_exists": {
+            "type": "bool",
+            "measure": "file_exists:deploy-dev.sh",
+            "target": true,
+            "weight": 0.02
+          },
+          "caddy_routing_added": {
+            "type": "bool",
+            "measure": "project_route_in_caddyfile",
+            "target": true,
+            "weight": 0.02
+          },
+          "traefik_routing_added": {
+            "type": "bool",
+            "measure": "pathprefix_in_traefik_config",
+            "target": true,
+            "weight": 0.02
+          },
+          "deployment_returns_200": {
+            "type": "bool",
+            "measure": "curl_url_returns_200",
+            "target": true,
+            "weight": 0.03
+          },
+          "no_localhost_in_frontend": {
+            "type": "bool",
+            "measure": "no_hardcoded_localhost_urls",
+            "target": true,
+            "weight": 0.02
+          },
+          "cypress_uses_deployed_url": {
+            "type": "bool",
+            "measure": "baseurl_is_ingevision_cloud",
+            "target": true,
+            "weight": 0.02
+          }
+        },
+        "red_state": {
+          "tests_total": {
+            "type": "int",
+            "measure": "cypress_output_total",
+            "target": null,
+            "weight": 0
+          },
+          "tests_passing": {
+            "type": "int",
+            "measure": "cypress_output_passing",
+            "target": 0,
+            "weight": 0.2
+          },
+          "tests_failing": {
+            "type": "int",
+            "measure": "cypress_output_failing",
+            "target": "=tests_total",
+            "weight": 0
+          },
+          "red_percentage": {
+            "type": "percent",
+            "measure": "failing_div_total_times_100",
+            "target": 100,
+            "weight": 0.2
+          }
+        },
+        "manifest_git": {
+          "manifest_created": {
+            "type": "bool",
+            "measure": "file_exists:.pipeline/manifest.json",
+            "target": true,
+            "weight": 0.05
+          },
+          "manifest_has_epics": {
+            "type": "bool",
+            "measure": "epics_array_populated",
+            "target": true,
+            "weight": 0.03
+          },
+          "git_committed": {
+            "type": "bool",
+            "measure": "bootstrap_commit_exists",
+            "target": true,
+            "weight": 0.02
+          }
+        }
+      },
+      "quality_formula": "0.10*(structure) + 0.15*(tests_implemented) + 0.15*(deployment) + 0.40*(red_state) + 0.10*(no_localhost) + 0.10*(manifest_git)",
+      "critical_metric": "red_percentage",
+      "critical_threshold": 100
+    },
+    "2": {
+      "name": "Implement Epic",
+      "purpose": "Implement code until E2E tests pass for current epic (RED to GREEN)",
+      "mode": "autonomous",
+      "inputs": [
+        "Skeleton app with failing tests"
+      ],
+      "outputs": [
+        "Working features with passing E2E tests"
+      ],
+      "repeats": true,
+      "metrics": {
+        "epic_context": {
+          "epic_id": {
+            "type": "int",
+            "measure": "manifest_current_epic",
+            "target": null,
+            "weight": 0
+          },
+          "stories_in_epic": {
+            "type": "int",
+            "measure": "count_stories_for_epic",
+            "target": null,
+            "weight": 0
+          },
+          "tests_for_epic": {
+            "type": "int",
+            "measure": "count_e2e_for_epic",
+            "target": null,
+            "weight": 0
+          }
+        },
+        "implementation": {
+          "backend_files_created": {
+            "type": "int",
+            "measure": "new_files_in_server",
+            "target": ">=1",
+            "weight": 0.03
+          },
+          "frontend_files_created": {
+            "type": "int",
+            "measure": "new_files_in_client_src",
+            "target": ">=1",
+            "weight": 0.03
+          },
+          "typescript_errors": {
+            "type": "int",
+            "measure": "tsc_noemit_errors",
+            "target": 0,
+            "weight": 0.02
+          },
+          "data_testid_coverage": {
+            "type": "percent",
+            "measure": "components_with_data_testid",
+            "target": ">=90",
+            "weight": 0.02
+          },
+          "unit_tests_for_complex_logic": {
+            "type": "bool",
+            "measure": "timers_state_machines_algorithms_have_unit_tests",
+            "target": true,
+            "weight": 0.03
+          },
+          "parallel_writes_used": {
+            "type": "bool",
+            "measure": "writes_batched_not_sequential",
+            "target": true,
+            "weight": 0.02
+          }
+        },
+        "green_state": {
+          "epic_tests_total": {
+            "type": "int",
+            "measure": "tests_in_epic_spec",
+            "target": null,
+            "weight": 0
+          },
+          "epic_tests_passing": {
+            "type": "int",
+            "measure": "cypress_epic_passing",
+            "target": "=epic_tests_total",
+            "weight": 0.15
+          },
+          "epic_green_percentage": {
+            "type": "percent",
+            "measure": "epic_passing_div_total",
+            "target": 100,
+            "weight": 0.2
+          },
+          "fix_iterations": {
+            "type": "int",
+            "measure": "test_fix_cycles",
+            "target": null,
+            "weight": 0
+          },
+          "max_consecutive_failures": {
+            "type": "int",
+            "measure": "longest_same_failure_streak",
+            "target": "<=3",
+            "weight": 0.05
+          }
+        },
+        "regression": {
+          "regression_check_run": {
+            "type": "bool",
+            "measure": "full_suite_executed",
+            "target": true,
+            "weight": 0.05
+          },
+          "previous_epics_tests": {
+            "type": "int",
+            "measure": "tests_from_earlier_epics",
+            "target": null,
+            "weight": 0
+          },
+          "previous_epics_passing": {
+            "type": "int",
+            "measure": "earlier_tests_passing",
+            "target": "=previous_epics_tests",
+            "weight": 0.1
+          },
+          "regression_introduced": {
+            "type": "bool",
+            "measure": "any_previous_test_broke",
+            "target": false,
+            "weight": 0.15
+          }
+        },
+        "completion": {
+          "deployed_successfully": {
+            "type": "bool",
+            "measure": "curl_returns_200",
+            "target": true,
+            "weight": 0.05
+          },
+          "manifest_updated": {
+            "type": "bool",
+            "measure": "epic_status_complete",
+            "target": true,
+            "weight": 0.03
+          },
+          "current_epic_incremented": {
+            "type": "bool",
+            "measure": "current_epic_bumped",
+            "target": true,
+            "weight": 0.02
+          },
+          "git_committed": {
+            "type": "bool",
+            "measure": "commit_exists",
+            "target": true,
+            "weight": 0.05
+          }
+        }
+      },
+      "quality_formula": "0.10*(implementation) + 0.05*(typescript) + 0.35*(epic_green) + 0.25*(no_regression) + 0.10*(fix_efficiency) + 0.10*(deployment) + 0.05*(testability)",
+      "critical_metrics": [
+        "epic_green_percentage",
+        "regression_introduced"
+      ],
+      "critical_thresholds": {
+        "epic_green_percentage": 100,
+        "regression_introduced": false
+      }
+    },
+    "3": {
+      "name": "Finalize",
+      "purpose": "Polish code, verify non-functional requirements, deliver working app",
+      "mode": "autonomous",
+      "inputs": [
+        "Working app with all E2E tests passing"
+      ],
+      "outputs": [
+        "Production-ready app deployed to dev environment"
+      ],
+      "metrics": {
+        "preconditions": {
+          "all_epics_complete": {
+            "type": "bool",
+            "measure": "no_epic_status_not_complete",
+            "target": true,
+            "weight": 0.05
+          },
+          "initial_tests_passing": {
+            "type": "percent",
+            "measure": "e2e_pass_rate_before_polish",
+            "target": 100,
+            "weight": 0.05
+          }
+        },
+        "code_polish": {
+          "todo_comments": {
+            "type": "int",
+            "measure": "grep_todo_in_src",
+            "target": 0,
+            "weight": 0.03
+          },
+          "console_logs": {
+            "type": "int",
+            "measure": "grep_console_log_excluding_errors",
+            "target": 0,
+            "weight": 0.03
+          },
+          "hardcoded_localhost": {
+            "type": "int",
+            "measure": "grep_localhost_in_client",
+            "target": 0,
+            "weight": 0.03
+          },
+          "any_type_usage": {
+            "type": "int",
+            "measure": "grep_colon_any_in_ts",
+            "target": 0,
+            "weight": 0.03
+          },
+          "dead_code_found": {
+            "type": "bool",
+            "measure": "unreachable_code_detected",
+            "target": false,
+            "weight": 0.03
+          }
+        },
+        "security": {
+          "security_audit_run": {
+            "type": "bool",
+            "measure": "all_5_grep_commands_executed_with_output",
+            "target": true,
+            "weight": 0.02
+          },
+          "passwords_hashed": {
+            "type": "bool",
+            "measure": "bcrypt_used_grep_verified",
+            "target": true,
+            "weight": 0.03
+          },
+          "jwt_has_expiry": {
+            "type": "bool",
+            "measure": "expires_in_set_grep_verified",
+            "target": true,
+            "weight": 0.03
+          },
+          "input_validation": {
+            "type": "bool",
+            "measure": "validation_on_endpoints",
+            "target": true,
+            "weight": 0.03
+          },
+          "sql_parameterized": {
+            "type": "bool",
+            "measure": "no_string_concat_in_queries_grep_verified",
+            "target": true,
+            "weight": 0.03
+          },
+          "xss_prevented": {
+            "type": "bool",
+            "measure": "no_innerHTML_grep_verified",
+            "target": true,
+            "weight": 0.02
+          },
+          "cors_configured": {
+            "type": "bool",
+            "measure": "cors_middleware_present",
+            "target": true,
+            "weight": 0.02
+          },
+          "no_secrets_in_client": {
+            "type": "bool",
+            "measure": "no_api_keys_in_frontend_grep_verified",
+            "target": true,
+            "weight": 0.02
+          },
+          "security_score": {
+            "type": "percent",
+            "measure": "security_checks_passed",
+            "target": 100,
+            "weight": 0.02
+          }
+        },
+        "final_tests": {
+          "final_tests_total": {
+            "type": "int",
+            "measure": "cypress_output_total",
+            "target": null,
+            "weight": 0
+          },
+          "final_tests_passing": {
+            "type": "int",
+            "measure": "cypress_output_passing",
+            "target": "=final_tests_total",
+            "weight": 0.1
+          },
+          "final_green_percentage": {
+            "type": "percent",
+            "measure": "passing_div_total",
+            "target": 100,
+            "weight": 0.15
+          },
+          "polish_regression": {
+            "type": "bool",
+            "measure": "any_test_broke_during_polish",
+            "target": false,
+            "weight": 0.05
+          }
+        },
+        "documentation": {
+          "readme_exists": {
+            "type": "bool",
+            "measure": "file_exists:README.md",
+            "target": true,
+            "weight": 0.03
+          },
+          "readme_sections": {
+            "type": "percent",
+            "measure": "has_features_setup_api_testing",
+            "target": 100,
+            "weight": 0.04
+          },
+          "readme_word_count": {
+            "type": "int",
+            "measure": "word_count_readme",
+            "target": ">=200",
+            "weight": 0.03
+          }
+        },
+        "metrics_reports": {
+          "transcript_analysis_run": {
+            "type": "bool",
+            "measure": "analyze_step_executed",
+            "target": true,
+            "weight": 0.03
+          },
+          "final_report_generated": {
+            "type": "bool",
+            "measure": "file_exists:pipeline-final-report.md",
+            "target": true,
+            "weight": 0.03
+          },
+          "csv_summary_generated": {
+            "type": "bool",
+            "measure": "file_exists:pipeline-summary.csv",
+            "target": true,
+            "weight": 0.02
+          }
+        },
+        "completion": {
+          "manifest_status_complete": {
+            "type": "bool",
+            "measure": "current_phase_complete",
+            "target": true,
+            "weight": 0.02
+          },
+          "manifest_finalized": {
+            "type": "bool",
+            "measure": "finalized_true",
+            "target": true,
+            "weight": 0.02
+          },
+          "git_committed": {
+            "type": "bool",
+            "measure": "finalize_commit_exists",
+            "target": true,
+            "weight": 0.02
+          },
+          "deployment_url_provided": {
+            "type": "bool",
+            "measure": "url_in_completion_message",
+            "target": true,
+            "weight": 0.02
+          }
+        }
+      },
+      "quality_formula": "0.10*(preconditions) + 0.15*(code_polish) + 0.20*(security) + 0.25*(final_green) + 0.10*(documentation) + 0.10*(metrics) + 0.10*(completion)",
+      "critical_metric": "final_green_percentage",
+      "critical_threshold": 100
+    }
+  }
+}

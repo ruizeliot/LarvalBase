@@ -1,0 +1,213 @@
+#!/bin/bash
+# Pipeline step runner v4.2
+# Usage: ./run-step.sh <step> [project-path] [mode] [run-id] [epic]
+# mode: "new" (default) or "feature"
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source shared libraries
+source "$SCRIPT_DIR/lib/common.sh"
+source "$SCRIPT_DIR/lib/transcript.sh"
+source "$SCRIPT_DIR/lib/module-health.sh" 2>/dev/null || true
+
+STEP="${1:-}"
+PROJECT_PATH="${2:-$(pwd)}"
+MODE="${3:-new}"
+RUN_ID="${4:-}"
+EPIC="${5:-}"
+
+if [ -z "$STEP" ]; then
+    echo "Usage: ./run-step.sh <step> [project-path] [mode] [run-id] [epic]"
+    echo "Steps: 0a, 0b, 1, 2, 3"
+    echo "Mode: 'new' (default) or 'feature'"
+    echo "Run ID: optional, used by pipeline orchestrators"
+    echo "Epic: optional, used for phase 2 transcript naming"
+    exit 1
+fi
+
+# Validate project path
+validate_project_path "$PROJECT_PATH"
+require_expect
+
+# Get command file
+CMD_FILE=$(get_command_file "$STEP" "$MODE")
+[ -z "$CMD_FILE" ] && die "Unknown step: $STEP"
+
+CMD_PATH="/home/claude/.claude/commands/$CMD_FILE"
+[ ! -f "$CMD_PATH" ] && die "Command file not found: $CMD_PATH"
+
+# Setup
+mkdir -p "$PROJECT_PATH/docs/metrics" "$PROJECT_PATH/.pipeline"
+TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+START_TIME=$(date +%s)
+
+# Build step name for display
+STEP_DISPLAY="$STEP"
+[ "$MODE" = "feature" ] && STEP_DISPLAY="${STEP}-feature"
+
+# Determine transcript location
+if [ -n "$RUN_ID" ]; then
+    RUN_DIR="$PROJECT_PATH/.pipeline/runs/$RUN_ID"
+    mkdir -p "$RUN_DIR"
+    if [ -n "$EPIC" ]; then
+        TRANSCRIPT="$RUN_DIR/${STEP_DISPLAY}-epic-${EPIC}-transcript.md"
+    else
+        TRANSCRIPT="$RUN_DIR/${STEP_DISPLAY}-transcript.md"
+    fi
+else
+    if [ -n "$EPIC" ]; then
+        TRANSCRIPT="$PROJECT_PATH/docs/metrics/${STEP_DISPLAY}-epic-${EPIC}-${TIMESTAMP}-transcript.md"
+    else
+        TRANSCRIPT="$PROJECT_PATH/docs/metrics/${STEP_DISPLAY}-${TIMESTAMP}-transcript.md"
+    fi
+fi
+
+print_header "Step: $STEP_DISPLAY"
+echo "Project: $PROJECT_PATH"
+echo "Started: $(date)"
+print_header ""
+
+# Write transcript header
+write_transcript_header "$TRANSCRIPT" "$STEP_DISPLAY" "$PROJECT_PATH" "$RUN_ID"
+
+# Generate intelligence context for this step
+INTEL_FILE="$PROJECT_PATH/.pipeline/intelligence-context.md"
+echo "Analyzing project for relevant modules and patterns..."
+
+if type export_intelligence_context &>/dev/null; then
+    INTEL_CONTEXT=$(export_intelligence_context "$PROJECT_PATH" 2>/dev/null || true)
+    if [[ -n "$INTEL_CONTEXT" ]]; then
+        echo "$INTEL_CONTEXT" > "$INTEL_FILE"
+        echo "✓ Intelligence context generated ($(wc -l < "$INTEL_FILE") lines)"
+
+        # Record which modules are being used
+        MATCHED_MODULES=$(find_relevant_modules "$PROJECT_PATH" 2>/dev/null | jq -r '.matches[].module_id' 2>/dev/null || true)
+        if [[ -n "$MATCHED_MODULES" ]]; then
+            for mod in $MATCHED_MODULES; do
+                record_module_usage "$PROJECT_PATH" "$mod" "$STEP" 2>/dev/null || true
+                mark_modules_used "$PROJECT_PATH" "$mod" 2>/dev/null || true
+            done
+        fi
+    else
+        echo "  (No relevant modules found)"
+        echo "# No intelligence context for this step" > "$INTEL_FILE"
+    fi
+else
+    echo "  (Intelligence system not available)"
+    echo "# Intelligence system not available" > "$INTEL_FILE"
+fi
+echo ""
+
+# Run claude using expect
+cd "$PROJECT_PATH"
+
+# Get the slash command name from the file
+SLASH_CMD=$(basename "$CMD_FILE" .md)
+
+# Stop file for graceful exit
+STOP_FILE="$PROJECT_PATH/.pipeline/.stop"
+rm -f "$STOP_FILE"
+
+# Check for existing session to resume
+SESSION_FILE="$PROJECT_PATH/.pipeline/session-id"
+SESSION_ID=""
+if [ -f "$SESSION_FILE" ]; then
+    SESSION_ID=$(cat "$SESSION_FILE")
+    if [ -n "$SESSION_ID" ]; then
+        echo ""
+        echo "╔════════════════════════════════════════════════════════════════╗"
+        echo "║  Resuming existing session: ${SESSION_ID:0:36}...              ║"
+        echo "╚════════════════════════════════════════════════════════════════╝"
+        echo ""
+    fi
+fi
+
+# Run expect with dual output
+# If resuming: pass session ID
+# If new: pass session file path so ID gets saved for potential resume
+if [ -n "$SESSION_ID" ]; then
+    expect "$SCRIPT_DIR/lib/expect-step.exp" "$SLASH_CMD" "$STOP_FILE" "$SESSION_ID" "" 2>&1 | \
+        stdbuf -oL tee >(clean_transcript >> "$TRANSCRIPT")
+else
+    expect "$SCRIPT_DIR/lib/expect-step.exp" "$SLASH_CMD" "$STOP_FILE" "" "$SESSION_FILE" 2>&1 | \
+        stdbuf -oL tee >(clean_transcript >> "$TRANSCRIPT")
+fi
+EXPECT_EXIT=${PIPESTATUS[0]}
+
+# Clear session file on successful completion (not on API error)
+if [ $EXPECT_EXIT -eq 0 ]; then
+    rm -f "$SESSION_FILE"
+fi
+
+# Handle different exit codes
+EXIT_STATUS="completed"
+if [ $EXPECT_EXIT -eq 75 ]; then
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║  API ERROR - Session exited for fresh resume                   ║"
+    echo "║  Run: ./pipeline resume $PROJECT_PATH                          ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    EXIT_STATUS="api-error"
+elif [ $EXPECT_EXIT -ne 0 ]; then
+    echo "Step interrupted (exit code: $EXPECT_EXIT)"
+    EXIT_STATUS="interrupted"
+fi
+
+# Small delay to let process substitution finish writing
+sleep 1
+
+# Calculate duration
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+# Add footer to transcript
+write_transcript_footer "$TRANSCRIPT" "$START_TIME" "$EXIT_STATUS"
+
+# Append manifest state if it exists
+MANIFEST_FILE="$PROJECT_PATH/.pipeline/manifest.json"
+append_manifest_state "$TRANSCRIPT" "$MANIFEST_FILE" "$EPIC"
+
+# Get status from checkpoint (if available)
+CHECKPOINT_FILE="$PROJECT_PATH/.pipeline/checkpoint.json"
+CHECKPOINT_STATUS=$(jq -r '.status // "unknown"' "$CHECKPOINT_FILE" 2>/dev/null || echo "unknown")
+
+echo ""
+print_header "Step Complete"
+echo "Status: $CHECKPOINT_STATUS"
+echo "Duration: $(format_duration $DURATION)"
+echo "Transcript: $TRANSCRIPT"
+
+# Record feedback for module usage
+if type auto_feedback_from_analysis &>/dev/null; then
+    # Find latest analysis if any
+    LATEST_ANALYSIS=$(ls -t "$PROJECT_PATH/.pipeline/runs/"*/analysis/*-analysis.json 2>/dev/null | head -1 || true)
+    if [[ -n "$LATEST_ANALYSIS" ]]; then
+        auto_feedback_from_analysis "$PROJECT_PATH" "$LATEST_ANALYSIS" 2>/dev/null || true
+    fi
+
+    # Record combinations
+    if type auto_record_combination &>/dev/null; then
+        auto_record_combination "$PROJECT_PATH" 2>/dev/null || true
+    fi
+fi
+
+echo ""
+echo "Run ./pipeline analyze to generate detailed metrics"
+print_header ""
+
+# Check if this was a batch completion (for phase 2)
+if [ "$STEP" = "2" ] && grep -q "PIPELINE:BATCH_COMPLETE" "$TRANSCRIPT" 2>/dev/null; then
+    echo ""
+    echo "╔════════════════════════════════════════════════════════════════╗"
+    echo "║  BATCH COMPLETE - Starting next batch with fresh context      ║"
+    echo "╚════════════════════════════════════════════════════════════════╝"
+    echo ""
+    
+    # Clear session for fresh start
+    rm -f "$SESSION_FILE"
+    
+    # Recursively run next batch (same step, fresh context)
+    exec "$0" "$@"
+fi

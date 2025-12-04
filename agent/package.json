@@ -1,0 +1,23 @@
+{
+  "name": "pipeline-agent",
+  "version": "1.0.0",
+  "description": "Pipeline Worker Agent System - Distributed compute for pipeline execution",
+  "main": "coordinator.js",
+  "bin": {
+    "pipeline-coordinator": "./coordinator.js",
+    "pipeline-agent": "./worker-agent.js",
+    "pipeline-dispatch": "./dispatch.js"
+  },
+  "scripts": {
+    "coordinator": "node coordinator.js",
+    "agent": "node worker-agent.js",
+    "dispatch": "node dispatch.js",
+    "start": "node coordinator.js"
+  },
+  "dependencies": {
+    "ws": "^8.14.0",
+    "uuid": "^9.0.0"
+  },
+  "author": "Pipeline Team",
+  "license": "MIT"
+}

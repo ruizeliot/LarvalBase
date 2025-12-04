@@ -1,0 +1,27 @@
+{
+  "projectId": "pipeline-monitor-desktop",
+  "projectPath": "C:\\Users\\ahunt\\Documents\\IMT Claude\\Pipeline-Office\\test-projects\\counter-desktop-test-2",
+  "currentPhase": "0a",
+  "status": "running",
+  "createdAt": "2025-12-04T15:33:05.202Z",
+  "phases": {
+    "1": {
+      "status": "pending"
+    },
+    "2": {
+      "status": "pending",
+      "loops": []
+    },
+    "3": {
+      "status": "pending"
+    },
+    "0a": {
+      "status": "pending"
+    },
+    "0b": {
+      "status": "pending"
+    }
+  },
+  "pipelineRunId": "new-1764862385197-4437c1d4",
+  "workerSessionId": "95dabcbd-bb17-47ab-9403-1c3b3be787f5"
+}

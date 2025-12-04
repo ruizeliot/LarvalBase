@@ -1,0 +1,151 @@
+#!/usr/bin/expect -f
+# Interactive expect script for brainstorm sessions
+# Supports input injection, graceful stop, and session resume
+# Usage: expect expect-interactive.exp <slash_cmd> <input_file> <stop_file> <status_file> <stop_marker> [session_id]
+#
+# If session_id is provided, resumes that session instead of starting new one
+
+log_user 1
+set timeout 30
+set cmd [lindex $argv 0]
+set input_file [lindex $argv 1]
+set stop_file [lindex $argv 2]
+set status_file [lindex $argv 3]
+set stop_marker [lindex $argv 4]
+set session_id [lindex $argv 5]
+set session_file [lindex $argv 6]
+
+# Check if we're resuming or starting new
+if {$session_id ne ""} {
+    # Resume existing session
+    spawn claude --resume $session_id --model opus --dangerously-skip-permissions
+    expect "bypass permissions"
+    sleep 1
+    # Send continue message
+    send "Please continue where we left off."
+    sleep 0.5
+    send "\r"
+} else {
+    # Start new session with generated session ID (for later resume)
+    set new_session_id [exec uuidgen]
+
+    # Save session ID to file if path provided
+    if {$session_file ne ""} {
+        set fp [open $session_file w]
+        puts $fp $new_session_id
+        close $fp
+    }
+
+    spawn claude --session-id $new_session_id --model opus --dangerously-skip-permissions
+    expect "bypass permissions"
+    sleep 1
+    # Send command then Enter key
+    send "/$cmd"
+    sleep 0.5
+    send "\r"
+    # Wait for command to be processed (look for "is running")
+    expect {
+        -timeout 30
+        "is running" {
+            # Command received, now switch to 1-second timeout for input checking
+        }
+        timeout {
+            send_user "\nWarning: Command may not have been received\n"
+        }
+    }
+}
+
+# Now use 1-second timeout for input file checking
+set timeout 1
+
+# Helper to write status
+proc write_status {status_file code} {
+    set fp [open $status_file w]
+    puts $fp $code
+    close $fp
+}
+
+# Helper to handle stop request
+proc handle_stop {stop_file status_file stop_marker} {
+    write_status $status_file "stopped"
+    file delete $stop_file
+    # Send stop message to chat - this will appear in transcript
+    send "--- PIPELINE STOPPED BY USER (code: 201) ---"
+    sleep 0.5
+    send "\r"
+    # Wait for message to be processed and written to transcript
+    sleep 3
+    # Now create stop marker to stop transcript writing
+    close [open $stop_marker w]
+    sleep 1
+    # Now send exit
+    send "\x1b"
+    sleep 1
+    send "/exit"
+    sleep 0.5
+    send "\r"
+    expect eof
+}
+
+# Helper to handle input injection
+proc handle_input {input_file} {
+    set fp [open $input_file r]
+    set content [read $fp]
+    close $fp
+    file delete $input_file
+    send $content
+    sleep 0.5
+    send "\r"
+}
+
+# Wait for completion or input injection
+expect {
+    -re {PIPELINE:COMPLETE|PIPELINE:CONTINUE} {
+        write_status $status_file "complete"
+        sleep 2
+        send "/exit"
+        sleep 0.5
+        send "\r"
+    }
+    -re {API Error: [0-9]+|"type":"error".*api_error} {
+        # API error - exit gracefully for fresh resume
+        send_user "\n*** API Error detected - exiting for fresh resume ***\n"
+        write_status $status_file "api-error"
+        sleep 2
+        send "\x03"
+        sleep 1
+        send "/exit"
+        sleep 0.5
+        send "\r"
+        expect eof
+        exit 75
+    }
+    -re ".+" {
+        # Check for stop file
+        if {[file exists $stop_file]} {
+            handle_stop $stop_file $status_file $stop_marker
+        # Check for input file
+        } elseif {[file exists $input_file]} {
+            handle_input $input_file
+            exp_continue
+        } else {
+            exp_continue
+        }
+    }
+    timeout {
+        # Check for input file during idle periods
+        if {[file exists $input_file]} {
+            handle_input $input_file
+        }
+        # Check for stop file
+        if {[file exists $stop_file]} {
+            handle_stop $stop_file $status_file $stop_marker
+        }
+        exp_continue
+    }
+    eof {
+        # Claude exited on its own
+    }
+}
+
+expect eof

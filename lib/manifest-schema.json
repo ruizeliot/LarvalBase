@@ -1,0 +1,103 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "pipeline-manifest-v5.2",
+  "title": "Pipeline Manifest Schema v5.2",
+  "description": "Single source of truth for pipeline manifest structure. ALL components MUST use this.",
+  "type": "object",
+  "required": ["project", "pipeline", "phases"],
+  "properties": {
+    "project": {
+      "type": "object",
+      "required": ["name", "path"],
+      "properties": {
+        "name": { "type": "string", "description": "Project name (basename of path)" },
+        "path": { "type": "string", "description": "Full path to project" },
+        "version": { "type": "string", "default": "1.0.0" },
+        "created": { "type": "string", "format": "date-time" }
+      }
+    },
+    "pipeline": {
+      "type": "object",
+      "required": ["type", "version"],
+      "properties": {
+        "type": { "type": "string", "enum": ["webReact-fullStack", "unity-vr", "feature"], "description": "Pipeline type" },
+        "version": { "type": "string", "description": "Pipeline version (e.g., 5.2)" },
+        "mode": { "type": "string", "enum": ["new-project", "new-feature"], "default": "new-project" }
+      }
+    },
+    "phases": {
+      "type": "object",
+      "description": "Phase tracking - ALL phases use this structure",
+      "properties": {
+        "0a": { "$ref": "#/definitions/phase" },
+        "0b": { "$ref": "#/definitions/phase" },
+        "1": { "$ref": "#/definitions/phase" },
+        "2": { "$ref": "#/definitions/loopingPhase" },
+        "3": { "$ref": "#/definitions/phase" }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "properties": {
+        "url": { "type": "string" },
+        "api_url": { "type": "string" },
+        "backend_port": { "type": "integer" },
+        "frontend_port": { "type": "integer" },
+        "pm2_processes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "tech_stack": {
+      "type": "object",
+      "properties": {
+        "frontend": { "type": "string" },
+        "backend": { "type": "string" },
+        "testing": { "type": "string" },
+        "deployment": { "type": "string" }
+      }
+    }
+  },
+  "definitions": {
+    "phase": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in-progress", "complete", "failed"] },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "commit": { "type": "string", "description": "Git commit hash when phase completed (for analysis checkpoints)" }
+      }
+    },
+    "loopingPhase": {
+      "type": "object",
+      "required": ["status", "looping", "loop_type", "loops"],
+      "description": "Phase 2 MUST have this structure for epic looping",
+      "properties": {
+        "status": { "type": "string", "enum": ["pending", "in-progress", "complete", "failed"] },
+        "looping": { "type": "boolean", "const": true, "description": "MUST be true for Phase 2" },
+        "loop_type": { "type": "string", "const": "epic", "description": "Type of loop (for display)" },
+        "current_loop": { "type": "integer", "minimum": 1, "description": "Current epic index (1-based)" },
+        "loops": {
+          "type": "array",
+          "description": "Array of epics - THIS is where epics live",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "status"],
+            "properties": {
+              "id": { "type": "integer", "description": "Epic ID (1-based)" },
+              "name": { "type": "string", "description": "Epic name" },
+              "status": { "type": "string", "enum": ["pending", "in-progress", "complete", "failed"] },
+              "stories": { "type": "array", "items": { "type": "string" }, "description": "User story IDs" },
+              "tests": { "type": "array", "items": { "type": "string" }, "description": "E2E test IDs" },
+              "startedAt": { "type": "string", "format": "date-time" },
+              "completedAt": { "type": "string", "format": "date-time" },
+              "commit": { "type": "string", "description": "Git commit hash when epic completed (for analysis checkpoints)" }
+            }
+          }
+        },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "commit": { "type": "string", "description": "Git commit hash when phase completed (for analysis checkpoints)" }
+      }
+    }
+  }
+}

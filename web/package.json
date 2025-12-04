@@ -1,0 +1,17 @@
+{
+  "name": "pipeline-web-gui",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "build": "npm run build --workspaces",
+    "test:e2e": "cd client && npm run test:e2e"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}

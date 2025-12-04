@@ -1,0 +1,88 @@
+#!/usr/bin/expect -f
+# Step execution expect script for automated pipeline phases
+# Runs command and waits for PIPELINE:COMPLETE with timeout
+# Usage: expect expect-step.exp <slash_cmd> <stop_file> [session_id] [session_file]
+#
+# If session_id is provided, resumes that session
+# If session_file is provided, saves new session ID to it for later resume
+
+log_user 1
+set timeout 30
+set cmd [lindex $argv 0]
+set stop_file [lindex $argv 1]
+set session_id [lindex $argv 2]
+set session_file [lindex $argv 3]
+
+# Check if we're resuming or starting new
+if {$session_id ne ""} {
+    # Resume existing session
+    spawn claude --resume $session_id --model opus --dangerously-skip-permissions
+    expect "bypass permissions"
+    sleep 1
+    send "Please continue where you left off."
+    sleep 0.5
+    send "\r"
+} else {
+    # Start new session with generated ID
+    set new_session_id [exec uuidgen]
+
+    # Save session ID to file if path provided
+    if {$session_file ne ""} {
+        set fp [open $session_file w]
+        puts $fp $new_session_id
+        close $fp
+    }
+
+    spawn claude --session-id $new_session_id --model opus --dangerously-skip-permissions
+    expect "bypass permissions"
+    sleep 1
+    send "/$cmd"
+    sleep 0.5
+    send "\r"
+}
+
+# Wait for step completion - look for PIPELINE codes
+# 3600 second (1 hour) hard timeout
+expect {
+    -timeout 3600
+    -re {PIPELINE:BATCH_COMPLETE|PIPELINE:COMPLETE|PIPELINE:CONTINUE} {
+        sleep 2
+        send "/exit"
+        sleep 0.5
+        send "\r"
+    }
+    -re {API Error: [0-9]+|"type":"error".*api_error} {
+        # API error - exit gracefully so session can be resumed fresh
+        send_user "\n*** API Error detected - exiting for fresh resume ***\n"
+        sleep 2
+        send "\x03"
+        sleep 1
+        send "/exit"
+        sleep 0.5
+        send "\r"
+        expect eof
+        exit 75
+    }
+    -re ".+" {
+        # Check for stop file on any output
+        if {[file exists $stop_file]} {
+            send_user "\n\nStop file detected - gracefully exiting...\n\n"
+            file delete $stop_file
+            # Send escape to interrupt any current operation
+            send "\x1b"
+            sleep 1
+            send "/exit"
+            sleep 0.5
+            send "\r"
+            # Wait for actual exit
+            expect eof
+        } else {
+            exp_continue
+        }
+    }
+    eof {
+        # Claude exited on its own
+    }
+}
+
+expect eof

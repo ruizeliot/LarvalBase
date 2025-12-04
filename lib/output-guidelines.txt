@@ -1,0 +1,42 @@
+OUTPUT COST OPTIMIZATION (v5.0.18)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL: Aggressive output truncation to reduce transcript context costs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+TEST OUTPUT (npm test, cypress run, jest)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SHOW Brief Summary:
+   npm test 2>&1 | head -30 || echo "Exit: $?"
+
+   Output: 3 passed, 2 failed (file:line for first 3 failures), exit code
+
+❌ DON'T show full output, passing tests, or long stack traces
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+BUILD OUTPUT (npm run build)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SHOW:
+   npm run build 2>&1 | grep -E "ERROR|Built|failed" | head -10
+
+❌ DON'T show verbose build logs
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+LOGS (docker logs, npm run dev)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ SHOW Last 20 relevant lines:
+   docker logs container 2>&1 | grep -E "ERROR|WARN" | tail -20
+
+❌ DON'T show entire log history
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PRINCIPLE: Show minimum needed for success/failure determination
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Success = "✓ Tests passed"
+Failure = Summary + first 3 errors
+
+Target: 80-90% context reduction

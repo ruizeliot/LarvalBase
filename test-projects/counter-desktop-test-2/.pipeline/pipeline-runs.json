@@ -1,0 +1,53 @@
+{
+  "runs": [
+    {
+      "runId": "new-1764857906290-cf1dcc98",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-04T14:18:26.291Z",
+      "status": "running",
+      "phases": {
+        "0a": {
+          "sessions": [
+            {
+              "sessionId": "979ef86e-5ec1-4da0-b737-9a0e2bb24d4e",
+              "startedAt": "2025-12-04T14:18:26.304Z",
+              "command": "/0a-pipeline-desktop-brainstorm-v6.0",
+              "spawnedAt": "2025-12-04T14:18:26.303Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T14:18:26.304Z"
+        }
+      },
+      "sessions": [
+        "979ef86e-5ec1-4da0-b737-9a0e2bb24d4e"
+      ]
+    },
+    {
+      "runId": "new-1764862385197-4437c1d4",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-04T15:33:05.197Z",
+      "status": "running",
+      "phases": {
+        "0a": {
+          "sessions": [
+            {
+              "sessionId": "95dabcbd-bb17-47ab-9403-1c3b3be787f5",
+              "startedAt": "2025-12-04T15:33:05.211Z",
+              "command": "/0a-pipeline-desktop-brainstorm-v6.0",
+              "spawnedAt": "2025-12-04T15:33:05.210Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T15:33:05.211Z"
+        }
+      },
+      "sessions": [
+        "95dabcbd-bb17-47ab-9403-1c3b3be787f5"
+      ]
+    }
+  ],
+  "currentRunId": "new-1764862385197-4437c1d4"
+}

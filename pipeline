@@ -1,0 +1,1738 @@
+#!/bin/bash
+# Pipeline CLI v6.0 - Unified pipeline execution
+# Usage: ./pipeline <command> [options]
+#
+# Commands:
+#   run <project>                         Run full pipeline (0a→0b→1→2→3)
+#   step <N> <project>                    Run individual step
+#   status <project>                      Show pipeline status
+#   watch <project>                       Reattach to running session
+#   send <project> <message>              Send message to running session
+#   stop <project>                        Stop running session gracefully
+#   cleanup                               Clean up orphaned Xvfb/pm2 processes
+#   analyze <project> [run-id]            Analyze completed run
+#   resume <project>                      Resume stopped/paused session
+#   help                                  Show this help message
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source shared libraries
+source "$SCRIPT_DIR/lib/common.sh"
+source "$SCRIPT_DIR/lib/transcript.sh"
+
+# Show help
+show_help() {
+    cat << 'EOF'
+Pipeline CLI v6.0 - Unified Pipeline Execution
+
+USAGE:
+    ./pipeline <command> [options]
+
+COMMANDS:
+    run <project>
+        Run the complete pipeline (0a → 0b → 1 → 2 → 3).
+        Opens a tmux session attached to Claude Code CLI.
+        All phases run sequentially with auto-transitions.
+
+        Controls while running:
+          Ctrl+B D     Detach (pipeline keeps running)
+          ./pipeline watch   Reattach to session
+          ./pipeline send    Send message to session
+
+    step <step> <project>
+        Run individual pipeline step.
+        Steps: 0a, 0b, 1, 2, 3
+
+    status <project>
+        Show current pipeline status.
+
+    watch <project>
+        Reattach to running pipeline session.
+        Press Ctrl+B D to detach again.
+
+    send <project> <message>
+        Send message to running session.
+
+    stop <project>
+        Stop running session gracefully.
+        Also cleans up any orphaned Xvfb processes.
+
+    cleanup
+        Clean up orphaned processes from pipeline runs:
+        - Xvfb (virtual displays from Cypress)
+        - Stuck pm2 logs processes
+        - Stale /tmp/.X*-lock files
+        Run this after killing tmux manually.
+
+    analyze <project> [run-id]
+        Analyze completed pipeline run.
+
+    resume <project>
+        Resume a stopped/paused session.
+
+    signal <phase> [project] [options]  (DEPRECATED)
+        Signal phase completion. DEPRECATED in v6.0 - supervisor now reads
+        worker output to determine completion. Kept for backward compatibility.
+
+EXAMPLES:
+    # Start a new project
+    ./pipeline run /home/claude/IMT/my-project
+
+    # Run individual step
+    ./pipeline step 2 /home/claude/IMT/my-project
+
+    # Monitor running pipeline
+    ./pipeline watch /home/claude/IMT/my-project
+    ./pipeline status /home/claude/IMT/my-project
+
+    # Interact with session
+    ./pipeline send /home/claude/IMT/my-project "your message"
+    ./pipeline stop /home/claude/IMT/my-project
+
+VERSION: 6.0
+EOF
+}
+
+# Command: modules - Manage reusable module library
+cmd_modules() {
+    source "$SCRIPT_DIR/lib/modules.sh"
+
+    local subcmd="${1:-list}"
+    shift || true
+
+    case "$subcmd" in
+        list)
+            list_modules
+            ;;
+        apply)
+            local module_name="${1:-}"
+            local project_path="${2:-}"
+            [ -z "$module_name" ] && die "Module name required. Usage: ./pipeline modules apply <name> <project>"
+            [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline modules apply <name> <project>"
+            project_path=$(realpath "$project_path" 2>/dev/null || echo "$project_path")
+            apply_module "$project_path" "$module_name"
+            ;;
+        *)
+            die "Unknown modules subcommand: $subcmd. Use: list, apply"
+            ;;
+    esac
+}
+
+# REMOVED: cmd_brainstorm - merged into cmd_run for v6
+
+# Placeholder to mark where brainstorm was
+_removed_brainstorm() {
+    local project_path=""
+    local mode="new"
+    local use_module=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --feature|-f)
+                mode="feature"
+                shift
+                ;;
+            --use-module|-m)
+                [ -z "${2:-}" ] && die "--use-module requires a module name"
+                use_module="$2"
+                shift 2
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                if [ -z "$project_path" ]; then
+                    project_path="$1"
+                else
+                    die "Unexpected argument: $1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline brainstorm <project> [--feature] [--use-module <name>]"
+
+    # Resolve to absolute path
+    project_path=$(realpath "$project_path" 2>/dev/null || echo "$project_path")
+    validate_project_path "$project_path" true
+
+    # Apply module if specified
+    if [ -n "$use_module" ]; then
+        source "$SCRIPT_DIR/lib/modules.sh"
+        info "Applying module: $use_module"
+        if apply_module "$project_path" "$use_module"; then
+            success "Module applied: $use_module"
+            echo ""
+            echo "Module files added to your project. The brainstorm session"
+            echo "will now include this module in the design discussion."
+            echo ""
+        else
+            warn "Failed to apply module: $use_module"
+            echo "Continuing without module..."
+        fi
+    fi
+
+    require_expect
+
+    local start_time=$(date +%s)
+    local start_iso=$(date -Iseconds)
+    local run_id=$(date +%Y%m%d-%H%M%S)
+    local run_dir="$project_path/.pipeline/runs/$run_id"
+    mkdir -p "$run_dir"
+
+    # Determine step and type
+    local step="0a"
+    local run_type="brainstorm-new"
+    local slash_cmd="0a-pipeline-brainstorm-v5.2"
+    local transcript_name="0a-transcript.md"
+
+    if [ "$mode" = "feature" ]; then
+        step="0a-feature"
+        run_type="brainstorm-feature"
+        slash_cmd="0a-pipeline-brainstorm-feature-v5.2"
+        transcript_name="0a-feature-transcript.md"
+    fi
+
+    # Save run metadata
+    cat > "$run_dir/metadata.json" << EOF
+{
+  "runId": "$run_id",
+  "type": "$run_type",
+  "projectPath": "$project_path",
+  "startStep": "0a",
+  "startedAt": "$start_iso",
+  "steps": ["0a"],
+  "status": "running",
+  "pipelineVersion": "$PIPELINE_VERSION"
+}
+EOF
+
+    if [ "$mode" = "feature" ]; then
+        print_header "BRAINSTORM: New Feature"
+    else
+        print_header "BRAINSTORM: New Project"
+    fi
+    echo "Project: $project_path"
+    echo "Run ID: $run_id"
+    echo ""
+    echo "This is an INTERACTIVE session."
+    echo "You will brainstorm with Claude to create user stories."
+    print_header ""
+
+    local transcript="$run_dir/$transcript_name"
+    write_transcript_header "$transcript" "$step" "$project_path" "$run_id"
+
+    # Setup control files
+    local input_file="$project_path/.pipeline/.input"
+    local stop_file="$project_path/.pipeline/.stop"
+    local status_file="$project_path/.pipeline/.exit_status"
+    local stop_marker="$project_path/.pipeline/.stop_writing"
+    local session_file="$project_path/.pipeline/session-id"
+    rm -f "$stop_file" "$input_file" "$status_file" "$stop_marker"
+
+    echo ""
+    echo "To send input: ./pipeline send $project_path \"your message\""
+    echo "To stop:       ./pipeline stop $project_path"
+    echo "To resume:     ./pipeline resume $project_path"
+    echo ""
+
+    # Run expect with dual output (pass session_file as 7th arg for resume support)
+    cd "$project_path"
+    { expect "$SCRIPT_DIR/lib/expect-interactive.exp" "$slash_cmd" "$input_file" "$stop_file" "$status_file" "$stop_marker" "" "$session_file" 2>/dev/null || true; } | \
+      stdbuf -oL tee >(clean_transcript_with_stop "$stop_marker" >> "$transcript")
+
+    sleep 2
+    rm -f "$stop_marker"
+
+    # Read exit status
+    local exit_status="unknown"
+    if [ -f "$status_file" ]; then
+        exit_status=$(cat "$status_file")
+        rm -f "$status_file"
+    fi
+
+    # Calculate duration
+    local end_time=$(date +%s)
+    local end_iso=$(date -Iseconds)
+    local duration=$((end_time - start_time))
+
+    # Add footer based on status
+    echo "" >> "$transcript"
+    echo "---" >> "$transcript"
+    echo "" >> "$transcript"
+
+    local metadata_status="unknown"
+    local display_status="Brainstorm Ended"
+
+    case "$exit_status" in
+        "complete")
+            echo "**Ended:** $end_iso" >> "$transcript"
+            echo "**Duration:** ${duration}s" >> "$transcript"
+            echo "**Status:** Complete" >> "$transcript"
+            metadata_status="complete"
+            display_status="Brainstorm Complete"
+            ;;
+        "stopped")
+            echo "**Stopped:** $end_iso" >> "$transcript"
+            echo "**Duration:** ${duration}s" >> "$transcript"
+            metadata_status="stopped"
+            display_status="Brainstorm Stopped by User"
+            ;;
+        "failed")
+            echo "**Ended:** $end_iso" >> "$transcript"
+            echo "**Duration:** ${duration}s" >> "$transcript"
+            echo "**Status:** Failed" >> "$transcript"
+            metadata_status="failed"
+            display_status="Brainstorm Failed"
+            ;;
+        *)
+            echo "**Ended:** $end_iso" >> "$transcript"
+            echo "**Duration:** ${duration}s" >> "$transcript"
+            echo "**Status:** Unknown" >> "$transcript"
+            ;;
+    esac
+
+    # Update metadata
+    jq --arg endedAt "$end_iso" \
+       --arg duration "$duration" \
+       --arg status "$metadata_status" \
+       '. + {endedAt: $endedAt, durationSeconds: ($duration | tonumber), status: $status}' \
+       "$run_dir/metadata.json" > "$run_dir/metadata.tmp" && mv "$run_dir/metadata.tmp" "$run_dir/metadata.json"
+
+    echo ""
+    print_header "$display_status"
+    echo ""
+    echo "Run ID: $run_id"
+    echo "Duration: $(format_duration $duration)"
+    echo "Status: $exit_status"
+    echo ""
+
+    if [ "$exit_status" = "stopped" ]; then
+        echo "To resume: ./pipeline resume $project_path"
+        echo ""
+    fi
+
+    echo "To continue with automated pipeline:"
+    if [ "$mode" = "feature" ]; then
+        echo "  ./pipeline run $project_path --feature"
+    else
+        echo "  ./pipeline run $project_path"
+    fi
+    print_header ""
+}
+
+# Command: run (automated pipeline with separate Claude per phase)
+cmd_run() {
+    local project_path=""
+    local feature_mode=""
+    local from_phase=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --feature|-f)
+                feature_mode="--feature"
+                shift
+                ;;
+            --from)
+                from_phase="$2"
+                shift 2
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                if [ -z "$project_path" ]; then
+                    project_path="$1"
+                else
+                    die "Unexpected argument: $1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline run <project> [--feature] [--from <phase>]"
+
+    # Create project directory if it doesn't exist
+    if [ ! -d "$project_path" ]; then
+        echo "Creating project directory: $project_path"
+        mkdir -p "$project_path"
+    fi
+
+    project_path=$(realpath "$project_path")
+
+    # Initialize manifest ONLY if it doesn't exist or has no progress/epics
+    local manifest_file="$project_path/.pipeline/manifest.json"
+    local should_init=true
+
+    if [[ -f "$manifest_file" ]]; then
+        # Check if any phase beyond 0a is complete (has progress)
+        local has_progress=$(jq -r '
+            .phases | to_entries |
+            map(select(.key != "0a" and .value.status == "complete")) |
+            length > 0
+        ' "$manifest_file" 2>/dev/null || echo "false")
+
+        # Also check if manifest has epics defined
+        local has_epics=$(jq -r '.epics | length > 0' "$manifest_file" 2>/dev/null || echo "false")
+
+        # Check if 0a is pending (fresh start, should preserve)
+        local phase_0a_pending=$(jq -r '.phases["0a"].status == "pending"' "$manifest_file" 2>/dev/null || echo "false")
+
+        if [[ "$has_progress" == "true" ]]; then
+            echo "Existing manifest with progress found - preserving"
+            should_init=false
+        elif [[ "$has_epics" == "true" ]]; then
+            echo "Existing manifest with epics found - preserving"
+            should_init=false
+        elif [[ "$phase_0a_pending" == "true" ]]; then
+            echo "Existing manifest with 0a pending - preserving for fresh start"
+            should_init=false
+        fi
+    fi
+
+    if [[ "$should_init" == "true" ]]; then
+        local run_id=$(date +%Y%m%d-%H%M%S)
+        "$SCRIPT_DIR/init-manifest.sh" "$project_path" "$run_id" "new-project" 2>/dev/null || true
+    fi
+
+    # Run the unified pipeline script
+    local from_arg=""
+    if [[ -n "$from_phase" ]]; then
+        from_arg="--from $from_phase"
+    fi
+    exec "$SCRIPT_DIR/run-pipeline.sh" "$project_path" $feature_mode $from_arg
+}
+
+# Command: step (run individual step)
+cmd_step() {
+    local step=""
+    local project_path=""
+    local mode="new"
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --feature|-f)
+                mode="feature"
+                shift
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                if [ -z "$step" ]; then
+                    step="$1"
+                elif [ -z "$project_path" ]; then
+                    project_path="$1"
+                else
+                    die "Unexpected argument: $1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$step" ] && die "Step required. Usage: ./pipeline step <step> <project> [--feature]"
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline step <step> <project> [--feature]"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Execute run-step.sh
+    exec "$SCRIPT_DIR/run-step.sh" "$step" "$project_path" "$mode"
+}
+
+# Command: status
+cmd_status() {
+    local project_path="$1"
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline status <project>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+    require_jq
+
+    local manifest="$project_path/.pipeline/manifest.json"
+    local current_run_file="$project_path/.pipeline/current-run.txt"
+
+    print_header "PIPELINE STATUS"
+    echo ""
+    echo "Project: $(basename "$project_path")"
+    echo "Path: $project_path"
+    echo ""
+
+    # Check for current run
+    if [ -f "$current_run_file" ]; then
+        local run_id=$(cat "$current_run_file")
+        local run_meta="$project_path/.pipeline/runs/$run_id/metadata.json"
+
+        if [ -f "$run_meta" ]; then
+            local run_status=$(jq -r '.status // "unknown"' "$run_meta")
+            local run_type=$(jq -r '.type // "unknown"' "$run_meta")
+            local started_at=$(jq -r '.startedAt // "unknown"' "$run_meta")
+
+            echo "Current Run: $run_id"
+            echo "Type: $run_type"
+            echo "Status: $run_status"
+            echo "Started: $started_at"
+
+            if [ "$run_status" = "running" ]; then
+                # Check if input/stop files exist
+                [ -f "$project_path/.pipeline/.input" ] && echo "  (pending input)"
+                [ -f "$project_path/.pipeline/.stop" ] && echo "  (stop requested)"
+            fi
+            echo ""
+        fi
+    else
+        echo "No active run found."
+        echo ""
+    fi
+
+    # Check manifest
+    if [ -f "$manifest" ]; then
+        local current_phase=$(jq -r '.currentPhase // "unknown"' "$manifest")
+        local current_epic=$(jq -r '.currentEpic // 0' "$manifest")
+        local total_epics=$(jq '.epics | length // 0' "$manifest")
+        local completed_epics=$(jq '[.epics[] | select(.status == "complete")] | length' "$manifest")
+        local tests_passing=$(jq -r '.tests.passing // 0' "$manifest")
+        local tests_total=$(jq -r '.tests.total // 0' "$manifest")
+        local project_status=$(jq -r '.status // "unknown"' "$manifest")
+
+        echo "Phase: $current_phase ($(get_step_name "$current_phase"))"
+        echo "Epic: $current_epic / $total_epics ($completed_epics complete)"
+        echo "Tests: $tests_passing / $tests_total passing"
+        echo "Overall: $project_status"
+        echo ""
+
+        # Show epic details
+        echo "Epics:"
+        jq -r '.epics[] | "  \(.id). \(.name): \(.status)"' "$manifest"
+    else
+        echo "No manifest found. Run brainstorm first."
+    fi
+
+    print_header ""
+}
+
+# Command: watch - Attach to live Claude Code CLI session (or tail log in foreground mode)
+cmd_watch() {
+    local project_path="$1"
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline watch <project>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    local project_name=$(basename "$project_path")
+    local log_file="$project_path/.pipeline/pipeline.log"
+
+    # Check if tmux is available
+    if ! command -v tmux &>/dev/null; then
+        # Foreground mode - tail the log file
+        print_header "PIPELINE WATCH (foreground mode)"
+        echo ""
+        echo "Project: $project_name"
+        echo "Log file: $log_file"
+        echo ""
+
+        if [ ! -f "$log_file" ]; then
+            echo "No log file found. Start pipeline first with:"
+            echo "  ./pipeline run $project_path"
+            return 1
+        fi
+
+        echo "Tailing log file (Ctrl+C to stop)..."
+        echo "────────────────────────────────────────────────────────────────"
+        tail -f "$log_file"
+        return 0
+    fi
+
+    # tmux mode
+    local session_prefix="pipeline-${project_name}"
+
+    # Find active sessions sorted by creation time (newest first)
+    local sessions=$(tmux ls 2>/dev/null | grep "^${session_prefix}" | sort -t'(' -k2 -r)
+
+    if [ -z "$sessions" ]; then
+        # No tmux session - check for log file (might be foreground mode)
+        if [ -f "$log_file" ]; then
+            echo "No tmux session, but log file exists. Tailing..."
+            echo "────────────────────────────────────────────────────────────────"
+            tail -f "$log_file"
+            return 0
+        fi
+
+        print_header "PIPELINE WATCH"
+        echo ""
+        echo "Project: $project_name"
+        echo "No active sessions found."
+        echo ""
+        echo "Start a pipeline first with:"
+        echo "  ./pipeline run $project_path"
+        print_header ""
+        return 1
+    fi
+
+    local session_count=$(echo "$sessions" | wc -l)
+    local latest_session=$(echo "$sessions" | head -1 | cut -d: -f1)
+
+    # If multiple sessions, show selection
+    if [ "$session_count" -gt 1 ]; then
+        echo "Multiple sessions found ($session_count):"
+        echo ""
+        local i=1
+        echo "$sessions" | while read -r line; do
+            local sess_name=$(echo "$line" | cut -d: -f1)
+            echo "  $i) $sess_name"
+            i=$((i+1))
+        done
+        echo ""
+        echo "Attaching to latest: $latest_session"
+        echo "(Press Ctrl+B then D to detach)"
+        echo ""
+        sleep 2
+    else
+        echo "Attaching to: $latest_session"
+        echo "(Press Ctrl+B then D to detach)"
+        sleep 1
+    fi
+
+    # Attach to the tmux session (read-only mode)
+    tmux attach-session -t "$latest_session" -r
+}
+
+# Command: send - Send message to running pipeline session (or write to file in foreground mode)
+cmd_send() {
+    local project_path=""
+    local target="worker"  # Default to worker
+    local message_parts=()
+
+    # Parse arguments - flags can appear anywhere
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --supervisor|-s)
+                target="supervisor"
+                shift
+                ;;
+            --worker|-w)
+                target="worker"
+                shift
+                ;;
+            --target|-t)
+                target="$2"
+                shift 2
+                ;;
+            -*)
+                die "Unknown option: $1. Usage: ./pipeline send <project> <message> [--supervisor|--worker]"
+                ;;
+            *)
+                if [ -z "$project_path" ]; then
+                    project_path="$1"
+                else
+                    message_parts+=("$1")
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    local message="${message_parts[*]}"
+
+    [ -z "$project_path" ] && die "Usage: ./pipeline send <project> [--supervisor|--worker] <message>"
+    [ -z "$message" ] && die "Message required. Usage: ./pipeline send <project> [--supervisor|--worker] <message>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    local project_name=$(basename "$project_path")
+    local msg_file="$project_path/.pipeline/user-message.txt"
+
+    # Check if tmux is available
+    if ! command -v tmux &>/dev/null; then
+        # Foreground mode - write to message file
+        echo "$message" > "$msg_file"
+        success "Message queued (foreground mode)"
+        echo "The pipeline will read this on next check."
+        return 0
+    fi
+
+    local session_name="${target}-${project_name}"
+
+    # Check if session exists
+    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        # Try legacy naming (pipeline-* for backwards compatibility)
+        local legacy_session="pipeline-${project_name}"
+        if [ "$target" = "worker" ] && tmux has-session -t "$legacy_session" 2>/dev/null; then
+            session_name="$legacy_session"
+        else
+            # No tmux session - try file-based messaging (foreground mode might be running)
+            if [ -d "$project_path/.pipeline" ]; then
+                echo "$message" > "$msg_file"
+                success "Message queued (file-based, no tmux session found)"
+                echo "If pipeline is running in foreground mode, it will read this."
+                return 0
+            fi
+            die "No active $target session found ($session_name). Start with: ./pipeline supervise $project_path"
+        fi
+    fi
+
+    # Format message - add [User]: prefix for supervisor messages
+    local formatted_message="$message"
+    if [ "$target" = "supervisor" ]; then
+        formatted_message="[User]: $message"
+    fi
+
+    # STEP 1: Exit copy-mode if active (q exits copy-mode, harmless otherwise)
+    tmux send-keys -t "$session_name" q >/dev/null 2>&1
+    sleep 0.2
+
+    # STEP 2: Send Ctrl-C to interrupt any running operation (works in Claude)
+    tmux send-keys -t "$session_name" C-c >/dev/null 2>&1
+    sleep 0.5
+
+    # STEP 3: Clear any existing input
+    tmux send-keys -t "$session_name" C-u >/dev/null 2>&1
+    sleep 0.2
+
+    # STEP 4: Type the message (literal mode to avoid special char issues)
+    tmux send-keys -t "$session_name" -l "$formatted_message"
+    sleep 0.2
+
+    # STEP 5: Submit with Enter
+    tmux send-keys -t "$session_name" Enter
+
+    success "Message sent to $target ($session_name)"
+}
+
+# Command: stop - Stop running pipeline session
+cmd_stop() {
+    local project_path="$1"
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline stop <project>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    local project_name=$(basename "$project_path")
+    local session_name="pipeline-${project_name}"
+
+    # Check if session exists
+    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+        echo "No active session found for $project_name"
+        return 0
+    fi
+
+    # Send /exit to gracefully close Claude, then kill session
+    tmux send-keys -t "$session_name" C-u
+    tmux send-keys -t "$session_name" "/exit" Enter
+    sleep 2
+    tmux kill-session -t "$session_name" 2>/dev/null || true
+
+    # Clean up orphaned Xvfb processes from Cypress tests
+    # These become orphans when tmux sessions are killed abruptly
+    local xvfb_count=$(pgrep -u "$(whoami)" -f "^Xvfb :" 2>/dev/null | wc -l)
+    if [ "$xvfb_count" -gt 0 ]; then
+        pkill -u "$(whoami)" -f "^Xvfb :" 2>/dev/null || true
+        rm -f /tmp/.X[0-9]*-lock 2>/dev/null || true
+        echo "Cleaned up $xvfb_count orphaned Xvfb process(es)"
+    fi
+
+    success "Pipeline stopped for $project_name"
+}
+
+# Command: cleanup - Clean up orphaned processes from pipeline runs
+cmd_cleanup() {
+    echo "Cleaning up orphaned pipeline processes..."
+
+    # Clean up Xvfb processes (from Cypress)
+    local xvfb_count=$(pgrep -u "$(whoami)" -f "^Xvfb :" 2>/dev/null | wc -l)
+    if [ "$xvfb_count" -gt 0 ]; then
+        pkill -u "$(whoami)" -f "^Xvfb :" 2>/dev/null || true
+        echo "  Killed $xvfb_count Xvfb process(es)"
+    else
+        echo "  No orphaned Xvfb processes"
+    fi
+
+    # Clean up stale lock files
+    local lock_count=$(ls /tmp/.X[0-9]*-lock 2>/dev/null | wc -l)
+    if [ "$lock_count" -gt 0 ]; then
+        rm -f /tmp/.X[0-9]*-lock 2>/dev/null || true
+        echo "  Removed $lock_count Xvfb lock file(s)"
+    else
+        echo "  No stale lock files"
+    fi
+
+    # Clean up stuck pm2 logs processes
+    local pm2logs_count=$(pgrep -u "$(whoami)" -f "pm2 logs" 2>/dev/null | wc -l)
+    if [ "$pm2logs_count" -gt 0 ]; then
+        pkill -u "$(whoami)" -f "pm2 logs" 2>/dev/null || true
+        echo "  Killed $pm2logs_count stuck pm2 logs process(es)"
+    else
+        echo "  No stuck pm2 logs processes"
+    fi
+
+    success "Cleanup complete"
+}
+
+# Command: analyze
+cmd_analyze() {
+    local project_path=""
+    local run_id=""
+    local phase=""
+    local verbose=""
+    local legacy=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --phase|-p)
+                phase="$2"
+                shift 2
+                ;;
+            --verbose|-v)
+                verbose="--verbose"
+                shift
+                ;;
+            --legacy|-l)
+                legacy="true"
+                shift
+                ;;
+            *)
+                if [[ -z "$project_path" ]]; then
+                    project_path="$1"
+                else
+                    run_id="$1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Usage: ./pipeline analyze <project> [run-id] [--phase A|B|C] [--verbose] [--legacy]"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Build args
+    local args=("$project_path")
+    [[ -n "$run_id" ]] && args+=("$run_id")
+    [[ -n "$phase" ]] && args+=("--phase" "$phase")
+    [[ -n "$verbose" ]] && args+=("$verbose")
+
+    # Use legacy script or new pipeline-based analysis
+    if [[ -n "$legacy" ]]; then
+        exec "$SCRIPT_DIR/analyze-pipeline.sh" "${args[@]}"
+    else
+        exec "$SCRIPT_DIR/run-analyze-pipeline.sh" "${args[@]}"
+    fi
+}
+
+# Command: resume
+cmd_resume() {
+    local project_path="$1"
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline resume <project>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Execute resume-session.sh
+    exec "$SCRIPT_DIR/resume-session.sh" "$project_path"
+}
+
+# Command: transcript - Generate transcript from JSONL
+cmd_transcript() {
+    local project_path=""
+    local session_id=""
+    local output_file=""
+    local include_tools=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --session|-s)
+                session_id="$2"
+                shift 2
+                ;;
+            --output|-o)
+                output_file="$2"
+                shift 2
+                ;;
+            --tools)
+                include_tools="--include-tools"
+                shift
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline transcript <project> [options]"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Determine output file
+    if [ -z "$output_file" ]; then
+        local timestamp=$(date +%Y%m%d-%H%M%S)
+        output_file="$project_path/docs/metrics/transcript-${timestamp}.md"
+        mkdir -p "$(dirname "$output_file")"
+    fi
+
+    # Generate transcript
+    if [ -n "$session_id" ]; then
+        echo "Generating transcript for session: $session_id"
+        if generate_transcript_from_jsonl "$session_id" "$output_file" $include_tools; then
+            echo "Transcript saved to: $output_file"
+        else
+            die "Failed to generate transcript"
+        fi
+    else
+        echo "Generating transcript from latest session..."
+        if generate_transcript_from_latest "$project_path" "$output_file" $include_tools; then
+            echo "Transcript saved to: $output_file"
+        else
+            die "Failed to generate transcript"
+        fi
+    fi
+
+    # Show preview
+    echo ""
+    echo "Preview (first 20 lines):"
+    echo "---"
+    head -20 "$output_file"
+    echo "..."
+}
+
+# Command: sessions - List Claude sessions for a project
+cmd_sessions() {
+    local project_path="$1"
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline sessions <project>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Use find-session.sh to list sessions
+    "$SCRIPT_DIR/lib/find-session.sh" --list "$project_path"
+}
+
+# Command: stream - Live stream session output
+cmd_stream() {
+    local project_path=""
+    local session_id=""
+    local format="json"
+    local include_tools=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --session|-s)
+                session_id="$2"
+                shift 2
+                ;;
+            --format|-f)
+                format="$2"
+                shift 2
+                ;;
+            --tools)
+                include_tools="--include-tools"
+                shift
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline stream <project> [options]"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Build command
+    local cmd="$SCRIPT_DIR/lib/jsonl-stream.sh $project_path --format $format"
+    [ -n "$session_id" ] && cmd="$cmd --session $session_id"
+    [ -n "$include_tools" ] && cmd="$cmd $include_tools"
+
+    exec $cmd
+}
+
+# Command: monitor - Persistent monitoring with interval checks (for AI use)
+cmd_monitor() {
+    local project_path=""
+    local interval=300  # Default 5 minutes
+    local max_checks=72   # Default ~6 hours max (72 * 5min = 360min)
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --interval|-i)
+                interval="$2"
+                shift 2
+                ;;
+            --max-checks|-m)
+                max_checks="$2"
+                shift 2
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline monitor <project> [--interval N] [--max-checks N]"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+    require_jq
+
+    local project_name=$(basename "$project_path")
+    local manifest="$project_path/.pipeline/manifest.json"
+    local check_count=0
+    local start_time=$(date +%s)
+
+    echo "════════════════════════════════════════════════════════════════"
+    echo "PERSISTENT PIPELINE MONITOR"
+    echo "════════════════════════════════════════════════════════════════"
+    echo "Project: $project_name"
+    echo "Interval: ${interval}s"
+    echo "Max checks: $max_checks"
+    echo "Started: $(date)"
+    echo "════════════════════════════════════════════════════════════════"
+    echo ""
+
+    while [ $check_count -lt $max_checks ]; do
+        check_count=$((check_count + 1))
+        local elapsed=$(($(date +%s) - start_time))
+        local elapsed_min=$((elapsed / 60))
+
+        echo "────────────────────────────────────────────────────────────────"
+        echo "[Check #$check_count] $(date '+%H:%M:%S') (${elapsed_min}m elapsed)"
+        echo "────────────────────────────────────────────────────────────────"
+
+        # Check if tmux session exists
+        local session_name="pipeline-${project_name}"
+        local session_exists="no"
+        if tmux has-session -t "$session_name" 2>/dev/null; then
+            session_exists="yes"
+        fi
+        echo "Session active: $session_exists"
+
+        # Check manifest status
+        if [ -f "$manifest" ]; then
+            local current_phase=$(jq -r '.currentPhase // "unknown"' "$manifest")
+            local project_status=$(jq -r '.status // "unknown"' "$manifest")
+            local current_epic=$(jq -r '.currentEpic // 0' "$manifest")
+            local total_epics=$(jq '.epics | length // 0' "$manifest")
+            local completed_epics=$(jq '[.epics[] | select(.status == "complete")] | length' "$manifest")
+            local tests_passing=$(jq -r '.tests.passing // 0' "$manifest")
+            local tests_total=$(jq -r '.tests.total // 0' "$manifest")
+
+            echo "Phase: $current_phase"
+            echo "Status: $project_status"
+            echo "Epic: $current_epic / $total_epics ($completed_epics complete)"
+            echo "Tests: $tests_passing / $tests_total passing"
+
+            # Check for completion
+            if [ "$project_status" = "complete" ]; then
+                echo ""
+                echo "════════════════════════════════════════════════════════════════"
+                echo "✅ PIPELINE COMPLETE!"
+                echo "════════════════════════════════════════════════════════════════"
+                echo "Total time: ${elapsed_min} minutes"
+                echo "Final phase: $current_phase"
+                echo "Tests passing: $tests_passing / $tests_total"
+                return 0
+            fi
+
+            # Check for failure indicators
+            if [ "$project_status" = "failed" ]; then
+                echo ""
+                echo "════════════════════════════════════════════════════════════════"
+                echo "❌ PIPELINE FAILED!"
+                echo "════════════════════════════════════════════════════════════════"
+                echo "Failed at phase: $current_phase"
+                echo "Check logs for details"
+                return 1
+            fi
+
+            # Check if session died but status not complete
+            if [ "$session_exists" = "no" ] && [ "$project_status" = "in-progress" ]; then
+                echo ""
+                echo "⚠️  WARNING: Session not running but status is in-progress"
+                echo "   Pipeline may have crashed. Check: ./pipeline status $project_path"
+            fi
+        else
+            echo "No manifest found"
+        fi
+
+        # Check for signal files
+        local signals
+        signals=$(ls "$project_path/.pipeline/.signal-"*"-complete" 2>/dev/null | wc -l) || signals=0
+        if [ "$signals" -gt 0 ]; then
+            echo "Signal files: $signals"
+        fi
+
+        echo ""
+
+        # Wait for next check (unless last iteration)
+        if [ $check_count -lt $max_checks ]; then
+            echo "Next check in ${interval}s..."
+            sleep $interval
+        fi
+    done
+
+    echo ""
+    echo "════════════════════════════════════════════════════════════════"
+    echo "⏰ MAX CHECKS REACHED ($max_checks)"
+    echo "════════════════════════════════════════════════════════════════"
+    echo "Pipeline did not complete within monitoring window"
+    echo "Last status: $(jq -r '.status // "unknown"' "$manifest" 2>/dev/null)"
+    return 2
+}
+
+# Command: auto-monitor - Monitor pipeline and send updates to another tmux session
+cmd_auto_monitor() {
+    local project_path=""
+    local target_session=""
+    local interval=300  # Default 5 minutes
+    local max_checks=72   # Default ~6 hours (72 * 5min = 360min)
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --target|-t)
+                target_session="$2"
+                shift 2
+                ;;
+            --interval|-i)
+                interval="$2"
+                shift 2
+                ;;
+            --max-checks|-m)
+                max_checks="$2"
+                shift 2
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Usage: ./pipeline auto-monitor <project> --target <tmux-session> [--interval N]"
+    [ -z "$target_session" ] && die "Target session required. Usage: ./pipeline auto-monitor <project> --target <tmux-session>"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+    require_jq
+
+    # Verify target session exists
+    if ! tmux has-session -t "$target_session" 2>/dev/null; then
+        die "Target tmux session '$target_session' not found. List sessions with: tmux ls"
+    fi
+
+    local project_name=$(basename "$project_path")
+    local manifest="$project_path/.pipeline/manifest.json"
+    local check_count=0
+    local start_time=$(date +%s)
+    local last_phase=""
+    local last_tests=""
+
+    echo "Auto-monitor started for $project_name"
+    echo "Target session: $target_session"
+    echo "Interval: ${interval}s"
+
+    # Send initial message (use -- to prevent message being parsed as options)
+    tmux send-keys -t "$target_session" -- ""  # Clear any pending input
+    sleep 0.1
+    tmux send-keys -t "$target_session" -- "[Heartbeat] Started. Check worker progress."
+    tmux send-keys -t "$target_session" Enter
+
+    while [ $check_count -lt $max_checks ]; do
+        check_count=$((check_count + 1))
+        sleep $interval
+
+        local elapsed=$(($(date +%s) - start_time))
+        local elapsed_min=$((elapsed / 60))
+
+        # Check session still exists
+        if ! tmux has-session -t "$target_session" 2>/dev/null; then
+            echo "Target session closed. Stopping monitor."
+            return 0
+        fi
+
+        # Check worker session (try both new and legacy naming)
+        local worker_session="worker-${project_name}"
+        local legacy_session="pipeline-${project_name}"
+        local session_active="no"
+        if tmux has-session -t "$worker_session" 2>/dev/null; then
+            session_active="yes"
+        elif tmux has-session -t "$legacy_session" 2>/dev/null; then
+            session_active="yes"
+        fi
+
+        # Get status from manifest
+        local current_phase="?"
+        local project_status="?"
+        local tests_passing="0"
+        local tests_total="0"
+        local current_epic="0"
+        local total_epics="0"
+
+        if [ -f "$manifest" ]; then
+            current_phase=$(jq -r '.currentPhase // "?"' "$manifest")
+            project_status=$(jq -r '.status // "?"' "$manifest")
+            tests_passing=$(jq -r '.tests.passing // 0' "$manifest")
+            tests_total=$(jq -r '.tests.total // 0' "$manifest")
+            current_epic=$(jq -r '.currentEpic // 0' "$manifest")
+            total_epics=$(jq '.epics | length // 0' "$manifest")
+        fi
+
+        # Build status line (for local logging only)
+        local status_line="[${elapsed_min}m] Phase:$current_phase Epic:$current_epic/$total_epics Tests:$tests_passing/$tests_total Session:$session_active"
+
+        # Heartbeat message - supervisor reads worker output to judge progress
+        local heartbeat_msg="[Heartbeat] Check worker progress."
+
+        # Send heartbeat every interval
+        tmux send-keys -t "$target_session" -- "$heartbeat_msg"
+        tmux send-keys -t "$target_session" Enter
+
+        # Exit conditions (heartbeat stops when pipeline ends)
+        if [ "$project_status" = "complete" ]; then
+            echo "Pipeline complete!"
+            return 0
+        fi
+        if [ "$project_status" = "failed" ] || { [ "$session_active" = "no" ] && [ "$project_status" = "in-progress" ]; }; then
+            echo "Pipeline needs attention!"
+            return 1
+        fi
+
+        echo "[Check $check_count] $status_line"
+    done
+
+    tmux send-keys -t "$target_session" -- "Monitor timeout after ${elapsed_min}m"
+    tmux send-keys -t "$target_session" Enter
+    return 2
+}
+
+# Command: supervise - Start Supervisor Claude that orchestrates workers
+cmd_supervise() {
+    local project_path=""
+    local interval=120
+    local feature_mode=""
+    local from_phase=""
+    local offload_target=""
+    local foreground_mode=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --interval|-i)
+                interval="$2"
+                shift 2
+                ;;
+            --feature|-f)
+                feature_mode="--feature"
+                shift
+                ;;
+            --from)
+                from_phase="$2"
+                shift 2
+                ;;
+            --offload|-o)
+                offload_target="$2"
+                shift 2
+                ;;
+            --foreground|--fg)
+                foreground_mode="true"
+                shift
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Usage: ./pipeline supervise <project> [--interval N] [--feature] [--from <phase>] [--foreground]"
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path" true
+
+    local project_name=$(basename "$project_path")
+    local supervisor_session="supervisor-${project_name}"
+
+    # Auto-detect Windows/no-tmux
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "${WINDIR:-}" ]] || ! command -v tmux &>/dev/null; then
+        if [[ -z "$foreground_mode" ]]; then
+            echo "⚠️  tmux not available. Running in foreground mode."
+            foreground_mode="true"
+        fi
+    fi
+
+    # Determine mode for supervisor
+    local mode="new-project"
+    if [ -n "$feature_mode" ]; then
+        mode="feature"
+    elif [ -n "$from_phase" ]; then
+        mode="resume --from $from_phase"
+    fi
+
+    print_header "SUPERVISED PIPELINE"
+    echo ""
+    echo "Project: $project_name"
+    echo "Mode: $mode"
+    if [ "$foreground_mode" = "true" ]; then
+        echo "Run Mode: Foreground (Windows)"
+    else
+        echo "Supervisor: $supervisor_session"
+    fi
+    if [ -n "$offload_target" ]; then
+        echo "Offload to: $offload_target (workers run remotely)"
+    fi
+    echo "Heartbeat interval: ${interval}s"
+    echo ""
+
+    # ═══════════════════════════════════════════════════════════════
+    # FOREGROUND MODE (Windows / no-tmux)
+    # ═══════════════════════════════════════════════════════════════
+    if [ "$foreground_mode" = "true" ]; then
+        local log_file="$project_path/.pipeline/supervisor.log"
+        local msg_file="$project_path/.pipeline/user-message.txt"
+        mkdir -p "$project_path/.pipeline"
+
+        echo "Log file: $log_file"
+        echo ""
+        echo "Commands (run in another terminal):"
+        echo "  ./pipeline watch $project_path     # View output"
+        echo "  ./pipeline send $project_path \"msg\" # Send message"
+        echo "  Ctrl+C                              # Stop"
+        echo ""
+        print_header "Starting Supervisor..."
+
+        # Initialize manifest if needed
+        local manifest="$project_path/.pipeline/manifest.json"
+        if [ ! -f "$manifest" ]; then
+            local run_id=$(date +%Y%m%d-%H%M%S)
+            "$SCRIPT_DIR/init-manifest.sh" "$project_path" "$run_id" "new-project" 2>/dev/null || true
+        fi
+
+        # Build supervisor command
+        local supervisor_cmd="/supervisor $project_path --mode $mode"
+
+        # Clear message file
+        rm -f "$msg_file"
+
+        # Run Claude directly in foreground
+        cd "$project_path"
+        echo "════════════════════════════════════════════════════════════════" | tee -a "$log_file"
+        echo "Supervisor started at $(date)" | tee -a "$log_file"
+        echo "Command: $supervisor_cmd" | tee -a "$log_file"
+        echo "════════════════════════════════════════════════════════════════" | tee -a "$log_file"
+
+        # Start Claude with input from message file polling
+        (
+            echo "$supervisor_cmd"
+            while true; do
+                if [[ -f "$msg_file" ]]; then
+                    cat "$msg_file"
+                    rm -f "$msg_file"
+                fi
+                sleep 2
+            done
+        ) | claude --dangerously-skip-permissions 2>&1 | tee -a "$log_file"
+
+        echo ""
+        print_header "Supervisor Ended"
+        return 0
+    fi
+
+    # ═══════════════════════════════════════════════════════════════
+    # TMUX MODE (Linux/VPS)
+    # ═══════════════════════════════════════════════════════════════
+
+    # Kill existing sessions if any
+    tmux kill-session -t "$supervisor_session" 2>/dev/null || true
+    tmux kill-session -t "worker-${project_name}" 2>/dev/null || true
+    sleep 1
+
+    # Initialize manifest if needed
+    local manifest="$project_path/.pipeline/manifest.json"
+    if [ ! -f "$manifest" ]; then
+        local run_id=$(date +%Y%m%d-%H%M%S)
+        "$SCRIPT_DIR/init-manifest.sh" "$project_path" "$run_id" "new-project" 2>/dev/null || true
+    fi
+
+    # Reset manifest status so supervisor can work
+    if [ -f "$manifest" ]; then
+        local tmp_manifest=$(mktemp)
+        jq '.status = "in-progress"' "$manifest" > "$tmp_manifest" && mv "$tmp_manifest" "$manifest"
+    fi
+
+    # 1. Create Supervisor session
+    echo "Starting Supervisor Claude..."
+    tmux new-session -d -s "$supervisor_session" -c "$project_path"
+    sleep 0.5
+
+    # Start Claude in supervisor session
+    tmux send-keys -t "$supervisor_session" "claude --dangerously-skip-permissions" Enter
+
+    # Wait for Claude to fully initialize (check for prompt)
+    echo "Waiting for Supervisor Claude to initialize..."
+    local max_wait=30
+    local waited=0
+    while [ $waited -lt $max_wait ]; do
+        sleep 2
+        waited=$((waited + 2))
+        # Check if Claude prompt is visible (looking for the > prompt or bypass text)
+        if tmux capture-pane -t "$supervisor_session" -p 2>/dev/null | grep -qE "(^> |bypass permissions)"; then
+            echo "Supervisor Claude ready after ${waited}s"
+            break
+        fi
+    done
+
+    if [ $waited -ge $max_wait ]; then
+        echo "Warning: Supervisor Claude may not be ready (waited ${max_wait}s)"
+    fi
+
+    # Build supervisor command with all options
+    local supervisor_cmd="/supervisor $project_path --mode $mode"
+    if [ -n "$offload_target" ]; then
+        supervisor_cmd="$supervisor_cmd --offload $offload_target"
+    fi
+
+    # Send the supervisor slash command with project path and mode
+    # The supervisor will spawn and manage workers itself
+    tmux send-keys -t "$supervisor_session" "$supervisor_cmd" Enter
+    sleep 3  # Wait for command to process
+
+    echo "Supervisor started. It will spawn workers for each phase."
+    echo ""
+
+    # 2. Start heartbeat targeting the Supervisor
+    echo "Starting heartbeat (sending updates every ${interval}s)..."
+    # Kill any existing heartbeat for this project first
+    pkill -f "auto-monitor.*${project_name}" 2>/dev/null || true
+    sleep 0.5
+    # Use nohup to survive SSH disconnection
+    nohup "$SCRIPT_DIR/pipeline" auto-monitor "$project_path" --target "$supervisor_session" --interval "$interval" > /tmp/pipeline-${project_name}-heartbeat.log 2>&1 &
+    local heartbeat_pid=$!
+    disown $heartbeat_pid
+
+    echo ""
+    print_header "SUPERVISED PIPELINE RUNNING"
+    echo ""
+    echo "Supervisor: $supervisor_session"
+    echo "Mode:       $mode"
+    if [ -n "$offload_target" ]; then
+        echo "Offload:    $offload_target"
+    fi
+    echo ""
+    echo "The Supervisor Claude will:"
+    echo "  1. Spawn a worker for the current phase"
+    if [ -n "$offload_target" ]; then
+        echo "     (workers run on $offload_target via SSH)"
+    fi
+    echo "  2. Monitor worker output to detect completion"
+    echo "  3. Kill worker and spawn next phase worker"
+    echo "  4. For phase 0a: wait for your approval"
+    echo ""
+    echo "Commands:"
+    echo "  tmux attach -t $supervisor_session  # Watch Supervisor"
+    echo "  ./pipeline status $project_path     # Check status"
+    echo "  ./pipeline send $project_path --supervisor \"message\"  # Send to supervisor"
+    echo ""
+    echo "Logs (survives SSH disconnect):"
+    echo "  /tmp/pipeline-${project_name}-heartbeat.log"
+    echo ""
+    echo "Pipeline running in background (safe to disconnect SSH)"
+}
+
+# Command: health - Show intelligence dashboard
+cmd_health() {
+    source "$SCRIPT_DIR/lib/module-health.sh" 2>/dev/null || die "Intelligence system not available"
+    display_health_dashboard
+}
+
+# Command: learn - Record human fix / manage learnings
+cmd_learn() {
+    source "$SCRIPT_DIR/lib/fix-learner.sh" 2>/dev/null || die "Learning system not available"
+
+    local subcmd="${1:-show}"
+    shift || true
+
+    case "$subcmd" in
+        show)
+            display_learnings
+            ;;
+        add)
+            interactive_record_fix
+            ;;
+        detect)
+            local project_path="${1:-}"
+            [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline learn detect <project>"
+            project_path=$(realpath "$project_path")
+            detect_fixes_from_diff "$project_path"
+            ;;
+        *)
+            echo "Usage: ./pipeline learn [show|add|detect <project>]"
+            echo ""
+            echo "  show              Display recorded learnings"
+            echo "  add               Record a new human fix interactively"
+            echo "  detect <project>  Auto-detect fixes from git history"
+            ;;
+    esac
+}
+
+# Command: signal - Signal phase completion (DEPRECATED in v6.0)
+# In v6.0, supervisor reads worker output to determine completion.
+# This command is kept for backward compatibility but is no longer used.
+cmd_signal() {
+    echo "⚠️  DEPRECATED: Signal command is deprecated in v6.0"
+    echo "   Supervisor now reads worker output to determine phase completion."
+    echo "   This command still works but is no longer recommended."
+    echo ""
+
+    local phase=""
+    local tests_passing=""
+    local tests_failing=""
+    local project_path=""
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --tests-passing)
+                tests_passing="$2"
+                shift 2
+                ;;
+            --tests-failing)
+                tests_failing="$2"
+                shift 2
+                ;;
+            -*)
+                die "Unknown option: $1"
+                ;;
+            *)
+                if [ -z "$phase" ]; then
+                    phase="$1"
+                elif [ -z "$project_path" ]; then
+                    project_path="$1"
+                else
+                    die "Unexpected argument: $1"
+                fi
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$phase" ] && die "Phase required. Usage: ./pipeline signal <phase> [project] [--tests-passing N] [--tests-failing N]"
+
+    # Default to current directory
+    if [ -z "$project_path" ]; then
+        project_path="$(pwd)"
+    fi
+
+    project_path=$(realpath "$project_path")
+    validate_project_path "$project_path"
+
+    # Validate phase
+    case "$phase" in
+        0a|0b|1|2|3|0a-feature|0b-feature|1-feature|2-feature|3-feature)
+            ;;
+        *)
+            die "Invalid phase: $phase. Valid phases: 0a, 0b, 1, 2, 3 (and -feature variants)"
+            ;;
+    esac
+
+    # Create signal file
+    local signal_dir="$project_path/.pipeline"
+    local signal_file="$signal_dir/.signal-${phase}-complete"
+    local timestamp=$(date -Iseconds)
+
+    mkdir -p "$signal_dir"
+
+    # Build JSON signal
+    local json="{\"phase\":\"$phase\",\"timestamp\":\"$timestamp\""
+
+    if [ -n "$tests_passing" ]; then
+        json="$json,\"tests_passing\":$tests_passing"
+    fi
+    if [ -n "$tests_failing" ]; then
+        json="$json,\"tests_failing\":$tests_failing"
+    fi
+
+    json="$json}"
+
+    echo "$json" > "$signal_file"
+
+    echo "✓ Phase $phase signaled complete"
+    echo "  Signal file: $signal_file"
+
+    # Also update checkpoint for compatibility
+    local checkpoint="$signal_dir/checkpoint.json"
+    local checkpoint_json="{\"lastAction\":\"phase-${phase}-complete\",\"timestamp\":\"$timestamp\",\"phase\":\"$phase\""
+
+    if [ -n "$tests_passing" ] || [ -n "$tests_failing" ]; then
+        checkpoint_json="$checkpoint_json,\"tests\":{\"passing\":${tests_passing:-0},\"failing\":${tests_failing:-0}}"
+    fi
+
+    checkpoint_json="$checkpoint_json}"
+    echo "$checkpoint_json" > "$checkpoint"
+
+    # Update manifest to mark phase complete (critical for resume)
+    local manifest="$signal_dir/manifest.json"
+    local phase_key="${phase%-feature}"  # Remove -feature suffix for manifest lookup
+    if [[ -f "$manifest" ]]; then
+        local next_phase=""
+        case "$phase_key" in
+            0a) next_phase="0b" ;;
+            0b) next_phase="1" ;;
+            1)  next_phase="2" ;;
+            2)  next_phase="3" ;;
+            3)  next_phase="" ;;
+        esac
+
+        # Update phase status and currentPhase
+        if [[ -n "$next_phase" ]]; then
+            jq ".phases[\"$phase_key\"].status = \"complete\" | .phases[\"$phase_key\"].completedAt = \"$timestamp\" | .currentPhase = \"$next_phase\"" \
+                "$manifest" > "${manifest}.tmp" && mv "${manifest}.tmp" "$manifest"
+        else
+            jq ".phases[\"$phase_key\"].status = \"complete\" | .phases[\"$phase_key\"].completedAt = \"$timestamp\" | .status = \"complete\" | .completedAt = \"$timestamp\"" \
+                "$manifest" > "${manifest}.tmp" && mv "${manifest}.tmp" "$manifest"
+        fi
+        echo "  Manifest updated: phase $phase_key → complete, currentPhase → ${next_phase:-done}"
+    fi
+}
+
+# Command: anti - Manage anti-patterns
+cmd_anti() {
+    source "$SCRIPT_DIR/lib/anti-patterns.sh" 2>/dev/null || die "Anti-patterns system not available"
+
+    local subcmd="${1:-show}"
+    shift || true
+
+    case "$subcmd" in
+        show|list)
+            list_anti_patterns
+            ;;
+        clear)
+            local pattern_id="${1:-}"
+            [ -z "$pattern_id" ] && die "Pattern ID required. Usage: ./pipeline anti clear <pattern-id>"
+            clear_anti_pattern "$pattern_id"
+            ;;
+        *)
+            echo "Usage: ./pipeline anti [show|clear <id>]"
+            echo ""
+            echo "  show              List all anti-patterns"
+            echo "  clear <id>        Remove an anti-pattern (when fixed)"
+            ;;
+    esac
+}
+
+# Main dispatcher
+main() {
+    local command="${1:-help}"
+    shift || true
+
+    case "$command" in
+        run|r)
+            cmd_run "$@"
+            ;;
+        step|s)
+            cmd_step "$@"
+            ;;
+        status|st)
+            cmd_status "$@"
+            ;;
+        watch|w)
+            cmd_watch "$@"
+            ;;
+        monitor|mon)
+            cmd_monitor "$@"
+            ;;
+        auto-monitor|am)
+            cmd_auto_monitor "$@"
+            ;;
+        supervise|sup)
+            cmd_supervise "$@"
+            ;;
+        send)
+            cmd_send "$@"
+            ;;
+        stop)
+            cmd_stop "$@"
+            ;;
+        cleanup)
+            cmd_cleanup "$@"
+            ;;
+        analyze|a)
+            cmd_analyze "$@"
+            ;;
+        resume|res)
+            cmd_resume "$@"
+            ;;
+        transcript|tr)
+            cmd_transcript "$@"
+            ;;
+        sessions|sess)
+            cmd_sessions "$@"
+            ;;
+        stream)
+            cmd_stream "$@"
+            ;;
+        modules|mod)
+            cmd_modules "$@"
+            ;;
+        health|h)
+            cmd_health "$@"
+            ;;
+        learn|l)
+            cmd_learn "$@"
+            ;;
+        anti)
+            cmd_anti "$@"
+            ;;
+        signal|sig)
+            cmd_signal "$@"
+            ;;
+        help|--help|-?)
+            show_help
+            ;;
+        version|--version|-v)
+            echo "Pipeline CLI v$PIPELINE_VERSION"
+            ;;
+        *)
+            die "Unknown command: $command. Run './pipeline help' for usage."
+            ;;
+    esac
+}
+
+main "$@"

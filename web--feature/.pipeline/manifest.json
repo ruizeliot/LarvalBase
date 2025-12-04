@@ -1,0 +1,28 @@
+{
+  "version": "5.0.3",
+  "runId": "20251129-165819",
+  "project": {
+    "name": "web--feature",
+    "path": "/C/Users/ahunt/Documents/IMT Claude/Pipeline-Office/web--feature"
+  },
+  "mode": "new-project",
+  "status": "in-progress",
+  "startedAt": "2025-11-29T16:58:20+01:00",
+  "completedAt": null,
+  "currentPhase": "0a",
+  "currentEpic": 1,
+  "currentBatch": 1,
+  "epics": [],
+  "tests": {
+    "total": 0,
+    "passing": 0,
+    "failing": 0
+  },
+  "phases": {
+    "0a": {"status": "pending"},
+    "0b": {"status": "pending"},
+    "1": {"status": "pending"},
+    "2": {"status": "pending"},
+    "3": {"status": "pending"}
+  }
+}
