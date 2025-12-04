@@ -47,7 +47,31 @@
       "sessions": [
         "95dabcbd-bb17-47ab-9403-1c3b3be787f5"
       ]
+    },
+    {
+      "runId": "new-1764862988377-44128149",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-04T15:43:08.377Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "92ff7542-34cc-4bed-845f-b08528fe8e28",
+              "startedAt": "2025-12-04T15:43:08.388Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-04T15:43:08.387Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T15:43:08.388Z"
+        }
+      },
+      "sessions": [
+        "92ff7542-34cc-4bed-845f-b08528fe8e28"
+      ]
     }
   ],
-  "currentRunId": "new-1764862385197-4437c1d4"
+  "currentRunId": "new-1764862988377-44128149"
 }

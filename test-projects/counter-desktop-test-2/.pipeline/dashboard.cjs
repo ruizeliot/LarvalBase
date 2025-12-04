@@ -99,7 +99,7 @@ function renderDashboard() {
   const elapsed = Date.now() - startTime;
 
   console.log('\x1b[36m================================================================\x1b[0m');
-  console.log('\x1b[36m  PIPELINE DASHBOARD v2 (No Supervisor)\x1b[0m');
+  console.log('\x1b[36m  PIPELINE DASHBOARD (No Supervisor)\x1b[0m');
   console.log('\x1b[36m  Project: ' + PROJECT_ID + '\x1b[0m');
   console.log('\x1b[36m================================================================\x1b[0m\n');
 
