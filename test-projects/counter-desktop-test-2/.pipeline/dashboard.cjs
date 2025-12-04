@@ -21,6 +21,48 @@ const PROJECT_PATH = path.resolve(__dirname, '..');
 const PROJECT_ID = 'pipeline-monitor-desktop';
 // Claude Code stores todos globally, not per-project
 const TODOS_DIR = path.join(process.env.USERPROFILE || process.env.HOME, '.claude', 'todos');
+// ============ DEPENDENCY CHECKS ============
+
+function checkCommand(cmd) {
+  try {
+    execSync(`where ${cmd}`, { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function checkDependencies() {
+  console.log('\x1b[36mChecking dependencies...\x1b[0m');
+
+  // Check Claude CLI
+  if (!checkCommand('claude')) {
+    console.log('\x1b[33m[WARN] Claude CLI not found. Installing...\x1b[0m');
+    try {
+      execSync('npm install -g @anthropic-ai/claude-code', { stdio: 'inherit' });
+      console.log('\x1b[32m[OK] Claude CLI installed successfully.\x1b[0m');
+    } catch (err) {
+      console.error('\x1b[31m[ERROR] Failed to install Claude CLI. Please install manually:\x1b[0m');
+      console.error('  npm install -g @anthropic-ai/claude-code');
+      process.exit(1);
+    }
+  } else {
+    console.log('\x1b[32m[OK] Claude CLI found.\x1b[0m');
+  }
+
+  // Check graph-easy (Perl module for ASCII diagrams)
+  if (!checkCommand('graph-easy')) {
+    console.log('\x1b[33m[WARN] graph-easy not found.\x1b[0m');
+    console.log('  graph-easy is optional (used for ASCII flow diagrams).');
+    console.log('  To install: cpan Graph::Easy');
+    console.log('  (Requires Perl and CPAN)');
+    console.log('\x1b[90m  Continuing without graph-easy...\x1b[0m');
+  } else {
+    console.log('\x1b[32m[OK] graph-easy found.\x1b[0m');
+  }
+
+  console.log('');
+}
 
 // Pipeline run tracker for analysis
 const PIPELINE_OFFICE = path.resolve(__dirname, '..', '..', '..');
@@ -510,6 +552,9 @@ async function runPhase(phase) {
 
 async function main() {
   const args = process.argv.slice(2);
+
+  // Check dependencies first
+  checkDependencies();
 
   // Clear log on fresh start
   if (!args.includes('--resume')) {
