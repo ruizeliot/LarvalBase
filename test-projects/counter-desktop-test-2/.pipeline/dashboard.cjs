@@ -138,8 +138,9 @@ function generateSessionId() {
 function generateCcusageSessionId(projectPath) {
   // ccusage encodes project path as session ID: /foo/bar -> -foo-bar
   // Windows: C:\foo\bar -> C--foo-bar
+  // Spaces are also replaced with dashes
   const normalized = projectPath.replace(/\\/g, '/');
-  return normalized.replace(/^\//, '').replace(/:/g, '-').replace(/\//g, '-');
+  return normalized.replace(/^\//, '').replace(/:/g, '-').replace(/\//g, '-').replace(/ /g, '-');
 }
 
 function getWorkerTodoFilePath() {
