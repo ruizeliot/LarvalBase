@@ -131,6 +131,9 @@ let pipelineRunId = null; // Track this pipeline run for analysis
 // ccusage session ID - derived from project path (ccusage uses path-based IDs)
 let ccusageSessionId = null;
 
+// Starting token counts (to calculate delta for this pipeline run only)
+let startingTokens = null;
+
 function generateSessionId() {
   return crypto.randomUUID();
 }
@@ -257,22 +260,36 @@ function fetchCostData() {
     const projectSession = sessions.find(s => s.sessionId === ccusageSessionId);
 
     if (projectSession) {
-      const tokens = {
+      const currentTokens = {
         input: projectSession.inputTokens || 0,
         output: projectSession.outputTokens || 0,
         cacheWrite: projectSession.cacheCreationTokens || 0,
         cacheRead: projectSession.cacheReadTokens || 0
       };
 
+      // Record starting tokens on first fetch (baseline for this pipeline run)
+      if (!startingTokens) {
+        startingTokens = { ...currentTokens };
+        log('[COST] Starting baseline: ' + JSON.stringify(startingTokens));
+      }
+
+      // Calculate delta (this pipeline run only)
+      const deltaTokens = {
+        input: currentTokens.input - startingTokens.input,
+        output: currentTokens.output - startingTokens.output,
+        cacheWrite: currentTokens.cacheWrite - startingTokens.cacheWrite,
+        cacheRead: currentTokens.cacheRead - startingTokens.cacheRead
+      };
+
       lastCostData = {
-        input: tokens.input,
-        output: tokens.output,
-        cache_read: tokens.cacheRead,
-        cache_write: tokens.cacheWrite,
-        cost_usd: calculateCost(tokens),
+        input: deltaTokens.input,
+        output: deltaTokens.output,
+        cache_read: deltaTokens.cacheRead,
+        cache_write: deltaTokens.cacheWrite,
+        cost_usd: calculateCost(deltaTokens),
         error: null
       };
-      log('[COST] Found session: ' + JSON.stringify(lastCostData));
+      log('[COST] Delta: ' + JSON.stringify(lastCostData));
     } else {
       // Session not found - list available for debugging
       const available = sessions.map(s => s.sessionId).slice(0, 5);
