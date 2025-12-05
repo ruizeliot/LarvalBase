@@ -25,9 +25,60 @@ const TODOS_DIR = path.join(process.env.USERPROFILE || process.env.HOME, '.claud
 
 function checkCommand(cmd) {
   try {
-    execSync(`where ${cmd}`, { stdio: 'ignore' });
+    // Windows uses 'where', Unix uses 'which'
+    const checkCmd = process.platform === 'win32' ? 'where' : 'which';
+    execSync(`${checkCmd} ${cmd}`, { stdio: 'ignore' });
     return true;
   } catch {
+    return false;
+  }
+}
+
+function checkNpxPackage(pkg) {
+  try {
+    execSync(`npx ${pkg} --version`, { stdio: 'ignore', timeout: 15000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function checkJq() {
+  // Check if jq is installed
+  if (checkCommand('jq')) {
+    return true;
+  }
+
+  // Try to install jq automatically
+  console.log('\x1b[33m[INFO] jq not found. Installing...\x1b[0m');
+
+  const homeDir = process.env.USERPROFILE || process.env.HOME;
+  const binDir = path.join(homeDir, 'bin');
+
+  try {
+    // Create ~/bin if it doesn't exist
+    if (!fs.existsSync(binDir)) {
+      fs.mkdirSync(binDir, { recursive: true });
+    }
+
+    if (process.platform === 'win32') {
+      // Download jq for Windows
+      const jqPath = path.join(binDir, 'jq.exe');
+      execSync(`curl -L -o "${jqPath}" "https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-windows-amd64.exe"`, {
+        stdio: 'inherit',
+        timeout: 60000
+      });
+      console.log('\x1b[32m[OK] jq installed to ' + jqPath + '\x1b[0m');
+      return true;
+    } else {
+      // On Unix, suggest package manager
+      console.log('\x1b[33m[WARN] Please install jq manually:\x1b[0m');
+      console.log('  macOS: brew install jq');
+      console.log('  Ubuntu: apt install jq');
+      return false;
+    }
+  } catch (err) {
+    console.log('\x1b[33m[WARN] Failed to auto-install jq: ' + err.message + '\x1b[0m');
     return false;
   }
 }
@@ -35,9 +86,9 @@ function checkCommand(cmd) {
 function checkDependencies() {
   console.log('\x1b[36mChecking dependencies...\x1b[0m');
 
-  // Check Claude CLI
+  // Check Claude CLI (required)
   if (!checkCommand('claude')) {
-    console.log('\x1b[33m[WARN] Claude CLI not found. Installing...\x1b[0m');
+    console.log('\x1b[33m[INFO] Claude CLI not found. Installing...\x1b[0m');
     try {
       execSync('npm install -g @anthropic-ai/claude-code', { stdio: 'inherit' });
       console.log('\x1b[32m[OK] Claude CLI installed successfully.\x1b[0m');
@@ -50,15 +101,20 @@ function checkDependencies() {
     console.log('\x1b[32m[OK] Claude CLI found.\x1b[0m');
   }
 
-  // Check graph-easy (Perl module for ASCII diagrams)
-  if (!checkCommand('graph-easy')) {
-    console.log('\x1b[33m[WARN] graph-easy not found.\x1b[0m');
-    console.log('  graph-easy is optional (used for ASCII flow diagrams).');
-    console.log('  To install: cpan Graph::Easy');
-    console.log('  (Requires Perl and CPAN)');
-    console.log('\x1b[90m  Continuing without graph-easy...\x1b[0m');
+  // Check jq (required for cost tracking)
+  if (!checkJq()) {
+    console.log('\x1b[90m  Cost tracking will be limited without jq.\x1b[0m');
   } else {
-    console.log('\x1b[32m[OK] graph-easy found.\x1b[0m');
+    console.log('\x1b[32m[OK] jq found.\x1b[0m');
+  }
+
+  // Check ccusage (auto-installs via npx if needed)
+  console.log('\x1b[90m[INFO] ccusage will be auto-installed via npx on first use.\x1b[0m');
+
+  // graph-easy is truly optional and complex to install (Perl)
+  // Don't even mention it unless the user has it
+  if (checkCommand('graph-easy')) {
+    console.log('\x1b[32m[OK] graph-easy found (ASCII diagrams enabled).\x1b[0m');
   }
 
   console.log('');
