@@ -128,8 +128,18 @@ const tracker = require(path.join(PIPELINE_OFFICE, 'lib', 'pipeline-run-tracker.
 let workerSessionId = null;
 let pipelineRunId = null; // Track this pipeline run for analysis
 
+// ccusage session ID - derived from project path (ccusage uses path-based IDs)
+let ccusageSessionId = null;
+
 function generateSessionId() {
   return crypto.randomUUID();
+}
+
+function generateCcusageSessionId(projectPath) {
+  // ccusage encodes project path as session ID: /foo/bar -> -foo-bar
+  // Windows: C:\foo\bar -> C--foo-bar
+  const normalized = projectPath.replace(/\\/g, '/');
+  return normalized.replace(/^\//, '').replace(/:/g, '-').replace(/\//g, '-');
 }
 
 function getWorkerTodoFilePath() {
@@ -215,9 +225,10 @@ function calculateCost(tokens) {
 }
 
 function fetchCostData() {
-  // If no worker session, nothing to track
-  if (!workerSessionId) {
-    return;
+  // Initialize ccusage session ID if not set
+  if (!ccusageSessionId) {
+    ccusageSessionId = generateCcusageSessionId(PROJECT_PATH);
+    log('[COST] ccusage session ID: ' + ccusageSessionId);
   }
 
   try {
@@ -241,15 +252,15 @@ function fetchCostData() {
       return;
     }
 
-    // Find our worker's session by ID
-    const workerSession = sessions.find(s => s.sessionId === workerSessionId);
+    // Find our project's session by ccusage session ID (path-based)
+    const projectSession = sessions.find(s => s.sessionId === ccusageSessionId);
 
-    if (workerSession) {
+    if (projectSession) {
       const tokens = {
-        input: workerSession.inputTokens || 0,
-        output: workerSession.outputTokens || 0,
-        cacheWrite: workerSession.cacheCreationTokens || 0,
-        cacheRead: workerSession.cacheReadTokens || 0
+        input: projectSession.inputTokens || 0,
+        output: projectSession.outputTokens || 0,
+        cacheWrite: projectSession.cacheCreationTokens || 0,
+        cacheRead: projectSession.cacheReadTokens || 0
       };
 
       lastCostData = {
@@ -260,10 +271,12 @@ function fetchCostData() {
         cost_usd: calculateCost(tokens),
         error: null
       };
-      log('[COST] Session ' + workerSessionId.slice(0, 8) + ': ' + JSON.stringify(lastCostData));
+      log('[COST] Found session: ' + JSON.stringify(lastCostData));
     } else {
-      // Session not found yet (worker just started)
-      log('[COST] Session ' + workerSessionId.slice(0, 8) + ' not found in ccusage yet');
+      // Session not found - list available for debugging
+      const available = sessions.map(s => s.sessionId).slice(0, 5);
+      log('[COST] Session not found. Looking for: ' + ccusageSessionId);
+      log('[COST] Available sessions: ' + JSON.stringify(available));
     }
   } catch (err) {
     // ccusage not available or failed - fail silently
@@ -358,12 +371,10 @@ function renderDashboard() {
     }
   }
 
-  // Cost tracking section - per pipeline session, not daily total
-  console.log('\n\x1b[36m  COST (This Pipeline):\x1b[0m');
+  // Cost tracking section - per project session (from ccusage)
+  console.log('\n\x1b[36m  COST (This Project):\x1b[0m');
   if (lastCostData.error) {
     console.log('  \x1b[90m(ccusage not available - run: npm install -g ccusage)\x1b[0m');
-  } else if (!workerSessionId) {
-    console.log('  \x1b[90m(waiting for worker to start...)\x1b[0m');
   } else {
     const costColor = parseFloat(lastCostData.cost_usd) > 5 ? '\x1b[33m' : '\x1b[32m';
     console.log('  Tokens: ' + formatTokens(lastCostData.input) + ' in / ' + formatTokens(lastCostData.output) + ' out');
