@@ -186,7 +186,7 @@ function log(msg) {
 let costMonitorInterval = null;
 
 function formatCost(usd) {
-  return '$' + parseFloat(usd || 0).toFixed(2);
+  return '$' + parseFloat(usd || 0).toFixed(3);
 }
 
 function formatTokens(count) {
@@ -201,29 +201,44 @@ function formatTokens(count) {
 function fetchCostData() {
   try {
     // Use ccusage to get daily cost data
-    const result = execSync('npx ccusage@latest daily --json 2>/dev/null', {
+    // Note: stdio option handles stderr suppression cross-platform
+    const result = execSync('npx ccusage@latest daily --json', {
       encoding: 'utf8',
-      timeout: 10000,
+      timeout: 30000,
       stdio: ['ignore', 'pipe', 'ignore']
     });
 
-    const data = JSON.parse(result);
-    if (Array.isArray(data) && data.length > 0) {
+    const parsed = JSON.parse(result);
+
+    // ccusage v17+ wraps data in { daily: [...] } object
+    // Earlier versions returned array directly
+    let dailyArray;
+    if (parsed && parsed.daily && Array.isArray(parsed.daily)) {
+      dailyArray = parsed.daily;
+    } else if (Array.isArray(parsed)) {
+      dailyArray = parsed;
+    } else {
+      log('[COST] Unexpected ccusage format: ' + JSON.stringify(parsed).slice(0, 100));
+      return;
+    }
+
+    if (dailyArray.length > 0) {
       // Get today's data (first entry)
-      const today = data[0];
+      const today = dailyArray[0];
       lastCostData = {
         input: today.inputTokens || today.input || 0,
         output: today.outputTokens || today.output || 0,
         cache_read: today.cacheReadTokens || 0,
-        cache_write: today.cacheWriteTokens || 0,
+        cache_write: today.cacheCreationTokens || today.cacheWriteTokens || 0,
         cost_usd: today.totalCost || today.cost_usd || '0.00',
         error: null
       };
+      log('[COST] Updated: ' + JSON.stringify(lastCostData));
     }
   } catch (err) {
     // ccusage not available or failed - fail silently
     if (!lastCostData.error) {
-      log('[COST] ccusage not available: ' + err.message);
+      log('[COST] ccusage error: ' + err.message);
       lastCostData.error = 'ccusage unavailable';
     }
   }

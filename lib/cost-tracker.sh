@@ -112,8 +112,13 @@ cost_get_project_cost() {
     local session_count=$(ls -1 "$claude_dir"/*.jsonl 2>/dev/null | grep -v '/agent-' | wc -l) || session_count=0
 
     # Get daily totals which include all sessions
+    # ccusage v17+ returns { daily: [...] }, older versions return [...]
     local daily
-    daily=$(npx ccusage@latest daily --json 2>/dev/null | jq '.[0] // {}' 2>/dev/null) || daily='{}'
+    local raw_output
+    raw_output=$(npx ccusage@latest daily --json 2>/dev/null) || raw_output='{}'
+
+    # Handle both formats: { daily: [...] } or just [...]
+    daily=$(echo "$raw_output" | jq '(if .daily then .daily[0] else .[0] end) // {}' 2>/dev/null) || daily='{}'
 
     if [[ -z "$daily" ]] || [[ "$daily" == "{}" ]]; then
         echo "{\"input\": 0, \"output\": 0, \"cost_usd\": \"0.00\", \"sessions\": $session_count}"
@@ -182,7 +187,8 @@ cost_calculate() {
 cost_format() {
     local cost="${1:-0}"
     # Use LC_NUMERIC=C to ensure decimal point (not comma)
-    LC_NUMERIC=C printf '$%.2f' "$cost"
+    # 3 decimal places for precision
+    LC_NUMERIC=C printf '$%.3f' "$cost"
 }
 
 # Format tokens for display (with K/M suffixes)
