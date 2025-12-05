@@ -55,8 +55,9 @@ COMMANDS:
     send <project> <message>
         Send message to running session.
 
-    stop <project>
-        Stop running session gracefully.
+    stop <project> [--graceful]
+        Stop running session.
+        With --graceful: saves session ID for exact conversation restoration.
         Also cleans up any orphaned Xvfb processes.
 
     cleanup
@@ -69,12 +70,19 @@ COMMANDS:
     analyze <project> [run-id]
         Analyze completed pipeline run.
 
-    resume <project>
+    resume <project> [--graceful]
         Resume a stopped/paused session.
+        Normal: restarts current phase from scratch (new conversation).
+        With --graceful: restores exact conversation (requires prior --graceful stop).
 
     signal <phase> [project] [options]  (DEPRECATED)
         Signal phase completion. DEPRECATED in v6.0 - supervisor now reads
         worker output to determine completion. Kept for backward compatibility.
+
+    cost [command] [project]
+        Token usage and cost tracking (uses ccusage).
+        Commands: summary, live, monitor, session, ccusage
+        Example: ./pipeline cost live ./my-project
 
 EXAMPLES:
     # Start a new project
@@ -711,39 +719,153 @@ cmd_send() {
 }
 
 # Command: stop - Stop running pipeline session
+# With --graceful: saves session ID for exact conversation restoration
 cmd_stop() {
-    local project_path="$1"
+    local project_path=""
+    local graceful_mode=""
 
-    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline stop <project>"
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --graceful|-g)
+                graceful_mode="true"
+                shift
+                ;;
+            -*)
+                die "Unknown option: $1. Usage: ./pipeline stop <project> [--graceful]"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline stop <project> [--graceful]"
 
     project_path=$(realpath "$project_path")
     validate_project_path "$project_path"
 
     local project_name=$(basename "$project_path")
-    local session_name="pipeline-${project_name}"
+    local pipeline_dir="$project_path/.pipeline"
+    local graceful_state="$pipeline_dir/graceful-state.json"
 
-    # Check if session exists
-    if ! tmux has-session -t "$session_name" 2>/dev/null; then
+    # Try multiple session naming patterns
+    local session_name=""
+    for pattern in "worker-${project_name}" "pipeline-${project_name}" "supervisor-${project_name}"; do
+        if tmux has-session -t "$pattern" 2>/dev/null; then
+            session_name="$pattern"
+            break
+        fi
+    done
+
+    # Check for foreground mode (no tmux but log exists)
+    local foreground_mode=""
+    if [[ -z "$session_name" ]] && [[ -f "$pipeline_dir/pipeline.log" ]]; then
+        foreground_mode="true"
+    fi
+
+    if [[ -z "$session_name" ]] && [[ -z "$foreground_mode" ]]; then
         echo "No active session found for $project_name"
         return 0
     fi
 
-    # Send /exit to gracefully close Claude, then kill session
-    tmux send-keys -t "$session_name" C-u
-    tmux send-keys -t "$session_name" "/exit" Enter
-    sleep 2
-    tmux kill-session -t "$session_name" 2>/dev/null || true
+    # GRACEFUL MODE: Save session state before stopping
+    if [[ "$graceful_mode" == "true" ]]; then
+        echo "Graceful stop: saving session state..."
 
-    # Clean up orphaned Xvfb processes from Cypress tests
-    # These become orphans when tmux sessions are killed abruptly
-    local xvfb_count=$(pgrep -u "$(whoami)" -f "^Xvfb :" 2>/dev/null | wc -l)
-    if [ "$xvfb_count" -gt 0 ]; then
-        pkill -u "$(whoami)" -f "^Xvfb :" 2>/dev/null || true
-        rm -f /tmp/.X[0-9]*-lock 2>/dev/null || true
-        echo "Cleaned up $xvfb_count orphaned Xvfb process(es)"
+        # Find the latest session ID from Claude's JSONL files
+        local session_id=""
+        local claude_dir="$HOME/.claude/projects"
+        local encoded_path=$(echo "$project_path" | sed 's|^/||; s|/|-|g; s|^|-|')
+        local project_sessions="$claude_dir/$encoded_path"
+
+        # Windows path encoding (different format)
+        if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "${WINDIR:-}" ]]; then
+            # Convert Windows path: C:\Users\foo -> -C-Users-foo
+            encoded_path=$(echo "$project_path" | sed 's|\\|/|g; s|:|/|; s|^/||; s|/|-|g; s|^|-|')
+            project_sessions="$claude_dir/$encoded_path"
+        fi
+
+        if [[ -d "$project_sessions" ]]; then
+            # Find latest non-agent session
+            local latest_jsonl=$(ls -t "$project_sessions"/*.jsonl 2>/dev/null | grep -v '/agent-' | head -1)
+            if [[ -n "$latest_jsonl" ]]; then
+                session_id=$(basename "$latest_jsonl" .jsonl)
+                echo "  Found session: $session_id"
+            fi
+        fi
+
+        # Read current manifest state
+        local manifest="$pipeline_dir/manifest.json"
+        local current_phase="unknown"
+        local current_epic="0"
+        local todo_progress="[]"
+
+        if [[ -f "$manifest" ]]; then
+            current_phase=$(jq -r '.currentPhase // "unknown"' "$manifest")
+            current_epic=$(jq -r '.currentEpic // 0' "$manifest")
+        fi
+
+        # Save graceful state
+        local timestamp=$(date -Iseconds)
+        cat > "$graceful_state" << EOF
+{
+  "sessionId": "${session_id:-}",
+  "savedAt": "$timestamp",
+  "currentPhase": "$current_phase",
+  "currentEpic": $current_epic,
+  "projectPath": "$project_path",
+  "canGracefulResume": ${session_id:+true}${session_id:-false}
+}
+EOF
+
+        if [[ -n "$session_id" ]]; then
+            # Also save to session-id file for compatibility
+            echo "$session_id" > "$pipeline_dir/session-id"
+            success "Session state saved"
+            echo "  Session ID: $session_id"
+            echo "  Phase: $current_phase"
+            echo "  State file: $graceful_state"
+        else
+            warn "Could not find session ID - graceful resume may not work"
+            echo "  Normal resume (restart phase) will still work"
+        fi
+    fi
+
+    # Stop the session
+    if [[ -n "$session_name" ]]; then
+        # tmux mode
+        tmux send-keys -t "$session_name" C-u
+        tmux send-keys -t "$session_name" "/exit" Enter
+        sleep 2
+        tmux kill-session -t "$session_name" 2>/dev/null || true
+    elif [[ "$foreground_mode" == "true" ]]; then
+        # Foreground mode - signal stop via file
+        echo "STOP" > "$pipeline_dir/.stop"
+        echo "Stop signal sent to foreground process"
+    fi
+
+    # Clean up orphaned Xvfb processes from Cypress tests (Linux only)
+    if command -v pgrep &>/dev/null; then
+        local xvfb_count=$(pgrep -u "$(whoami)" -f "^Xvfb :" 2>/dev/null | wc -l) || xvfb_count=0
+        if [ "$xvfb_count" -gt 0 ]; then
+            pkill -u "$(whoami)" -f "^Xvfb :" 2>/dev/null || true
+            rm -f /tmp/.X[0-9]*-lock 2>/dev/null || true
+            echo "Cleaned up $xvfb_count orphaned Xvfb process(es)"
+        fi
     fi
 
     success "Pipeline stopped for $project_name"
+
+    if [[ "$graceful_mode" == "true" ]]; then
+        echo ""
+        echo "To resume exact conversation:"
+        echo "  ./pipeline resume --graceful $project_path"
+        echo ""
+        echo "To restart phase from scratch:"
+        echo "  ./pipeline resume $project_path"
+    fi
 }
 
 # Command: cleanup - Clean up orphaned processes from pipeline runs
@@ -834,16 +956,150 @@ cmd_analyze() {
 }
 
 # Command: resume
+# Normal: restarts current phase from scratch (new conversation)
+# --graceful: restores exact conversation using saved session ID
 cmd_resume() {
-    local project_path="$1"
+    local project_path=""
+    local graceful_mode=""
 
-    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline resume <project>"
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --graceful|-g)
+                graceful_mode="true"
+                shift
+                ;;
+            -*)
+                die "Unknown option: $1. Usage: ./pipeline resume <project> [--graceful]"
+                ;;
+            *)
+                project_path="$1"
+                shift
+                ;;
+        esac
+    done
+
+    [ -z "$project_path" ] && die "Project path required. Usage: ./pipeline resume <project> [--graceful]"
 
     project_path=$(realpath "$project_path")
     validate_project_path "$project_path"
 
-    # Execute resume-session.sh
-    exec "$SCRIPT_DIR/resume-session.sh" "$project_path"
+    local project_name=$(basename "$project_path")
+    local pipeline_dir="$project_path/.pipeline"
+    local graceful_state="$pipeline_dir/graceful-state.json"
+    local session_file="$pipeline_dir/session-id"
+    local manifest="$pipeline_dir/manifest.json"
+
+    # GRACEFUL RESUME: Restore exact conversation
+    if [[ "$graceful_mode" == "true" ]]; then
+        print_header "GRACEFUL RESUME"
+        echo ""
+        echo "Project: $project_path"
+        echo ""
+
+        # Check for saved session state
+        local session_id=""
+        if [[ -f "$graceful_state" ]]; then
+            local can_resume=$(jq -r '.canGracefulResume // false' "$graceful_state")
+            session_id=$(jq -r '.sessionId // ""' "$graceful_state")
+            local saved_phase=$(jq -r '.currentPhase // "unknown"' "$graceful_state")
+            local saved_at=$(jq -r '.savedAt // "unknown"' "$graceful_state")
+
+            echo "Saved state found:"
+            echo "  Session: $session_id"
+            echo "  Phase: $saved_phase"
+            echo "  Saved at: $saved_at"
+            echo ""
+
+            if [[ "$can_resume" != "true" ]] || [[ -z "$session_id" ]]; then
+                warn "Graceful resume not available (no session ID saved)"
+                echo "Falling back to normal resume (restart phase)..."
+                echo ""
+                graceful_mode=""
+            fi
+        elif [[ -f "$session_file" ]]; then
+            # Try legacy session-id file
+            session_id=$(cat "$session_file")
+            echo "Using legacy session file: $session_id"
+        else
+            warn "No saved session state found"
+            echo "Use --graceful with stop first:"
+            echo "  ./pipeline stop --graceful $project_path"
+            echo ""
+            echo "Falling back to normal resume..."
+            graceful_mode=""
+        fi
+
+        if [[ "$graceful_mode" == "true" ]] && [[ -n "$session_id" ]]; then
+            echo "Restoring exact conversation..."
+            echo "Claude will continue from where you left off."
+            echo "All previous context (todos, messages) preserved."
+            print_header ""
+
+            cd "$project_path"
+
+            # Auto-detect foreground vs tmux mode
+            local use_foreground=""
+            if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ -n "${WINDIR:-}" ]] || ! command -v tmux &>/dev/null; then
+                use_foreground="true"
+            fi
+
+            if [[ "$use_foreground" == "true" ]]; then
+                # Foreground mode - run Claude directly with --resume
+                echo "Running in foreground mode (Ctrl+C to stop)"
+                echo "────────────────────────────────────────────────────────────────"
+                claude --resume "$session_id" --dangerously-skip-permissions
+            else
+                # tmux mode
+                local session_name="worker-${project_name}"
+                tmux kill-session -t "$session_name" 2>/dev/null || true
+                sleep 0.5
+
+                tmux new-session -d -s "$session_name" -c "$project_path"
+                sleep 0.5
+
+                tmux send-keys -t "$session_name" "claude --resume $session_id --dangerously-skip-permissions" Enter
+
+                echo "Session restored in tmux: $session_name"
+                echo ""
+                echo "Commands:"
+                echo "  tmux attach -t $session_name  # View session"
+                echo "  ./pipeline send $project_path \"message\"  # Send message"
+                echo "  ./pipeline stop $project_path  # Stop"
+
+                # Auto-attach if interactive
+                if [[ -t 0 ]]; then
+                    echo ""
+                    echo "Attaching to session (Ctrl+B D to detach)..."
+                    sleep 1
+                    tmux attach-session -t "$session_name"
+                fi
+            fi
+
+            return 0
+        fi
+    fi
+
+    # NORMAL RESUME: Restart current phase (new conversation)
+    print_header "RESUME PIPELINE"
+    echo ""
+    echo "Project: $project_path"
+
+    # Read current phase from manifest
+    local current_phase="1"
+    if [[ -f "$manifest" ]]; then
+        current_phase=$(jq -r '.currentPhase // "1"' "$manifest")
+    fi
+
+    echo "Current phase: $current_phase"
+    echo ""
+    echo "This will start a NEW conversation at phase $current_phase."
+    echo "Previous work (files, tests) is preserved."
+    echo "Previous conversation context is NOT preserved."
+    print_header ""
+
+    # Use the run-pipeline.sh with --from to resume at current phase
+    exec "$SCRIPT_DIR/run-pipeline.sh" "$project_path" --from "$current_phase"
 }
 
 # Command: transcript - Generate transcript from JSONL
@@ -1657,6 +1913,67 @@ cmd_anti() {
     esac
 }
 
+# Command: cost - Token usage and cost tracking
+cmd_cost() {
+    source "$SCRIPT_DIR/lib/cost-tracker.sh" 2>/dev/null || die "Cost tracker not available"
+
+    local subcmd="${1:-}"
+    shift || true
+
+    case "$subcmd" in
+        ""|summary)
+            # Default: show project cost summary
+            local project_path="${1:-$(pwd)}"
+            project_path=$(realpath "$project_path")
+            cost_print_summary "$project_path"
+            ;;
+        live)
+            # Show live cost for running session
+            local project_path="${1:-$(pwd)}"
+            project_path=$(realpath "$project_path")
+            local cost=$(cost_get_live_cost "$project_path")
+            echo "Live Cost for $(basename "$project_path"):"
+            echo "$cost" | jq '.'
+            ;;
+        monitor)
+            # Start background cost monitor
+            local project_path="${1:-$(pwd)}"
+            local interval="${2:-30}"
+            project_path=$(realpath "$project_path")
+            cost_start_monitor "$project_path" "$interval"
+            ;;
+        session)
+            # Show cost for specific session
+            local session_id="${1:-}"
+            [ -z "$session_id" ] && die "Session ID required. Usage: ./pipeline cost session <session-id>"
+            local cost=$(cost_get_session_cost "$session_id")
+            echo "Session Cost:"
+            echo "$cost" | jq '.'
+            ;;
+        ccusage)
+            # Run ccusage directly with passthrough args
+            echo "Running ccusage..."
+            npx ccusage@latest "$@"
+            ;;
+        *)
+            echo "Usage: ./pipeline cost [command] [options]"
+            echo ""
+            echo "Commands:"
+            echo "  summary [project]     Show project cost summary (default)"
+            echo "  live [project]        Show live cost for running session"
+            echo "  monitor [project] [N] Start cost monitor (updates every N seconds)"
+            echo "  session <session-id>  Show cost for specific session"
+            echo "  ccusage [args]        Run ccusage directly with any arguments"
+            echo ""
+            echo "Examples:"
+            echo "  ./pipeline cost                    # Summary for current directory"
+            echo "  ./pipeline cost live ./my-project  # Live cost tracking"
+            echo "  ./pipeline cost ccusage daily      # Run ccusage daily report"
+            echo "  ./pipeline cost ccusage blocks --live  # Real-time ccusage dashboard"
+            ;;
+    esac
+}
+
 # Main dispatcher
 main() {
     local command="${1:-help}"
@@ -1719,6 +2036,9 @@ main() {
             ;;
         anti)
             cmd_anti "$@"
+            ;;
+        cost|$)
+            cmd_cost "$@"
             ;;
         signal|sig)
             cmd_signal "$@"

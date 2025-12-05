@@ -117,11 +117,77 @@ let startTime = Date.now();
 let currentPhase = '1';
 let phaseStatus = { '1': 'pending', '2': 'pending', '3': 'pending', '4': 'pending', '5': 'pending' };
 let lastTodoStats = { pending: 0, inProgress: 0, completed: 0, total: 0, items: [] };
+let lastCostData = { input: 0, output: 0, cost_usd: '0.00', error: null };
 
 const logFile = path.join(__dirname, 'dashboard-v2.log');
 function log(msg) {
   const line = '[' + new Date().toISOString() + '] ' + msg;
   fs.appendFileSync(logFile, line + '\n');
+}
+
+// ============ COST TRACKING ============
+
+let costMonitorInterval = null;
+
+function formatCost(usd) {
+  return '$' + parseFloat(usd || 0).toFixed(2);
+}
+
+function formatTokens(count) {
+  if (count >= 1000000) {
+    return (count / 1000000).toFixed(1) + 'M';
+  } else if (count >= 1000) {
+    return (count / 1000).toFixed(1) + 'K';
+  }
+  return String(count);
+}
+
+function fetchCostData() {
+  try {
+    // Use ccusage to get daily cost data
+    const result = execSync('npx ccusage@latest daily --json 2>/dev/null', {
+      encoding: 'utf8',
+      timeout: 10000,
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+
+    const data = JSON.parse(result);
+    if (Array.isArray(data) && data.length > 0) {
+      // Get today's data (first entry)
+      const today = data[0];
+      lastCostData = {
+        input: today.inputTokens || today.input || 0,
+        output: today.outputTokens || today.output || 0,
+        cache_read: today.cacheReadTokens || 0,
+        cache_write: today.cacheWriteTokens || 0,
+        cost_usd: today.totalCost || today.cost_usd || '0.00',
+        error: null
+      };
+    }
+  } catch (err) {
+    // ccusage not available or failed - fail silently
+    if (!lastCostData.error) {
+      log('[COST] ccusage not available: ' + err.message);
+      lastCostData.error = 'ccusage unavailable';
+    }
+  }
+}
+
+function startCostMonitor() {
+  // Initial fetch
+  fetchCostData();
+
+  // Update every 30 seconds
+  costMonitorInterval = setInterval(() => {
+    fetchCostData();
+  }, 30000);
+}
+
+function stopCostMonitor() {
+  if (costMonitorInterval) {
+    clearInterval(costMonitorInterval);
+    costMonitorInterval = null;
+  }
 }
 
 // ============ LIVE DISPLAY ============
@@ -189,6 +255,16 @@ function renderDashboard() {
       const truncated = item.content.length > 50 ? item.content.substring(0, 47) + '...' : item.content;
       console.log('    ' + icon + ' ' + truncated);
     }
+  }
+
+  // Cost tracking section
+  console.log('\n\x1b[36m  COST (Today):\x1b[0m');
+  if (lastCostData.error) {
+    console.log('  \x1b[90m(ccusage not available - run: npm install -g ccusage)\x1b[0m');
+  } else {
+    const costColor = parseFloat(lastCostData.cost_usd) > 5 ? '\x1b[33m' : '\x1b[32m';
+    console.log('  Tokens: ' + formatTokens(lastCostData.input) + ' in / ' + formatTokens(lastCostData.output) + ' out');
+    console.log('  Cost:   ' + costColor + formatCost(lastCostData.cost_usd) + '\x1b[0m');
   }
 
   console.log('\n\x1b[36m----------------------------------------------------------------\x1b[0m');
@@ -607,8 +683,9 @@ async function main() {
   currentPhase = startPhase;
   const startIndex = PHASE_ORDER.indexOf(startPhase);
 
-  // Start live display
+  // Start live display and cost monitoring
   startDisplayLoop();
+  startCostMonitor();
 
   try {
     for (let i = startIndex; i < PHASE_ORDER.length; i++) {
@@ -688,6 +765,10 @@ async function main() {
     if (pipelineRunId) {
       console.log('\x1b[36m  Run ID: ' + pipelineRunId + ' (use for analysis)\x1b[0m');
     }
+    // Final cost summary
+    if (!lastCostData.error) {
+      console.log('\x1b[36m  Final Cost: ' + formatCost(lastCostData.cost_usd) + ' (' + formatTokens(lastCostData.input + lastCostData.output) + ' tokens)\x1b[0m');
+    }
     console.log('');
 
   } catch (err) {
@@ -699,6 +780,7 @@ async function main() {
   } finally {
     killWorker();
     stopDisplayLoop();
+    stopCostMonitor();
   }
 }
 
