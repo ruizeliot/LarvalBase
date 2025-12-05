@@ -14,12 +14,12 @@
 # Note: Don't use set -u here as this is sourced and may have unset vars
 set -eo pipefail
 
-# Pricing per 1M tokens (Claude 3.5 Sonnet / Opus defaults)
-# Update these if pricing changes
-COST_INPUT_PER_M=${COST_INPUT_PER_M:-3.00}      # $3/1M input tokens (Sonnet)
-COST_OUTPUT_PER_M=${COST_OUTPUT_PER_M:-15.00}   # $15/1M output tokens (Sonnet)
-COST_CACHE_WRITE_PER_M=${COST_CACHE_WRITE_PER_M:-3.75}  # $3.75/1M cache write
-COST_CACHE_READ_PER_M=${COST_CACHE_READ_PER_M:-0.30}    # $0.30/1M cache read
+# Pricing per 1M tokens - Claude Opus 4.5 (as of Dec 2025)
+# See: https://claude.com/pricing
+COST_INPUT_PER_M=${COST_INPUT_PER_M:-5.00}       # $5/1M input tokens
+COST_OUTPUT_PER_M=${COST_OUTPUT_PER_M:-25.00}    # $25/1M output tokens
+COST_CACHE_WRITE_PER_M=${COST_CACHE_WRITE_PER_M:-6.25}  # $6.25/1M cache write
+COST_CACHE_READ_PER_M=${COST_CACHE_READ_PER_M:-0.50}    # $0.50/1M cache read
 
 # Check if jq is available
 cost_check_jq() {

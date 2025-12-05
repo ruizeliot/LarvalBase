@@ -198,11 +198,31 @@ function formatTokens(count) {
   return String(count);
 }
 
+// Opus 4.5 pricing per 1M tokens (Dec 2025)
+const PRICING = {
+  input: 5.00,        // $5/1M input
+  output: 25.00,      // $25/1M output
+  cacheWrite: 6.25,   // $6.25/1M cache write
+  cacheRead: 0.50     // $0.50/1M cache read
+};
+
+function calculateCost(tokens) {
+  const input = (tokens.input || 0) / 1000000 * PRICING.input;
+  const output = (tokens.output || 0) / 1000000 * PRICING.output;
+  const cacheWrite = (tokens.cacheWrite || 0) / 1000000 * PRICING.cacheWrite;
+  const cacheRead = (tokens.cacheRead || 0) / 1000000 * PRICING.cacheRead;
+  return input + output + cacheWrite + cacheRead;
+}
+
 function fetchCostData() {
+  // If no worker session, nothing to track
+  if (!workerSessionId) {
+    return;
+  }
+
   try {
-    // Use ccusage to get daily cost data
-    // Note: stdio option handles stderr suppression cross-platform
-    const result = execSync('npx ccusage@latest daily --json', {
+    // Use ccusage session command to get per-session data
+    const result = execSync('npx ccusage@latest session --json', {
       encoding: 'utf8',
       timeout: 30000,
       stdio: ['ignore', 'pipe', 'ignore']
@@ -210,30 +230,40 @@ function fetchCostData() {
 
     const parsed = JSON.parse(result);
 
-    // ccusage v17+ wraps data in { daily: [...] } object
-    // Earlier versions returned array directly
-    let dailyArray;
-    if (parsed && parsed.daily && Array.isArray(parsed.daily)) {
-      dailyArray = parsed.daily;
+    // ccusage v17+ wraps data in { sessions: [...] } object
+    let sessions;
+    if (parsed && parsed.sessions && Array.isArray(parsed.sessions)) {
+      sessions = parsed.sessions;
     } else if (Array.isArray(parsed)) {
-      dailyArray = parsed;
+      sessions = parsed;
     } else {
-      log('[COST] Unexpected ccusage format: ' + JSON.stringify(parsed).slice(0, 100));
+      log('[COST] Unexpected ccusage session format');
       return;
     }
 
-    if (dailyArray.length > 0) {
-      // Get today's data (first entry)
-      const today = dailyArray[0];
+    // Find our worker's session by ID
+    const workerSession = sessions.find(s => s.sessionId === workerSessionId);
+
+    if (workerSession) {
+      const tokens = {
+        input: workerSession.inputTokens || 0,
+        output: workerSession.outputTokens || 0,
+        cacheWrite: workerSession.cacheCreationTokens || 0,
+        cacheRead: workerSession.cacheReadTokens || 0
+      };
+
       lastCostData = {
-        input: today.inputTokens || today.input || 0,
-        output: today.outputTokens || today.output || 0,
-        cache_read: today.cacheReadTokens || 0,
-        cache_write: today.cacheCreationTokens || today.cacheWriteTokens || 0,
-        cost_usd: today.totalCost || today.cost_usd || '0.00',
+        input: tokens.input,
+        output: tokens.output,
+        cache_read: tokens.cacheRead,
+        cache_write: tokens.cacheWrite,
+        cost_usd: calculateCost(tokens),
         error: null
       };
-      log('[COST] Updated: ' + JSON.stringify(lastCostData));
+      log('[COST] Session ' + workerSessionId.slice(0, 8) + ': ' + JSON.stringify(lastCostData));
+    } else {
+      // Session not found yet (worker just started)
+      log('[COST] Session ' + workerSessionId.slice(0, 8) + ' not found in ccusage yet');
     }
   } catch (err) {
     // ccusage not available or failed - fail silently
@@ -328,13 +358,18 @@ function renderDashboard() {
     }
   }
 
-  // Cost tracking section
-  console.log('\n\x1b[36m  COST (Today):\x1b[0m');
+  // Cost tracking section - per pipeline session, not daily total
+  console.log('\n\x1b[36m  COST (This Pipeline):\x1b[0m');
   if (lastCostData.error) {
     console.log('  \x1b[90m(ccusage not available - run: npm install -g ccusage)\x1b[0m');
+  } else if (!workerSessionId) {
+    console.log('  \x1b[90m(waiting for worker to start...)\x1b[0m');
   } else {
     const costColor = parseFloat(lastCostData.cost_usd) > 5 ? '\x1b[33m' : '\x1b[32m';
     console.log('  Tokens: ' + formatTokens(lastCostData.input) + ' in / ' + formatTokens(lastCostData.output) + ' out');
+    if (lastCostData.cache_read > 0 || lastCostData.cache_write > 0) {
+      console.log('  Cache:  ' + formatTokens(lastCostData.cache_write) + ' write / ' + formatTokens(lastCostData.cache_read) + ' read');
+    }
     console.log('  Cost:   ' + costColor + formatCost(lastCostData.cost_usd) + '\x1b[0m');
   }
 
