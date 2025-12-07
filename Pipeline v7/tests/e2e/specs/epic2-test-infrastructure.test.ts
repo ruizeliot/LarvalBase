@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as fs from 'fs';
 import * as os from 'os';
 import { fileURLToPath } from 'url';
-import { createMockClaude, setupMockClaude, cleanupMockClaude } from '../helpers/mock-claude.js';
+import { createMockClaude, setupMockClaude, cleanupMockClaude } from '../helpers/mock-claude.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FIXTURES_DIR = path.resolve(__dirname, '../fixtures');
