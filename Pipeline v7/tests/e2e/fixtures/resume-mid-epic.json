@@ -1,0 +1,42 @@
+{
+  "output": [
+    "[TODO] Resuming Phase 4: Epic 2",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 45}",
+    "[TODO] Continuing from checkpoint",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 60}",
+    "[TODO] Implementing remaining components",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 80}",
+    "[TODO] Running E2E tests",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 100}",
+    "[TODO] Epic 2 complete"
+  ],
+  "todoStates": [
+    {
+      "timestamp": 100,
+      "todos": [
+        {"content": "Continue from checkpoint", "status": "in_progress"},
+        {"content": "Implement remaining", "status": "pending"},
+        {"content": "Run E2E tests", "status": "pending"}
+      ]
+    },
+    {
+      "timestamp": 400,
+      "todos": [
+        {"content": "Continue from checkpoint", "status": "completed"},
+        {"content": "Implement remaining", "status": "completed"},
+        {"content": "Run E2E tests", "status": "in_progress"}
+      ]
+    },
+    {
+      "timestamp": 600,
+      "todos": [
+        {"content": "Continue from checkpoint", "status": "completed"},
+        {"content": "Implement remaining", "status": "completed"},
+        {"content": "Run E2E tests", "status": "completed"}
+      ]
+    }
+  ],
+  "finalState": {
+    "exitCode": 0
+  }
+}

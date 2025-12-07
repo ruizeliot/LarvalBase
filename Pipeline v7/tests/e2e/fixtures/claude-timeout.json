@@ -1,0 +1,18 @@
+{
+  "output": [
+    "[TODO] Starting long-running task...",
+    "[PROGRESS] {\"percent\": 10}",
+    "[TODO] Processing..."
+  ],
+  "todoStates": [
+    {
+      "timestamp": 100,
+      "todos": [
+        {"content": "Long running task", "status": "in_progress"}
+      ]
+    }
+  ],
+  "finalState": {
+    "exitCode": 124
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "output": [
+    "[TODO] Starting Epic implementation",
+    "[PROGRESS] {\"epic\": 1, \"percent\": 25}",
+    "[TODO] Creating components",
+    "[PROGRESS] {\"epic\": 1, \"percent\": 50}",
+    "[TODO] Writing tests",
+    "[PROGRESS] {\"epic\": 1, \"percent\": 75}",
+    "[TODO] All tests passing",
+    "[PROGRESS] {\"epic\": 1, \"percent\": 100}",
+    "[TODO] Epic complete!"
+  ],
+  "todoStates": [
+    {
+      "timestamp": 100,
+      "todos": [
+        {"content": "Create components", "status": "in_progress"},
+        {"content": "Write tests", "status": "pending"},
+        {"content": "Run tests", "status": "pending"}
+      ]
+    },
+    {
+      "timestamp": 300,
+      "todos": [
+        {"content": "Create components", "status": "completed"},
+        {"content": "Write tests", "status": "completed"},
+        {"content": "Run tests", "status": "in_progress"}
+      ]
+    },
+    {
+      "timestamp": 500,
+      "todos": [
+        {"content": "Create components", "status": "completed"},
+        {"content": "Write tests", "status": "completed"},
+        {"content": "Run tests", "status": "completed"}
+      ]
+    }
+  ],
+  "finalState": {
+    "exitCode": 0
+  }
+}

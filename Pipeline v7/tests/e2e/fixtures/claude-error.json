@@ -1,0 +1,18 @@
+{
+  "output": [
+    "[TODO] Starting task...",
+    "[ERROR] Context limit exceeded",
+    "[TODO] Attempting retry..."
+  ],
+  "todoStates": [
+    {
+      "timestamp": 100,
+      "todos": [
+        {"content": "Process task", "status": "in_progress"}
+      ]
+    }
+  ],
+  "finalState": {
+    "exitCode": 1
+  }
+}

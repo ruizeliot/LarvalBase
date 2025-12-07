@@ -1,0 +1,47 @@
+{
+  "output": [
+    "[TODO] Starting Phase 5: Finalize",
+    "[PROGRESS] {\"phase\": 5, \"percent\": 10}",
+    "[TODO] Running full regression",
+    "[PROGRESS] {\"phase\": 5, \"percent\": 30}",
+    "[TODO] Polishing documentation",
+    "[PROGRESS] {\"phase\": 5, \"percent\": 50}",
+    "[TODO] Creating release build",
+    "[PROGRESS] {\"phase\": 5, \"percent\": 70}",
+    "[TODO] Final verification",
+    "[PROGRESS] {\"phase\": 5, \"percent\": 90}",
+    "[TODO] Phase 5 complete - Pipeline finished!"
+  ],
+  "todoStates": [
+    {
+      "timestamp": 100,
+      "todos": [
+        {"content": "Run full regression", "status": "in_progress"},
+        {"content": "Polish documentation", "status": "pending"},
+        {"content": "Create release build", "status": "pending"},
+        {"content": "Final verification", "status": "pending"}
+      ]
+    },
+    {
+      "timestamp": 500,
+      "todos": [
+        {"content": "Run full regression", "status": "completed"},
+        {"content": "Polish documentation", "status": "completed"},
+        {"content": "Create release build", "status": "in_progress"},
+        {"content": "Final verification", "status": "pending"}
+      ]
+    },
+    {
+      "timestamp": 800,
+      "todos": [
+        {"content": "Run full regression", "status": "completed"},
+        {"content": "Polish documentation", "status": "completed"},
+        {"content": "Create release build", "status": "completed"},
+        {"content": "Final verification", "status": "completed"}
+      ]
+    }
+  ],
+  "finalState": {
+    "exitCode": 0
+  }
+}

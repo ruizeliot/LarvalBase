@@ -1,0 +1,42 @@
+{
+  "output": [
+    "[TODO] Starting Phase 1: Brainstorm",
+    "[PROGRESS] {\"phase\": 1, \"percent\": 10}",
+    "[TODO] Reading project requirements",
+    "[PROGRESS] {\"phase\": 1, \"percent\": 30}",
+    "[TODO] Generating user stories",
+    "[PROGRESS] {\"phase\": 1, \"percent\": 60}",
+    "[TODO] Creating brainstorm notes",
+    "[PROGRESS] {\"phase\": 1, \"percent\": 90}",
+    "[TODO] Phase 1 complete"
+  ],
+  "todoStates": [
+    {
+      "timestamp": 100,
+      "todos": [
+        {"content": "Read project requirements", "status": "in_progress"},
+        {"content": "Generate user stories", "status": "pending"},
+        {"content": "Create brainstorm notes", "status": "pending"}
+      ]
+    },
+    {
+      "timestamp": 300,
+      "todos": [
+        {"content": "Read project requirements", "status": "completed"},
+        {"content": "Generate user stories", "status": "in_progress"},
+        {"content": "Create brainstorm notes", "status": "pending"}
+      ]
+    },
+    {
+      "timestamp": 500,
+      "todos": [
+        {"content": "Read project requirements", "status": "completed"},
+        {"content": "Generate user stories", "status": "completed"},
+        {"content": "Create brainstorm notes", "status": "completed"}
+      ]
+    }
+  ],
+  "finalState": {
+    "exitCode": 0
+  }
+}
