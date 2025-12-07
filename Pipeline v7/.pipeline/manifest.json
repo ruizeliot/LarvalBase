@@ -70,13 +70,14 @@
         {
           "id": 7,
           "name": "Epic 7: Pipeline Orchestrator",
-          "status": "in-progress",
+          "status": "complete",
+          "completedAt": "2025-12-07T16:55:00.000Z",
           "stories": ["US-110", "US-111", "US-112", "US-113", "US-114", "US-115", "US-116", "US-117", "US-118", "US-119", "US-120"]
         },
         {
           "id": 8,
           "name": "Epic 8: UI Screens",
-          "status": "pending",
+          "status": "in-progress",
           "stories": ["US-130", "US-131", "US-132", "US-133", "US-134", "US-135", "US-136", "US-137", "US-138", "US-139", "US-140", "US-141", "US-142"]
         }
       ]
