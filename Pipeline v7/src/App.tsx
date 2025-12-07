@@ -225,7 +225,7 @@ export const App: React.FC<AppProps> = ({ initialPath, resume }) => {
   // Render current screen
   switch (screen) {
     case 'launcher':
-      return <LauncherScreen onStart={handleStart} />;
+      return <LauncherScreen onStart={handleStart} initialPath={initialPath} />;
 
     case 'resume':
       if (!manifest) {

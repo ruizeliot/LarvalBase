@@ -9,15 +9,17 @@ interface LauncherScreenProps {
   onStart: (path: string, type: PipelineType, mode: PipelineMode) => void;
   onResume?: (path: string) => void;
   recentProjects?: string[];
+  initialPath?: string;
 }
 
 export const LauncherScreen: React.FC<LauncherScreenProps> = ({
   onStart,
   onResume,
   recentProjects = [],
+  initialPath = '',
 }) => {
-  // SKELETON: Form works but doesn't actually start pipeline
-  const [projectPath, setProjectPath] = useState('');
+  // Use initialPath (from cwd) as default, or empty string
+  const [projectPath, setProjectPath] = useState(initialPath);
   const [pipelineType, setPipelineType] = useState<PipelineType>('terminal');
   const [pipelineMode, setPipelineMode] = useState<PipelineMode>('new');
   const [activeField, setActiveField] = useState<'path' | 'type' | 'mode' | 'start'>(

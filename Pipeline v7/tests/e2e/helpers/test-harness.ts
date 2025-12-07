@@ -17,14 +17,19 @@ interface TestHarness {
   kill: () => void;
 }
 
+interface TestHarnessOptions {
+  cwd?: string;
+}
+
 /**
  * Creates a test harness for running CLI tests
  */
-export function createTestHarness(args: string[] = []): TestHarness {
+export function createTestHarness(args: string[] = [], options: TestHarnessOptions = {}): TestHarness {
   const proc = spawn('node', [CLI_PATH, ...args], {
     stdio: ['pipe', 'pipe', 'pipe'],
     // FORCE_COLOR=3 enables full color, but NO CI=true to allow Ink's interactive rendering
     env: { ...process.env, FORCE_COLOR: '3' },
+    cwd: options.cwd,
   });
 
   const stdout: string[] = [];

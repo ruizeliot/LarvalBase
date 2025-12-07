@@ -202,8 +202,11 @@ async function main() {
     resume = true;
   }
 
+  // If no project path provided, default to current working directory
+  const effectivePath = projectPath || process.cwd();
+
   // Render the app
-  render(<App initialPath={projectPath || undefined} resume={resume} />);
+  render(<App initialPath={effectivePath} resume={resume} />);
 }
 
 main().catch((err) => {
