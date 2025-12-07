@@ -35,19 +35,21 @@
         {
           "id": 2,
           "name": "Epic 2: Test Infrastructure",
-          "status": "pending",
-          "stories": ["US-020", "US-021", "US-022", "US-023", "US-024", "US-025", "US-026", "US-027", "US-028", "US-029", "US-030"]
+          "status": "complete",
+          "completedAt": "2025-12-07T00:00:00.000Z",
+          "stories": ["US-031", "US-032", "US-033", "US-034", "US-035", "US-036", "US-037", "US-038", "US-039", "US-040"]
         },
         {
           "id": 3,
           "name": "Epic 3: State Management",
-          "status": "pending",
+          "status": "complete",
+          "completedAt": "2025-12-07T14:17:00.000Z",
           "stories": ["US-040", "US-041", "US-042", "US-043", "US-044", "US-045", "US-046", "US-047", "US-048", "US-049", "US-050"]
         },
         {
           "id": 4,
           "name": "Epic 4: Filesystem Service",
-          "status": "pending",
+          "status": "in-progress",
           "stories": ["US-060", "US-061", "US-062", "US-063", "US-064", "US-065", "US-066", "US-067", "US-068", "US-069"]
         },
         {
@@ -90,5 +92,5 @@
   },
   "workers": [],
   "createdAt": "2025-12-07T00:00:00.000Z",
-  "updatedAt": "2025-12-07T00:00:00.000Z"
+  "updatedAt": "2025-12-07T14:17:00.000Z"
 }
