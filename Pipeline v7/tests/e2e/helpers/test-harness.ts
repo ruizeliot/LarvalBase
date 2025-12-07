@@ -23,7 +23,8 @@ interface TestHarness {
 export function createTestHarness(args: string[] = []): TestHarness {
   const proc = spawn('node', [CLI_PATH, ...args], {
     stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env, FORCE_COLOR: '0' },
+    // FORCE_COLOR=3 enables full color, but NO CI=true to allow Ink's interactive rendering
+    env: { ...process.env, FORCE_COLOR: '3' },
   });
 
   const stdout: string[] = [];
