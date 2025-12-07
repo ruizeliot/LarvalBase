@@ -3,8 +3,23 @@
   "version": "7.0.0",
   "description": "Pipeline v7 - TUI application for automated development pipeline orchestration",
   "type": "module",
+  "main": "./dist/cli.js",
+  "types": "./dist/cli.d.ts",
   "bin": {
     "pipeline": "./bin/cli.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://gitlab.com/imt/pipeline-v7.git"
+  },
+  "homepage": "https://gitlab.com/imt/pipeline-v7#readme",
+  "bugs": {
+    "url": "https://gitlab.com/imt/pipeline-v7/issues"
   },
   "scripts": {
     "dev": "tsx watch src/cli.tsx",
