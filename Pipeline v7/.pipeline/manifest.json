@@ -63,13 +63,14 @@
         {
           "id": 6,
           "name": "Epic 6: Cost Service",
-          "status": "pending",
+          "status": "complete",
+          "completedAt": "2025-12-07T18:35:00.000Z",
           "stories": ["US-090", "US-091", "US-092", "US-093", "US-094", "US-095", "US-096", "US-097", "US-098", "US-099", "US-100"]
         },
         {
           "id": 7,
           "name": "Epic 7: Pipeline Orchestrator",
-          "status": "pending",
+          "status": "in-progress",
           "stories": ["US-110", "US-111", "US-112", "US-113", "US-114", "US-115", "US-116", "US-117", "US-118", "US-119", "US-120"]
         },
         {
@@ -94,5 +95,5 @@
   },
   "workers": [],
   "createdAt": "2025-12-07T00:00:00.000Z",
-  "updatedAt": "2025-12-07T17:30:00.000Z"
+  "updatedAt": "2025-12-07T18:35:00.000Z"
 }
