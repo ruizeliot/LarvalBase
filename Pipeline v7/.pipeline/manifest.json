@@ -49,13 +49,15 @@
         {
           "id": 4,
           "name": "Epic 4: Filesystem Service",
-          "status": "in-progress",
+          "status": "complete",
+          "completedAt": "2025-12-07T16:12:00.000Z",
           "stories": ["US-060", "US-061", "US-062", "US-063", "US-064", "US-065", "US-066", "US-067", "US-068", "US-069"]
         },
         {
           "id": 5,
           "name": "Epic 5: Process Service",
-          "status": "pending",
+          "status": "complete",
+          "completedAt": "2025-12-07T17:30:00.000Z",
           "stories": ["US-070", "US-071", "US-072", "US-073", "US-074", "US-075", "US-076", "US-077", "US-078", "US-079", "US-080"]
         },
         {
@@ -92,5 +94,5 @@
   },
   "workers": [],
   "createdAt": "2025-12-07T00:00:00.000Z",
-  "updatedAt": "2025-12-07T14:17:00.000Z"
+  "updatedAt": "2025-12-07T17:30:00.000Z"
 }
