@@ -1,0 +1,107 @@
+{
+  "version": "8.0.0",
+  "pipelineType": "terminal",
+  "pipelineMode": "new",
+  "project": {
+    "name": "pipeline-v8",
+    "path": "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/Pipeline v8",
+    "mode": "new"
+  },
+  "currentPhase": 3,
+  "status": "complete",
+  "phases": {
+    "1": {
+      "name": "Brainstorm",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "2": {
+      "name": "Technical Specs",
+      "status": "complete",
+      "startedAt": null,
+      "completedAt": null
+    },
+    "3": {
+      "name": "Bootstrap",
+      "status": "complete",
+      "startedAt": "2025-12-08T16:45:00.000Z",
+      "completedAt": null,
+      "testResults": {
+        "unit": {
+          "total": 107,
+          "passed": 0,
+          "failed": 107,
+          "status": "RED"
+        },
+        "integration": {
+          "total": 123,
+          "passed": 4,
+          "failed": 119,
+          "status": "RED"
+        },
+        "e2e": {
+          "total": 146,
+          "passed": 96,
+          "failed": 50,
+          "errors": 28,
+          "status": "RED"
+        }
+      }
+    },
+    "4": {
+      "name": "Implement",
+      "status": "pending",
+      "epics": [
+        {
+          "id": "epic-1",
+          "name": "Epic 1: Project Bootstrap",
+          "userStories": "US-001 to US-025",
+          "status": "pending"
+        },
+        {
+          "id": "epic-2",
+          "name": "Epic 2: Worker Spawning",
+          "userStories": "US-026 to US-045",
+          "status": "pending"
+        },
+        {
+          "id": "epic-3",
+          "name": "Epic 3: File Watching & Todos",
+          "userStories": "US-046 to US-070",
+          "status": "pending"
+        },
+        {
+          "id": "epic-4",
+          "name": "Epic 4: Pipeline Orchestration",
+          "userStories": "US-071 to US-100",
+          "status": "pending"
+        },
+        {
+          "id": "epic-5",
+          "name": "Epic 5: Full Dashboard UI",
+          "userStories": "US-101 to US-140",
+          "status": "pending"
+        }
+      ],
+      "currentEpicIndex": 0
+    },
+    "5": {
+      "name": "Finalize",
+      "status": "pending"
+    }
+  },
+  "worker": {
+    "sessionId": null,
+    "pid": null,
+    "status": "idle"
+  },
+  "costs": {
+    "total": 0,
+    "byPhase": {}
+  },
+  "timestamps": {
+    "created": "2025-12-08T16:45:00.000Z",
+    "lastModified": "2025-12-08T17:00:00.000Z"
+  }
+}

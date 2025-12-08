@@ -1,0 +1,27 @@
+{
+  "description": "Long-running task simulation for timeout tests",
+  "output": [
+    "Starting long task...",
+    "[PROGRESS] {\"phase\": 4, \"progress\": 5, \"task\": \"Working\"}",
+    "Still working...",
+    "[PROGRESS] {\"phase\": 4, \"progress\": 10, \"task\": \"Still working\"}",
+    "Making progress...",
+    "[PROGRESS] {\"phase\": 4, \"progress\": 15, \"task\": \"Making progress\"}"
+  ],
+  "todoStates": [
+    {
+      "timestamp": 0,
+      "todos": [
+        { "content": "Long running task", "status": "in_progress", "activeForm": "Working on it" }
+      ]
+    },
+    {
+      "timestamp": 30000,
+      "todos": [
+        { "content": "Long running task", "status": "in_progress", "activeForm": "Still working" }
+      ]
+    }
+  ],
+  "exitCode": 0,
+  "duration": 60000
+}

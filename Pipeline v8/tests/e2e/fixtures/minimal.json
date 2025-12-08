@@ -1,0 +1,7 @@
+{
+  "description": "Minimal fixture for quick tests",
+  "output": ["Hello from mock Claude"],
+  "todoStates": [],
+  "exitCode": 0,
+  "duration": 100
+}

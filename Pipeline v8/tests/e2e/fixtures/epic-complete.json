@@ -1,0 +1,46 @@
+{
+  "description": "Epic completion simulation for Phase 4",
+  "output": [
+    "Starting Epic 1: Project Setup",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 1, \"progress\": 0, \"task\": \"Starting\"}",
+    "Setting up project structure...",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 1, \"progress\": 50, \"task\": \"Creating files\"}",
+    "Running tests...",
+    "[PROGRESS] {\"phase\": 4, \"epic\": 1, \"progress\": 100, \"task\": \"Tests passing\"}",
+    "Epic 1 complete!",
+    "EPIC_COMPLETE: epic_1"
+  ],
+  "todoStates": [
+    {
+      "timestamp": 0,
+      "todos": [
+        { "content": "Create project structure", "status": "in_progress", "activeForm": "Creating structure" }
+      ]
+    },
+    {
+      "timestamp": 1000,
+      "todos": [
+        { "content": "Create project structure", "status": "completed", "activeForm": "Creating structure" },
+        { "content": "Implement feature", "status": "in_progress", "activeForm": "Implementing" }
+      ]
+    },
+    {
+      "timestamp": 2000,
+      "todos": [
+        { "content": "Create project structure", "status": "completed", "activeForm": "Creating structure" },
+        { "content": "Implement feature", "status": "completed", "activeForm": "Implementing" },
+        { "content": "Run tests", "status": "in_progress", "activeForm": "Running tests" }
+      ]
+    },
+    {
+      "timestamp": 3000,
+      "todos": [
+        { "content": "Create project structure", "status": "completed", "activeForm": "Creating structure" },
+        { "content": "Implement feature", "status": "completed", "activeForm": "Implementing" },
+        { "content": "Run tests", "status": "completed", "activeForm": "Running tests" }
+      ]
+    }
+  ],
+  "exitCode": 0,
+  "duration": 5000
+}
