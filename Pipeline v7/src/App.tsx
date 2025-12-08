@@ -1,276 +1,240 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { Box, Text, useApp, useInput } from 'ink';
-import type { Screen, Manifest, Todo, PipelineType, PipelineMode } from './types/index.js';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Box, Text, useApp } from 'ink';
 import { LauncherScreen } from './screens/LauncherScreen.js';
 import { ResumeScreen } from './screens/ResumeScreen.js';
 import { SplitViewScreen } from './screens/SplitViewScreen.js';
 import { CompleteScreen } from './screens/CompleteScreen.js';
-import { HelpOverlay } from './components/HelpOverlay.js';
-import { ManifestService } from './services/manifest.js';
+import { useConfig } from './hooks/useConfig.js';
 import { Orchestrator } from './services/orchestrator.js';
+import { FilesystemService } from './services/filesystem.js';
+import type { Manifest, Todo, WorkerSession, ScreenName } from './types/index.js';
 
 interface AppProps {
-  initialPath?: string;
-  resume?: boolean;
+  projectPath?: string;
+  testComponent?: string;
+  testHook?: string;
+  testFocus?: string;
 }
 
-export const App: React.FC<AppProps> = ({ initialPath, resume }) => {
+export const App: React.FC<AppProps> = ({ projectPath: initialPath, testComponent, testHook, testFocus }) => {
   const { exit } = useApp();
-  const [screen, setScreen] = useState<Screen>(
-    resume && initialPath ? 'resume' : 'launcher'
-  );
-  const [showHelp, setShowHelp] = useState(false);
-  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { config, addRecentProject } = useConfig();
 
-  // State management connected to real Orchestrator
-  const [manifest, setManifest] = useState<Manifest | null>(() => {
-    if (initialPath) {
-      const service = new ManifestService(initialPath);
-      return service.read();
-    }
-    return null;
-  });
+  const [screen, setScreen] = useState<ScreenName>(initialPath ? 'dashboard' : 'launcher');
+  const [projectPath, setProjectPath] = useState<string>(initialPath ?? '');
+  const [manifest, setManifest] = useState<Manifest | null>(null);
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [workerOutput, setWorkerOutput] = useState<string[]>([]);
-  const [projectPath, setProjectPath] = useState<string>(initialPath || '');
-  const orchestratorRef = useRef<Orchestrator | null>(null);
+  const [worker, setWorker] = useState<WorkerSession | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [cost, setCost] = useState(0);
+  const [orchestrator, setOrchestrator] = useState<Orchestrator | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Setup orchestrator event handlers
+  // Handle test modes for component testing
+  if (testComponent || testHook || testFocus) {
+    return <TestMode component={testComponent} hook={testHook} focus={testFocus} />;
+  }
+
+  // Initialize orchestrator when project path is set
   useEffect(() => {
-    const orchestrator = orchestratorRef.current;
-    if (!orchestrator) return;
+    if (!projectPath) return;
 
-    const handleTodoUpdate = (newTodos: Todo[]) => {
-      setTodos(newTodos);
-    };
-
-    const handleStateChange = (state: string) => {
-      if (state === 'complete') {
-        setScreen('complete');
-      } else if (state === 'paused') {
-        setIsPaused(true);
-      } else if (state === 'running') {
-        setIsPaused(false);
-      }
-    };
-
-    const handleWorkerSpawn = () => {
-      // Worker spawned - output will come through orchestrator events
-    };
-
-    orchestrator.on('todo:update', handleTodoUpdate);
-    orchestrator.on('state:change', handleStateChange);
-    orchestrator.on('worker:spawn', handleWorkerSpawn);
-
-    // Listen for worker output
-    const handleProgress = (progress: { message?: string }) => {
-      if (progress.message) {
-        setWorkerOutput((prev) => [...prev.slice(-99), progress.message!]);
-      }
-    };
-    orchestrator.on('progress', handleProgress);
-
-    return () => {
-      orchestrator.off('todo:update', handleTodoUpdate);
-      orchestrator.off('state:change', handleStateChange);
-      orchestrator.off('worker:spawn', handleWorkerSpawn);
-      orchestrator.off('progress', handleProgress);
-    };
-  }, [orchestratorRef.current]);
-
-  useInput((input, key) => {
-    // Global shortcuts (always active)
-    if (input === '?' && !showQuitConfirm) {
-      setShowHelp((prev) => !prev);
-      return;
-    }
-
-    if (key.escape) {
-      if (showHelp) {
-        setShowHelp(false);
-        return;
-      }
-      if (showQuitConfirm) {
-        setShowQuitConfirm(false);
-        return;
-      }
-      if (isFullscreen) {
-        setIsFullscreen(false);
-        return;
-      }
-    }
-
-    // Quit shortcut - works on all screens (not just launcher)
-    if (input === 'q' && !showQuitConfirm && !showHelp) {
-      setShowQuitConfirm(true);
-      return;
-    }
-
-    // Resume shortcut - works when paused
-    if ((input === 'r' || input === 'R') && isPaused) {
-      setIsPaused(false);
-      if (orchestratorRef.current) {
-        orchestratorRef.current.resumeFromPause();
-      }
-      return;
-    }
-
-    if (showQuitConfirm) {
-      if (input === 'y' || input === 'Y') {
-        // Cleanup orchestrator before exit
-        if (orchestratorRef.current) {
-          orchestratorRef.current.cleanup();
-        }
-        exit();
-        return;
-      }
-      if (input === 'n' || input === 'N') {
-        setShowQuitConfirm(false);
-        return;
-      }
-    }
-  });
-
-  const handleStart = useCallback(
-    async (path: string, type: PipelineType, mode: PipelineMode) => {
-      setProjectPath(path);
-
-      // Create orchestrator instance
-      const orchestrator = new Orchestrator({
-        projectPath: path,
-        pipelineType: type === 'desktop' ? 'desktop' : 'terminal',
-        pipelineMode: mode,
-      });
-      orchestratorRef.current = orchestrator;
-
-      // Initialize and get manifest
-      const projectName = path.split(/[/\\]/).pop() || 'project';
-      const newManifest = await orchestrator.initialize(projectName);
-      setManifest(newManifest);
-      setScreen('splitview');
-
-      // Start the pipeline
+    const init = async () => {
       try {
-        await orchestrator.start();
+        const fs = new FilesystemService();
+        const existingManifest = await fs.readManifest(projectPath);
+
+        if (existingManifest) {
+          setManifest(existingManifest);
+          setScreen('resume');
+        } else {
+          // No existing manifest, proceed to launcher to set up
+          setScreen('launcher');
+        }
       } catch (err) {
-        // Handle error - orchestrator will emit error events
-        console.error('Pipeline start error:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load project');
       }
-    },
-    []
-  );
+    };
 
-  const handleResume = useCallback(async () => {
-    if (!projectPath || !manifest) return;
+    init();
+  }, [projectPath]);
 
-    // Create orchestrator for existing project
-    const orchestrator = new Orchestrator({
-      projectPath,
-      pipelineType: manifest.project.type === 'desktop' ? 'desktop' : 'terminal',
-      pipelineMode: manifest.project.mode || 'new',
-    });
-    orchestratorRef.current = orchestrator;
-
-    setScreen('splitview');
-
-    // Resume the pipeline from saved state
+  // Initialize orchestrator when starting dashboard
+  const initOrchestrator = useCallback(async (path: string) => {
     try {
-      await orchestrator.resume();
+      const orch = new Orchestrator(path);
+      await orch.initialize();
+
+      orch.on('manifest:updated', (m: Manifest) => setManifest(m));
+      orch.on('TODO_UPDATE', (t: Todo[]) => setTodos(t));
+      orch.on('duration:update', (s: number) => setElapsedSeconds(s));
+      orch.on('worker:started', (w: WorkerSession) => setWorker(w));
+      orch.on('worker:stopped', () => setWorker(null));
+      orch.on('PHASE_COMPLETE', async () => {
+        const newCost = await orch.recalculateCost();
+        setCost(newCost);
+      });
+
+      setOrchestrator(orch);
+      setManifest(orch.getManifest());
+      setScreen('dashboard');
     } catch (err) {
-      console.error('Pipeline resume error:', err);
-    }
-  }, [projectPath, manifest]);
-
-  const handlePause = useCallback(() => {
-    setIsPaused(true);
-    if (orchestratorRef.current) {
-      orchestratorRef.current.pause();
+      setError(err instanceof Error ? err.message : 'Failed to initialize');
     }
   }, []);
 
-  const handleComplete = useCallback(() => {
-    setScreen('complete');
-  }, []);
+  // Handle launcher start
+  const handleLauncherStart = useCallback(async (path: string, type: string, mode: string) => {
+    setProjectPath(path);
+    addRecentProject(path);
 
-  const handleNewProject = useCallback(() => {
-    // Cleanup existing orchestrator
-    if (orchestratorRef.current) {
-      orchestratorRef.current.cleanup();
-      orchestratorRef.current = null;
+    // Check if project exists
+    const fs = new FilesystemService();
+    const existingManifest = await fs.readManifest(path);
+
+    if (existingManifest) {
+      setManifest(existingManifest);
+      setScreen('resume');
+    } else {
+      // Create new manifest
+      const manifestService = await import('./services/manifest.js');
+      const service = new manifestService.ManifestService();
+      const newManifest = service.createDefaultManifest(
+        path.split(/[/\\]/).pop() ?? 'project',
+        path
+      );
+      await fs.writeManifest(path, newManifest);
+      setManifest(newManifest);
+      await initOrchestrator(path);
     }
+  }, [addRecentProject, initOrchestrator]);
+
+  // Handle resume
+  const handleResume = useCallback(async () => {
+    await initOrchestrator(projectPath);
+  }, [projectPath, initOrchestrator]);
+
+  // Handle start new from resume
+  const handleStartNew = useCallback(() => {
     setManifest(null);
-    setTodos([]);
-    setWorkerOutput([]);
     setProjectPath('');
-    setIsPaused(false);
     setScreen('launcher');
   }, []);
 
-  // Show help overlay if active
-  if (showHelp) {
-    return <HelpOverlay onClose={() => setShowHelp(false)} />;
-  }
+  // Dashboard actions
+  const handleStart = useCallback(async () => {
+    if (orchestrator) {
+      await orchestrator.startWorker();
+      setWorker(orchestrator.getWorker());
+    }
+  }, [orchestrator]);
 
-  // Show quit confirmation if active
-  if (showQuitConfirm) {
+  const handleStop = useCallback(async () => {
+    if (orchestrator) {
+      await orchestrator.stopWorker();
+      setWorker(null);
+    }
+  }, [orchestrator]);
+
+  const handleRestart = useCallback(async () => {
+    if (orchestrator) {
+      await orchestrator.restartWorker();
+      setWorker(orchestrator.getWorker());
+    }
+  }, [orchestrator]);
+
+  const handleFocus = useCallback(async () => {
+    if (orchestrator) {
+      await orchestrator.focusWorker();
+    }
+  }, [orchestrator]);
+
+  const handleQuit = useCallback(() => {
+    orchestrator?.cleanup();
+    exit();
+  }, [orchestrator, exit]);
+
+  // Check for completion
+  useEffect(() => {
+    if (manifest && manifest.phases['5']?.status === 'complete') {
+      setScreen('complete');
+    }
+  }, [manifest]);
+
+  // Render error state
+  if (error) {
     return (
-      <Box padding={1}>
-        <Text color="yellow">Quit Pipeline? [y/n]</Text>
+      <Box flexDirection="column" padding={1}>
+        <Text color="red" bold>Error</Text>
+        <Text color="red">{error}</Text>
+        <Text dimColor>Press any key to exit</Text>
       </Box>
     );
   }
 
-  // Render current screen
+  // Render screens
   switch (screen) {
     case 'launcher':
-      return <LauncherScreen onStart={handleStart} initialPath={initialPath} />;
+      return (
+        <LauncherScreen
+          recentProjects={config.recentProjects}
+          onStart={handleLauncherStart}
+          onQuit={handleQuit}
+        />
+      );
 
     case 'resume':
-      if (!manifest) {
-        setScreen('launcher');
-        return null;
-      }
-      return (
+      return manifest ? (
         <ResumeScreen
           manifest={manifest}
           onResume={handleResume}
-          onCancel={() => setScreen('launcher')}
-          onDelete={handleNewProject}
+          onNew={handleStartNew}
+          onQuit={handleQuit}
         />
-      );
+      ) : null;
 
-    case 'splitview':
-      if (!manifest) {
-        setScreen('launcher');
-        return null;
-      }
-      return (
+    case 'dashboard':
+      return manifest ? (
         <SplitViewScreen
           manifest={manifest}
           todos={todos}
-          workerOutput={workerOutput}
-          onPause={handlePause}
-          onFullscreen={() => setIsFullscreen(true)}
-          isPaused={isPaused}
+          worker={worker}
+          elapsedSeconds={elapsedSeconds}
+          cost={cost}
+          onStart={handleStart}
+          onStop={handleStop}
+          onRestart={handleRestart}
+          onFocus={handleFocus}
+          onQuit={handleQuit}
         />
-      );
+      ) : null;
 
     case 'complete':
-      if (!manifest) {
-        setScreen('launcher');
-        return null;
-      }
-      return (
+      return manifest ? (
         <CompleteScreen
           manifest={manifest}
-          onNewProject={handleNewProject}
-          onExit={() => exit()}
+          onNew={handleStartNew}
+          onQuit={handleQuit}
         />
-      );
+      ) : null;
 
     default:
-      return <LauncherScreen onStart={handleStart} />;
+      return <Text>Unknown screen: {screen}</Text>;
   }
+};
+
+// Test mode component for E2E testing individual components/hooks
+const TestMode: React.FC<{ component?: string; hook?: string; focus?: string }> = ({
+  component,
+  hook,
+  focus,
+}) => {
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Text>Test Mode</Text>
+      {component && <Text>Component: {component}</Text>}
+      {hook && <Text>Hook: {hook}</Text>}
+      {focus && <Text>Focus: {focus}</Text>}
+    </Box>
+  );
 };

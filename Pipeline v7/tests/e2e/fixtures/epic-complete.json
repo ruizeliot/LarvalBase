@@ -1,42 +1,38 @@
 {
   "output": [
-    "[TODO] Starting Epic implementation",
-    "[PROGRESS] {\"epic\": 1, \"percent\": 25}",
-    "[TODO] Creating components",
-    "[PROGRESS] {\"epic\": 1, \"percent\": 50}",
-    "[TODO] Writing tests",
-    "[PROGRESS] {\"epic\": 1, \"percent\": 75}",
-    "[TODO] All tests passing",
-    "[PROGRESS] {\"epic\": 1, \"percent\": 100}",
-    "[TODO] Epic complete!"
+    "Starting Epic 1 implementation",
+    "Writing component code...",
+    "Running tests...",
+    "All tests passing",
+    "Epic 1 complete"
   ],
   "todoStates": [
     {
-      "timestamp": 100,
+      "timestamp": 0,
       "todos": [
-        {"content": "Create components", "status": "in_progress"},
-        {"content": "Write tests", "status": "pending"},
-        {"content": "Run tests", "status": "pending"}
-      ]
-    },
-    {
-      "timestamp": 300,
-      "todos": [
-        {"content": "Create components", "status": "completed"},
-        {"content": "Write tests", "status": "completed"},
-        {"content": "Run tests", "status": "in_progress"}
+        { "content": "Write component code", "status": "in_progress", "activeForm": "Writing code" }
       ]
     },
     {
       "timestamp": 500,
       "todos": [
-        {"content": "Create components", "status": "completed"},
-        {"content": "Write tests", "status": "completed"},
-        {"content": "Run tests", "status": "completed"}
+        { "content": "Write component code", "status": "completed", "activeForm": "Writing code" },
+        { "content": "Run tests", "status": "in_progress", "activeForm": "Running tests" }
+      ]
+    },
+    {
+      "timestamp": 1000,
+      "todos": [
+        { "content": "Write component code", "status": "completed", "activeForm": "Writing code" },
+        { "content": "Run tests", "status": "completed", "activeForm": "Running tests" }
       ]
     }
   ],
   "finalState": {
-    "exitCode": 0
+    "exitCode": 0,
+    "manifestUpdate": {
+      "epics.0.status": "complete",
+      "epics.0.testsPass": 10
+    }
   }
 }

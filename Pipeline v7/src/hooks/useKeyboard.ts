@@ -1,81 +1,39 @@
 import { useInput, useApp } from 'ink';
-import { useState, useCallback } from 'react';
 
-interface UseKeyboardOptions {
-  onQuit?: () => void;
+interface KeyboardActions {
+  onStart?: () => void;
+  onStop?: () => void;
+  onRestart?: () => void;
+  onFocus?: () => void;
   onHelp?: () => void;
-  onPause?: () => void;
-  onResume?: () => void;
-  active?: boolean;
+  onQuit?: () => void;
+  onClear?: () => void;
+  isActive?: boolean;
 }
 
-interface KeyboardState {
-  showHelp: boolean;
-  showQuitConfirm: boolean;
-  isPaused: boolean;
-}
+export function useKeyboard(actions: KeyboardActions) {
+  const { exit, clear } = useApp();
+  const isActive = actions.isActive ?? true;
 
-export function useKeyboard(options: UseKeyboardOptions = {}) {
-  const { exit } = useApp();
-  const [state, setState] = useState<KeyboardState>({
-    showHelp: false,
-    showQuitConfirm: false,
-    isPaused: false,
+  useInput((input, key) => {
+    if (!isActive) return;
+
+    // Global shortcuts
+    if (input === 's') {
+      actions.onStart?.();
+    } else if (input === 'x') {
+      actions.onStop?.();
+    } else if (input === 'r') {
+      actions.onRestart?.();
+    } else if (input === 'f') {
+      actions.onFocus?.();
+    } else if (input === '?') {
+      actions.onHelp?.();
+    } else if (input === 'q') {
+      actions.onQuit?.();
+    } else if (key.ctrl && input === 'l') {
+      actions.onClear?.();
+      clear();
+    }
   });
-
-  const handleInput = useCallback(
-    (input: string, key: { escape?: boolean; ctrl?: boolean }) => {
-      // Global shortcuts
-      if (input === '?') {
-        setState((prev) => ({ ...prev, showHelp: !prev.showHelp }));
-        options.onHelp?.();
-        return;
-      }
-
-      if (input === 'q' && !state.showQuitConfirm) {
-        setState((prev) => ({ ...prev, showQuitConfirm: true }));
-        return;
-      }
-
-      if (state.showQuitConfirm) {
-        if (input === 'y' || input === 'Y') {
-          options.onQuit?.();
-          exit();
-          return;
-        }
-        if (input === 'n' || input === 'N' || key.escape) {
-          setState((prev) => ({ ...prev, showQuitConfirm: false }));
-          return;
-        }
-      }
-
-      if (key.escape && state.showHelp) {
-        setState((prev) => ({ ...prev, showHelp: false }));
-        return;
-      }
-
-      if (input === 'p') {
-        setState((prev) => ({ ...prev, isPaused: true }));
-        options.onPause?.();
-        return;
-      }
-
-      if (input === 'r' && state.isPaused) {
-        setState((prev) => ({ ...prev, isPaused: false }));
-        options.onResume?.();
-        return;
-      }
-    },
-    [state, options, exit]
-  );
-
-  useInput(handleInput, { isActive: options.active ?? true });
-
-  return {
-    showHelp: state.showHelp,
-    showQuitConfirm: state.showQuitConfirm,
-    isPaused: state.isPaused,
-    setShowHelp: (show: boolean) => setState((prev) => ({ ...prev, showHelp: show })),
-    setShowQuitConfirm: (show: boolean) => setState((prev) => ({ ...prev, showQuitConfirm: show })),
-  };
 }

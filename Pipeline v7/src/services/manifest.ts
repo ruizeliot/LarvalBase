@@ -1,91 +1,164 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import type { Manifest, Phase, Epic } from '../types/index.js';
-
-// SKELETON: Service structure in place but methods are stubs
+import type { Manifest, Epic, Phase, Todo, WorkerSession } from '../types/index.js';
 
 export class ManifestService {
-  private projectPath: string;
-  private manifest: Manifest | null = null;
-
-  constructor(projectPath: string) {
-    this.projectPath = projectPath;
-  }
-
-  get manifestPath(): string {
-    return path.join(this.projectPath, '.pipeline', 'manifest.json');
-  }
-
-  exists(): boolean {
-    return fs.existsSync(this.manifestPath);
-  }
-
-  read(): Manifest | null {
-    // SKELETON: Would read from file
-    if (!this.exists()) {
-      return null;
-    }
-    try {
-      const content = fs.readFileSync(this.manifestPath, 'utf-8');
-      this.manifest = JSON.parse(content) as Manifest;
-      return this.manifest;
-    } catch {
-      return null;
-    }
-  }
-
-  write(manifest: Manifest): void {
-    // SKELETON: Would use atomic write (temp + rename)
-    const dir = path.dirname(this.manifestPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-    fs.writeFileSync(this.manifestPath, JSON.stringify(manifest, null, 2));
-    this.manifest = manifest;
-  }
-
-  updatePhase(phaseNum: number, updates: Partial<Phase>): void {
-    // SKELETON: Would update specific phase
-    if (!this.manifest) return;
-    this.manifest.phases[phaseNum] = {
-      ...this.manifest.phases[phaseNum],
-      ...updates,
-    };
-    this.write(this.manifest);
-  }
-
-  advancePhase(): void {
-    // SKELETON: Would advance to next phase
-    if (!this.manifest) return;
-    this.manifest.currentPhase++;
-    this.write(this.manifest);
-  }
-
-  getEpics(): Epic[] {
-    // SKELETON: Would return phase 4 epics
-    return this.manifest?.phases[4]?.epics || [];
-  }
-
-  static createDefault(projectPath: string, name: string): Manifest {
+  createDefaultManifest(projectName: string, projectPath: string): Manifest {
     return {
       version: '7.0.0',
       project: {
-        name,
+        name: projectName,
         path: projectPath,
-        type: 'terminal',
-        mode: 'new',
       },
-      currentPhase: 1,
+      pipeline: {
+        type: 'terminal-tui',
+        version: '6.0',
+        architecture: 'two-window',
+      },
+      currentPhase: '1',
       phases: {
-        1: { status: 'pending' },
-        2: { status: 'pending' },
-        3: { status: 'pending' },
-        4: { status: 'pending', epics: [] },
-        5: { status: 'pending' },
+        '1': { status: 'pending' },
+        '2': { status: 'pending' },
+        '3': { status: 'pending' },
+        '4': { status: 'pending', loops: [] },
+        '5': { status: 'pending' },
+      },
+      epics: [],
+      tests: {
+        total: 0,
+        passing: 0,
+        coverage: 0,
+      },
+      cost: {
+        total: 0,
+        byPhase: {},
+      },
+      duration: {
+        total: 0,
+        byPhase: {},
       },
       workers: [],
-      cost: { total: 0, byPhase: {} },
-      duration: { total: 0, byPhase: {} },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
+  }
+
+  updatePhaseStatus(manifest: Manifest, phase: string, status: Phase['status']): Manifest {
+    return {
+      ...manifest,
+      phases: {
+        ...manifest.phases,
+        [phase]: {
+          ...manifest.phases[phase],
+          status,
+          ...(status === 'complete' ? { completedAt: new Date().toISOString() } : {}),
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  advancePhase(manifest: Manifest): Manifest {
+    const currentPhase = parseInt(manifest.currentPhase, 10);
+    const nextPhase = currentPhase + 1;
+
+    if (nextPhase > 5) {
+      return manifest;
+    }
+
+    return {
+      ...manifest,
+      currentPhase: String(nextPhase),
+      phases: {
+        ...manifest.phases,
+        [String(currentPhase)]: {
+          ...manifest.phases[String(currentPhase)],
+          status: 'complete',
+          completedAt: new Date().toISOString(),
+        },
+        [String(nextPhase)]: {
+          ...manifest.phases[String(nextPhase)],
+          status: 'running',
+        },
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  updateEpicStatus(manifest: Manifest, epicId: number, status: Epic['status']): Manifest {
+    return {
+      ...manifest,
+      epics: manifest.epics.map((epic) =>
+        epic.id === epicId ? { ...epic, status } : epic
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  addWorker(manifest: Manifest, worker: WorkerSession): Manifest {
+    return {
+      ...manifest,
+      workers: [...manifest.workers, worker],
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  updateWorkerStatus(manifest: Manifest, sessionId: string, status: WorkerSession['status']): Manifest {
+    return {
+      ...manifest,
+      workers: manifest.workers.map((w) =>
+        w.sessionId === sessionId ? { ...w, status } : w
+      ),
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  updateCost(manifest: Manifest, cost: number, phase?: string): Manifest {
+    const byPhase = { ...manifest.cost.byPhase };
+    if (phase) {
+      byPhase[phase] = (byPhase[phase] ?? 0) + cost;
+    }
+
+    return {
+      ...manifest,
+      cost: {
+        total: manifest.cost.total + cost,
+        byPhase,
+        lastUpdated: new Date().toISOString(),
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  updateDuration(manifest: Manifest, seconds: number, phase?: string): Manifest {
+    const byPhase = { ...manifest.duration.byPhase };
+    if (phase) {
+      byPhase[phase] = (byPhase[phase] ?? 0) + seconds;
+    }
+
+    return {
+      ...manifest,
+      duration: {
+        total: manifest.duration.total + seconds,
+        byPhase,
+      },
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  calculateProgress(todos: Todo[]): number {
+    if (todos.length === 0) return 0;
+    const completed = todos.filter((t) => t.status === 'completed').length;
+    return Math.round((completed / todos.length) * 100);
+  }
+
+  isPhaseComplete(todos: Todo[]): boolean {
+    return todos.length > 0 && todos.every((t) => t.status === 'completed');
+  }
+
+  getCurrentEpic(manifest: Manifest): Epic | null {
+    return manifest.epics.find((e) => e.status === 'in_progress') ?? null;
+  }
+
+  getNextPendingEpic(manifest: Manifest): Epic | null {
+    return manifest.epics.find((e) => e.status === 'pending') ?? null;
   }
 }

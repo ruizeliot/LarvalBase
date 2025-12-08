@@ -1,18 +1,25 @@
 {
   "output": [
-    "[TODO] Starting task...",
-    "[ERROR] Context limit exceeded",
-    "[TODO] Attempting retry..."
+    "Starting Phase 4: Implement",
+    "Writing component code...",
+    "ERROR: Unexpected error occurred"
   ],
   "todoStates": [
     {
-      "timestamp": 100,
+      "timestamp": 0,
       "todos": [
-        {"content": "Process task", "status": "in_progress"}
+        { "content": "Write component code", "status": "in_progress", "activeForm": "Writing code" }
+      ]
+    },
+    {
+      "timestamp": 800,
+      "todos": [
+        { "content": "Write component code", "status": "in_progress", "activeForm": "Writing code" }
       ]
     }
   ],
   "finalState": {
-    "exitCode": 1
+    "exitCode": 1,
+    "error": "Process terminated unexpectedly"
   }
 }

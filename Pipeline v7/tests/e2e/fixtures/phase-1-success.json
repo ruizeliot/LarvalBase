@@ -1,42 +1,47 @@
 {
   "output": [
-    "[TODO] Starting Phase 1: Brainstorm",
-    "[PROGRESS] {\"phase\": 1, \"percent\": 10}",
-    "[TODO] Reading project requirements",
-    "[PROGRESS] {\"phase\": 1, \"percent\": 30}",
-    "[TODO] Generating user stories",
-    "[PROGRESS] {\"phase\": 1, \"percent\": 60}",
-    "[TODO] Creating brainstorm notes",
-    "[PROGRESS] {\"phase\": 1, \"percent\": 90}",
-    "[TODO] Phase 1 complete"
+    "Starting Phase 1: Brainstorm",
+    "Reading docs/brainstorm-notes.md...",
+    "Analyzing requirements...",
+    "Creating user stories...",
+    "Phase 1 complete: 25 user stories generated"
   ],
   "todoStates": [
     {
-      "timestamp": 100,
+      "timestamp": 0,
       "todos": [
-        {"content": "Read project requirements", "status": "in_progress"},
-        {"content": "Generate user stories", "status": "pending"},
-        {"content": "Create brainstorm notes", "status": "pending"}
-      ]
-    },
-    {
-      "timestamp": 300,
-      "todos": [
-        {"content": "Read project requirements", "status": "completed"},
-        {"content": "Generate user stories", "status": "in_progress"},
-        {"content": "Create brainstorm notes", "status": "pending"}
+        { "content": "Read brainstorm notes", "status": "in_progress", "activeForm": "Reading notes" }
       ]
     },
     {
       "timestamp": 500,
       "todos": [
-        {"content": "Read project requirements", "status": "completed"},
-        {"content": "Generate user stories", "status": "completed"},
-        {"content": "Create brainstorm notes", "status": "completed"}
+        { "content": "Read brainstorm notes", "status": "completed", "activeForm": "Reading notes" },
+        { "content": "Analyze requirements", "status": "in_progress", "activeForm": "Analyzing requirements" }
+      ]
+    },
+    {
+      "timestamp": 1500,
+      "todos": [
+        { "content": "Read brainstorm notes", "status": "completed", "activeForm": "Reading notes" },
+        { "content": "Analyze requirements", "status": "completed", "activeForm": "Analyzing requirements" },
+        { "content": "Create user stories", "status": "in_progress", "activeForm": "Creating stories" }
+      ]
+    },
+    {
+      "timestamp": 3000,
+      "todos": [
+        { "content": "Read brainstorm notes", "status": "completed", "activeForm": "Reading notes" },
+        { "content": "Analyze requirements", "status": "completed", "activeForm": "Analyzing requirements" },
+        { "content": "Create user stories", "status": "completed", "activeForm": "Creating stories" }
       ]
     }
   ],
   "finalState": {
-    "exitCode": 0
+    "exitCode": 0,
+    "manifestUpdate": {
+      "currentPhase": "2",
+      "phases.1.status": "complete"
+    }
   }
 }

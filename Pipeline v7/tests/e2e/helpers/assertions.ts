@@ -1,95 +1,185 @@
 import { expect } from 'vitest';
 
 /**
- * Assert that output contains a pattern
+ * Custom assertions for TUI testing
  */
-export function assertContains(
-  output: string[],
-  pattern: RegExp | string,
-  message?: string
-): void {
-  const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
-  const found = output.some((line) => regex.test(line));
 
-  if (!found) {
-    throw new Error(
-      message ||
-        `Expected output to contain ${pattern}. Got:\n${output.join('\n')}`
-    );
-  }
+/**
+ * Assert that output contains text
+ */
+export function expectOutput(output: string) {
+  return {
+    toContain(text: string) {
+      expect(output).toContain(text);
+    },
+
+    toMatch(pattern: RegExp) {
+      expect(output).toMatch(pattern);
+    },
+
+    toHaveProgressBar(percentage: number) {
+      expect(output).toMatch(new RegExp(`${percentage}%`));
+    },
+
+    toHaveStatus(status: string) {
+      const statusPatterns: Record<string, RegExp> = {
+        running: /running|▶|⟳/i,
+        idle: /idle|○/i,
+        completed: /complete|✓|✔/i,
+        error: /error|✗|✘/i,
+        pending: /pending|○/i,
+      };
+      const pattern = statusPatterns[status.toLowerCase()];
+      if (pattern) {
+        expect(output).toMatch(pattern);
+      } else {
+        expect(output.toLowerCase()).toContain(status.toLowerCase());
+      }
+    },
+
+    toHaveTodo(content: string, status?: 'pending' | 'in_progress' | 'completed') {
+      expect(output).toContain(content);
+      if (status) {
+        const statusIcons: Record<string, string[]> = {
+          pending: ['○', '[ ]'],
+          in_progress: ['⟳', '[~]', '...'],
+          completed: ['✓', '✔', '[x]', '[X]'],
+        };
+        const icons = statusIcons[status];
+        const hasIcon = icons.some((icon) => output.includes(icon));
+        expect(hasIcon, `Expected todo "${content}" to have ${status} status`).toBe(true);
+      }
+    },
+
+    toHaveEpic(name: string, status?: 'pending' | 'in_progress' | 'complete') {
+      expect(output).toContain(name);
+      if (status) {
+        // Check that status indicator appears near epic name
+        const epicLine = output.split('\n').find((line) => line.includes(name));
+        expect(epicLine, `Epic "${name}" not found in output`).toBeDefined();
+
+        if (status === 'complete') {
+          expect(epicLine).toMatch(/✓|✔|complete/i);
+        } else if (status === 'in_progress') {
+          expect(epicLine).toMatch(/⟳|running|in.progress/i);
+        }
+      }
+    },
+
+    toHavePhase(phase: number | string, name?: string) {
+      expect(output).toMatch(new RegExp(`Phase\\s*${phase}`, 'i'));
+      if (name) {
+        expect(output).toContain(name);
+      }
+    },
+
+    toHaveCost(amount?: number) {
+      expect(output).toMatch(/\$[\d.]+/);
+      if (amount !== undefined) {
+        expect(output).toContain(`$${amount.toFixed(2)}`);
+      }
+    },
+
+    toHaveDuration(format?: string) {
+      // Duration format: MM:SS or HH:MM:SS
+      expect(output).toMatch(/\d+:\d{2}(:\d{2})?/);
+      if (format) {
+        expect(output).toContain(format);
+      }
+    },
+
+    toHaveHeader(projectName: string) {
+      expect(output).toContain(projectName);
+    },
+
+    toHaveShortcuts() {
+      // Should show at least some keyboard shortcuts
+      expect(output).toMatch(/\[.\]/);
+    },
+
+    toHaveModal() {
+      // Modal usually has borders and centered content (includes rounded corners ╭╮)
+      expect(output).toMatch(/[┌╔╭].*[┐╗╮]/);
+    },
+
+    toBeEmpty() {
+      expect(output.trim()).toBe('');
+    },
+
+    not: {
+      toContain(text: string) {
+        expect(output).not.toContain(text);
+      },
+
+      toMatch(pattern: RegExp) {
+        expect(output).not.toMatch(pattern);
+      },
+
+      toHaveModal() {
+        expect(output).not.toMatch(/[┌╔╭].*[┐╗╮]/);
+      },
+    },
+  };
 }
 
 /**
- * Assert ANSI escape code is present (for styling verification)
+ * Assert todo list structure
  */
-export function assertAnsiCode(
-  output: string[],
-  code: string,
-  message?: string
-): void {
-  const ansiPattern = new RegExp(`\\x1b\\[${code}m`);
-  const found = output.some((line) => ansiPattern.test(line));
+export function expectTodoList(todos: Array<{ content: string; status: string }>) {
+  return {
+    toHaveLength(length: number) {
+      expect(todos).toHaveLength(length);
+    },
 
-  if (!found) {
-    throw new Error(
-      message || `Expected ANSI code ${code} in output. Got:\n${output.join('\n')}`
-    );
-  }
+    toHaveCompleted(count: number) {
+      const completed = todos.filter((t) => t.status === 'completed');
+      expect(completed).toHaveLength(count);
+    },
+
+    toHaveInProgress(count: number) {
+      const inProgress = todos.filter((t) => t.status === 'in_progress');
+      expect(inProgress).toHaveLength(count);
+    },
+
+    toHavePending(count: number) {
+      const pending = todos.filter((t) => t.status === 'pending');
+      expect(pending).toHaveLength(count);
+    },
+
+    toBeAllCompleted() {
+      const allCompleted = todos.every((t) => t.status === 'completed');
+      expect(allCompleted).toBe(true);
+    },
+  };
 }
 
 /**
- * Assert exit code matches expected
+ * Assert manifest structure
  */
-export function assertExitCode(
-  actual: number | null,
-  expected: number,
-  message?: string
-): void {
-  expect(actual).toBe(expected);
-}
+export function expectManifest(manifest: {
+  currentPhase?: string;
+  phases?: Record<string, { status: string }>;
+  epics?: Array<{ status: string }>;
+}) {
+  return {
+    toBeAtPhase(phase: number | string) {
+      expect(manifest.currentPhase).toBe(String(phase));
+    },
 
-/**
- * Assert output does NOT contain a pattern
- */
-export function assertNotContains(
-  output: string[],
-  pattern: RegExp | string,
-  message?: string
-): void {
-  const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
-  const found = output.some((line) => regex.test(line));
+    toHavePhaseStatus(phase: number | string, status: string) {
+      expect(manifest.phases?.[String(phase)]?.status).toBe(status);
+    },
 
-  if (found) {
-    throw new Error(
-      message ||
-        `Expected output NOT to contain ${pattern}. Got:\n${output.join('\n')}`
-    );
-  }
-}
-
-/**
- * Assert output lines appear in order
- */
-export function assertOrder(
-  output: string[],
-  patterns: Array<RegExp | string>,
-  message?: string
-): void {
-  let lastIndex = -1;
-
-  for (const pattern of patterns) {
-    const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
-    const index = output.findIndex((line, i) => i > lastIndex && regex.test(line));
-
-    if (index === -1) {
-      throw new Error(
-        message ||
-          `Pattern ${pattern} not found after index ${lastIndex}. Output:\n${output.join(
-            '\n'
-          )}`
+    toHaveCompletedPhases(count: number) {
+      const completed = Object.values(manifest.phases || {}).filter(
+        (p) => p.status === 'complete'
       );
-    }
+      expect(completed).toHaveLength(count);
+    },
 
-    lastIndex = index;
-  }
+    toHaveEpicsCompleted(count: number) {
+      const completed = (manifest.epics || []).filter((e) => e.status === 'complete');
+      expect(completed).toHaveLength(count);
+    },
+  };
 }

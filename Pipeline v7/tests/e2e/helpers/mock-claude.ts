@@ -1,145 +1,214 @@
-import { spawn, ChildProcess } from 'child_process';
-import * as fs from 'fs';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as os from 'os';
-
-interface MockClaudeOptions {
-  fixture: string;
-  delay?: number;
-  exitCode?: number;
-}
+import type { Todo, Manifest } from '../../../src/types/index.js';
 
 interface TodoState {
   timestamp: number;
-  todos: Array<{
-    content: string;
-    status: 'pending' | 'in_progress' | 'completed';
-  }>;
+  todos: Todo[];
 }
 
-interface ClaudeFixture {
+interface MockFixture {
   output: string[];
-  todoStates?: TodoState[];
+  todoStates: TodoState[];
   finalState: {
-    exitCode: number;
+    exitCode: number | null;
+    manifestUpdate?: Record<string, unknown>;
+    error?: string;
+    timeout?: boolean;
+    timeoutAfterMs?: number;
   };
 }
 
 /**
- * Creates a mock Claude process that:
- * 1. Reads from a fixture file
- * 2. Streams output with delays
- * 3. Exits with specified code
+ * MockClaude simulates Claude CLI behavior by:
+ * 1. Writing todo files at specified intervals
+ * 2. Updating manifest.json for phase transitions
+ * 3. Returning mock PIDs for process detection
  */
-export function createMockClaude(options: MockClaudeOptions): ChildProcess {
-  // Handle missing fixture file - return a process that exits with code 1
-  if (!fs.existsSync(options.fixture)) {
-    const script = `
-      console.error('Error: Fixture file not found: ${options.fixture.replace(/\\/g, '\\\\')}');
-      process.exit(1);
-    `;
-    return spawn('node', ['-e', script], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env },
-    });
+export class MockClaude {
+  private fixture: MockFixture | null = null;
+  private projectPath: string;
+  private sessionId: string;
+  private todoDir: string;
+  private running = false;
+  private pid = Math.floor(Math.random() * 90000) + 10000;
+  private timers: NodeJS.Timeout[] = [];
+
+  constructor(projectPath: string, sessionId = 'mock-session-001') {
+    this.projectPath = projectPath;
+    this.sessionId = sessionId;
+    this.todoDir = path.join(process.env.HOME || process.env.USERPROFILE || '', '.claude', 'todos');
   }
 
-  const fixtureContent = fs.readFileSync(options.fixture, 'utf-8');
-  const fixture: ClaudeFixture = JSON.parse(fixtureContent);
+  async loadFixture(fixturePath: string): Promise<void> {
+    const content = await fs.readFile(fixturePath, 'utf-8');
+    this.fixture = JSON.parse(content);
+  }
 
-  // Default delay to 100ms if not specified, but allow explicit 0
-  const delay = options.delay !== undefined ? options.delay : 100;
+  setFixture(fixture: MockFixture): void {
+    this.fixture = fixture;
+  }
 
-  // Create a Node script that emulates Claude behavior
-  const script = `
-    const output = ${JSON.stringify(fixture.output)};
-    const delay = ${delay};
-    const exitCode = ${options.exitCode ?? fixture.finalState.exitCode};
-    const todoStates = ${JSON.stringify(fixture.todoStates || [])};
-    const sessionId = process.env.PIPELINE_SESSION_ID || 'mock-session';
-    const todoDir = require('path').join(require('os').homedir(), '.claude', 'todos');
+  getPid(): number {
+    return this.pid;
+  }
 
-    // Ensure todo directory exists
-    require('fs').mkdirSync(todoDir, { recursive: true });
+  getSessionId(): string {
+    return this.sessionId;
+  }
 
-    const startTime = Date.now();
-    let todoIndex = 0;
+  isRunning(): boolean {
+    return this.running;
+  }
 
-    function writeTodo() {
-      const elapsed = Date.now() - startTime;
-      while (todoIndex < todoStates.length && elapsed >= todoStates[todoIndex].timestamp) {
-        const todoPath = require('path').join(todoDir, sessionId + '.json');
-        require('fs').writeFileSync(todoPath, JSON.stringify(todoStates[todoIndex].todos, null, 2));
-        todoIndex++;
-      }
+  async start(): Promise<void> {
+    if (!this.fixture) {
+      throw new Error('No fixture loaded');
     }
 
-    // Write final todo state (in case we exit before all timestamps)
-    function writeFinalTodo() {
-      if (todoStates.length > 0) {
-        const finalState = todoStates[todoStates.length - 1];
-        const todoPath = require('path').join(todoDir, sessionId + '.json');
-        require('fs').writeFileSync(todoPath, JSON.stringify(finalState.todos, null, 2));
-      }
-    }
+    this.running = true;
 
-    // If delay is 0, output everything immediately (synchronously)
-    if (delay === 0) {
-      for (const line of output) {
-        console.log(line);
-      }
-      writeFinalTodo();
-      process.exit(exitCode);
-    } else {
-      // Use async iteration with delays
-      let index = 0;
+    // Create todo directory
+    await fs.mkdir(this.todoDir, { recursive: true });
 
-      function emitNext() {
-        writeTodo();
-        if (index < output.length) {
-          console.log(output[index]);
-          index++;
-          setTimeout(emitNext, delay);
-        } else {
-          // Write final todo state before exiting
-          writeFinalTodo();
-          process.exit(exitCode);
+    // Schedule todo state updates
+    for (const state of this.fixture.todoStates) {
+      const timer = setTimeout(async () => {
+        if (this.running) {
+          await this.writeTodos(state.todos);
         }
-      }
-
-      emitNext();
+      }, state.timestamp);
+      this.timers.push(timer);
     }
-  `;
 
-  return spawn('node', ['-e', script], {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: { ...process.env },
-  });
-}
+    // Schedule final state
+    const lastTimestamp = this.fixture.todoStates[this.fixture.todoStates.length - 1]?.timestamp || 0;
+    const finalTimer = setTimeout(async () => {
+      await this.handleFinalState();
+    }, lastTimestamp + 500);
+    this.timers.push(finalTimer);
+  }
 
-/**
- * Set up mock Claude in test environment
- */
-export function setupMockClaude(fixturesDir: string): void {
-  process.env.MOCK_CLAUDE_DIR = fixturesDir;
-  process.env.USE_MOCK_CLAUDE = 'true';
-}
+  async stop(): Promise<void> {
+    this.running = false;
+    for (const timer of this.timers) {
+      clearTimeout(timer);
+    }
+    this.timers = [];
+  }
 
-/**
- * Clean up mock Claude after tests
- */
-export function cleanupMockClaude(): void {
-  delete process.env.MOCK_CLAUDE_DIR;
-  delete process.env.USE_MOCK_CLAUDE;
+  private async writeTodos(todos: Todo[]): Promise<void> {
+    const todoPath = path.join(this.todoDir, `${this.sessionId}.json`);
+    await fs.writeFile(todoPath, JSON.stringify(todos, null, 2));
+  }
 
-  // Clean up any created todo files
-  const todoDir = path.join(os.homedir(), '.claude', 'todos');
-  if (fs.existsSync(todoDir)) {
-    const files = fs.readdirSync(todoDir);
-    for (const file of files) {
-      if (file.startsWith('mock-') || file.startsWith('test-')) {
-        fs.unlinkSync(path.join(todoDir, file));
+  private async handleFinalState(): Promise<void> {
+    if (!this.fixture) return;
+
+    const { finalState } = this.fixture;
+
+    // Update manifest if specified
+    if (finalState.manifestUpdate) {
+      await this.updateManifest(finalState.manifestUpdate);
+    }
+
+    // Handle timeout
+    if (finalState.timeout) {
+      // Just keep running - the test should handle timeout detection
+      return;
+    }
+
+    // Handle completion or error
+    this.running = false;
+  }
+
+  private async updateManifest(updates: Record<string, unknown>): Promise<void> {
+    const manifestPath = path.join(this.projectPath, '.pipeline', 'manifest.json');
+
+    try {
+      const content = await fs.readFile(manifestPath, 'utf-8');
+      const manifest = JSON.parse(content) as Manifest;
+
+      // Apply updates using dot notation
+      for (const [key, value] of Object.entries(updates)) {
+        this.setNestedValue(manifest, key, value);
       }
+
+      await fs.writeFile(manifestPath, JSON.stringify(manifest, null, 2));
+    } catch {
+      // Manifest doesn't exist yet, ignore
     }
   }
+
+  private setNestedValue(obj: Record<string, unknown>, path: string, value: unknown): void {
+    const keys = path.split('.');
+    let current: Record<string, unknown> = obj;
+
+    for (let i = 0; i < keys.length - 1; i++) {
+      const key = keys[i];
+      if (!(key in current)) {
+        current[key] = {};
+      }
+      current = current[key] as Record<string, unknown>;
+    }
+
+    current[keys[keys.length - 1]] = value;
+  }
 }
+
+/**
+ * Create a mock fixture for testing
+ */
+export function createMockFixture(options: Partial<MockFixture>): MockFixture {
+  return {
+    output: options.output || ['Mock output'],
+    todoStates: options.todoStates || [
+      {
+        timestamp: 0,
+        todos: [{ content: 'Test task', status: 'in_progress', activeForm: 'Testing' }],
+      },
+      {
+        timestamp: 100,
+        todos: [{ content: 'Test task', status: 'completed', activeForm: 'Testing' }],
+      },
+    ],
+    finalState: options.finalState || {
+      exitCode: 0,
+    },
+  };
+}
+
+/**
+ * Quick fixtures for common scenarios
+ */
+export const fixtures = {
+  success: createMockFixture({
+    finalState: { exitCode: 0 },
+  }),
+
+  error: createMockFixture({
+    finalState: { exitCode: 1, error: 'Test error' },
+  }),
+
+  timeout: createMockFixture({
+    todoStates: [
+      { timestamp: 0, todos: [{ content: 'Long task', status: 'in_progress', activeForm: 'Processing' }] },
+    ],
+    finalState: { exitCode: null, timeout: true, timeoutAfterMs: 5000 },
+  }),
+
+  phaseComplete: (phase: number) =>
+    createMockFixture({
+      todoStates: [
+        { timestamp: 0, todos: [{ content: `Phase ${phase} task`, status: 'in_progress', activeForm: 'Working' }] },
+        { timestamp: 100, todos: [{ content: `Phase ${phase} task`, status: 'completed', activeForm: 'Working' }] },
+      ],
+      finalState: {
+        exitCode: 0,
+        manifestUpdate: {
+          currentPhase: String(phase + 1),
+          [`phases.${phase}.status`]: 'complete',
+        },
+      },
+    }),
+};

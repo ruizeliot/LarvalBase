@@ -1,18 +1,19 @@
 {
   "output": [
-    "[TODO] Starting long-running task...",
-    "[PROGRESS] {\"percent\": 10}",
-    "[TODO] Processing..."
+    "Starting Phase 4: Implement",
+    "Processing complex task..."
   ],
   "todoStates": [
     {
-      "timestamp": 100,
+      "timestamp": 0,
       "todos": [
-        {"content": "Long running task", "status": "in_progress"}
+        { "content": "Process complex task", "status": "in_progress", "activeForm": "Processing" }
       ]
     }
   ],
   "finalState": {
-    "exitCode": 124
+    "exitCode": null,
+    "timeout": true,
+    "timeoutAfterMs": 300000
   }
 }

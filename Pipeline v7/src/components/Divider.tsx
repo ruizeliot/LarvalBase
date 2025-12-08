@@ -1,43 +1,31 @@
 import React from 'react';
-import { Box, Text } from 'ink';
+import { Box, Text, useStdout } from 'ink';
 
 interface DividerProps {
   title?: string;
-  width?: number;
-  style?: 'single' | 'double' | 'dashed';
 }
 
-export const Divider: React.FC<DividerProps> = ({
-  title,
-  width = 40,
-  style = 'single',
-}) => {
-  const chars: Record<string, string> = {
-    single: '─',
-    double: '═',
-    dashed: '-',
-  };
-
-  const char = chars[style];
+export const Divider: React.FC<DividerProps> = ({ title }) => {
+  const { stdout } = useStdout();
+  const width = stdout?.columns ?? 80;
 
   if (title) {
-    const titleWithPadding = ` ${title} `;
-    const sideWidth = Math.max(2, Math.floor((width - titleWithPadding.length) / 2));
-    const leftSide = char.repeat(sideWidth);
-    const rightSide = char.repeat(sideWidth);
+    const sideLength = Math.max(0, Math.floor((width - title.length - 4) / 2));
+    const left = '─'.repeat(sideLength);
+    const right = '─'.repeat(sideLength);
 
     return (
       <Box>
-        <Text dimColor>{leftSide}</Text>
-        <Text bold>{titleWithPadding}</Text>
-        <Text dimColor>{rightSide}</Text>
+        <Text dimColor>{left}</Text>
+        <Text> {title} </Text>
+        <Text dimColor>{right}</Text>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Text dimColor>{char.repeat(width)}</Text>
+      <Text dimColor>{'─'.repeat(width)}</Text>
     </Box>
   );
 };

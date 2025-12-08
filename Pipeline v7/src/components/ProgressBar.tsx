@@ -1,32 +1,26 @@
 import React from 'react';
 import { Box, Text } from 'ink';
-
-interface ProgressBarProps {
-  percent: number;
-  width?: number;
-  label?: string;
-  showPercent?: boolean;
-}
+import type { ProgressBarProps } from '../types/index.js';
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
-  percent,
+  value,
   width = 20,
-  label,
   showPercent = true,
 }) => {
-  // SKELETON: Shows static bar, calculations work but data isn't real
-  const clampedPercent = Math.max(0, Math.min(100, percent));
-  const filled = Math.round((clampedPercent / 100) * width);
-  const empty = width - filled;
+  const clampedValue = Math.min(100, Math.max(0, value));
+  const filledWidth = Math.round((clampedValue / 100) * width);
+  const emptyWidth = width - filledWidth;
+
+  const filled = '█'.repeat(filledWidth);
+  const empty = '░'.repeat(emptyWidth);
 
   return (
-    <Box flexDirection="column">
-      {label && <Text dimColor>{label}</Text>}
-      <Box>
-        <Text color="green">{'█'.repeat(filled)}</Text>
-        <Text dimColor>{'░'.repeat(empty)}</Text>
-        {showPercent && <Text> {Math.round(clampedPercent)}%</Text>}
-      </Box>
+    <Box>
+      <Text color="green">{filled}</Text>
+      <Text dimColor>{empty}</Text>
+      {showPercent && (
+        <Text> {Math.round(clampedValue)}%</Text>
+      )}
     </Box>
   );
 };

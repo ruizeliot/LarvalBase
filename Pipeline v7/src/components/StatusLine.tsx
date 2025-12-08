@@ -2,54 +2,44 @@ import React from 'react';
 import { Box, Text } from 'ink';
 
 interface StatusLineProps {
-  cost?: number;
-  duration?: number;
-  phase?: number;
-  epic?: number;
+  cost: string;
+  duration: string;
+  workerStatus: 'idle' | 'running' | 'stopped' | 'crashed';
+  shortcuts?: boolean;
 }
 
 export const StatusLine: React.FC<StatusLineProps> = ({
-  cost = 0,
-  duration = 0,
-  phase,
-  epic,
+  cost,
+  duration,
+  workerStatus,
+  shortcuts = true,
 }) => {
-  // SKELETON: Shows placeholder values
-  const formatCost = (amount: number): string => {
-    return `$${amount.toFixed(2)}`;
-  };
-
-  const formatDuration = (seconds: number): string => {
-    const hrs = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    if (hrs > 0) {
-      return `${hrs}h ${mins}m`;
-    }
-    if (mins > 0) {
-      return `${mins}m ${secs}s`;
-    }
-    return `${secs}s`;
-  };
+  const workerColor = workerStatus === 'running' ? 'green' :
+    workerStatus === 'crashed' ? 'red' :
+    workerStatus === 'stopped' ? 'yellow' : 'gray';
 
   return (
-    <Box gap={2}>
-      {phase !== undefined && (
-        <Text>
-          <Text dimColor>Phase:</Text> {phase}
-        </Text>
+    <Box flexDirection="column" paddingX={1}>
+      <Box justifyContent="space-between">
+        <Box gap={3}>
+          <Text>
+            <Text dimColor>Cost:</Text> <Text color="green">{cost}</Text>
+          </Text>
+          <Text>
+            <Text dimColor>Duration:</Text> <Text>{duration}</Text>
+          </Text>
+          <Text>
+            <Text dimColor>Worker:</Text> <Text color={workerColor}>{workerStatus}</Text>
+          </Text>
+        </Box>
+      </Box>
+      {shortcuts && (
+        <Box marginTop={1}>
+          <Text dimColor>
+            [s] Start  [x] Stop  [r] Restart  [f] Focus  [?] Help  [q] Quit
+          </Text>
+        </Box>
       )}
-      {epic !== undefined && (
-        <Text>
-          <Text dimColor>Epic:</Text> {epic}
-        </Text>
-      )}
-      <Text>
-        <Text dimColor>Cost:</Text> <Text color="yellow">{formatCost(cost)}</Text>
-      </Text>
-      <Text>
-        <Text dimColor>Duration:</Text> {formatDuration(duration)}
-      </Text>
     </Box>
   );
 };

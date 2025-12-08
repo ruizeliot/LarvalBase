@@ -1,3 +1,3 @@
-// Re-export all hooks
-export { useKeyboard } from './useKeyboard.js';
+// Hook exports
 export { useConfig } from './useConfig.js';
+export { useKeyboard } from './useKeyboard.js';

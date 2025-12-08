@@ -4,32 +4,42 @@ import { Box, Text, useInput } from 'ink';
 interface ModalProps {
   title: string;
   children: React.ReactNode;
-  onClose?: () => void;
+  onClose: () => void;
+  width?: number;
 }
 
-export const Modal: React.FC<ModalProps> = ({ title, children, onClose }) => {
-  // SKELETON: Modal renders but focus trap not implemented
+export const Modal: React.FC<ModalProps> = ({
+  title,
+  children,
+  onClose,
+  width = 50,
+}) => {
   useInput((input, key) => {
-    if (key.escape && onClose) {
+    if (key.escape) {
       onClose();
     }
   });
+
+  const contentWidth = width - 4;
+  const horizontalLine = '─'.repeat(contentWidth);
 
   return (
     <Box
       flexDirection="column"
       borderStyle="round"
       borderColor="cyan"
-      paddingX={2}
-      paddingY={1}
+      paddingX={1}
+      paddingY={0}
     >
-      <Box marginBottom={1}>
-        <Text bold color="cyan">
-          {title}
-        </Text>
+      <Box justifyContent="center">
+        <Text bold color="cyan">{title}</Text>
       </Box>
-      <Box flexDirection="column">{children}</Box>
-      <Box marginTop={1}>
+      <Text dimColor>{horizontalLine}</Text>
+      <Box flexDirection="column" paddingY={1}>
+        {children}
+      </Box>
+      <Text dimColor>{horizontalLine}</Text>
+      <Box justifyContent="center">
         <Text dimColor>[Esc] Close</Text>
       </Box>
     </Box>

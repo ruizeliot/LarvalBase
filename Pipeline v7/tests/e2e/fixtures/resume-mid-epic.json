@@ -1,42 +1,40 @@
 {
   "output": [
-    "[TODO] Resuming Phase 4: Epic 2",
-    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 45}",
-    "[TODO] Continuing from checkpoint",
-    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 60}",
-    "[TODO] Implementing remaining components",
-    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 80}",
-    "[TODO] Running E2E tests",
-    "[PROGRESS] {\"phase\": 4, \"epic\": 2, \"percent\": 100}",
-    "[TODO] Epic 2 complete"
+    "Resuming Epic 2 implementation",
+    "Continuing from last checkpoint...",
+    "Writing remaining code...",
+    "Running tests...",
+    "Epic 2 complete"
   ],
   "todoStates": [
     {
-      "timestamp": 100,
+      "timestamp": 0,
       "todos": [
-        {"content": "Continue from checkpoint", "status": "in_progress"},
-        {"content": "Implement remaining", "status": "pending"},
-        {"content": "Run E2E tests", "status": "pending"}
+        { "content": "Resume checkpoint", "status": "completed", "activeForm": "Resumed" },
+        { "content": "Write remaining code", "status": "in_progress", "activeForm": "Writing code" }
       ]
     },
     {
-      "timestamp": 400,
+      "timestamp": 500,
       "todos": [
-        {"content": "Continue from checkpoint", "status": "completed"},
-        {"content": "Implement remaining", "status": "completed"},
-        {"content": "Run E2E tests", "status": "in_progress"}
+        { "content": "Resume checkpoint", "status": "completed", "activeForm": "Resumed" },
+        { "content": "Write remaining code", "status": "completed", "activeForm": "Writing code" },
+        { "content": "Run tests", "status": "in_progress", "activeForm": "Running tests" }
       ]
     },
     {
-      "timestamp": 600,
+      "timestamp": 1000,
       "todos": [
-        {"content": "Continue from checkpoint", "status": "completed"},
-        {"content": "Implement remaining", "status": "completed"},
-        {"content": "Run E2E tests", "status": "completed"}
+        { "content": "Resume checkpoint", "status": "completed", "activeForm": "Resumed" },
+        { "content": "Write remaining code", "status": "completed", "activeForm": "Writing code" },
+        { "content": "Run tests", "status": "completed", "activeForm": "Running tests" }
       ]
     }
   ],
   "finalState": {
-    "exitCode": 0
+    "exitCode": 0,
+    "manifestUpdate": {
+      "epics.1.status": "complete"
+    }
   }
 }

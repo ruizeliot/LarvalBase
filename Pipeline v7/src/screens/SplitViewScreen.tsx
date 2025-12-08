@@ -1,146 +1,186 @@
-import React, { useState } from 'react';
-import { Box, Text, useInput, useStdout } from 'ink';
-import type { Manifest, Todo } from '../types/index.js';
+import React, { useState, useEffect } from 'react';
+import { Box, Text, useApp } from 'ink';
 import { Header } from '../components/Header.js';
+import { Divider } from '../components/Divider.js';
 import { ProgressBar } from '../components/ProgressBar.js';
 import { TodoList } from '../components/TodoList.js';
 import { EpicList } from '../components/EpicList.js';
 import { StatusLine } from '../components/StatusLine.js';
+import { HelpOverlay } from '../components/HelpOverlay.js';
+import { Modal } from '../components/Modal.js';
+import { useKeyboard } from '../hooks/useKeyboard.js';
+import type { Manifest, Todo, WorkerSession } from '../types/index.js';
 
 interface SplitViewScreenProps {
   manifest: Manifest;
   todos: Todo[];
-  workerOutput: string[];
-  onPause: () => void;
-  onFullscreen: () => void;
-  isPaused: boolean;
+  worker: WorkerSession | null;
+  elapsedSeconds: number;
+  cost: number;
+  onStart: () => void;
+  onStop: () => void;
+  onRestart: () => void;
+  onFocus: () => void;
+  onQuit: () => void;
 }
+
+const phaseNames: Record<string, string> = {
+  '1': 'Brainstorm',
+  '2': 'Specs',
+  '3': 'Bootstrap',
+  '4': 'Implement',
+  '5': 'Finalize',
+};
 
 export const SplitViewScreen: React.FC<SplitViewScreenProps> = ({
   manifest,
   todos,
-  workerOutput,
-  onPause,
-  onFullscreen,
-  isPaused,
+  worker,
+  elapsedSeconds,
+  cost,
+  onStart,
+  onStop,
+  onRestart,
+  onFocus,
+  onQuit,
 }) => {
-  // SKELETON: Split view renders but worker output is static
-  const [splitRatio, setSplitRatio] = useState(50);
-  const { stdout } = useStdout();
-  const terminalWidth = stdout?.columns || 80;
+  const { exit } = useApp();
+  const [showHelp, setShowHelp] = useState(false);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
 
-  useInput((input, key) => {
-    if (key.leftArrow) {
-      setSplitRatio((prev) => Math.max(20, prev - 5));
+  // Calculate progress
+  const completedTodos = todos.filter((t) => t.status === 'completed').length;
+  const progress = todos.length > 0 ? Math.round((completedTodos / todos.length) * 100) : 0;
+
+  // Format duration
+  const formatDuration = (secs: number) => {
+    const hours = Math.floor(secs / 3600);
+    const mins = Math.floor((secs % 3600) / 60);
+    const s = secs % 60;
+    if (hours > 0) {
+      return `${hours}:${mins.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     }
-    if (key.rightArrow) {
-      setSplitRatio((prev) => Math.min(80, prev + 5));
-    }
-    if (input === 'f' || input === 'F') {
-      onFullscreen();
-    }
-    if (input === 'p') {
-      onPause();
-    }
+    return `${mins}:${s.toString().padStart(2, '0')}`;
+  };
+
+  // Format cost
+  const formatCost = (amount: number) => `$${amount.toFixed(2)}`;
+
+  // Current phase info
+  const currentPhase = parseInt(manifest.currentPhase, 10);
+  const phaseName = phaseNames[manifest.currentPhase] ?? 'Unknown';
+  const phaseStatus = manifest.phases[manifest.currentPhase]?.status ?? 'pending';
+
+  // Current epic
+  const currentEpic = manifest.epics.find((e) => e.status === 'in_progress');
+
+  useKeyboard({
+    onStart: () => {
+      if (worker?.status !== 'running') {
+        onStart();
+      }
+    },
+    onStop: () => {
+      if (worker?.status === 'running') {
+        onStop();
+      }
+    },
+    onRestart,
+    onFocus,
+    onHelp: () => setShowHelp(true),
+    onQuit: () => setShowQuitConfirm(true),
+    isActive: !showHelp && !showQuitConfirm,
   });
 
-  const leftWidth = Math.floor((terminalWidth * splitRatio) / 100);
-  const rightWidth = terminalWidth - leftWidth - 3; // Account for divider
-
-  const completedTodos = todos.filter((t) => t.status === 'completed').length;
-  const totalTodos = todos.length;
-  const progress = totalTodos > 0 ? (completedTodos / totalTodos) * 100 : 0;
-
-  const currentPhase = manifest.currentPhase;
-  const epics = manifest.phases[4]?.epics || [];
+  const handleQuitConfirm = (confirm: boolean) => {
+    setShowQuitConfirm(false);
+    if (confirm) {
+      onQuit();
+      exit();
+    }
+  };
 
   return (
     <Box flexDirection="column" height="100%">
       {/* Header */}
-      <Box borderStyle="single" borderBottom={false}>
-        <Box width={leftWidth}>
-          <Text bold color="cyan">
-            {' '}
-            ORCHESTRATOR{' '}
-          </Text>
+      <Header
+        projectName={manifest.project.name}
+        phase={currentPhase}
+        phaseName={phaseName}
+        status={phaseStatus}
+      />
+
+      <Divider />
+
+      {/* Progress */}
+      <Box paddingX={1} marginY={1}>
+        <Text>Progress: </Text>
+        <ProgressBar value={progress} width={30} />
+      </Box>
+
+      <Divider />
+
+      {/* Main content area */}
+      <Box flexDirection="row" flexGrow={1}>
+        {/* Left panel - Todos */}
+        <Box flexDirection="column" width="50%" paddingRight={1}>
+          <TodoList todos={todos} maxItems={15} />
         </Box>
-        <Text>│</Text>
-        <Box width={rightWidth}>
-          <Text bold color="cyan">
-            {' '}
-            WORKER{' '}
-          </Text>
+
+        {/* Right panel - Epics */}
+        <Box flexDirection="column" width="50%" paddingLeft={1}>
+          <EpicList
+            epics={manifest.epics}
+            currentEpic={currentEpic?.id}
+          />
         </Box>
       </Box>
 
-      {/* Main content */}
-      <Box flexGrow={1} borderStyle="single" borderTop={false} borderBottom={false}>
-        {/* Left pane - Orchestrator */}
-        <Box width={leftWidth} flexDirection="column" paddingX={1}>
-          <Text>
-            <Text dimColor>Project:</Text> {manifest.project.name}
-          </Text>
-          <Text>
-            <Text dimColor>Phase:</Text> {currentPhase} -{' '}
-            {['Brainstorm', 'Specs', 'Bootstrap', 'Implement', 'Finalize'][
-              currentPhase - 1
-            ] || 'Unknown'}
-          </Text>
-          {manifest.currentEpic && (
-            <Text>
-              <Text dimColor>Epic:</Text> {manifest.currentEpic}/{epics.length}
-            </Text>
-          )}
+      <Divider />
 
-          <Box marginY={1}>
-            <ProgressBar percent={progress} width={leftWidth - 8} />
-          </Box>
+      {/* Status line */}
+      <StatusLine
+        cost={formatCost(cost)}
+        duration={formatDuration(elapsedSeconds)}
+        workerStatus={worker?.status ?? 'idle'}
+      />
 
-          <TodoList todos={todos} maxVisible={5} />
+      {/* Help overlay */}
+      {showHelp && (
+        <Box position="absolute" marginLeft={10} marginTop={5}>
+          <HelpOverlay onClose={() => setShowHelp(false)} />
+        </Box>
+      )}
 
-          {currentPhase === 4 && epics.length > 0 && (
-            <Box marginTop={1}>
-              <EpicList epics={epics} currentEpic={manifest.currentEpic} />
+      {/* Quit confirmation */}
+      {showQuitConfirm && (
+        <Box position="absolute" marginLeft={15} marginTop={8}>
+          <Modal title="Quit?" onClose={() => setShowQuitConfirm(false)} width={40}>
+            <Box flexDirection="column">
+              <Text>Are you sure you want to quit?</Text>
+              {worker?.status === 'running' && (
+                <Text color="yellow">Worker is still running!</Text>
+              )}
+              <Box marginTop={1} gap={2}>
+                <Text
+                  color="green"
+                  inverse
+                  onPress={() => handleQuitConfirm(true)}
+                >
+                  {' [y] Yes '}
+                </Text>
+                <Text
+                  color="red"
+                  inverse
+                  onPress={() => handleQuitConfirm(false)}
+                >
+                  {' [n] No '}
+                </Text>
+              </Box>
             </Box>
-          )}
-
-          <Box marginTop={1}>
-            <StatusLine
-              cost={manifest.cost.total}
-              duration={manifest.duration.total}
-            />
-          </Box>
+          </Modal>
         </Box>
-
-        {/* Divider */}
-        <Box flexDirection="column">
-          <Text>│</Text>
-        </Box>
-
-        {/* Right pane - Worker */}
-        <Box width={rightWidth} flexDirection="column" paddingX={1} overflowY="hidden">
-          {workerOutput.length === 0 ? (
-            <Text dimColor>Waiting for worker output...</Text>
-          ) : (
-            workerOutput.slice(-10).map((line, i) => (
-              <Text key={i} wrap="truncate">
-                {line}
-              </Text>
-            ))
-          )}
-        </Box>
-      </Box>
-
-      {/* Status bar */}
-      <Box borderStyle="single" borderTop={false} paddingX={1}>
-        {isPaused ? (
-          <Text color="yellow"> PAUSED - Press [r] to resume </Text>
-        ) : (
-          <Text dimColor>
-            [p] Pause [f] Fullscreen [←→] Resize [q] Quit [?] Help
-          </Text>
-        )}
-      </Box>
+      )}
     </Box>
   );
 };

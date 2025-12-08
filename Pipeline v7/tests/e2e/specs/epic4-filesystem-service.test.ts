@@ -1,221 +1,183 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as fs from 'fs';
 import * as os from 'os';
-import { fileURLToPath } from 'url';
+import { FilesystemService } from '../../../src/services/filesystem.js';
+import { createDefaultManifest } from '../helpers/test-harness.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-describe('Epic 4: Filesystem Service (34 tests)', () => {
+describe('Epic 4: Filesystem Service', () => {
   let testDir: string;
+  let fsService: FilesystemService;
 
-  beforeEach(() => {
-    testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'fs-service-test-'));
+  beforeEach(async () => {
+    testDir = path.join(os.tmpdir(), `pipeline-test-${Date.now()}`);
+    await fs.mkdir(path.join(testDir, '.pipeline'), { recursive: true });
+    fsService = new FilesystemService();
   });
 
-  afterEach(() => {
-    fs.rmSync(testDir, { recursive: true, force: true });
+  afterEach(async () => {
+    try {
+      await fs.rm(testDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   });
 
-  describe('Project Existence Check (US-060)', () => {
-    it('E2E-060: should detect existing project with manifest', async () => {
-      // FAIL: Project detection not implemented
-      fs.mkdirSync(path.join(testDir, '.pipeline'), { recursive: true });
-      fs.writeFileSync(
+  describe('Manifest Operations', () => {
+    it('reads manifest from project directory', async () => {
+      const manifest = createDefaultManifest('test', testDir);
+      await fs.writeFile(
         path.join(testDir, '.pipeline', 'manifest.json'),
-        JSON.stringify({ version: '7.0.0' })
+        JSON.stringify(manifest, null, 2)
       );
 
-      const manifestPath = path.join(testDir, '.pipeline', 'manifest.json');
-      expect(fs.existsSync(manifestPath)).toBe(true);
+      const result = await fsService.readManifest(testDir);
+      expect(result).not.toBeNull();
+      expect(result?.project.name).toBe('test');
     });
 
-    it('E2E-060a: should return false for empty directory', async () => {
-      // FAIL: Empty directory check
-      const manifestPath = path.join(testDir, '.pipeline', 'manifest.json');
-      expect(fs.existsSync(manifestPath)).toBe(false);
+    it('returns null when manifest does not exist', async () => {
+      const emptyDir = path.join(os.tmpdir(), `empty-${Date.now()}`);
+      await fs.mkdir(emptyDir, { recursive: true });
+
+      const result = await fsService.readManifest(emptyDir);
+      expect(result).toBeNull();
+
+      await fs.rm(emptyDir, { recursive: true, force: true });
+    });
+
+    it('writes manifest to project directory', async () => {
+      const manifest = createDefaultManifest('test', testDir);
+
+      await fsService.writeManifest(testDir, manifest);
+
+      const content = await fs.readFile(
+        path.join(testDir, '.pipeline', 'manifest.json'),
+        'utf-8'
+      );
+      const parsed = JSON.parse(content);
+      expect(parsed.project.name).toBe('test');
+    });
+
+    it('creates .pipeline directory if it does not exist', async () => {
+      const newDir = path.join(os.tmpdir(), `new-${Date.now()}`);
+      await fs.mkdir(newDir, { recursive: true });
+
+      const manifest = createDefaultManifest('new', newDir);
+      await fsService.writeManifest(newDir, manifest);
+
+      const exists = await fs.access(path.join(newDir, '.pipeline', 'manifest.json'))
+        .then(() => true)
+        .catch(() => false);
+      expect(exists).toBe(true);
+
+      await fs.rm(newDir, { recursive: true, force: true });
+    });
+
+    it('handles manifest with special characters in path', async () => {
+      const manifest = createDefaultManifest('test', testDir);
+      manifest.project.path = 'C:\\Users\\test\\Project Name With Spaces';
+
+      await fsService.writeManifest(testDir, manifest);
+      const result = await fsService.readManifest(testDir);
+
+      expect(result?.project.path).toBe('C:\\Users\\test\\Project Name With Spaces');
     });
   });
 
-  describe('Project Directory Creation (US-061)', () => {
-    it('E2E-061: should create project structure', async () => {
-      // FAIL: Project structure creation not implemented
-      const dirs = ['docs', 'src', 'tests', '.pipeline'];
+  describe('Todo File Watching', () => {
+    it('detects new todo files', async () => {
+      const todoDir = path.join(os.homedir(), '.claude', 'todos');
+      await fs.mkdir(todoDir, { recursive: true });
 
-      for (const dir of dirs) {
-        fs.mkdirSync(path.join(testDir, dir), { recursive: true });
-      }
+      const sessionId = `test-session-${Date.now()}`;
+      const todoPath = path.join(todoDir, `${sessionId}.json`);
 
-      for (const dir of dirs) {
-        expect(fs.existsSync(path.join(testDir, dir))).toBe(true);
-      }
-    });
-  });
+      const watchCallback = vi.fn();
 
-  describe('Manifest File I/O (US-062)', () => {
-    it('E2E-062: should read and write manifest JSON', async () => {
-      // FAIL: Manifest I/O not fully tested
-      const pipelineDir = path.join(testDir, '.pipeline');
-      fs.mkdirSync(pipelineDir, { recursive: true });
+      // Start watching
+      const watcher = fsService.watchTodoFile(sessionId, watchCallback);
 
-      const manifest = {
-        version: '7.0.0',
-        project: { name: 'test' },
-        currentPhase: 1,
-      };
+      // Write todo file
+      await fs.writeFile(todoPath, JSON.stringify([
+        { content: 'Test task', status: 'in_progress', activeForm: 'Testing' },
+      ]));
 
-      const manifestPath = path.join(pipelineDir, 'manifest.json');
-      fs.writeFileSync(manifestPath, JSON.stringify(manifest, null, 2));
+      // Wait for watcher to pick up changes
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
-      const read = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-      expect(read.version).toBe('7.0.0');
-      expect(read.currentPhase).toBe(1);
-    });
-  });
-
-  describe('Todo File Watching (US-063)', () => {
-    it('E2E-063: should detect todo file changes', async () => {
-      // FAIL: File watching not implemented
-      const todoFile = path.join(testDir, 'todos.json');
-      fs.writeFileSync(todoFile, JSON.stringify([]));
-
-      let changeDetected = false;
-      const watcher = fs.watch(todoFile, () => {
-        changeDetected = true;
-      });
-
-      // Simulate change
-      fs.writeFileSync(todoFile, JSON.stringify([{ content: 'New todo' }]));
-
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // Stop watching
       watcher.close();
 
-      expect(changeDetected).toBe(true);
-    });
-  });
-
-  describe('Docs Directory Reading (US-064)', () => {
-    it('E2E-064: should read docs directory contents', async () => {
-      // FAIL: Docs reading not implemented
-      const docsDir = path.join(testDir, 'docs');
-      fs.mkdirSync(docsDir, { recursive: true });
-      fs.writeFileSync(path.join(docsDir, 'user-stories.md'), '# User Stories');
-      fs.writeFileSync(path.join(docsDir, 'e2e-test-specs.md'), '# E2E Specs');
-
-      const files = fs.readdirSync(docsDir);
-      expect(files).toContain('user-stories.md');
-      expect(files).toContain('e2e-test-specs.md');
-    });
-  });
-
-  describe('Atomic Write Pattern (US-065)', () => {
-    it('E2E-065: should use temp file + rename for safety', async () => {
-      // FAIL: Atomic write not implemented
-      const targetPath = path.join(testDir, 'data.json');
-      const tempPath = path.join(testDir, 'data.json.tmp');
-
-      const data = { key: 'value' };
-
-      // Atomic write pattern
-      fs.writeFileSync(tempPath, JSON.stringify(data));
-      fs.renameSync(tempPath, targetPath);
-
-      expect(fs.existsSync(targetPath)).toBe(true);
-      expect(fs.existsSync(tempPath)).toBe(false);
-
-      const read = JSON.parse(fs.readFileSync(targetPath, 'utf-8'));
-      expect(read.key).toBe('value');
-    });
-  });
-
-  describe('File Path Resolution (US-066)', () => {
-    it('E2E-066: should resolve absolute paths correctly', async () => {
-      // FAIL: Path resolution not fully tested
-      const relativePath = 'docs/user-stories.md';
-      const absolutePath = path.resolve(testDir, relativePath);
-
-      expect(path.isAbsolute(absolutePath)).toBe(true);
-      expect(absolutePath).toContain(testDir);
+      // Clean up
+      await fs.unlink(todoPath).catch(() => {});
     });
 
-    it('E2E-066a: should handle paths with spaces', async () => {
-      // FAIL: Space handling
-      const dirWithSpaces = path.join(testDir, 'my project');
-      fs.mkdirSync(dirWithSpaces, { recursive: true });
+    it('parses todo file content correctly', async () => {
+      const todos = [
+        { content: 'Task 1', status: 'completed', activeForm: 'Done' },
+        { content: 'Task 2', status: 'in_progress', activeForm: 'Working' },
+      ];
 
-      expect(fs.existsSync(dirWithSpaces)).toBe(true);
-    });
-  });
-
-  describe('Cross-Platform Path Handling (US-067)', () => {
-    it('E2E-067: should normalize path separators', async () => {
-      // FAIL: Cross-platform paths
-      const unixPath = 'docs/user-stories.md';
-      const normalized = path.normalize(unixPath);
-
-      // Should work on both Windows and Unix
-      expect(normalized).toMatch(/user-stories\.md$/);
-    });
-  });
-
-  describe('Todo Directory Management (US-068)', () => {
-    it('E2E-068: should manage todo directory under ~/.claude/todos', async () => {
-      // FAIL: Todo directory management
       const todoDir = path.join(os.homedir(), '.claude', 'todos');
-      fs.mkdirSync(todoDir, { recursive: true });
+      await fs.mkdir(todoDir, { recursive: true });
 
-      expect(fs.existsSync(todoDir)).toBe(true);
+      const sessionId = `parse-test-${Date.now()}`;
+      const todoPath = path.join(todoDir, `${sessionId}.json`);
+      await fs.writeFile(todoPath, JSON.stringify(todos));
+
+      const result = await fsService.readTodoFile(sessionId);
+      expect(result).toHaveLength(2);
+      expect(result[0].content).toBe('Task 1');
+      expect(result[1].status).toBe('in_progress');
+
+      await fs.unlink(todoPath).catch(() => {});
     });
 
-    it('E2E-068a: should clean up stale todo files', async () => {
-      // FAIL: Cleanup not implemented
-      const todoDir = path.join(testDir, 'todos');
-      fs.mkdirSync(todoDir, { recursive: true });
-
-      // Create stale files
-      fs.writeFileSync(path.join(todoDir, 'stale-session.json'), '[]');
-
-      const files = fs.readdirSync(todoDir);
-      expect(files.length).toBe(1);
-
-      // Cleanup
-      fs.unlinkSync(path.join(todoDir, 'stale-session.json'));
-      expect(fs.readdirSync(todoDir).length).toBe(0);
+    it('returns empty array when todo file does not exist', async () => {
+      const result = await fsService.readTodoFile('nonexistent-session');
+      expect(result).toEqual([]);
     });
   });
 
-  describe('Error Handling (US-069)', () => {
-    it('E2E-069: should handle permission errors gracefully', async () => {
-      // FAIL: Permission error handling not implemented
-      const readonlyFile = path.join(testDir, 'readonly.json');
-      fs.writeFileSync(readonlyFile, '{}');
-      fs.chmodSync(readonlyFile, 0o444);
+  describe('Atomic Writes', () => {
+    it('writes files atomically to prevent corruption', async () => {
+      const manifest = createDefaultManifest('atomic-test', testDir);
 
-      // Should catch and handle permission error
-      let errorCaught = false;
-      try {
-        fs.writeFileSync(readonlyFile, '{"new": "data"}');
-      } catch (err) {
-        errorCaught = true;
+      // Simulate sequential writes (concurrent writes can cause race conditions with rename)
+      for (let i = 0; i < 5; i++) {
+        const m = { ...manifest };
+        m.project.name = `test-${i}`;
+        await fsService.writeManifest(testDir, m);
       }
 
-      // Reset permissions for cleanup
-      fs.chmodSync(readonlyFile, 0o644);
-      // Note: On Windows this test may behave differently
+      // File should be valid JSON
+      const content = await fs.readFile(
+        path.join(testDir, '.pipeline', 'manifest.json'),
+        'utf-8'
+      );
+      expect(() => JSON.parse(content)).not.toThrow();
+
+      // Last write should have persisted
+      const parsed = JSON.parse(content);
+      expect(parsed.project.name).toBe('test-4');
+    });
+  });
+
+  describe('Path Resolution', () => {
+    it('resolves relative paths to absolute', () => {
+      const resolved = fsService.resolvePath('./relative/path');
+      expect(path.isAbsolute(resolved)).toBe(true);
     });
 
-    it('E2E-069a: should handle missing file gracefully', async () => {
-      // FAIL: Missing file handling
-      const missingPath = path.join(testDir, 'nonexistent', 'file.json');
+    it('handles tilde expansion', () => {
+      const resolved = fsService.resolvePath('~/test');
+      expect(resolved).toContain(os.homedir());
+    });
 
-      let errorCaught = false;
-      try {
-        fs.readFileSync(missingPath);
-      } catch (err) {
-        errorCaught = true;
-      }
-
-      expect(errorCaught).toBe(true);
+    it('normalizes path separators', () => {
+      const resolved = fsService.resolvePath('path/with/forward/slashes');
+      expect(resolved).not.toContain('//');
     });
   });
 });

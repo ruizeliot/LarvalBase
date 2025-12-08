@@ -2,122 +2,150 @@ import React, { useState } from 'react';
 import { Box, Text, useInput } from 'ink';
 import TextInput from 'ink-text-input';
 import SelectInput from 'ink-select-input';
-import type { PipelineType, PipelineMode } from '../types/index.js';
-import { Header } from '../components/Header.js';
+import { Divider } from '../components/Divider.js';
 
 interface LauncherScreenProps {
-  onStart: (path: string, type: PipelineType, mode: PipelineMode) => void;
-  onResume?: (path: string) => void;
-  recentProjects?: string[];
-  initialPath?: string;
+  recentProjects: string[];
+  onStart: (projectPath: string, type: string, mode: string) => void;
+  onQuit: () => void;
 }
 
+type Step = 'path' | 'type' | 'mode' | 'confirm';
+
+const typeOptions = [
+  { label: 'Terminal/TUI (Ink)', value: 'terminal-tui' },
+  { label: 'Desktop (Tauri)', value: 'desktop' },
+];
+
+const modeOptions = [
+  { label: 'New Project', value: 'new' },
+  { label: 'Add Feature', value: 'feature' },
+  { label: 'Fix Bug', value: 'fix' },
+];
+
 export const LauncherScreen: React.FC<LauncherScreenProps> = ({
+  recentProjects,
   onStart,
-  onResume,
-  recentProjects = [],
-  initialPath = '',
+  onQuit,
 }) => {
-  // Use initialPath (from cwd) as default, or empty string
-  const [projectPath, setProjectPath] = useState(initialPath);
-  const [pipelineType, setPipelineType] = useState<PipelineType>('terminal');
-  const [pipelineMode, setPipelineMode] = useState<PipelineMode>('new');
-  const [activeField, setActiveField] = useState<'path' | 'type' | 'mode' | 'start'>(
-    'path'
-  );
-
-  const typeOptions = [
-    { label: 'Desktop (Tauri)', value: 'desktop' as const },
-    { label: 'Terminal (Ink)', value: 'terminal' as const },
-  ];
-
-  const modeOptions = [
-    { label: 'New Project', value: 'new' as const },
-    { label: 'Add Feature', value: 'feature' as const },
-    { label: 'Fix Bug', value: 'fix' as const },
-  ];
+  const [step, setStep] = useState<Step>('path');
+  const [projectPath, setProjectPath] = useState('');
+  const [projectType, setProjectType] = useState('terminal-tui');
+  const [projectMode, setProjectMode] = useState('new');
 
   useInput((input, key) => {
-    if (key.tab && !key.shift) {
-      const fields = ['path', 'type', 'mode', 'start'] as const;
-      const currentIndex = fields.indexOf(activeField);
-      const nextIndex = (currentIndex + 1) % fields.length;
-      setActiveField(fields[nextIndex]);
+    if (input === 'q' && step === 'path') {
+      onQuit();
     }
-    if (key.tab && key.shift) {
-      const fields = ['path', 'type', 'mode', 'start'] as const;
-      const currentIndex = fields.indexOf(activeField);
-      const prevIndex = (currentIndex - 1 + fields.length) % fields.length;
-      setActiveField(fields[prevIndex]);
-    }
-    if (key.return && activeField === 'start') {
-      if (projectPath.trim()) {
-        onStart(projectPath.trim(), pipelineType, pipelineMode);
-      }
+    if (key.escape) {
+      if (step === 'type') setStep('path');
+      else if (step === 'mode') setStep('type');
+      else if (step === 'confirm') setStep('mode');
     }
   });
 
+  const handlePathSubmit = () => {
+    if (projectPath.trim()) {
+      setStep('type');
+    }
+  };
+
+  const handleTypeSelect = (item: { value: string }) => {
+    setProjectType(item.value);
+    setStep('mode');
+  };
+
+  const handleModeSelect = (item: { value: string }) => {
+    setProjectMode(item.value);
+    setStep('confirm');
+  };
+
+  const handleConfirm = () => {
+    onStart(projectPath, projectType, projectMode);
+  };
+
   return (
     <Box flexDirection="column" padding={1}>
-      <Header title="PIPELINE v7" />
-
-      <Box
-        flexDirection="column"
-        borderStyle="round"
-        borderColor={activeField === 'path' ? 'cyan' : undefined}
-        paddingX={1}
-        marginBottom={1}
-      >
-        <Text dimColor>Project Path:</Text>
-        <TextInput
-          value={projectPath}
-          onChange={setProjectPath}
-          placeholder="/path/to/project"
-          focus={activeField === 'path'}
-        />
+      <Box justifyContent="center" marginBottom={1}>
+        <Text bold color="cyan">PIPELINE v7</Text>
       </Box>
 
-      <Box flexDirection="column" marginBottom={1}>
-        <Text dimColor>Pipeline Type:</Text>
-        <Box
-          borderStyle={activeField === 'type' ? 'round' : undefined}
-          borderColor={activeField === 'type' ? 'cyan' : undefined}
-        >
-          <SelectInput
-            items={typeOptions}
-            onSelect={(item) => setPipelineType(item.value)}
-            isFocused={activeField === 'type'}
-          />
+      <Divider />
+
+      {step === 'path' && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>Project Path</Text>
+          <Box marginTop={1}>
+            <Text dimColor>{'> '}</Text>
+            <TextInput
+              value={projectPath}
+              onChange={setProjectPath}
+              onSubmit={handlePathSubmit}
+              placeholder="Enter path or press Tab for recent"
+            />
+          </Box>
+
+          {recentProjects.length > 0 && (
+            <Box flexDirection="column" marginTop={1}>
+              <Text dimColor>Recent Projects:</Text>
+              {recentProjects.map((path, i) => (
+                <Text key={i} dimColor>  {i + 1}. {path}</Text>
+              ))}
+            </Box>
+          )}
+
+          <Box marginTop={2}>
+            <Text dimColor>[Enter] Continue  [q] Quit</Text>
+          </Box>
         </Box>
-      </Box>
+      )}
 
-      <Box flexDirection="column" marginBottom={1}>
-        <Text dimColor>Mode:</Text>
-        <Box
-          borderStyle={activeField === 'mode' ? 'round' : undefined}
-          borderColor={activeField === 'mode' ? 'cyan' : undefined}
-        >
-          <SelectInput
-            items={modeOptions}
-            onSelect={(item) => setPipelineMode(item.value)}
-            isFocused={activeField === 'mode'}
-          />
+      {step === 'type' && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>Pipeline Type</Text>
+          <Box marginTop={1}>
+            <SelectInput items={typeOptions} onSelect={handleTypeSelect} />
+          </Box>
+          <Box marginTop={1}>
+            <Text dimColor>[Esc] Back</Text>
+          </Box>
         </Box>
-      </Box>
+      )}
 
-      <Box marginTop={1}>
-        <Text
-          inverse={activeField === 'start'}
-          color={activeField === 'start' ? 'cyan' : undefined}
-        >
-          {' '}
-          {'>'} START{' '}
-        </Text>
-      </Box>
+      {step === 'mode' && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>Pipeline Mode</Text>
+          <Box marginTop={1}>
+            <SelectInput items={modeOptions} onSelect={handleModeSelect} />
+          </Box>
+          <Box marginTop={1}>
+            <Text dimColor>[Esc] Back</Text>
+          </Box>
+        </Box>
+      )}
 
-      <Box marginTop={2}>
-        <Text dimColor>[Tab] Navigate [Enter] Select [q] Quit [?] Help</Text>
-      </Box>
+      {step === 'confirm' && (
+        <Box flexDirection="column" marginTop={1}>
+          <Text bold>Confirm</Text>
+          <Box flexDirection="column" marginTop={1} paddingLeft={2}>
+            <Text>Path: <Text color="cyan">{projectPath}</Text></Text>
+            <Text>Type: <Text color="yellow">{projectType}</Text></Text>
+            <Text>Mode: <Text color="green">{projectMode}</Text></Text>
+          </Box>
+          <Box marginTop={2}>
+            <SelectInput
+              items={[
+                { label: 'Start Pipeline', value: 'start' },
+                { label: 'Go Back', value: 'back' },
+              ]}
+              onSelect={(item) => {
+                if (item.value === 'start') handleConfirm();
+                else setStep('mode');
+              }}
+            />
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 };

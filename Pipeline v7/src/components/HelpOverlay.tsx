@@ -6,46 +6,30 @@ interface HelpOverlayProps {
   onClose: () => void;
 }
 
+const shortcuts = [
+  { key: 's', description: 'Start worker' },
+  { key: 'x', description: 'Stop worker' },
+  { key: 'r', description: 'Restart worker' },
+  { key: 'f', description: 'Focus worker window' },
+  { key: '?', description: 'Show this help' },
+  { key: 'q', description: 'Quit application' },
+  { key: 'Ctrl+L', description: 'Clear screen' },
+  { key: 'Tab', description: 'Next element' },
+  { key: 'Esc', description: 'Close modal / Go back' },
+];
+
 export const HelpOverlay: React.FC<HelpOverlayProps> = ({ onClose }) => {
   return (
-    <Modal title="KEYBOARD SHORTCUTS" onClose={onClose}>
-      <Box flexDirection="row" gap={4}>
-        <Box flexDirection="column">
-          <Text bold dimColor>
-            Navigation
-          </Text>
-          <Text>Tab        Next field</Text>
-          <Text>Shift+Tab  Previous field</Text>
-          <Text>↑/↓        Navigate lists</Text>
-          <Text>Enter      Select/Confirm</Text>
-          <Text>Esc        Back/Cancel</Text>
-        </Box>
-        <Box flexDirection="column">
-          <Text bold dimColor>
-            Pipeline Control
-          </Text>
-          <Text>p          Pause pipeline</Text>
-          <Text>r          Resume (when paused)</Text>
-          <Text>Ctrl+C     Emergency stop</Text>
-        </Box>
-      </Box>
-      <Box marginTop={1} flexDirection="row" gap={4}>
-        <Box flexDirection="column">
-          <Text bold dimColor>
-            Global
-          </Text>
-          <Text>q          Quit</Text>
-          <Text>?          Show this help</Text>
-          <Text>Ctrl+L     Clear screen</Text>
-        </Box>
-        <Box flexDirection="column">
-          <Text bold dimColor>
-            View
-          </Text>
-          <Text>f/F11      Fullscreen worker</Text>
-          <Text>←/→        Resize panes</Text>
-          <Text>l          Toggle log view</Text>
-        </Box>
+    <Modal title="Keyboard Shortcuts" onClose={onClose} width={45}>
+      <Box flexDirection="column" gap={0}>
+        {shortcuts.map(({ key, description }) => (
+          <Box key={key} gap={2}>
+            <Box width={10}>
+              <Text color="yellow">[{key}]</Text>
+            </Box>
+            <Text>{description}</Text>
+          </Box>
+        ))}
       </Box>
     </Modal>
   );

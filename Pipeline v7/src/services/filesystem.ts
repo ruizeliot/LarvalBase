@@ -1,316 +1,171 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as os from 'os';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import * as os from 'node:os';
 import type { Manifest, Todo } from '../types/index.js';
-
-/**
- * FilesystemService - Centralized filesystem operations for Pipeline v7
- *
- * Epic 4 Implementation:
- * - US-060: Project existence check
- * - US-061: Project directory creation
- * - US-062: Manifest file I/O
- * - US-063: Todo file watching
- * - US-064: Docs directory reading
- * - US-065: Atomic write pattern
- * - US-066: File path resolution
- * - US-067: Cross-platform path handling
- * - US-068: Todo directory management
- * - US-069: Error handling
- */
-
-export interface FileWatcher {
-  close: () => void;
-}
-
-export interface ValidationResult {
-  valid: boolean;
-  error?: string;
-}
-
-export interface ProjectInfo {
-  name: string;
-  path: string;
-  hasManifest: boolean;
-  hasDocs: boolean;
-}
 
 export class FilesystemService {
   private watchers: Map<string, fs.FSWatcher> = new Map();
 
-  // US-060: Project Existence Check
-  projectExists(projectPath: string): boolean {
-    const manifestPath = path.join(projectPath, '.pipeline', 'manifest.json');
-    return fs.existsSync(manifestPath);
-  }
-
-  // US-061: Project Directory Creation
-  createProjectStructure(projectPath: string): void {
-    const dirs = ['docs', 'src', 'tests', '.pipeline'];
-    for (const dir of dirs) {
-      const dirPath = path.join(projectPath, dir);
-      if (!fs.existsSync(dirPath)) {
-        fs.mkdirSync(dirPath, { recursive: true });
-      }
-    }
-  }
-
-  // US-062: Manifest File I/O
-  readManifest(projectPath: string): Manifest | null {
+  async readManifest(projectPath: string): Promise<Manifest | null> {
     const manifestPath = path.join(projectPath, '.pipeline', 'manifest.json');
     try {
-      if (!fs.existsSync(manifestPath)) {
-        return null;
-      }
-      const content = fs.readFileSync(manifestPath, 'utf-8');
+      const content = await fs.promises.readFile(manifestPath, 'utf-8');
       return JSON.parse(content) as Manifest;
     } catch {
       return null;
     }
   }
 
-  writeManifest(projectPath: string, manifest: Manifest): void {
+  async writeManifest(projectPath: string, manifest: Manifest): Promise<void> {
     const pipelineDir = path.join(projectPath, '.pipeline');
-    if (!fs.existsSync(pipelineDir)) {
-      fs.mkdirSync(pipelineDir, { recursive: true });
-    }
     const manifestPath = path.join(pipelineDir, 'manifest.json');
-    // Use atomic write (temp + rename) for safety
-    this.atomicWrite(manifestPath, JSON.stringify(manifest, null, 2));
+    const tempPath = path.join(pipelineDir, 'manifest.json.tmp');
+
+    // Ensure directory exists
+    await fs.promises.mkdir(pipelineDir, { recursive: true });
+
+    // Update timestamp
+    manifest.updatedAt = new Date().toISOString();
+
+    // Atomic write: write to temp file, then rename
+    await fs.promises.writeFile(tempPath, JSON.stringify(manifest, null, 2));
+    await fs.promises.rename(tempPath, manifestPath);
   }
 
-  // US-063: Todo File Watching
-  watchTodoFile(
-    todoPath: string,
-    callback: (todos: Todo[]) => void
-  ): FileWatcher {
-    const dir = path.dirname(todoPath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+  watchManifest(projectPath: string, callback: (manifest: Manifest) => void): () => void {
+    const manifestPath = path.join(projectPath, '.pipeline', 'manifest.json');
+    let debounceTimer: NodeJS.Timeout | null = null;
 
-    // Initialize file if it doesn't exist
-    if (!fs.existsSync(todoPath)) {
-      fs.writeFileSync(todoPath, JSON.stringify([]));
-    }
-
-    const watcher = fs.watch(todoPath, () => {
-      try {
-        const content = fs.readFileSync(todoPath, 'utf-8');
-        const todos = JSON.parse(content) as Todo[];
-        callback(todos);
-      } catch {
-        // Ignore parse errors during write
+    const watcher = fs.watch(manifestPath, async (eventType) => {
+      if (eventType === 'change') {
+        // Debounce rapid changes
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+          try {
+            const content = await fs.promises.readFile(manifestPath, 'utf-8');
+            const manifest = JSON.parse(content) as Manifest;
+            callback(manifest);
+          } catch {
+            // File might be in the middle of being written
+          }
+        }, 100);
       }
     });
 
-    this.watchers.set(todoPath, watcher);
+    this.watchers.set(manifestPath, watcher);
 
-    return {
-      close: () => {
-        watcher.close();
-        this.watchers.delete(todoPath);
-      },
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      watcher.close();
+      this.watchers.delete(manifestPath);
     };
   }
 
-  // US-064: Docs Directory Reading
-  readDocsDirectory(projectPath: string): string[] {
-    const docsDir = path.join(projectPath, 'docs');
-    if (!fs.existsSync(docsDir)) {
-      return [];
-    }
-    return fs.readdirSync(docsDir);
-  }
+  watchTodos(sessionId: string, callback: (todos: Todo[]) => void): () => void {
+    const todosDir = path.join(os.homedir(), '.claude', 'todos');
+    const todoFile = path.join(todosDir, `${sessionId}.json`);
+    let debounceTimer: NodeJS.Timeout | null = null;
 
-  readDocFile(projectPath: string, filename: string): string | null {
-    const filePath = path.join(projectPath, 'docs', filename);
-    try {
-      return fs.readFileSync(filePath, 'utf-8');
-    } catch {
-      return null;
-    }
-  }
-
-  // US-065: Atomic Write Pattern
-  atomicWrite(targetPath: string, content: string): void {
-    const tempPath = targetPath + '.tmp';
-    const dir = path.dirname(targetPath);
-
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
-
-    // Write to temp file first
-    fs.writeFileSync(tempPath, content);
-
-    // Rename to final destination (atomic on most filesystems)
-    fs.renameSync(tempPath, targetPath);
-  }
-
-  // US-066: File Path Resolution
-  resolvePath(basePath: string, relativePath: string): string {
-    return path.resolve(basePath, relativePath);
-  }
-
-  isAbsolutePath(filePath: string): boolean {
-    return path.isAbsolute(filePath);
-  }
-
-  // US-067: Cross-Platform Path Handling
-  normalizePath(filePath: string): string {
-    return path.normalize(filePath);
-  }
-
-  joinPaths(...paths: string[]): string {
-    return path.join(...paths);
-  }
-
-  getBasename(filePath: string): string {
-    return path.basename(filePath);
-  }
-
-  getDirname(filePath: string): string {
-    return path.dirname(filePath);
-  }
-
-  // US-068: Todo Directory Management
-  getTodoDirectory(): string {
-    return path.join(os.homedir(), '.claude', 'todos');
-  }
-
-  ensureTodoDirectory(): void {
-    const todoDir = this.getTodoDirectory();
-    if (!fs.existsSync(todoDir)) {
-      fs.mkdirSync(todoDir, { recursive: true });
-    }
-  }
-
-  cleanStaleTodoFiles(sessionId?: string): number {
-    const todoDir = this.getTodoDirectory();
-    if (!fs.existsSync(todoDir)) {
-      return 0;
-    }
-
-    const files = fs.readdirSync(todoDir);
-    let cleaned = 0;
-
-    for (const file of files) {
-      // If sessionId provided, only clean files matching that session
-      // Otherwise, clean all .json files
-      if (!sessionId || file.includes(sessionId)) {
-        try {
-          fs.unlinkSync(path.join(todoDir, file));
-          cleaned++;
-        } catch {
-          // Ignore cleanup errors
-        }
+    // Try to read initially if file exists
+    if (fs.existsSync(todoFile)) {
+      try {
+        const content = fs.readFileSync(todoFile, 'utf-8');
+        const todos = JSON.parse(content) as Todo[];
+        callback(todos);
+      } catch {
+        // Ignore initial read errors
       }
     }
 
-    return cleaned;
+    // Watch for changes
+    const watcher = fs.watch(todosDir, async (eventType, filename) => {
+      if (filename === `${sessionId}.json` && eventType === 'change') {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+          try {
+            const content = await fs.promises.readFile(todoFile, 'utf-8');
+            const todos = JSON.parse(content) as Todo[];
+            callback(todos);
+          } catch {
+            // File might be in the middle of being written
+          }
+        }, 50);
+      }
+    });
+
+    this.watchers.set(todoFile, watcher);
+
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      watcher.close();
+      this.watchers.delete(todoFile);
+    };
   }
 
-  listTodoFiles(): string[] {
-    const todoDir = this.getTodoDirectory();
-    if (!fs.existsSync(todoDir)) {
+  watchTodoFile(sessionId: string, callback: (todos: Todo[]) => void): { close: () => void } {
+    const stopWatching = this.watchTodos(sessionId, callback);
+    return {
+      close: stopWatching,
+    };
+  }
+
+  async readTodoFile(sessionId: string): Promise<Todo[]> {
+    const todosDir = path.join(os.homedir(), '.claude', 'todos');
+    const todoFile = path.join(todosDir, `${sessionId}.json`);
+    try {
+      const content = await fs.promises.readFile(todoFile, 'utf-8');
+      return JSON.parse(content) as Todo[];
+    } catch {
       return [];
     }
-    return fs.readdirSync(todoDir).filter((f) => f.endsWith('.json'));
   }
 
-  // US-069: Error Handling
-  safeRead(filePath: string): { content: string | null; error: Error | null } {
+  async exists(filePath: string): Promise<boolean> {
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
-      return { content, error: null };
-    } catch (err) {
-      return { content: null, error: err as Error };
-    }
-  }
-
-  safeWrite(
-    filePath: string,
-    content: string
-  ): { success: boolean; error: Error | null } {
-    try {
-      this.atomicWrite(filePath, content);
-      return { success: true, error: null };
-    } catch (err) {
-      return { success: false, error: err as Error };
-    }
-  }
-
-  exists(filePath: string): boolean {
-    return fs.existsSync(filePath);
-  }
-
-  isDirectory(filePath: string): boolean {
-    try {
-      return fs.statSync(filePath).isDirectory();
+      await fs.promises.access(filePath);
+      return true;
     } catch {
       return false;
     }
   }
 
-  isFile(filePath: string): boolean {
+  async readJson<T>(filePath: string): Promise<T | null> {
     try {
-      return fs.statSync(filePath).isFile();
-    } catch {
-      return false;
-    }
-  }
-
-  // Validation helpers
-  validateProjectPath(projectPath: string): ValidationResult {
-    if (!projectPath) {
-      return { valid: false, error: 'Project path is required' };
-    }
-
-    if (!path.isAbsolute(projectPath)) {
-      return { valid: false, error: 'Project path must be absolute' };
-    }
-
-    try {
-      const stat = fs.statSync(projectPath);
-      if (!stat.isDirectory()) {
-        return { valid: false, error: 'Project path must be a directory' };
-      }
-    } catch {
-      // Directory doesn't exist, which is okay for new projects
-      return { valid: true };
-    }
-
-    return { valid: true };
-  }
-
-  // Project discovery
-  discoverProject(projectPath: string): ProjectInfo | null {
-    const manifestPath = path.join(projectPath, '.pipeline', 'manifest.json');
-
-    if (!fs.existsSync(manifestPath)) {
-      return null;
-    }
-
-    try {
-      const manifest = this.readManifest(projectPath);
-      if (!manifest) {
-        return null;
-      }
-
-      return {
-        name: manifest.project?.name || path.basename(projectPath),
-        path: projectPath,
-        hasManifest: true,
-        hasDocs: fs.existsSync(path.join(projectPath, 'docs')),
-      };
+      const content = await fs.promises.readFile(filePath, 'utf-8');
+      return JSON.parse(content) as T;
     } catch {
       return null;
     }
   }
 
-  // Cleanup
-  closeAllWatchers(): void {
+  async writeJson(filePath: string, data: unknown): Promise<void> {
+    const dir = path.dirname(filePath);
+    await fs.promises.mkdir(dir, { recursive: true });
+    await fs.promises.writeFile(filePath, JSON.stringify(data, null, 2));
+  }
+
+  async appendLog(logPath: string, message: string): Promise<void> {
+    const timestamp = new Date().toISOString();
+    const line = `[${timestamp}] ${message}\n`;
+    await fs.promises.appendFile(logPath, line);
+  }
+
+  resolvePath(inputPath: string): string {
+    if (inputPath.startsWith('~')) {
+      return path.join(os.homedir(), inputPath.slice(1));
+    }
+    return path.resolve(inputPath);
+  }
+
+  joinPath(...parts: string[]): string {
+    return path.join(...parts);
+  }
+
+  getHomeDir(): string {
+    return os.homedir();
+  }
+
+  cleanup(): void {
     for (const watcher of this.watchers.values()) {
       watcher.close();
     }

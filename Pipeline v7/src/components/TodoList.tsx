@@ -4,66 +4,50 @@ import type { Todo } from '../types/index.js';
 
 interface TodoListProps {
   todos: Todo[];
-  maxVisible?: number;
+  maxItems?: number;
 }
 
-export const TodoList: React.FC<TodoListProps> = ({ todos, maxVisible = 6 }) => {
-  // SKELETON: Renders todos but they're not connected to real worker data
-  const visibleTodos = todos.slice(0, maxVisible);
-  const hasMore = todos.length > maxVisible;
+const statusIcons: Record<string, string> = {
+  completed: '✓',
+  in_progress: '⟳',
+  pending: '○',
+};
 
-  const getStatusIcon = (status: Todo['status']): string => {
-    switch (status) {
-      case 'completed':
-        return '✓';
-      case 'in_progress':
-        return '●';
-      case 'pending':
-        return '○';
-      default:
-        return '?';
-    }
-  };
+const statusColors: Record<string, string> = {
+  completed: 'green',
+  in_progress: 'yellow',
+  pending: 'gray',
+};
 
-  const getStatusColor = (status: Todo['status']): string => {
-    switch (status) {
-      case 'completed':
-        return 'green';
-      case 'in_progress':
-        return 'yellow';
-      case 'pending':
-        return 'gray';
-      default:
-        return 'white';
-    }
-  };
-
-  if (todos.length === 0) {
-    return (
-      <Box>
-        <Text dimColor>No todos</Text>
-      </Box>
-    );
-  }
+export const TodoList: React.FC<TodoListProps> = ({ todos, maxItems = 10 }) => {
+  const displayTodos = todos.slice(0, maxItems);
+  const remaining = todos.length - maxItems;
 
   return (
-    <Box flexDirection="column">
-      <Text bold dimColor>
-        Todos:
-      </Text>
-      {visibleTodos.map((todo, index) => (
-        <Box key={index}>
-          <Text color={getStatusColor(todo.status)}>
-            {getStatusIcon(todo.status)}{' '}
-          </Text>
-          <Text color={todo.status === 'in_progress' ? 'white' : 'gray'}>
-            {todo.content}
-          </Text>
-        </Box>
-      ))}
-      {hasMore && (
-        <Text dimColor>... and {todos.length - maxVisible} more</Text>
-      )}
+    <Box flexDirection="column" paddingX={1}>
+      <Text bold>Tasks</Text>
+      <Box flexDirection="column" marginTop={1}>
+        {displayTodos.length === 0 ? (
+          <Text dimColor>No tasks</Text>
+        ) : (
+          displayTodos.map((todo, index) => (
+            <Box key={index} gap={1}>
+              <Text color={statusColors[todo.status]}>
+                {statusIcons[todo.status] || '?'}
+              </Text>
+              <Text
+                color={todo.status === 'in_progress' ? 'yellow' : undefined}
+                dimColor={todo.status === 'pending'}
+              >
+                {todo.status === 'in_progress' ? todo.activeForm : todo.content}
+              </Text>
+            </Box>
+          ))
+        )}
+        {remaining > 0 && (
+          <Text dimColor>... and {remaining} more</Text>
+        )}
+      </Box>
     </Box>
   );
 };

@@ -1,109 +1,98 @@
-import React, { useState } from 'react';
-import { Box, Text, useInput } from 'ink';
+import React from 'react';
+import { Box, Text } from 'ink';
+import SelectInput from 'ink-select-input';
+import { Divider } from '../components/Divider.js';
+import { Badge } from '../components/Badge.js';
 import type { Manifest } from '../types/index.js';
-import { Header } from '../components/Header.js';
 
 interface CompleteScreenProps {
   manifest: Manifest;
-  onNewProject: () => void;
-  onExit: () => void;
+  onNew: () => void;
+  onQuit: () => void;
 }
 
 export const CompleteScreen: React.FC<CompleteScreenProps> = ({
   manifest,
-  onNewProject,
-  onExit,
+  onNew,
+  onQuit,
 }) => {
-  // SKELETON: Shows completion but stats are placeholder
-  const [selectedButton, setSelectedButton] = useState<'new' | 'exit'>('new');
-
-  useInput((input, key) => {
-    if (key.leftArrow || key.rightArrow) {
-      setSelectedButton((prev) => (prev === 'new' ? 'exit' : 'new'));
-    }
-
-    if (key.return) {
-      if (selectedButton === 'new') {
-        onNewProject();
-      } else {
-        onExit();
-      }
-    }
-
-    if (input === 'q') {
-      onExit();
-    }
-  });
+  // Calculate stats
+  const completedEpics = manifest.epics.filter((e) => e.status === 'complete').length;
+  const totalEpics = manifest.epics.length;
+  const completedPhases = Object.values(manifest.phases).filter((p) => p.status === 'complete').length;
 
   return (
     <Box flexDirection="column" padding={1}>
       <Box justifyContent="center" marginBottom={1}>
-        <Text bold color="green">
-          ✓ PIPELINE COMPLETE
-        </Text>
+        <Text bold color="green">PIPELINE COMPLETE!</Text>
       </Box>
 
-      <Box flexDirection="column" borderStyle="round" padding={1} marginBottom={1}>
-        <Text>
-          <Text dimColor>Project:</Text> {manifest.project.name}
-        </Text>
-        <Text>
-          <Text dimColor>Type:</Text>{' '}
-          {manifest.project.type === 'terminal' ? 'Terminal (Ink)' : 'Desktop (Tauri)'}
-        </Text>
-        <Text>
-          <Text dimColor>Mode:</Text>{' '}
-          {manifest.project.mode === 'new'
-            ? 'New Project'
-            : manifest.project.mode === 'feature'
-            ? 'Add Feature'
-            : 'Fix Bug'}
-        </Text>
+      <Divider />
+
+      <Box flexDirection="column" marginTop={1}>
+        <Box justifyContent="center">
+          <Badge variant="success">SUCCESS</Badge>
+        </Box>
+
+        <Box flexDirection="column" marginTop={2} paddingX={2}>
+          <Text bold>Summary</Text>
+          <Box flexDirection="column" marginTop={1} paddingLeft={2}>
+            <Text>Project: <Text color="cyan">{manifest.project.name}</Text></Text>
+            <Text>Phases: <Text color="green">{completedPhases}/5</Text> complete</Text>
+            <Text>Epics: <Text color="green">{completedEpics}/{totalEpics}</Text> complete</Text>
+            <Text>Tests: <Text color="green">{manifest.tests.passing}/{manifest.tests.total}</Text> passing</Text>
+            <Text>Coverage: <Text color={manifest.tests.coverage >= 80 ? 'green' : 'yellow'}>{manifest.tests.coverage}%</Text></Text>
+            <Text>Total Cost: <Text color="green">${manifest.cost.total.toFixed(2)}</Text></Text>
+            <Text>Total Duration: <Text>{formatDuration(manifest.duration.total)}</Text></Text>
+          </Box>
+        </Box>
+
+        <Box marginTop={2}>
+          <Text bold>Phase Breakdown</Text>
+        </Box>
+        <Box flexDirection="column" marginTop={1} paddingLeft={2}>
+          {Object.entries(manifest.phases).map(([phase, data]) => (
+            <Text key={phase}>
+              Phase {phase}:{' '}
+              <Badge variant={data.status === 'complete' ? 'success' : 'warning'}>
+                {data.status}
+              </Badge>
+              {manifest.cost.byPhase[phase] && (
+                <Text dimColor> (${manifest.cost.byPhase[phase].toFixed(2)})</Text>
+              )}
+            </Text>
+          ))}
+        </Box>
       </Box>
 
-      <Box flexDirection="column" borderStyle="round" padding={1} marginBottom={1}>
-        <Text bold dimColor>
-          Summary
-        </Text>
-        <Text>
-          <Text dimColor>Phases Completed:</Text> 5/5
-        </Text>
-        <Text>
-          <Text dimColor>Epics Completed:</Text>{' '}
-          {manifest.phases[4]?.epics?.length || 0}/
-          {manifest.phases[4]?.epics?.length || 0}
-        </Text>
-        <Text>
-          <Text dimColor>Total Cost:</Text>{' '}
-          <Text color="yellow">${manifest.cost.total.toFixed(2)}</Text>
-        </Text>
-        <Text>
-          <Text dimColor>Total Duration:</Text>{' '}
-          {Math.floor(manifest.duration.total / 3600)}h{' '}
-          {Math.floor((manifest.duration.total % 3600) / 60)}m
-        </Text>
-      </Box>
+      <Divider />
 
-      <Box gap={2}>
-        <Text
-          inverse={selectedButton === 'new'}
-          color={selectedButton === 'new' ? 'cyan' : undefined}
-        >
-          {' '}
-          {'>'} NEW PROJECT{' '}
-        </Text>
-        <Text
-          inverse={selectedButton === 'exit'}
-          color={selectedButton === 'exit' ? 'red' : undefined}
-        >
-          {' '}
-          x EXIT{' '}
-        </Text>
-      </Box>
-
-      <Box marginTop={2}>
-        <Text dimColor>[Enter] {selectedButton === 'new' ? 'New Project' : 'Exit'} [q] Exit</Text>
+      <Box marginTop={1}>
+        <SelectInput
+          items={[
+            { label: 'Start New Pipeline', value: 'new' },
+            { label: 'Exit', value: 'quit' },
+          ]}
+          onSelect={(item) => {
+            if (item.value === 'new') onNew();
+            else onQuit();
+          }}
+        />
       </Box>
     </Box>
   );
 };
+
+function formatDuration(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = seconds % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${mins}m ${secs}s`;
+  }
+  if (mins > 0) {
+    return `${mins}m ${secs}s`;
+  }
+  return `${secs}s`;
+}

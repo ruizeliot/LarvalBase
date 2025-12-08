@@ -1,51 +1,47 @@
-import { useState, useCallback } from 'react';
-import type { Project, PipelineType, PipelineMode } from '../types/index.js';
+import { useState, useEffect } from 'react';
+import Conf from 'conf';
 
-interface Config {
+interface AppConfig {
   recentProjects: string[];
-  defaultType: PipelineType;
-  defaultMode: PipelineMode;
-  splitRatio: number;
+  defaultType: 'terminal-tui' | 'desktop';
+  defaultMode: 'new' | 'feature' | 'fix';
+  confirmQuit: boolean;
 }
 
-const defaultConfig: Config = {
+const defaultConfig: AppConfig = {
   recentProjects: [],
-  defaultType: 'terminal',
+  defaultType: 'terminal-tui',
   defaultMode: 'new',
-  splitRatio: 50,
+  confirmQuit: true,
 };
 
+const config = new Conf<AppConfig>({
+  projectName: 'pipeline-v7',
+  defaults: defaultConfig,
+});
+
 export function useConfig() {
-  // SKELETON: In-memory config, no persistence yet
-  const [config, setConfig] = useState<Config>(defaultConfig);
+  const [appConfig, setAppConfig] = useState<AppConfig>(() => ({
+    recentProjects: config.get('recentProjects') ?? [],
+    defaultType: config.get('defaultType') ?? 'terminal-tui',
+    defaultMode: config.get('defaultMode') ?? 'new',
+    confirmQuit: config.get('confirmQuit') ?? true,
+  }));
 
-  const addRecentProject = useCallback((path: string) => {
-    setConfig((prev) => ({
-      ...prev,
-      recentProjects: [path, ...prev.recentProjects.filter((p) => p !== path)].slice(0, 5),
-    }));
-  }, []);
+  const updateConfig = <K extends keyof AppConfig>(key: K, value: AppConfig[K]) => {
+    config.set(key, value);
+    setAppConfig((prev) => ({ ...prev, [key]: value }));
+  };
 
-  const setSplitRatio = useCallback((ratio: number) => {
-    setConfig((prev) => ({
-      ...prev,
-      splitRatio: Math.max(20, Math.min(80, ratio)),
-    }));
-  }, []);
-
-  const setDefaultType = useCallback((type: PipelineType) => {
-    setConfig((prev) => ({ ...prev, defaultType: type }));
-  }, []);
-
-  const setDefaultMode = useCallback((mode: PipelineMode) => {
-    setConfig((prev) => ({ ...prev, defaultMode: mode }));
-  }, []);
+  const addRecentProject = (projectPath: string) => {
+    const recent = appConfig.recentProjects.filter((p) => p !== projectPath);
+    const updated = [projectPath, ...recent].slice(0, 5);
+    updateConfig('recentProjects', updated);
+  };
 
   return {
-    config,
+    config: appConfig,
+    updateConfig,
     addRecentProject,
-    setSplitRatio,
-    setDefaultType,
-    setDefaultMode,
   };
 }

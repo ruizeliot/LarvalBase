@@ -1,32 +1,20 @@
 import React from 'react';
 import { Text } from 'ink';
+import type { BadgeProps } from '../types/index.js';
 
-type BadgeVariant = 'success' | 'error' | 'warning' | 'info';
+const variantColors: Record<string, string> = {
+  success: 'green',
+  error: 'red',
+  warning: 'yellow',
+  info: 'blue',
+};
 
-interface BadgeProps {
-  children: React.ReactNode;
-  variant?: BadgeVariant;
-}
-
-export const Badge: React.FC<BadgeProps> = ({ children, variant = 'info' }) => {
-  const colors: Record<BadgeVariant, string> = {
-    success: 'green',
-    error: 'red',
-    warning: 'yellow',
-    info: 'blue',
-  };
-
-  const bgColors: Record<BadgeVariant, string> = {
-    success: 'bgGreen',
-    error: 'bgRed',
-    warning: 'bgYellow',
-    info: 'bgBlue',
-  };
+export const Badge: React.FC<BadgeProps> = ({ variant, children }) => {
+  const color = variantColors[variant] || 'white';
 
   return (
-    <Text color="white" backgroundColor={colors[variant]}>
-      {' '}
-      {children}{' '}
+    <Text color={color} inverse>
+      {` ${children.toUpperCase()} `}
     </Text>
   );
 };

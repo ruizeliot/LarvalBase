@@ -1,165 +1,217 @@
-import { spawn, ChildProcess } from 'child_process';
+import * as fs from 'fs/promises';
 import * as path from 'path';
-import * as fs from 'fs';
-import { fileURLToPath } from 'url';
+import * as os from 'os';
+import { render, cleanup } from 'ink-testing-library';
+import React from 'react';
+import { MockClaude, createMockFixture } from './mock-claude.js';
+import type { Manifest, Todo, Epic } from '../../../src/types/index.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const CLI_PATH = path.resolve(__dirname, '../../../bin/cli.js');
-
-interface TestHarness {
-  process: ChildProcess;
-  stdout: string[];
-  stderr: string[];
-  exitCode: number | null;
-  send: (input: string) => void;
-  waitForOutput: (pattern: RegExp, timeout?: number) => Promise<string>;
-  waitForClose: () => Promise<number>;
-  kill: () => void;
-}
-
-interface TestHarnessOptions {
-  cwd?: string;
+export interface TestContext {
+  projectPath: string;
+  todoDir: string;
+  mockClaude: MockClaude;
+  manifest: Manifest;
+  cleanup: () => Promise<void>;
 }
 
 /**
- * Creates a test harness for running CLI tests
+ * Create a test project directory with initial manifest
  */
-export function createTestHarness(args: string[] = [], options: TestHarnessOptions = {}): TestHarness {
-  const proc = spawn('node', [CLI_PATH, ...args], {
-    stdio: ['pipe', 'pipe', 'pipe'],
-    // FORCE_COLOR=3 enables full color, but NO CI=true to allow Ink's interactive rendering
-    env: { ...process.env, FORCE_COLOR: '3' },
-    cwd: options.cwd,
-  });
+export async function createTestProject(name = 'test-project'): Promise<TestContext> {
+  const tempDir = path.join(os.tmpdir(), 'pipeline-v7-test', name);
+  const pipelineDir = path.join(tempDir, '.pipeline');
+  const todoDir = path.join(os.homedir(), '.claude', 'todos');
 
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-  let exitCode: number | null = null;
+  // Create directories
+  await fs.mkdir(pipelineDir, { recursive: true });
+  await fs.mkdir(todoDir, { recursive: true });
 
-  proc.stdout?.on('data', (data: Buffer) => {
-    const lines = data.toString().split('\n').filter((l) => l);
-    stdout.push(...lines);
-  });
+  // Create default manifest
+  const manifest = createDefaultManifest(name, tempDir);
+  await fs.writeFile(
+    path.join(pipelineDir, 'manifest.json'),
+    JSON.stringify(manifest, null, 2)
+  );
 
-  proc.stderr?.on('data', (data: Buffer) => {
-    const lines = data.toString().split('\n').filter((l) => l);
-    stderr.push(...lines);
-  });
-
-  proc.on('close', (code) => {
-    exitCode = code;
-  });
+  // Create mock Claude instance
+  const mockClaude = new MockClaude(tempDir);
+  mockClaude.setFixture(createMockFixture({}));
 
   return {
-    process: proc,
-    stdout,
-    stderr,
-    get exitCode() {
-      return exitCode;
-    },
-    set exitCode(code: number | null) {
-      exitCode = code;
-    },
-
-    send(input: string): void {
-      proc.stdin?.write(input);
-    },
-
-    async waitForOutput(pattern: RegExp, timeout = 5000): Promise<string> {
-      const startTime = Date.now();
-
-      return new Promise((resolve, reject) => {
-        const check = () => {
-          for (const line of stdout) {
-            if (pattern.test(line)) {
-              resolve(line);
-              return;
-            }
-          }
-
-          if (Date.now() - startTime > timeout) {
-            reject(
-              new Error(
-                `Timeout waiting for output matching ${pattern}. Got: ${stdout.join(
-                  '\n'
-                )}`
-              )
-            );
-            return;
-          }
-
-          setTimeout(check, 50);
-        };
-
-        check();
-      });
-    },
-
-    async waitForClose(): Promise<number> {
-      return new Promise((resolve) => {
-        if (exitCode !== null) {
-          resolve(exitCode);
-          return;
-        }
-
-        proc.on('close', (code) => {
-          resolve(code ?? 1);
-        });
-      });
-    },
-
-    kill(): void {
-      proc.kill('SIGTERM');
+    projectPath: tempDir,
+    todoDir,
+    mockClaude,
+    manifest,
+    cleanup: async () => {
+      await mockClaude.stop();
+      try {
+        await fs.rm(tempDir, { recursive: true, force: true });
+      } catch {
+        // Ignore cleanup errors
+      }
     },
   };
 }
 
 /**
- * Helper to wait for specific output
+ * Create a default test manifest
  */
-export async function waitForOutput(
-  stdout: string[],
-  pattern: RegExp,
-  timeout = 5000
-): Promise<string> {
-  const startTime = Date.now();
-
-  return new Promise((resolve, reject) => {
-    const check = () => {
-      for (const line of stdout) {
-        if (pattern.test(line)) {
-          resolve(line);
-          return;
-        }
-      }
-
-      if (Date.now() - startTime > timeout) {
-        reject(new Error(`Timeout waiting for ${pattern}`));
-        return;
-      }
-
-      setTimeout(check, 50);
-    };
-
-    check();
-  });
+export function createDefaultManifest(name: string, projectPath: string): Manifest {
+  return {
+    version: '7.0.0',
+    project: {
+      name,
+      path: projectPath,
+      type: 'terminal',
+      mode: 'new',
+    },
+    currentPhase: '1',
+    phases: {
+      '1': { status: 'pending', startedAt: null, completedAt: null },
+      '2': { status: 'pending', startedAt: null, completedAt: null },
+      '3': { status: 'pending', startedAt: null, completedAt: null },
+      '4': { status: 'pending', startedAt: null, completedAt: null },
+      '5': { status: 'pending', startedAt: null, completedAt: null },
+    },
+    epics: [],
+    tests: {
+      total: 0,
+      passing: 0,
+      failing: 0,
+      coverage: 0,
+    },
+    cost: {
+      total: 0,
+      byPhase: {},
+    },
+    duration: {
+      total: 0,
+      byPhase: {},
+    },
+    worker: {
+      sessionId: null,
+      pid: null,
+      status: 'idle',
+    },
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 /**
- * Helper to send input to process
+ * Create a manifest with epics for testing
  */
-export function sendInput(
-  proc: ChildProcess,
-  input: string,
-  key?: { escape?: boolean; return?: boolean; tab?: boolean }
-): void {
-  if (key?.escape) {
-    proc.stdin?.write('\x1b');
-  } else if (key?.return) {
-    proc.stdin?.write('\r');
-  } else if (key?.tab) {
-    proc.stdin?.write('\t');
-  } else {
-    proc.stdin?.write(input);
+export function createManifestWithEpics(
+  name: string,
+  projectPath: string,
+  epicCount = 3
+): Manifest {
+  const manifest = createDefaultManifest(name, projectPath);
+  manifest.epics = Array.from({ length: epicCount }, (_, i) => ({
+    id: `epic-${i + 1}`,
+    name: `Epic ${i + 1}`,
+    status: 'pending' as const,
+    testsTotal: 10,
+    testsPass: 0,
+    startedAt: null,
+    completedAt: null,
+  }));
+  return manifest;
+}
+
+/**
+ * Wait for a condition to be true
+ */
+export async function waitFor(
+  condition: () => boolean | Promise<boolean>,
+  options: { timeout?: number; interval?: number } = {}
+): Promise<void> {
+  const { timeout = 5000, interval = 100 } = options;
+  const startTime = Date.now();
+
+  while (Date.now() - startTime < timeout) {
+    if (await condition()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, interval));
+  }
+
+  throw new Error(`waitFor timed out after ${timeout}ms`);
+}
+
+/**
+ * Create test todos
+ */
+export function createTestTodos(count = 3): Todo[] {
+  return Array.from({ length: count }, (_, i) => ({
+    content: `Task ${i + 1}`,
+    status: i === 0 ? 'in_progress' as const : 'pending' as const,
+    activeForm: `Working on task ${i + 1}`,
+  }));
+}
+
+/**
+ * Render helper for ink components
+ */
+export function renderComponent(component: React.ReactElement) {
+  const result = render(component);
+
+  return {
+    ...result,
+    getOutput: () => result.lastFrame() || '',
+    hasText: (text: string | RegExp) => {
+      const output = result.lastFrame() || '';
+      if (typeof text === 'string') {
+        return output.includes(text);
+      }
+      return text.test(output);
+    },
+    waitForText: async (text: string | RegExp, timeout = 5000) => {
+      await waitFor(() => {
+        const output = result.lastFrame() || '';
+        if (typeof text === 'string') {
+          return output.includes(text);
+        }
+        return text.test(output);
+      }, { timeout });
+    },
+  };
+}
+
+/**
+ * Keyboard key constants for testing
+ */
+export const KEYS = {
+  UP: '\u001B[A',
+  DOWN: '\u001B[B',
+  LEFT: '\u001B[D',
+  RIGHT: '\u001B[C',
+  ENTER: '\r',
+  SPACE: ' ',
+  TAB: '\t',
+  ESCAPE: '\u001B',
+  BACKSPACE: '\u007F',
+  DELETE: '\u001B[3~',
+  HOME: '\u001B[H',
+  END: '\u001B[F',
+  CTRL_C: '\u0003',
+  CTRL_D: '\u0004',
+};
+
+/**
+ * Simulate key press
+ */
+export function pressKey(stdin: { write: (s: string) => void }, key: string): void {
+  stdin.write(key);
+}
+
+/**
+ * Type text character by character
+ */
+export function typeText(stdin: { write: (s: string) => void }, text: string): void {
+  for (const char of text) {
+    stdin.write(char);
   }
 }
+
+export { cleanup };

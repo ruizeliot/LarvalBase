@@ -1,90 +1,89 @@
 {
-  "version": "5.2",
+  "version": "6.0",
   "project": {
     "name": "pipeline-v7",
-    "path": "C:\Users\ahunt\Documents\IMT Claude\Pipeline-Office\Pipeline v7"
+    "path": "C:\\Users\\ahunt\\Documents\\IMT Claude\\Pipeline-Office\\Pipeline v7"
   },
   "pipeline": {
     "type": "terminal-tui",
-    "version": "6.0"
+    "version": "6.0",
+    "architecture": "two-window"
   },
-  "currentPhase": "4",
+  "currentPhase": "2",
   "phases": {
     "1": {
       "status": "complete",
-      "completedAt": "2025-12-07T00:00:00.000Z"
+      "completedAt": "2025-12-08T09:00:00.000Z",
+      "note": "Phase 1 documents updated for two-window architecture rebuild"
     },
     "2": {
-      "status": "complete",
-      "completedAt": "2025-12-07T00:00:00.000Z"
+      "status": "pending"
     },
     "3": {
-      "status": "complete",
-      "completedAt": "2025-12-07T00:00:00.000Z"
+      "status": "pending"
     },
     "4": {
-      "status": "in-progress",
-      "loops": [
-        {
-          "id": 1,
-          "name": "Epic 1: TUI Framework Foundation",
-          "status": "complete",
-          "completedAt": "2025-12-07T00:00:00.000Z",
-          "stories": ["US-001", "US-002", "US-003", "US-004", "US-005", "US-006", "US-007", "US-008", "US-009", "US-010"]
-        },
-        {
-          "id": 2,
-          "name": "Epic 2: Test Infrastructure",
-          "status": "complete",
-          "completedAt": "2025-12-07T00:00:00.000Z",
-          "stories": ["US-031", "US-032", "US-033", "US-034", "US-035", "US-036", "US-037", "US-038", "US-039", "US-040"]
-        },
-        {
-          "id": 3,
-          "name": "Epic 3: State Management",
-          "status": "complete",
-          "completedAt": "2025-12-07T14:17:00.000Z",
-          "stories": ["US-040", "US-041", "US-042", "US-043", "US-044", "US-045", "US-046", "US-047", "US-048", "US-049", "US-050"]
-        },
-        {
-          "id": 4,
-          "name": "Epic 4: Filesystem Service",
-          "status": "complete",
-          "completedAt": "2025-12-07T16:12:00.000Z",
-          "stories": ["US-060", "US-061", "US-062", "US-063", "US-064", "US-065", "US-066", "US-067", "US-068", "US-069"]
-        },
-        {
-          "id": 5,
-          "name": "Epic 5: Process Service",
-          "status": "complete",
-          "completedAt": "2025-12-07T17:30:00.000Z",
-          "stories": ["US-070", "US-071", "US-072", "US-073", "US-074", "US-075", "US-076", "US-077", "US-078", "US-079", "US-080"]
-        },
-        {
-          "id": 6,
-          "name": "Epic 6: Cost Service",
-          "status": "complete",
-          "completedAt": "2025-12-07T18:35:00.000Z",
-          "stories": ["US-090", "US-091", "US-092", "US-093", "US-094", "US-095", "US-096", "US-097", "US-098", "US-099", "US-100"]
-        },
-        {
-          "id": 7,
-          "name": "Epic 7: Pipeline Orchestrator",
-          "status": "complete",
-          "completedAt": "2025-12-07T16:55:00.000Z",
-          "stories": ["US-110", "US-111", "US-112", "US-113", "US-114", "US-115", "US-116", "US-117", "US-118", "US-119", "US-120"]
-        },
-        {
-          "id": 8,
-          "name": "Epic 8: UI Screens",
-          "status": "in-progress",
-          "stories": ["US-130", "US-131", "US-132", "US-133", "US-134", "US-135", "US-136", "US-137", "US-138", "US-139", "US-140", "US-141", "US-142"]
-        }
-      ]
+      "status": "pending",
+      "loops": []
     },
     "5": {
       "status": "pending"
     }
+  },
+  "epics": [
+    {
+      "id": 1,
+      "name": "TUI Framework",
+      "stories": 25,
+      "status": "pending"
+    },
+    {
+      "id": 2,
+      "name": "Test Infrastructure",
+      "stories": 30,
+      "status": "pending"
+    },
+    {
+      "id": 3,
+      "name": "State Management",
+      "stories": 35,
+      "status": "pending"
+    },
+    {
+      "id": 4,
+      "name": "Filesystem Service",
+      "stories": 25,
+      "status": "pending"
+    },
+    {
+      "id": 5,
+      "name": "Process Service (wt.exe)",
+      "stories": 25,
+      "status": "pending"
+    },
+    {
+      "id": 6,
+      "name": "Cost Service",
+      "stories": 20,
+      "status": "pending"
+    },
+    {
+      "id": 7,
+      "name": "Pipeline Orchestrator",
+      "stories": 30,
+      "status": "pending"
+    },
+    {
+      "id": 8,
+      "name": "UI Screens (Dashboard)",
+      "stories": 35,
+      "status": "pending"
+    }
+  ],
+  "tests": {
+    "total": 225,
+    "passing": 0,
+    "coverage": 0
   },
   "cost": {
     "total": 0,
@@ -96,5 +95,6 @@
   },
   "workers": [],
   "createdAt": "2025-12-07T00:00:00.000Z",
-  "updatedAt": "2025-12-07T18:35:00.000Z"
+  "updatedAt": "2025-12-08T09:00:00.000Z",
+  "rebuildReason": "Architecture change from single TUI to two-window (Dashboard + Worker)"
 }
