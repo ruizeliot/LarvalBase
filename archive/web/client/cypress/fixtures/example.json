@@ -1,0 +1,16 @@
+{
+  "testPipeline": {
+    "id": "test-pipeline-1",
+    "projectName": "Test Project",
+    "projectPath": "/home/test/project",
+    "currentPhase": "1",
+    "status": "in-progress"
+  },
+  "testWorker": {
+    "id": "test-worker-1",
+    "name": "Worker 1",
+    "status": "connected",
+    "cpu": 45,
+    "ram": 60
+  }
+}
