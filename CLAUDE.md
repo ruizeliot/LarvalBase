@@ -35,7 +35,11 @@ The orchestrator will ask for stack type and pipeline mode, then manage everythi
 ```
 Pipeline-Office/
 ├── lib/
-│   └── dashboard.cjs      # Dashboard source (copied to projects)
+│   ├── dashboard-v2.cjs   # Interactive dashboard (press 1-5 to expand)
+│   ├── dashboard.cjs      # Legacy dashboard (v1)
+│   ├── analyze-session.ps1    # Post-phase cost/todo analysis
+│   ├── spawn-worker.ps1       # Spawn worker in conhost
+│   └── spawn-dashboard.ps1    # Spawn dashboard
 ├── docs/
 │   └── plans/             # Design and implementation docs
 ├── archive/               # Legacy v6.x code (reference only)
@@ -61,11 +65,11 @@ When orchestrator initializes a project:
 | Command | Location | Purpose |
 |---------|----------|---------|
 | `/orchestrator` | `~/.claude/commands/` | Start pipeline orchestration |
-| `/1-new-pipeline-desktop-v6.0` | `~/.claude/commands/` | Phase 1: Brainstorm |
-| `/2-new-pipeline-desktop-v6.0` | `~/.claude/commands/` | Phase 2: Technical |
-| `/3-new-pipeline-desktop-v6.0` | `~/.claude/commands/` | Phase 3: Bootstrap |
-| `/4-new-pipeline-desktop-v6.0` | `~/.claude/commands/` | Phase 4: Implement |
-| `/5-new-pipeline-desktop-v6.0` | `~/.claude/commands/` | Phase 5: Finalize |
+| `/1-new-pipeline-desktop-v7.0` | `~/.claude/commands/` | Phase 1: Brainstorm |
+| `/2-new-pipeline-desktop-v7.0` | `~/.claude/commands/` | Phase 2: Technical |
+| `/3-new-pipeline-desktop-v7.0` | `~/.claude/commands/` | Phase 3: Bootstrap |
+| `/4-new-pipeline-desktop-v7.0` | `~/.claude/commands/` | Phase 4: Implement |
+| `/5-new-pipeline-desktop-v7.0` | `~/.claude/commands/` | Phase 5: Finalize |
 
 ## How It Works
 
@@ -92,13 +96,22 @@ When orchestrator initializes a project:
     { "id": 1, "name": "...", "status": "pending" }
   ],
   "phases": {
-    "1": { "status": "complete", "duration": 222000, "cost": 0.12 },
+    "1": {
+      "status": "complete",
+      "duration": 1292000,
+      "cost": 2.76,
+      "tokens": 2915260,
+      "todoBreakdown": [
+        { "content": "Task name", "durationMs": 12000, "cost": 0.02 }
+      ]
+    },
     "2": { "status": "complete" },
-    "3": { "status": "running", "workerSessionId": "..." },
+    "3": { "status": "running", "sessionId": "..." },
     "4": { "status": "pending" },
     "5": { "status": "pending" }
   },
-  "totalCost": 0.41
+  "totalCost": 2.76,
+  "heartbeat": { "enabled": true, "intervalMs": 300000 }
 }
 ```
 
@@ -108,4 +121,4 @@ All v6.x code is archived in `archive/`. Reference only - not used by v7.0.
 
 ---
 
-**Last Updated:** 2025-12-09
+**Last Updated:** 2025-12-10

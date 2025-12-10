@@ -6,7 +6,10 @@ param(
     [string]$PhaseNumber,
 
     [Parameter(Mandatory=$true)]
-    [string]$PhaseCommand
+    [string]$PhaseCommand,
+
+    [Parameter(Mandatory=$false)]
+    [string]$OutputStyle = ""
 )
 
 $claudePath = "$env:APPDATA\npm\claude.cmd"
@@ -204,7 +207,20 @@ public class ConsoleInjector {
 
 Add-Type -TypeDefinition $injectCode -Language CSharp
 
-# First inject the text (without Enter)
+# If OutputStyle specified, inject it first
+if ($OutputStyle -ne "") {
+    Write-Host "Setting output style: $OutputStyle"
+    $styleCmd = "/output-style $OutputStyle"
+    $styleResult = [ConsoleInjector]::InjectText($childPid, $styleCmd)
+    Write-Host "Style text injection: $styleResult"
+    Start-Sleep -Milliseconds 500
+    $styleEnter = [ConsoleInjector]::InjectEnter($childPid)
+    Write-Host "Style enter injection: $styleEnter"
+    # Wait for style to apply
+    Start-Sleep -Seconds 2
+}
+
+# Now inject the phase command (without Enter)
 $result = [ConsoleInjector]::InjectText($childPid, $PhaseCommand)
 Write-Host "Text injection result: $result"
 
