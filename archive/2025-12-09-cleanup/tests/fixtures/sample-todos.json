@@ -1,0 +1,27 @@
+[
+  {
+    "content": "Set up project structure",
+    "status": "completed",
+    "activeForm": "Setting up project structure"
+  },
+  {
+    "content": "Install dependencies",
+    "status": "completed",
+    "activeForm": "Installing dependencies"
+  },
+  {
+    "content": "Configure TypeScript",
+    "status": "in_progress",
+    "activeForm": "Configuring TypeScript"
+  },
+  {
+    "content": "Create component scaffold",
+    "status": "pending",
+    "activeForm": "Creating component scaffold"
+  },
+  {
+    "content": "Write unit tests",
+    "status": "pending",
+    "activeForm": "Writing unit tests"
+  }
+]

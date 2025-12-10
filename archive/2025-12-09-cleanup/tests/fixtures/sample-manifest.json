@@ -1,0 +1,64 @@
+{
+  "projectId": "test-project",
+  "projectPath": "C:/Users/test/test-project",
+  "currentPhase": "3",
+  "status": "running",
+  "mode": "new",
+  "createdAt": "2025-12-01T10:00:00.000Z",
+  "phases": {
+    "1": {
+      "status": "complete",
+      "completedAt": "2025-12-01T10:30:00.000Z"
+    },
+    "2": {
+      "status": "complete",
+      "completedAt": "2025-12-01T11:00:00.000Z"
+    },
+    "3": {
+      "status": "running"
+    },
+    "4": {
+      "status": "pending",
+      "epicLoops": [
+        {
+          "epic": 1,
+          "name": "Core Features",
+          "status": "pending",
+          "stories": ["US-001", "US-002"],
+          "tests": ["E2E-001", "E2E-002"]
+        },
+        {
+          "epic": 2,
+          "name": "UI Polish",
+          "status": "pending",
+          "stories": ["US-003", "US-004"],
+          "tests": ["E2E-003", "E2E-004"]
+        }
+      ]
+    },
+    "5": {
+      "status": "pending"
+    }
+  },
+  "pipelineRunId": "new-1701234567890-abc123",
+  "workerSessionId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+  "phaseStats": {
+    "1": {
+      "duration": 1800000,
+      "cost": "0.500"
+    },
+    "2": {
+      "duration": 1800000,
+      "cost": "0.750"
+    },
+    "3": null,
+    "4": null,
+    "5": null
+  },
+  "costBaseline": {
+    "input": 10000,
+    "output": 5000,
+    "cacheWrite": 50000,
+    "cacheRead": 100000
+  }
+}

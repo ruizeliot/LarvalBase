@@ -1,0 +1,21 @@
+{
+  "version": "7.0",
+  "project": {
+    "name": "test-heartbeat",
+    "path": "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/test-heartbeat"
+  },
+  "stack": "desktop",
+  "mode": "new",
+  "status": "running",
+  "currentPhase": "1",
+  "createdAt": "2025-12-09T12:00:00.000Z",
+  "epics": [],
+  "phases": {
+    "1": { "status": "running", "startedAt": "2025-12-09T12:00:00.000Z", "workerSessionId": "test-worker-001" },
+    "2": { "status": "pending" },
+    "3": { "status": "pending" },
+    "4": { "status": "pending" },
+    "5": { "status": "pending" }
+  },
+  "totalCost": 0
+}

@@ -1,0 +1,298 @@
+{
+  "runs": [
+    {
+      "runId": "new-1764857906290-cf1dcc98",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-04T14:18:26.291Z",
+      "status": "running",
+      "phases": {
+        "0a": {
+          "sessions": [
+            {
+              "sessionId": "979ef86e-5ec1-4da0-b737-9a0e2bb24d4e",
+              "startedAt": "2025-12-04T14:18:26.304Z",
+              "command": "/0a-pipeline-desktop-brainstorm-v6.0",
+              "spawnedAt": "2025-12-04T14:18:26.303Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T14:18:26.304Z"
+        }
+      },
+      "sessions": [
+        "979ef86e-5ec1-4da0-b737-9a0e2bb24d4e"
+      ]
+    },
+    {
+      "runId": "new-1764862385197-4437c1d4",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-04T15:33:05.197Z",
+      "status": "running",
+      "phases": {
+        "0a": {
+          "sessions": [
+            {
+              "sessionId": "95dabcbd-bb17-47ab-9403-1c3b3be787f5",
+              "startedAt": "2025-12-04T15:33:05.211Z",
+              "command": "/0a-pipeline-desktop-brainstorm-v6.0",
+              "spawnedAt": "2025-12-04T15:33:05.210Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T15:33:05.211Z"
+        }
+      },
+      "sessions": [
+        "95dabcbd-bb17-47ab-9403-1c3b3be787f5"
+      ]
+    },
+    {
+      "runId": "new-1764862988377-44128149",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-04T15:43:08.377Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "92ff7542-34cc-4bed-845f-b08528fe8e28",
+              "startedAt": "2025-12-04T15:43:08.388Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-04T15:43:08.387Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T15:43:08.388Z",
+          "status": "complete",
+          "completedAt": "2025-12-04T15:51:07.894Z"
+        },
+        "2": {
+          "sessions": [
+            {
+              "sessionId": "a50d4d5e-26dc-41bc-89a2-00d2f15120b4",
+              "startedAt": "2025-12-04T15:51:09.907Z",
+              "command": "/2-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-04T15:51:09.906Z",
+              "epicId": null
+            },
+            {
+              "sessionId": "8010fa57-4684-4341-83ef-f90cbdfb0543",
+              "startedAt": "2025-12-04T15:51:18.110Z",
+              "command": "/2-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-04T15:51:18.110Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T15:51:09.907Z",
+          "status": "complete",
+          "completedAt": "2025-12-04T15:53:44.562Z"
+        },
+        "3": {
+          "sessions": [
+            {
+              "sessionId": "4c5cfc60-9f5b-4a0a-8e47-8c87d22ece55",
+              "startedAt": "2025-12-04T15:53:46.568Z",
+              "command": "/3-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-04T15:53:46.568Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-04T15:53:46.568Z"
+        }
+      },
+      "sessions": [
+        "92ff7542-34cc-4bed-845f-b08528fe8e28",
+        "a50d4d5e-26dc-41bc-89a2-00d2f15120b4",
+        "8010fa57-4684-4341-83ef-f90cbdfb0543",
+        "4c5cfc60-9f5b-4a0a-8e47-8c87d22ece55"
+      ]
+    },
+    {
+      "runId": "new-1764919321740-f14edf52",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T07:22:01.740Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "1939944c-5971-492b-9fd1-d8e5e62d398c",
+              "startedAt": "2025-12-05T07:22:07.188Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T07:22:07.187Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T07:22:07.188Z"
+        }
+      },
+      "sessions": [
+        "1939944c-5971-492b-9fd1-d8e5e62d398c"
+      ]
+    },
+    {
+      "runId": "new-1764919467574-d662bf91",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T07:24:27.574Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "02a6f4cd-0860-471a-b245-2f2439dbf895",
+              "startedAt": "2025-12-05T07:24:33.100Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T07:24:33.100Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T07:24:33.100Z"
+        }
+      },
+      "sessions": [
+        "02a6f4cd-0860-471a-b245-2f2439dbf895"
+      ]
+    },
+    {
+      "runId": "new-1764919492289-e8bfd2da",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T07:24:52.290Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "ec0d72ea-0846-4874-b900-391288502317",
+              "startedAt": "2025-12-05T07:24:57.714Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T07:24:57.713Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T07:24:57.714Z"
+        }
+      },
+      "sessions": [
+        "ec0d72ea-0846-4874-b900-391288502317"
+      ]
+    },
+    {
+      "runId": "new-1764920088481-6ce712be",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T07:34:48.481Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "85a2f6e3-aa47-4269-acea-25e9cee0698b",
+              "startedAt": "2025-12-05T07:34:48.494Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T07:34:48.493Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T07:34:48.494Z"
+        }
+      },
+      "sessions": [
+        "85a2f6e3-aa47-4269-acea-25e9cee0698b"
+      ]
+    },
+    {
+      "runId": "new-1764921481100-61d6350f",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T07:58:01.100Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "149b1d75-ee67-423a-83d4-6852d85b8589",
+              "startedAt": "2025-12-05T07:58:04.596Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T07:58:04.595Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T07:58:04.596Z",
+          "status": "complete",
+          "completedAt": "2025-12-05T07:58:55.743Z"
+        },
+        "2": {
+          "sessions": [
+            {
+              "sessionId": "60f7e2db-9083-4eef-9843-5187432f8531",
+              "startedAt": "2025-12-05T07:58:57.756Z",
+              "command": "/2-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T07:58:57.755Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T07:58:57.756Z"
+        }
+      },
+      "sessions": [
+        "149b1d75-ee67-423a-83d4-6852d85b8589",
+        "60f7e2db-9083-4eef-9843-5187432f8531"
+      ]
+    },
+    {
+      "runId": "new-1764921622968-2b9bb8b1",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T08:00:22.968Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "88f24db6-6f60-46e0-a6e2-1cc4d82e15c2",
+              "startedAt": "2025-12-05T08:00:26.490Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T08:00:26.490Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T08:00:26.490Z"
+        }
+      },
+      "sessions": [
+        "88f24db6-6f60-46e0-a6e2-1cc4d82e15c2"
+      ]
+    },
+    {
+      "runId": "new-1764921790022-9cebc1db",
+      "type": "new",
+      "description": "pipeline-monitor-desktop",
+      "startedAt": "2025-12-05T08:03:10.022Z",
+      "status": "running",
+      "phases": {
+        "1": {
+          "sessions": [
+            {
+              "sessionId": "b5589872-7aa7-4207-ac9f-47adf43d78c4",
+              "startedAt": "2025-12-05T08:03:13.490Z",
+              "command": "/1-new-pipeline-desktop-v6.0",
+              "spawnedAt": "2025-12-05T08:03:13.490Z",
+              "epicId": null
+            }
+          ],
+          "startedAt": "2025-12-05T08:03:13.490Z"
+        }
+      },
+      "sessions": [
+        "b5589872-7aa7-4207-ac9f-47adf43d78c4"
+      ]
+    }
+  ],
+  "currentRunId": "new-1764921790022-9cebc1db"
+}

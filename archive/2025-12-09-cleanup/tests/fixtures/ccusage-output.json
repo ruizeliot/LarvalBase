@@ -1,0 +1,20 @@
+{
+  "sessions": [
+    {
+      "sessionId": "C--Users-test-test-project",
+      "inputTokens": 150000,
+      "outputTokens": 75000,
+      "cacheCreationTokens": 200000,
+      "cacheReadTokens": 500000,
+      "costUSD": "2.750"
+    },
+    {
+      "sessionId": "C--Users-test-other-project",
+      "inputTokens": 50000,
+      "outputTokens": 25000,
+      "cacheCreationTokens": 100000,
+      "cacheReadTokens": 200000,
+      "costUSD": "1.125"
+    }
+  ]
+}
