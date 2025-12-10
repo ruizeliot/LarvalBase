@@ -14,24 +14,33 @@ $title = "Worker-Phase-$PhaseNumber"
 
 Write-Host "Spawning worker for phase $PhaseNumber"
 
-# Use conhost for consistency with orchestrator - capture the process
+# Spawn conhost with cmd running claude
 $proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $title && cd /d `"$ProjectPath`" && `"$claudePath`" `"$PhaseCommand`" --dangerously-skip-permissions" -PassThru
 
-# Output the conhost PID - this is what we'll use to check if worker is running
 Write-Host "Worker conhost PID: $($proc.Id)"
 
-# Also find the PowerShell/cmd inside it after a brief wait
-Start-Sleep -Seconds 2
+# Wait for child process to start
+Start-Sleep -Seconds 3
 
-# Get child processes of the conhost
+# Find the cmd.exe child process - THIS is what we need for reading console buffer
 $children = Get-WmiObject Win32_Process | Where-Object { $_.ParentProcessId -eq $proc.Id }
+$childPid = $null
 foreach ($child in $children) {
     Write-Host "  Child process: $($child.Name) (PID: $($child.ProcessId))"
+    if ($child.Name -eq "cmd.exe") {
+        $childPid = $child.ProcessId
+    }
 }
 
-# Output JSON for easy parsing
+if (-not $childPid) {
+    Write-Host "WARNING: Could not find child cmd.exe process"
+    $childPid = $proc.Id
+}
+
+# Output JSON for easy parsing - workerPid is the CMD process (for reading console buffer)
 $result = @{
     conhostPid = $proc.Id
+    workerPid = $childPid
     phase = $PhaseNumber
     command = $PhaseCommand
 } | ConvertTo-Json -Compress
