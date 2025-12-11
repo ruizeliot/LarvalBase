@@ -9,6 +9,9 @@ param(
     [string]$PhaseCommand,
 
     [Parameter(Mandatory=$false)]
+    [string]$BaseRules = "",  # v8.0+: Base rules command to inject BEFORE phase command
+
+    [Parameter(Mandatory=$false)]
     [string]$OutputStyle = "",
 
     [Parameter(Mandatory=$false)]
@@ -381,6 +384,19 @@ if ($OutputStyle -ne "") {
     Write-Host "Style enter injection: $styleEnter"
     # Wait for style to apply
     Start-Sleep -Seconds 2
+}
+
+# If BaseRules specified, inject it before phase command (v8.0+)
+if ($BaseRules -ne "") {
+    Write-Host "Injecting base rules: $BaseRules"
+    $baseResult = [ConsoleInjector]::InjectText($childPid, $BaseRules)
+    Write-Host "Base rules text injection: $baseResult"
+    Start-Sleep -Milliseconds 500
+    $baseEnter = [ConsoleInjector]::InjectEnter($childPid)
+    Write-Host "Base rules enter injection: $baseEnter"
+    # Wait 30 seconds for base rules to load before phase command
+    Write-Host "Waiting 30 seconds for base rules to load..."
+    Start-Sleep -Seconds 30
 }
 
 # Now inject the phase command (without Enter)
