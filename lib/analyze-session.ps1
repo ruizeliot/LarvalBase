@@ -64,6 +64,7 @@ function Get-EntryCost {
 }
 
 # Helper function to sum tokens and cost from entries within a time window
+# Returns breakdown of regular vs cached tokens and costs
 function Get-TokensInWindow {
     param(
         [array]$Entries,
@@ -71,28 +72,49 @@ function Get-TokensInWindow {
         [DateTime]$EndTime
     )
 
-    $sumTokens = 0
-    $sumCost = 0
+    $regularTokens = 0
+    $cachedTokens = 0
+    $regularCost = 0
+    $cachedCost = 0
 
     foreach ($entry in $Entries) {
         $entryTime = [DateTime]::Parse($entry.timestamp)
         if ($entryTime -ge $StartTime -and $entryTime -le $EndTime) {
-            # Sum all token types
-            $entryTokens = 0
-            if ($entry.inputTokens) { $entryTokens += $entry.inputTokens }
-            if ($entry.outputTokens) { $entryTokens += $entry.outputTokens }
-            if ($entry.cacheCreationTokens) { $entryTokens += $entry.cacheCreationTokens }
-            if ($entry.cacheReadTokens) { $entryTokens += $entry.cacheReadTokens }
-            $sumTokens += $entryTokens
+            $model = $entry.model
+            $prices = if ($PRICING.ContainsKey($model)) { $PRICING[$model] } else { $PRICING["default"] }
 
-            # Calculate accurate cost using pricing table
-            $sumCost += Get-EntryCost -Entry $entry
+            # Regular tokens: input + output
+            if ($entry.inputTokens) {
+                $regularTokens += $entry.inputTokens
+                $regularCost += ($entry.inputTokens / 1000000) * $prices.input
+            }
+            if ($entry.outputTokens) {
+                $regularTokens += $entry.outputTokens
+                $regularCost += ($entry.outputTokens / 1000000) * $prices.output
+            }
+
+            # Cached tokens: cacheWrite + cacheRead
+            if ($entry.cacheCreationTokens) {
+                $cachedTokens += $entry.cacheCreationTokens
+                $cachedCost += ($entry.cacheCreationTokens / 1000000) * $prices.cacheWrite
+            }
+            if ($entry.cacheReadTokens) {
+                $cachedTokens += $entry.cacheReadTokens
+                $cachedCost += ($entry.cacheReadTokens / 1000000) * $prices.cacheRead
+            }
         }
     }
 
+    $totalTokens = $regularTokens + $cachedTokens
+    $totalCost = $regularCost + $cachedCost
+
     return @{
-        tokens = $sumTokens
-        cost = $sumCost
+        tokens = $totalTokens
+        cost = $totalCost
+        regularTokens = $regularTokens
+        regularCost = $regularCost
+        cachedTokens = $cachedTokens
+        cachedCost = $cachedCost
     }
 }
 
@@ -174,8 +196,12 @@ foreach ($change in $todoChanges) {
                 content = $content
                 durationMs = [int]$todoDurationMs
                 durationFormatted = "{0:mm}m {0:ss}s" -f [TimeSpan]::FromMilliseconds($todoDurationMs)
-                cost = [Math]::Round($todoCost, 4)
-                tokens = $todoTokens
+                cost = [Math]::Round($windowData.cost, 4)
+                tokens = $windowData.tokens
+                regularTokens = $windowData.regularTokens
+                regularCost = [Math]::Round($windowData.regularCost, 4)
+                cachedTokens = $windowData.cachedTokens
+                cachedCost = [Math]::Round($windowData.cachedCost, 4)
                 startedAt = $startedAt.ToString("o")
                 completedAt = $changeTime.ToString("o")
             }
@@ -185,11 +211,43 @@ foreach ($change in $todoChanges) {
     }
 }
 
+# Calculate session-level token breakdown from all entries
+$sessionRegularTokens = 0
+$sessionCachedTokens = 0
+$sessionRegularCost = 0
+$sessionCachedCost = 0
+
+foreach ($entry in $entries) {
+    $model = $entry.model
+    $prices = if ($PRICING.ContainsKey($model)) { $PRICING[$model] } else { $PRICING["default"] }
+
+    if ($entry.inputTokens) {
+        $sessionRegularTokens += $entry.inputTokens
+        $sessionRegularCost += ($entry.inputTokens / 1000000) * $prices.input
+    }
+    if ($entry.outputTokens) {
+        $sessionRegularTokens += $entry.outputTokens
+        $sessionRegularCost += ($entry.outputTokens / 1000000) * $prices.output
+    }
+    if ($entry.cacheCreationTokens) {
+        $sessionCachedTokens += $entry.cacheCreationTokens
+        $sessionCachedCost += ($entry.cacheCreationTokens / 1000000) * $prices.cacheWrite
+    }
+    if ($entry.cacheReadTokens) {
+        $sessionCachedTokens += $entry.cacheReadTokens
+        $sessionCachedCost += ($entry.cacheReadTokens / 1000000) * $prices.cacheRead
+    }
+}
+
 # Build result
 $result = @{
     sessionId = $SessionId
     totalCost = [Math]::Round($totalCost, 4)
     totalTokens = $totalTokens
+    regularTokens = $sessionRegularTokens
+    regularCost = [Math]::Round($sessionRegularCost, 4)
+    cachedTokens = $sessionCachedTokens
+    cachedCost = [Math]::Round($sessionCachedCost, 4)
     durationMs = [int]$durationMs
     durationFormatted = "{0:mm}m {0:ss}s" -f [TimeSpan]::FromMilliseconds($durationMs)
     startedAt = $startTime.ToString("o")
