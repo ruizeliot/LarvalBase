@@ -31,6 +31,25 @@ public class DashboardWindowManager {
     [DllImport("kernel32.dll", SetLastError = true)]
     public static extern IntPtr GetConsoleWindow();
 
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    public static extern IntPtr CreateFile(
+        string lpFileName,
+        uint dwDesiredAccess,
+        uint dwShareMode,
+        IntPtr lpSecurityAttributes,
+        uint dwCreationDisposition,
+        uint dwFlagsAndAttributes,
+        IntPtr hTemplateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool SetConsoleMode(IntPtr hConsoleHandle, uint dwMode);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool CloseHandle(IntPtr hObject);
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool MoveWindow(IntPtr hWnd, int X, int Y, int nWidth, int nHeight, bool bRepaint);
 
@@ -40,12 +59,52 @@ public class DashboardWindowManager {
     public const int SM_CXSCREEN = 0;
     public const int SM_CYSCREEN = 1;
 
+    const uint GENERIC_READ = 0x80000000;
+    const uint GENERIC_WRITE = 0x40000000;
+    const uint FILE_SHARE_READ = 0x00000001;
+    const uint FILE_SHARE_WRITE = 0x00000002;
+    const uint OPEN_EXISTING = 3;
+    const uint ENABLE_QUICK_EDIT_MODE = 0x0040;
+    const uint ENABLE_EXTENDED_FLAGS = 0x0080;
+
     public static int GetScreenWidth() {
         return GetSystemMetrics(SM_CXSCREEN);
     }
 
     public static int GetScreenHeight() {
         return GetSystemMetrics(SM_CYSCREEN);
+    }
+
+    public static string DisableQuickEdit(int pid) {
+        FreeConsole();
+        if (!AttachConsole(pid)) {
+            return "AttachConsole failed: " + Marshal.GetLastWin32Error();
+        }
+
+        IntPtr hInput = CreateFile("CONIN$", GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
+
+        if (hInput == new IntPtr(-1)) {
+            FreeConsole();
+            return "CreateFile failed: " + Marshal.GetLastWin32Error();
+        }
+
+        uint mode;
+        if (!GetConsoleMode(hInput, out mode)) {
+            CloseHandle(hInput);
+            FreeConsole();
+            return "GetConsoleMode failed: " + Marshal.GetLastWin32Error();
+        }
+
+        // Disable Quick Edit Mode, enable extended flags
+        mode &= ~ENABLE_QUICK_EDIT_MODE;
+        mode |= ENABLE_EXTENDED_FLAGS;
+
+        bool success = SetConsoleMode(hInput, mode);
+        CloseHandle(hInput);
+        FreeConsole();
+
+        return success ? "OK:QuickEdit disabled" : "SetConsoleMode failed: " + Marshal.GetLastWin32Error();
     }
 
     public static string MoveWindowByPid(int pid, int x, int y, int w, int h) {
@@ -130,5 +189,9 @@ if ($moveResult.StartsWith("OK")) {
 } else {
     Write-Host "WARNING: Could not position dashboard window"
 }
+
+# Disable Quick Edit Mode to prevent freeze on click
+$quickEditResult = [DashboardWindowManager]::DisableQuickEdit($childPid)
+Write-Host "Quick Edit disable result: $quickEditResult"
 
 Write-Host "Dashboard spawned"
