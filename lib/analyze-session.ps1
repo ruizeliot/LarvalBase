@@ -1,6 +1,6 @@
 # analyze-session.ps1 - Analyze a Claude session for cost/duration/tokens
-# Uses ccusage for accurate cost, parses transcript for per-todo timing
-# Option B: Accurate per-todo tokens by summing entries within time windows
+# Parses transcript JSONL directly for accurate pricing (no ccusage dependency)
+# Includes per-todo breakdown with regular vs cached token/cost split
 
 param(
     [Parameter(Mandatory=$true)]
@@ -15,56 +15,156 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Get ccusage data
-Write-Host "Getting cost data from ccusage..."
-$ccusageOutput = npx ccusage@latest session -i $SessionId --json 2>&1
+# Pricing per million tokens (from https://platform.claude.com/docs/en/about-claude/pricing)
+# Cache pricing: 5-min = 1.25x base input, 1-hour = 2x base input, cache read = 0.1x base input
+$PRICING = @{
+    "claude-opus-4-5-20251101" = @{
+        input = 5.0
+        output = 25.0
+        cacheWrite5m = 6.25    # 5-min cache write (1.25x input)
+        cacheWrite1h = 10.0    # 1-hour cache write (2x input)
+        cacheRead = 0.50       # Cache read (0.1x input)
+    }
+    "claude-sonnet-4-5-20250929" = @{
+        input = 3.0
+        output = 15.0
+        cacheWrite5m = 3.75
+        cacheWrite1h = 6.0
+        cacheRead = 0.30
+    }
+    "claude-sonnet-4-20250514" = @{
+        input = 3.0
+        output = 15.0
+        cacheWrite5m = 3.75
+        cacheWrite1h = 6.0
+        cacheRead = 0.30
+    }
+    "claude-haiku-4-5-20251001" = @{
+        input = 1.0
+        output = 5.0
+        cacheWrite5m = 1.25
+        cacheWrite1h = 2.0
+        cacheRead = 0.10
+    }
+    # Fallback for unknown models (use Sonnet pricing as reasonable default)
+    "default" = @{
+        input = 3.0
+        output = 15.0
+        cacheWrite5m = 3.75
+        cacheWrite1h = 6.0
+        cacheRead = 0.30
+    }
+}
 
-try {
-    $ccusageData = $ccusageOutput | ConvertFrom-Json
-} catch {
-    Write-Error "Failed to parse ccusage output: $ccusageOutput"
+# Find transcript path if not provided
+if (-not $TranscriptPath) {
+    $resolved = (Resolve-Path $ProjectPath).Path
+    $encoded = $resolved -replace '\\', '/' -replace ':', '-' -replace ' ', '-' -replace '/', '-'
+    if ($encoded.StartsWith('-')) { $encoded = $encoded.Substring(1) }
+
+    $transcriptsDir = Join-Path $env:USERPROFILE ".claude\projects\$encoded"
+    $TranscriptPath = Join-Path $transcriptsDir "$SessionId.jsonl"
+}
+
+if (-not (Test-Path $TranscriptPath)) {
+    Write-Error "Transcript not found: $TranscriptPath"
     exit 1
 }
 
-$totalCost = $ccusageData.totalCost
-$totalTokens = $ccusageData.totalTokens
-$entries = $ccusageData.entries
+Write-Host "Parsing transcript: $TranscriptPath" -ForegroundColor Cyan
 
-# Pricing per million tokens (from https://platform.claude.com/docs/en/about-claude/pricing)
-$PRICING = @{
-    "claude-opus-4-5-20251101" = @{
-        input = 5.0; output = 25.0; cacheWrite = 6.25; cacheRead = 0.50
-    }
-    "claude-sonnet-4-5-20250929" = @{
-        input = 3.0; output = 15.0; cacheWrite = 3.75; cacheRead = 0.30
-    }
-    "claude-haiku-4-5-20251001" = @{
-        input = 1.0; output = 5.0; cacheWrite = 1.25; cacheRead = 0.10
-    }
-    # Fallback for unknown models (use Opus pricing as conservative estimate)
-    "default" = @{
-        input = 5.0; output = 25.0; cacheWrite = 6.25; cacheRead = 0.50
+# Parse transcript JSONL
+$lines = Get-Content $TranscriptPath
+$usageEntries = @()
+$todoChanges = @()
+
+foreach ($line in $lines) {
+    try {
+        $obj = $line | ConvertFrom-Json
+
+        # Extract usage data from API responses
+        if ($obj.message -and $obj.message.usage) {
+            $usage = $obj.message.usage
+            $model = $obj.message.model
+
+            $entry = @{
+                timestamp = $obj.timestamp
+                model = $model
+                inputTokens = if ($usage.input_tokens) { $usage.input_tokens } else { 0 }
+                outputTokens = if ($usage.output_tokens) { $usage.output_tokens } else { 0 }
+                cacheReadTokens = if ($usage.cache_read_input_tokens) { $usage.cache_read_input_tokens } else { 0 }
+                # Cache creation breakdown (5m vs 1h)
+                cacheWrite5mTokens = 0
+                cacheWrite1hTokens = 0
+            }
+
+            # Parse cache_creation breakdown if available
+            if ($usage.cache_creation) {
+                if ($usage.cache_creation.ephemeral_5m_input_tokens) {
+                    $entry.cacheWrite5mTokens = $usage.cache_creation.ephemeral_5m_input_tokens
+                }
+                if ($usage.cache_creation.ephemeral_1h_input_tokens) {
+                    $entry.cacheWrite1hTokens = $usage.cache_creation.ephemeral_1h_input_tokens
+                }
+            } elseif ($usage.cache_creation_input_tokens) {
+                # Fallback: if no breakdown, assume all cache writes are 5m
+                $entry.cacheWrite5mTokens = $usage.cache_creation_input_tokens
+            }
+
+            $usageEntries += $entry
+        }
+
+        # Extract TodoWrite calls
+        if ($obj.message -and $obj.message.content) {
+            $todoContent = $obj.message.content | Where-Object { $_.type -eq "tool_use" -and $_.name -eq "TodoWrite" }
+            if ($todoContent -and $todoContent.input.todos) {
+                $todoChanges += @{
+                    timestamp = $obj.timestamp
+                    todos = $todoContent.input.todos
+                }
+            }
+        }
+    } catch {
+        # Skip unparseable lines
     }
 }
 
-# Helper function to calculate cost for a single entry
-function Get-EntryCost {
-    param($Entry)
+Write-Host "Found $($usageEntries.Count) API responses with usage data" -ForegroundColor Green
+Write-Host "Found $($todoChanges.Count) TodoWrite calls" -ForegroundColor Green
 
-    $model = $Entry.model
-    $prices = if ($PRICING.ContainsKey($model)) { $PRICING[$model] } else { $PRICING["default"] }
+# Helper function to calculate cost for tokens using model-specific pricing
+function Get-TokenCost {
+    param(
+        [string]$Model,
+        [int]$InputTokens,
+        [int]$OutputTokens,
+        [int]$CacheReadTokens,
+        [int]$CacheWrite5mTokens,
+        [int]$CacheWrite1hTokens
+    )
 
-    $cost = 0
-    if ($Entry.inputTokens) { $cost += ($Entry.inputTokens / 1000000) * $prices.input }
-    if ($Entry.outputTokens) { $cost += ($Entry.outputTokens / 1000000) * $prices.output }
-    if ($Entry.cacheCreationTokens) { $cost += ($Entry.cacheCreationTokens / 1000000) * $prices.cacheWrite }
-    if ($Entry.cacheReadTokens) { $cost += ($Entry.cacheReadTokens / 1000000) * $prices.cacheRead }
+    $prices = if ($PRICING.ContainsKey($Model)) { $PRICING[$Model] } else { $PRICING["default"] }
 
-    return $cost
+    $regularCost = 0
+    $cachedCost = 0
+
+    # Regular tokens cost
+    $regularCost += ($InputTokens / 1000000) * $prices.input
+    $regularCost += ($OutputTokens / 1000000) * $prices.output
+
+    # Cached tokens cost (with proper 5m vs 1h pricing)
+    $cachedCost += ($CacheWrite5mTokens / 1000000) * $prices.cacheWrite5m
+    $cachedCost += ($CacheWrite1hTokens / 1000000) * $prices.cacheWrite1h
+    $cachedCost += ($CacheReadTokens / 1000000) * $prices.cacheRead
+
+    return @{
+        regularCost = $regularCost
+        cachedCost = $cachedCost
+        totalCost = $regularCost + $cachedCost
+    }
 }
 
 # Helper function to sum tokens and cost from entries within a time window
-# Returns breakdown of regular vs cached tokens and costs
 function Get-TokensInWindow {
     param(
         [array]$Entries,
@@ -80,37 +180,28 @@ function Get-TokensInWindow {
     foreach ($entry in $Entries) {
         $entryTime = [DateTime]::Parse($entry.timestamp)
         if ($entryTime -ge $StartTime -and $entryTime -le $EndTime) {
-            $model = $entry.model
-            $prices = if ($PRICING.ContainsKey($model)) { $PRICING[$model] } else { $PRICING["default"] }
-
             # Regular tokens: input + output
-            if ($entry.inputTokens) {
-                $regularTokens += $entry.inputTokens
-                $regularCost += ($entry.inputTokens / 1000000) * $prices.input
-            }
-            if ($entry.outputTokens) {
-                $regularTokens += $entry.outputTokens
-                $regularCost += ($entry.outputTokens / 1000000) * $prices.output
-            }
+            $regularTokens += $entry.inputTokens + $entry.outputTokens
 
-            # Cached tokens: cacheWrite + cacheRead
-            if ($entry.cacheCreationTokens) {
-                $cachedTokens += $entry.cacheCreationTokens
-                $cachedCost += ($entry.cacheCreationTokens / 1000000) * $prices.cacheWrite
-            }
-            if ($entry.cacheReadTokens) {
-                $cachedTokens += $entry.cacheReadTokens
-                $cachedCost += ($entry.cacheReadTokens / 1000000) * $prices.cacheRead
-            }
+            # Cached tokens: cache read + cache writes
+            $cachedTokens += $entry.cacheReadTokens + $entry.cacheWrite5mTokens + $entry.cacheWrite1hTokens
+
+            # Calculate costs
+            $costs = Get-TokenCost -Model $entry.model `
+                -InputTokens $entry.inputTokens `
+                -OutputTokens $entry.outputTokens `
+                -CacheReadTokens $entry.cacheReadTokens `
+                -CacheWrite5mTokens $entry.cacheWrite5mTokens `
+                -CacheWrite1hTokens $entry.cacheWrite1hTokens
+
+            $regularCost += $costs.regularCost
+            $cachedCost += $costs.cachedCost
         }
     }
 
-    $totalTokens = $regularTokens + $cachedTokens
-    $totalCost = $regularCost + $cachedCost
-
     return @{
-        tokens = $totalTokens
-        cost = $totalCost
+        tokens = $regularTokens + $cachedTokens
+        cost = $regularCost + $cachedCost
         regularTokens = $regularTokens
         regularCost = $regularCost
         cachedTokens = $cachedTokens
@@ -118,50 +209,46 @@ function Get-TokensInWindow {
     }
 }
 
-# Calculate duration from first/last entry timestamps
-$firstEntry = $entries | Select-Object -First 1
-$lastEntry = $entries | Select-Object -Last 1
+# Calculate session duration from first/last entry timestamps
+if ($usageEntries.Count -eq 0) {
+    Write-Error "No usage entries found in transcript"
+    exit 1
+}
+
+$firstEntry = $usageEntries | Select-Object -First 1
+$lastEntry = $usageEntries | Select-Object -Last 1
 
 $startTime = [DateTime]::Parse($firstEntry.timestamp)
 $endTime = [DateTime]::Parse($lastEntry.timestamp)
 $durationMs = ($endTime - $startTime).TotalMilliseconds
 
-# Find transcript path if not provided
-if (-not $TranscriptPath) {
-    # Encode project path to match Claude's folder naming
-    $resolved = (Resolve-Path $ProjectPath).Path
-    $encoded = $resolved -replace '\\', '/' -replace ':', '-' -replace ' ', '-' -replace '/', '-'
-    if ($encoded.StartsWith('-')) { $encoded = $encoded.Substring(1) }
+# Calculate session-level totals
+$sessionRegularTokens = 0
+$sessionCachedTokens = 0
+$sessionRegularCost = 0
+$sessionCachedCost = 0
 
-    $transcriptsDir = Join-Path $env:USERPROFILE ".claude\projects\$encoded"
-    $TranscriptPath = Join-Path $transcriptsDir "$SessionId.jsonl"
+foreach ($entry in $usageEntries) {
+    # Regular tokens
+    $sessionRegularTokens += $entry.inputTokens + $entry.outputTokens
+
+    # Cached tokens
+    $sessionCachedTokens += $entry.cacheReadTokens + $entry.cacheWrite5mTokens + $entry.cacheWrite1hTokens
+
+    # Calculate costs with proper pricing
+    $costs = Get-TokenCost -Model $entry.model `
+        -InputTokens $entry.inputTokens `
+        -OutputTokens $entry.outputTokens `
+        -CacheReadTokens $entry.cacheReadTokens `
+        -CacheWrite5mTokens $entry.cacheWrite5mTokens `
+        -CacheWrite1hTokens $entry.cacheWrite1hTokens
+
+    $sessionRegularCost += $costs.regularCost
+    $sessionCachedCost += $costs.cachedCost
 }
 
-# Parse transcript for TodoWrite calls
-$todoChanges = @()
-if (Test-Path $TranscriptPath) {
-    Write-Host "Parsing transcript for todo timing..."
-    $lines = Get-Content $TranscriptPath
-
-    foreach ($line in $lines) {
-        if ($line -match '"name"\s*:\s*"TodoWrite"') {
-            try {
-                $obj = $line | ConvertFrom-Json
-                $timestamp = $obj.timestamp
-                $todoContent = $obj.message.content | Where-Object { $_.type -eq "tool_use" -and $_.name -eq "TodoWrite" }
-
-                if ($todoContent -and $todoContent.input.todos) {
-                    $todoChanges += @{
-                        timestamp = $timestamp
-                        todos = $todoContent.input.todos
-                    }
-                }
-            } catch {
-                # Skip unparseable lines
-            }
-        }
-    }
-}
+$sessionTotalTokens = $sessionRegularTokens + $sessionCachedTokens
+$sessionTotalCost = $sessionRegularCost + $sessionCachedCost
 
 # Analyze per-todo durations
 $todoBreakdown = @()
@@ -182,22 +269,19 @@ foreach ($change in $todoChanges) {
             }
         }
         elseif ($status -eq "completed" -and $todoTimings.ContainsKey($content)) {
-            # Todo completed - calculate duration
+            # Todo completed - calculate duration and tokens
             $startedAt = $todoTimings[$content].startTime
             $todoDurationMs = ($changeTime - $startedAt).TotalMilliseconds
 
-            # Get actual tokens and cost from entries within this time window
-            # Cost is calculated using accurate per-model pricing including cache rates
-            $windowData = Get-TokensInWindow -Entries $entries -StartTime $startedAt -EndTime $changeTime
-            $todoTokens = $windowData.tokens
-            $todoCost = $windowData.cost
+            # Get tokens and cost from entries within this time window
+            $windowData = Get-TokensInWindow -Entries $usageEntries -StartTime $startedAt -EndTime $changeTime
 
             $todoBreakdown += @{
                 content = $content
                 durationMs = [int]$todoDurationMs
                 durationFormatted = "{0:mm}m {0:ss}s" -f [TimeSpan]::FromMilliseconds($todoDurationMs)
-                cost = [Math]::Round($windowData.cost, 4)
                 tokens = $windowData.tokens
+                cost = [Math]::Round($windowData.cost, 4)
                 regularTokens = $windowData.regularTokens
                 regularCost = [Math]::Round($windowData.regularCost, 4)
                 cachedTokens = $windowData.cachedTokens
@@ -211,39 +295,11 @@ foreach ($change in $todoChanges) {
     }
 }
 
-# Calculate session-level token breakdown from all entries
-$sessionRegularTokens = 0
-$sessionCachedTokens = 0
-$sessionRegularCost = 0
-$sessionCachedCost = 0
-
-foreach ($entry in $entries) {
-    $model = $entry.model
-    $prices = if ($PRICING.ContainsKey($model)) { $PRICING[$model] } else { $PRICING["default"] }
-
-    if ($entry.inputTokens) {
-        $sessionRegularTokens += $entry.inputTokens
-        $sessionRegularCost += ($entry.inputTokens / 1000000) * $prices.input
-    }
-    if ($entry.outputTokens) {
-        $sessionRegularTokens += $entry.outputTokens
-        $sessionRegularCost += ($entry.outputTokens / 1000000) * $prices.output
-    }
-    if ($entry.cacheCreationTokens) {
-        $sessionCachedTokens += $entry.cacheCreationTokens
-        $sessionCachedCost += ($entry.cacheCreationTokens / 1000000) * $prices.cacheWrite
-    }
-    if ($entry.cacheReadTokens) {
-        $sessionCachedTokens += $entry.cacheReadTokens
-        $sessionCachedCost += ($entry.cacheReadTokens / 1000000) * $prices.cacheRead
-    }
-}
-
 # Build result
 $result = @{
     sessionId = $SessionId
-    totalCost = [Math]::Round($totalCost, 4)
-    totalTokens = $totalTokens
+    totalCost = [Math]::Round($sessionTotalCost, 4)
+    totalTokens = $sessionTotalTokens
     regularTokens = $sessionRegularTokens
     regularCost = [Math]::Round($sessionRegularCost, 4)
     cachedTokens = $sessionCachedTokens
