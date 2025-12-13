@@ -1,15 +1,16 @@
 {
-  "calibrationDate": "2025-12-12",
-  "tokensPerPercent": 182707,
-  "subscriptionCostPerWeek": 50,
-  "method": "precise-averaged",
-  "tests": [
-    { "run": 1, "tokensPerPercent": 182288, "boundaries": "3% -> 4%" },
-    { "run": 2, "tokensPerPercent": 183126, "boundaries": "5% -> 6%" }
-  ],
-  "usage": {
-    "costPerPercent": 0.50,
-    "tokensPerDollar": 365414,
-    "formula": "subCost = (tokens / 182707) * 0.50"
-  }
+  "calibrationDate": "2025-12-12T13:41:34.373Z",
+  "calibrationType": "7-day",
+  "tokensPerPercent7Day": 123989,
+  "weeklyBudgetUSD": 50,
+  "dollarsPerPercent": 0.50,
+  "iterations": 4,
+  "startTokens": 123967,
+  "startPercent": 18,
+  "endTokens": 247956,
+  "endPercent": 19,
+  "tokensDelta": 123989,
+  "percentDelta": 1,
+  "tokensPerPercent": 123989,
+  "_note": "Re-run calibration-test.js to get accurate 7-day calibration values"
 }
