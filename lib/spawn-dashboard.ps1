@@ -156,8 +156,11 @@ Write-Host "Window placement: X=$windowX, Y=$windowY, W=$windowWidth, H=$windowH
 
 $dashboardTitle = "Pipeline-Dashboard"
 
+# Convert backslashes to forward slashes to avoid escape sequence issues when passing through cmd.exe to node
+$ForwardSlashPath = $ProjectPath -replace '\\', '/'
+
 # Use conhost for consistency (WriteConsoleInput requires traditional console)
-$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $dashboardTitle && cd /d `"$ProjectPath`" && node .pipeline/dashboard.cjs `"$ProjectPath`" $OrchestratorPID" -PassThru
+$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $dashboardTitle && cd /d `"$ProjectPath`" && node .pipeline/dashboard.cjs `"$ForwardSlashPath`" $OrchestratorPID" -PassThru
 
 Write-Host "Dashboard conhost PID: $($proc.Id)"
 
