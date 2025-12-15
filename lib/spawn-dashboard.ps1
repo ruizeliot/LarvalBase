@@ -159,8 +159,12 @@ $dashboardTitle = "Pipeline-Dashboard"
 # Convert backslashes to forward slashes to avoid escape sequence issues when passing through cmd.exe to node
 $ForwardSlashPath = $ProjectPath -replace '\\', '/'
 
+# Use central dashboard from Pipeline-Office/lib/ (not local .pipeline/ copy)
+$dashboardScript = Join-Path $PSScriptRoot "dashboard-v2.cjs"
+$dashboardScriptForward = $dashboardScript -replace [char]92, '/'
+
 # Use conhost for consistency (WriteConsoleInput requires traditional console)
-$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $dashboardTitle && cd /d `"$ProjectPath`" && node .pipeline/dashboard.cjs `"$ForwardSlashPath`" $OrchestratorPID" -PassThru
+$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $dashboardTitle && cd /d `"$ProjectPath`" && node "$dashboardScriptForward" `"$ForwardSlashPath`" $OrchestratorPID" -PassThru
 
 Write-Host "Dashboard conhost PID: $($proc.Id)"
 
