@@ -2,13 +2,21 @@
 # Used by orchestrator to communicate with workers proactively
 #
 # Usage: .\inject-worker-message.ps1 -WorkerPID 12345 -Message "continue"
+#        .\inject-worker-message.ps1 -WorkerPID 12345 -Message "/compact" -Interrupt
+#
+# Parameters:
+#   -WorkerPID         Target process ID
+#   -Message           Text to inject
+#   -NoEnter           Don't send Enter after message
+#   -Interrupt         Send Escape first to interrupt busy worker, wait 1s, then send message
+#   -InterruptDelayMs  Delay after Escape (default: 1000ms)
 #
 # Common messages for worker recovery:
 #   "continue"  - Resume after error/pause
 #   "yes"       - Confirm prompt
 #   "no"        - Decline prompt
 #   "skip"      - Skip current task
-#   "/compact"  - Compact context if running low
+#   "/compact"  - Compact context if running low (use -Interrupt if worker is busy)
 
 param(
     [Parameter(Mandatory=$true)]
@@ -21,7 +29,13 @@ param(
     [switch]$NoEnter,
 
     [Parameter(Mandatory=$false)]
-    [int]$DelayBeforeEnterMs = 200
+    [int]$DelayBeforeEnterMs = 200,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$Interrupt,
+
+    [Parameter(Mandatory=$false)]
+    [int]$InterruptDelayMs = 1000
 )
 
 Add-Type @'
@@ -210,8 +224,81 @@ public class WorkerInjector
             return "ERROR:WriteConsoleInput failed:" + lastErr;
         }
     }
+
+    public static string SendEscape(int targetPid)
+    {
+        FreeConsole();
+
+        if (!AttachConsole(targetPid))
+        {
+            int err = GetLastError();
+            return "ERROR:AttachConsole failed:" + err;
+        }
+
+        IntPtr hInput = CreateFile(
+            "CONIN$",
+            GENERIC_READ | GENERIC_WRITE,
+            FILE_SHARE_READ | FILE_SHARE_WRITE,
+            IntPtr.Zero,
+            OPEN_EXISTING,
+            0,
+            IntPtr.Zero);
+
+        if (hInput == IntPtr.Zero || hInput == new IntPtr(-1))
+        {
+            int err = GetLastError();
+            FreeConsole();
+            return "ERROR:CreateFile failed:" + err;
+        }
+
+        INPUT_RECORD[] records = new INPUT_RECORD[2];
+
+        // VK_ESCAPE = 0x1B, scan code = 0x01
+        records[0].EventType = KEY_EVENT;
+        records[0].KeyEvent.bKeyDown = 1;
+        records[0].KeyEvent.wRepeatCount = 1;
+        records[0].KeyEvent.UnicodeChar = (char)27;
+        records[0].KeyEvent.wVirtualKeyCode = 0x1B;
+        records[0].KeyEvent.wVirtualScanCode = 0x01;
+        records[0].KeyEvent.dwControlKeyState = 0;
+
+        records[1].EventType = KEY_EVENT;
+        records[1].KeyEvent.bKeyDown = 0;
+        records[1].KeyEvent.wRepeatCount = 1;
+        records[1].KeyEvent.UnicodeChar = (char)27;
+        records[1].KeyEvent.wVirtualKeyCode = 0x1B;
+        records[1].KeyEvent.wVirtualScanCode = 0x01;
+        records[1].KeyEvent.dwControlKeyState = 0;
+
+        uint written;
+        bool result = WriteConsoleInput(hInput, records, (uint)records.Length, out written);
+        int lastErr = GetLastError();
+
+        CloseHandle(hInput);
+        FreeConsole();
+
+        if (result)
+        {
+            return "OK:escape:" + written;
+        }
+        else
+        {
+            return "ERROR:WriteConsoleInput failed:" + lastErr;
+        }
+    }
 }
 '@
+
+# If -Interrupt flag is set, send Escape first to stop current operation
+if ($Interrupt) {
+    $escResult = [WorkerInjector]::SendEscape($WorkerPID)
+    if ($escResult.StartsWith("ERROR")) {
+        Write-Host $escResult
+        exit 1
+    }
+    Write-Host "Sent Escape to interrupt worker"
+    Start-Sleep -Milliseconds $InterruptDelayMs
+}
 
 # Send text
 $textResult = [WorkerInjector]::SendText($WorkerPID, $Message)
@@ -231,7 +318,15 @@ if (-not $NoEnter) {
         exit 1
     }
 
-    Write-Host "OK:injected '$Message' + Enter to PID $WorkerPID"
+    if ($Interrupt) {
+        Write-Host "OK:interrupted + injected '$Message' + Enter to PID $WorkerPID"
+    } else {
+        Write-Host "OK:injected '$Message' + Enter to PID $WorkerPID"
+    }
 } else {
-    Write-Host "OK:injected '$Message' to PID $WorkerPID (no Enter)"
+    if ($Interrupt) {
+        Write-Host "OK:interrupted + injected '$Message' to PID $WorkerPID (no Enter)"
+    } else {
+        Write-Host "OK:injected '$Message' to PID $WorkerPID (no Enter)"
+    }
 }
