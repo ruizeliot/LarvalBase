@@ -250,49 +250,115 @@ foreach ($entry in $usageEntries) {
 $sessionTotalTokens = $sessionRegularTokens + $sessionCachedTokens
 $sessionTotalCost = $sessionRegularCost + $sessionCachedCost
 
-# Analyze per-todo durations
+# Analyze per-todo durations using window-based approach
+# Each window is the time between consecutive TodoWrite calls
+# All todos marked "completed" in a window split that window's cost evenly
 $todoBreakdown = @()
-$todoTimings = @{}  # Track when each todo started
+$processedTodos = @{}  # Track which todos have already been added
 
-foreach ($change in $todoChanges) {
+for ($i = 0; $i -lt $todoChanges.Count; $i++) {
+    $change = $todoChanges[$i]
     $changeTime = [DateTime]::Parse($change.timestamp)
 
-    foreach ($todo in $change.todos) {
-        $content = $todo.content
-        $status = $todo.status
+    # Find all todos marked "completed" in this TodoWrite call that haven't been processed yet
+    $completedTodos = $change.todos | Where-Object {
+        $_.status -eq "completed" -and -not $processedTodos.ContainsKey($_.content)
+    }
 
-        if ($status -eq "in_progress") {
-            # Todo started
-            $todoTimings[$content] = @{
-                startTime = $changeTime
-                content = $content
-            }
+    if ($completedTodos.Count -gt 0) {
+        # Window start is the previous TodoWrite timestamp (or session start if first)
+        if ($i -eq 0) {
+            $windowStart = $startTime
+        } else {
+            $windowStart = [DateTime]::Parse($todoChanges[$i - 1].timestamp)
         }
-        elseif ($status -eq "completed" -and $todoTimings.ContainsKey($content)) {
-            # Todo completed - calculate duration and tokens
-            $startedAt = $todoTimings[$content].startTime
-            $todoDurationMs = ($changeTime - $startedAt).TotalMilliseconds
+        $windowEnd = $changeTime
 
-            # Get tokens and cost from entries within this time window
-            $windowData = Get-TokensInWindow -Entries $usageEntries -StartTime $startedAt -EndTime $changeTime
+        # Calculate duration for this window
+        $windowDurationMs = ($windowEnd - $windowStart).TotalMilliseconds
 
+        # Get tokens and cost for this window
+        $windowData = Get-TokensInWindow -Entries $usageEntries -StartTime $windowStart -EndTime $windowEnd
+
+        # Split cost evenly among all completed todos in this window
+        $splitCount = $completedTodos.Count
+        $perTodoDurationMs = [int]($windowDurationMs / $splitCount)
+        $perTodoTokens = [int]($windowData.tokens / $splitCount)
+        $perTodoRegularTokens = [int]($windowData.regularTokens / $splitCount)
+        $perTodoCachedTokens = [int]($windowData.cachedTokens / $splitCount)
+        $perTodoCost = [Math]::Round($windowData.cost / $splitCount, 4)
+        $perTodoRegularCost = [Math]::Round($windowData.regularCost / $splitCount, 4)
+        $perTodoCachedCost = [Math]::Round($windowData.cachedCost / $splitCount, 4)
+
+        foreach ($todo in $completedTodos) {
             $todoBreakdown += @{
-                content = $content
-                durationMs = [int]$todoDurationMs
-                durationFormatted = "{0:mm}m {0:ss}s" -f [TimeSpan]::FromMilliseconds($todoDurationMs)
-                tokens = $windowData.tokens
-                cost = [Math]::Round($windowData.cost, 4)
-                regularTokens = $windowData.regularTokens
-                regularCost = [Math]::Round($windowData.regularCost, 4)
-                cachedTokens = $windowData.cachedTokens
-                cachedCost = [Math]::Round($windowData.cachedCost, 4)
-                startedAt = $startedAt.ToString("o")
-                completedAt = $changeTime.ToString("o")
+                content = $todo.content
+                durationMs = $perTodoDurationMs
+                durationFormatted = "{0:mm}m {0:ss}s" -f [TimeSpan]::FromMilliseconds($perTodoDurationMs)
+                tokens = $perTodoTokens
+                cost = $perTodoCost
+                regularTokens = $perTodoRegularTokens
+                regularCost = $perTodoRegularCost
+                cachedTokens = $perTodoCachedTokens
+                cachedCost = $perTodoCachedCost
+                startedAt = $windowStart.ToString("o")
+                completedAt = $windowEnd.ToString("o")
             }
-
-            $todoTimings.Remove($content)
+            # Mark this todo as processed so we don't add it again
+            $processedTodos[$todo.content] = $true
         }
     }
+}
+
+# Fetch subscription usage percentage from Anthropic OAuth API
+$subscriptionUsage = $null
+try {
+    $credsPath = Join-Path $env:USERPROFILE ".claude\.credentials.json"
+    if (Test-Path $credsPath) {
+        $creds = Get-Content $credsPath | ConvertFrom-Json
+        if ($creds.claudeAiOauth -and $creds.claudeAiOauth.accessToken) {
+            $token = $creds.claudeAiOauth.accessToken
+            $headers = @{
+                'Authorization' = "Bearer $token"
+                'anthropic-beta' = 'oauth-2025-04-20'
+                'User-Agent' = 'claude-code/2.0.32'
+            }
+            $usageResponse = Invoke-RestMethod -Uri 'https://api.anthropic.com/api/oauth/usage' -Headers $headers -Method Get -ErrorAction SilentlyContinue
+
+            if ($usageResponse) {
+                $fiveHourUtil = if ($usageResponse.five_hour) { $usageResponse.five_hour.utilization } else { $null }
+                $sevenDayUtil = if ($usageResponse.seven_day) { $usageResponse.seven_day.utilization } else { $null }
+                $sevenDayResets = if ($usageResponse.seven_day) { $usageResponse.seven_day.resets_at } else { $null }
+
+                # Calculate subscription value based on API cost and usage percentage
+                $weeklyApiValue = $null
+                $monthlyApiValue = $null
+                $subscriptionType = $creds.claudeAiOauth.subscriptionType
+                $rateLimitTier = $creds.claudeAiOauth.rateLimitTier
+
+                # Determine subscription price
+                $subscriptionPrice = switch -Wildcard ($rateLimitTier) {
+                    "*max_20x*" { 200 }
+                    "*max_5x*" { 100 }
+                    "*pro*" { 20 }
+                    default { 200 }  # Assume Max if unknown
+                }
+
+                $subscriptionUsage = @{
+                    fiveHourUtilization = $fiveHourUtil
+                    sevenDayUtilization = $sevenDayUtil
+                    sevenDayResetsAt = $sevenDayResets
+                    subscriptionType = $subscriptionType
+                    subscriptionPrice = $subscriptionPrice
+                    # Note: For accurate weekly API value, use analyze-weekly.ps1 which sums all sessions
+                }
+
+                Write-Host "Subscription usage: $sevenDayUtil% of 7-day limit" -ForegroundColor Magenta
+            }
+        }
+    }
+} catch {
+    Write-Host "Could not fetch subscription usage: $_" -ForegroundColor Yellow
 }
 
 # Build result
@@ -310,6 +376,7 @@ $result = @{
     completedAt = $endTime.ToString("o")
     todoBreakdown = $todoBreakdown
     transcriptPath = $TranscriptPath
+    subscriptionUsage = $subscriptionUsage
 }
 
 # Output as JSON
