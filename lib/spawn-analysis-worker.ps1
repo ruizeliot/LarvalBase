@@ -23,7 +23,7 @@ $analysisCommand = "/analyze-worker-transcript `"$ProjectPath`" `"$SessionId`" `
 Write-Host "Analysis command: $analysisCommand"
 
 # Spawn conhost with cmd running claude (no window repositioning)
-$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $title && cd /d `"$ProjectPath`" && `"$claudePath`" --dangerously-skip-permissions" -PassThru
+$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $title && cd /d `"$ProjectPath`" && `"$claudePath`" --dangerously-skip-permissions" -WindowStyle Minimized -PassThru
 
 Write-Host "Analysis worker conhost PID: $($proc.Id)"
 
