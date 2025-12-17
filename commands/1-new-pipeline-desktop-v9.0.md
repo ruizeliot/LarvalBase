@@ -131,7 +131,7 @@ Read project context, then open naturally:
 
 ---
 
-## Steps 1-7: Design Phase (Same as v8.0)
+## Steps 1-7: Design Phase
 
 ### Step 1: UNDERSTAND (Text Only)
 After user describes their idea:
@@ -181,7 +181,7 @@ Present final mockup and scope confirmation.
 
 ---
 
-## Steps 8-12: Story Generation (Same as v8.0)
+## Steps 8-12: Story Generation
 
 ### Step 8: Finalize brainstorm-notes.md
 Transform checkpoints into structured document.
@@ -448,7 +448,7 @@ Full user stories document with index.
 
 ## Step 18: Presentation & Approval
 
-**Present complete design showcase (same format as v8.0) plus v9.0 additions:**
+**Present complete design showcase with all sections:**
 
 ```
 ════════════════════════════════════════════════════════════════

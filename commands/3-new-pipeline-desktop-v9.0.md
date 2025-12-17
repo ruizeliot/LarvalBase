@@ -90,13 +90,141 @@ grep -i "onboarding" docs/user-stories.md
 
 ## Step 2: Create Tauri Project Skeleton
 
-Same as v8.0 - create standard Tauri + React + Vite structure.
+### Project Structure
+```
+project/
+├── src/                      # React frontend
+├── src-tauri/                # Tauri backend (Rust)
+│   ├── capabilities/default.json
+│   └── tauri.conf.json
+├── tests/                    # Unit + Integration (Vitest)
+├── e2e/                      # E2E (WebdriverIO)
+└── package.json
+```
+
+### Tauri 2.0 Capabilities (CRITICAL)
+Create `src-tauri/capabilities/default.json` with specific permissions.
+
+### Frontend Must Call Real Tauri Commands
+```typescript
+// ✅ CORRECT - fails if command not implemented
+const newValue = await invoke<number>('increment_counter');
+
+// ❌ WRONG - uses setTimeout mock
+setTimeout(() => setCount(count + 1), 100);
+```
 
 ---
 
 ## Step 3: Tailwind with Strict Design Tokens
 
-Same as v8.0 - configure Tailwind with design tokens from brainstorm-notes.md.
+**CRITICAL: Use design tokens from brainstorm-notes.md. No arbitrary values allowed.**
+
+### Create tailwind.config.js
+
+```javascript
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    // STRICT: Only these colors allowed
+    colors: {
+      transparent: 'transparent',
+      current: 'currentColor',
+      // Primary palette (from brainstorm-notes.md)
+      primary: {
+        50: '#EEF2FF',
+        100: '#E0E7FF',
+        500: '#6366F1',
+        600: '#4F46E5',
+        700: '#4338CA',
+        900: '#312E81',
+      },
+      // Neutral palette
+      neutral: {
+        50: '#FAFAFA',
+        100: '#F5F5F5',
+        200: '#E5E5E5',
+        300: '#D4D4D4',
+        400: '#A3A3A3',
+        500: '#737373',
+        600: '#525252',
+        700: '#404040',
+        800: '#262626',
+        900: '#171717',
+      },
+      // Semantic
+      success: '#22C55E',
+      warning: '#F59E0B',
+      error: '#EF4444',
+      white: '#FFFFFF',
+      black: '#000000',
+    },
+    // STRICT: Only 4px grid spacing
+    spacing: {
+      0: '0',
+      1: '4px',
+      2: '8px',
+      3: '12px',
+      4: '16px',
+      5: '20px',
+      6: '24px',
+      8: '32px',
+      10: '40px',
+      12: '48px',
+      16: '64px',
+    },
+    // STRICT: Limited border radius
+    borderRadius: {
+      none: '0',
+      sm: '4px',
+      DEFAULT: '6px',
+      md: '8px',
+      lg: '12px',
+      full: '9999px',
+    },
+    // Typography
+    fontFamily: {
+      sans: ['Inter', 'system-ui', 'sans-serif'],
+    },
+    fontSize: {
+      xs: ['12px', { lineHeight: '16px' }],
+      sm: ['14px', { lineHeight: '20px' }],
+      base: ['16px', { lineHeight: '24px' }],
+      lg: ['18px', { lineHeight: '28px' }],
+      xl: ['20px', { lineHeight: '28px' }],
+      '2xl': ['24px', { lineHeight: '32px' }],
+    },
+    extend: {},
+  },
+  plugins: [],
+}
+```
+
+### Create ESLint Rule for Arbitrary Values
+
+Add to `eslint.config.js`:
+
+```javascript
+// Add rule to catch arbitrary Tailwind values
+{
+  rules: {
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: 'Literal[value=/\\[#[0-9a-fA-F]+\\]/]',
+        message: 'Arbitrary color values not allowed. Use design tokens.',
+      },
+      {
+        selector: 'Literal[value=/\\[\\d+px\\]/]',
+        message: 'Arbitrary spacing values not allowed. Use design tokens.',
+      },
+    ],
+  },
+}
+```
+
+Add npm script: `"lint:styles": "eslint src --ext .tsx,.ts"`
 
 ---
 
@@ -374,7 +502,116 @@ export async function cancelOperation() {
 
 ## Step 7: Visual Testing Infrastructure
 
-Same as v8.0 - set up wdio-image-comparison-service and axe-core.
+### Install Visual Testing Dependencies
+
+```bash
+npm install -D wdio-image-comparison-service @axe-core/webdriverio
+```
+
+### Update wdio.conf.js for Visual Testing
+
+Add to the config:
+
+```javascript
+import { join } from 'path';
+
+// Add to services array
+services: [
+  ['image-comparison', {
+    baselineFolder: join(__dirname, 'baselines'),
+    formatImageName: '{tag}',
+    screenshotPath: join(__dirname, 'screenshots'),
+    savePerInstance: true,
+    autoSaveBaseline: true,  // Creates baselines on first run
+    blockOutStatusBar: true,
+    blockOutToolBar: true,
+  }],
+],
+```
+
+### Create e2e/baselines/ Directory
+
+```bash
+mkdir -p e2e/baselines
+echo "# Visual Baselines\nGenerated during Phase 4 implementation." > e2e/baselines/README.md
+```
+
+### Create Visual Test Helper
+
+Create `e2e/helpers/visual.js`:
+
+```javascript
+import AxeBuilder from '@axe-core/webdriverio';
+
+/**
+ * Take a full page screenshot and compare to baseline
+ * @param {string} name - Screenshot name (without extension)
+ * @param {number} threshold - Max allowed diff percentage (default 0.1)
+ */
+export async function checkVisualBaseline(name, threshold = 0.1) {
+  await browser.pause(500); // Wait for animations
+  const diff = await browser.checkFullPageScreen(name);
+  expect(diff).toBeLessThan(threshold);
+}
+
+/**
+ * Run accessibility audit and assert no violations
+ */
+export async function checkAccessibility() {
+  const results = await new AxeBuilder({ client: browser }).analyze();
+  const violations = results.violations;
+
+  if (violations.length > 0) {
+    console.error('Accessibility violations:', JSON.stringify(violations, null, 2));
+  }
+
+  expect(violations).toHaveLength(0);
+}
+
+/**
+ * Check that an element has visible hover state
+ */
+export async function checkHoverState(selector) {
+  const element = await $(selector);
+  const defaultBg = await element.getCSSProperty('background-color');
+
+  await element.moveTo();
+  await browser.pause(100);
+
+  const hoverBg = await element.getCSSProperty('background-color');
+  expect(hoverBg.value).not.toBe(defaultBg.value);
+}
+
+/**
+ * Check that an element has visible focus ring
+ */
+export async function checkFocusState(selector) {
+  const element = await $(selector);
+  await element.click();
+  await browser.keys(['Tab']);
+
+  const boxShadow = await element.getCSSProperty('box-shadow');
+  const outline = await element.getCSSProperty('outline');
+
+  // Either box-shadow or outline should be visible
+  const hasFocusIndicator =
+    (boxShadow.value && boxShadow.value !== 'none') ||
+    (outline.value && outline.value !== 'none' && !outline.value.includes('0px'));
+
+  expect(hasFocusIndicator).toBe(true);
+}
+```
+
+### Add npm Scripts
+
+```json
+{
+  "scripts": {
+    "test:visual": "npm run test:e2e -- --spec './e2e/specs/visual.e2e.js'",
+    "test:a11y": "npm run test:e2e -- --spec './e2e/specs/accessibility.e2e.js'"
+  }
+}
+```
 
 ---
 
@@ -642,17 +879,85 @@ interface TutorialState {
 
 ## Steps 10-13: Implement Tests
 
-Same as v8.0 but also include:
-- Interaction helper usage in E2E tests
-- **Edge cases from specs (2-5 per E2E from different categories)**
+Convert specs from `docs/test-specs.md` to actual test files:
+- Unit tests in `tests/unit/`
+- Integration tests in `tests/integration/`
+- E2E tests in `e2e/specs/`
+- Visual tests in `e2e/specs/visual.e2e.js` and `e2e/specs/accessibility.e2e.js`
+
+**v9.0 Requirements:**
+- Use interaction helpers in E2E tests
+- **Include 2-5 edge cases per E2E from different categories**
 - Smoke test skeleton tests (marked as `.skip`)
 - Onboarding tests if epic exists
+
+### Visual Test Implementation
+
+Create `e2e/specs/visual.e2e.js`:
+
+```javascript
+import { checkVisualBaseline, checkHoverState, checkFocusState } from '../helpers/visual.js';
+
+describe('Visual Quality', () => {
+  describe('VIS-E2E-002: Visual Baseline', () => {
+    it('dashboard matches baseline', async () => {
+      // Navigate to dashboard
+      await checkVisualBaseline('dashboard');
+    });
+  });
+
+  describe('VIS-E2E-003: Interactive States', () => {
+    it('primary button has visible hover state', async () => {
+      await checkHoverState('[data-testid="primary-button"]');
+    });
+
+    it('primary button has visible focus ring', async () => {
+      await checkFocusState('[data-testid="primary-button"]');
+    });
+  });
+});
+```
+
+Create `e2e/specs/accessibility.e2e.js`:
+
+```javascript
+import { checkAccessibility } from '../helpers/visual.js';
+
+describe('VIS-E2E-004: Accessibility', () => {
+  it('dashboard passes WCAG AA contrast', async () => {
+    // Navigate to dashboard
+    await checkAccessibility();
+  });
+});
+```
 
 ---
 
 ## Steps 14-18: RED Verification
 
-Same as v8.0 - verify all tests fail.
+### Steps 14-15: Unit + Integration RED
+```bash
+npm run test:unit      # Expected: 100% failing
+npm run test:integration  # Expected: 100% failing
+```
+
+### Step 16: Build
+```bash
+npm run tauri build
+```
+
+### Step 17: Validate Launch
+Launch .exe, verify no crash.
+
+### Step 18: E2E + Visual RED
+```bash
+npm run test:e2e  # Expected: 100% failing (includes visual tests)
+```
+
+**Visual tests will fail because:**
+- No baselines exist yet (created in Phase 4)
+- No styled components exist
+- Accessibility audit will find contrast issues in unstyled UI
 
 ---
 

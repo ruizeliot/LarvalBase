@@ -735,7 +735,7 @@ if [ "$PHASE" = "3" ]; then
   echo "=== GATE 1: E2E Test Integrity + Infrastructure Check (v9.0) ==="
   GATE1_ISSUES=0
 
-  # CHECK 1: No synthetic events (same as v8.0)
+  # CHECK 1: No synthetic events in E2E tests
   echo "[1/4] Checking for synthetic events..."
   SYNTHETIC=$(grep -rn "browser\.execute" e2e/specs/*.js 2>/dev/null | grep -E "DragEvent|MouseEvent|KeyboardEvent|dispatchEvent|DataTransfer" | wc -l)
   if [ "$SYNTHETIC" -gt 0 ]; then
@@ -842,7 +842,7 @@ if [ "$RUN_GATE2" = "true" ]; then
   echo "=== GATE 2: Implementation + Quality Audit Verification (v9.0) ==="
   GATE2_ISSUES=0
 
-  # ===== EXISTING CHECKS (from v8.0) =====
+  # ===== IMPLEMENTATION QUALITY CHECKS =====
 
   # CHECK 1: No empty handlers
   echo "[1/8] Checking for empty handlers..."

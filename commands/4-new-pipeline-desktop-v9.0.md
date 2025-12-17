@@ -181,13 +181,43 @@ New implementation:
 
 ## Steps 5-8: Unit + Integration Layer
 
-Same as v8.0 - implement pure logic, then Tauri backend.
+### Step 5: Implement Pure Logic
+Validation, calculations, transforms - no side effects.
+
+### Step 6: Run Unit Tests Until GREEN
+```bash
+npm run test:unit
+```
+Fix failures, re-run. Instant feedback loop.
+
+### Step 7: Implement Tauri Backend
+Commands, state management, store operations.
+
+### Step 8: Run Integration Tests Until GREEN
+```bash
+npm run test:integration
+```
+Fix failures, re-run. No build needed.
 
 ---
 
 ## Step 9: Implement Frontend with Design Tokens
 
-Same as v8.0 but with extra emphasis:
+React components with:
+- Correct `data-testid` attributes
+- **ONLY design token classes (no arbitrary values)**
+- Proper hover/focus/active states
+
+**Example of correct styling:**
+```tsx
+// ✅ CORRECT - uses design tokens
+<button className="bg-primary-500 hover:bg-primary-600 focus:ring-2 focus:ring-primary-500 rounded-sm px-4 py-2">
+
+// ❌ WRONG - arbitrary values
+<button className="bg-[#6366F1] hover:bg-[#4F46E5] rounded-[5px] px-[15px] py-[9px]">
+```
+
+**v9.0 extra emphasis:**
 
 **Every interactive element MUST have a real handler:**
 
@@ -299,7 +329,17 @@ echo "✅ No forbidden patterns found"
 
 ## Step 13-14: Build and E2E
 
-Same as v8.0 - build app, run E2E tests.
+### Step 13: Build
+```bash
+npm run tauri build
+```
+
+### Step 14: Run E2E Tests Until GREEN
+```bash
+npm run test:e2e
+```
+
+**Fix Loop:** Read error → Fix code → Rebuild → Re-run.
 
 ---
 
@@ -357,7 +397,31 @@ All enabled smoke tests must pass. If they fail, fix the implementation.
 
 ## Steps 16-17: Visual and Accessibility
 
-Same as v8.0 - capture baselines, run accessibility audit.
+### Step 16: Capture/Update Visual Baselines
+
+**First epic:** Creates baseline screenshots.
+**Later epics:** Compares to baselines, updates if intentional changes.
+
+```bash
+npm run test:visual
+```
+
+**If baselines don't exist:** They auto-save on first run (autoSaveBaseline: true).
+
+**If visual diff detected:**
+1. Review the diff in `e2e/screenshots/diff/`
+2. If intentional change: delete old baseline, re-run to save new
+3. If regression: fix the code
+
+### Step 17: Run Accessibility Tests
+```bash
+npm run test:a11y
+```
+
+**Common fixes:**
+- Low contrast: adjust colors in Tailwind config
+- Missing focus ring: add `focus:ring-2 focus:ring-primary-500`
+- Missing labels: add `aria-label` or visible label
 
 ---
 

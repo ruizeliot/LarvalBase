@@ -82,7 +82,24 @@ grep -rn ": any" src --include="*.ts" --include="*.tsx"
 **Fix:** Remove TODOs, console.logs, add proper types.
 
 ### Step 2: Security Audit
-Same as v8.0 - check Tauri permissions, XSS vulnerabilities, secrets.
+
+#### Tauri Permissions
+```bash
+cat src-tauri/capabilities/default.json
+```
+**Expected:** Specific permissions, no wildcards.
+
+#### XSS Vulnerabilities
+```bash
+grep -r "innerHTML\|dangerouslySetInnerHTML" src --include="*.tsx"
+```
+**Expected:** Zero occurrences.
+
+#### Secrets in Code
+```bash
+grep -r "API_KEY\|SECRET\|PASSWORD\|TOKEN" src src-tauri/src
+```
+**Expected:** Zero hardcoded secrets.
 
 ### Step 3: Design Token Compliance
 ```bash
@@ -505,7 +522,9 @@ fi
 
 ### Step 16: Create README.md
 
-Same as v8.0, but add quality audit section:
+Create a complete README with project overview, features, tech stack, and testing commands.
+
+**Include quality audit section:**
 
 ```markdown
 ## Quality Assurance
@@ -552,7 +571,29 @@ EOF
 
 ### Step 18: GitLab Push
 
-Same as v8.0.
+**Get project name:**
+```bash
+PROJECT_NAME=$(jq -r '.name' package.json)
+echo "Project: $PROJECT_NAME"
+```
+
+**Create GitLab repository via API:**
+```bash
+curl --request POST \
+  --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data "{\"name\": \"$PROJECT_NAME\", \"namespace_id\": 120382085, \"visibility\": \"private\"}" \
+  "https://gitlab.com/api/v4/projects"
+```
+
+**Note:** namespace_id 120382085 = anthohunt-ai-assistant-group/pipeline-projects
+
+**Add remote and push:**
+```bash
+git remote add origin "https://oauth2:$GITLAB_TOKEN@gitlab.com/anthohunt-ai-assistant-group/pipeline-projects/$PROJECT_NAME.git"
+git push -u origin master
+echo "✓ Pushed to GitLab: https://gitlab.com/anthohunt-ai-assistant-group/pipeline-projects/$PROJECT_NAME"
+```
 
 ---
 
