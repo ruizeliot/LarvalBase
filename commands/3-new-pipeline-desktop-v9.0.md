@@ -267,7 +267,7 @@ public class WindowMinimizer {
         StringBuilder title = new StringBuilder(512);
         GetWindowText(hWnd, title, 512);
         string titleStr = title.ToString();
-        if (titleStr.Contains("msedgewebview2.exe") || titleStr.Contains("DevTools")) {
+        if (titleStr.Contains("msedgewebview") || titleStr.Contains("EdgeWebView") || titleStr.Contains("DevTools")) {
             ShowWindow(hWnd, SW_MINIMIZE);
             minimizedCount++;
         }
