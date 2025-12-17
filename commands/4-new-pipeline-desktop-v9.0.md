@@ -80,7 +80,7 @@ TodoWrite([
   { content: "1. Read manifest for current epic", status: "in_progress", activeForm: "Reading manifest" },
   { content: "2. Identify tests for this epic (all layers)", status: "pending", activeForm: "Identifying tests" },
   { content: "3. Read existing code patterns", status: "pending", activeForm: "Reading patterns" },
-  { content: "4. Check for bugs from previous epics", status: "pending", activeForm: "Checking for bugs" },
+  { content: "4. Check for bugs from previous epics (skip if Epic 1)", status: "pending", activeForm: "Checking for bugs" },
   { content: "5. Implement pure logic (validation, calculations)", status: "pending", activeForm: "Implementing logic" },
   { content: "6. UNIT: Run tests until GREEN", status: "pending", activeForm: "Running Unit tests" },
   { content: "7. Implement Tauri backend (commands, store)", status: "pending", activeForm: "Implementing backend" },
@@ -138,9 +138,23 @@ grep -r "invoke" src --include="*.tsx" | head -20
 
 ## Step 4: Check for Bugs from Previous Epics (NEW in v9.0)
 
-**CRITICAL: Fix bugs before implementing new features.**
+**⚠️ SKIP THIS STEP IF EPIC 1** - Epic 1 starts from RED state (Phase 3 bootstrap). There are no previous epics to regress.
 
-### Run All Existing Tests
+### Check Current Epic First
+
+```bash
+CURRENT_EPIC=$(cat .pipeline/manifest.json | jq -r '.currentEpic')
+
+if [ "$CURRENT_EPIC" -eq 1 ]; then
+  echo "Epic 1 - Skipping bug check (no previous epics)"
+  # Skip to Step 5
+else
+  echo "Epic $CURRENT_EPIC - Running regression check on previous epics"
+  # Continue with bug check below
+fi
+```
+
+### For Epic 2+ Only: Run All Existing Tests
 
 ```bash
 npm run test:unit
@@ -148,7 +162,7 @@ npm run test:integration
 npm run tauri build && npm run test:e2e
 ```
 
-### If Any Tests Fail
+### If Any Tests Fail (Epic 2+ only)
 
 **DO NOT SKIP THEM. Fix them before implementing the new epic.**
 
