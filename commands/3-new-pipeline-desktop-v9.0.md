@@ -100,9 +100,129 @@ Same as v8.0 - configure Tailwind with design tokens from brainstorm-notes.md.
 
 ---
 
-## Steps 4-5: Test Infrastructure (Unit, Integration, E2E)
+## Step 4: Vitest (Unit + Integration)
 
-Same as v8.0 - set up Vitest and WebdriverIO.
+- vitest.config.ts with jsdom environment
+- tests/setup.ts with Tauri mocks
+- npm scripts: test:unit, test:integration
+
+---
+
+## Step 5: WebdriverIO + tauri-driver (E2E)
+
+### Create e2e/minimize-devtools.ps1
+
+**CRITICAL: DevTools window must be minimized during E2E tests.**
+
+```powershell
+# Minimize DevTools window during E2E tests
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+
+public class WindowMinimizer {
+    [DllImport("user32.dll")]
+    public static extern bool EnumWindows(EnumWindowsProc lpEnumFunc, IntPtr lParam);
+    [DllImport("user32.dll")]
+    public static extern int GetWindowText(IntPtr hWnd, StringBuilder lpString, int nMaxCount);
+    [DllImport("user32.dll")]
+    public static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hWnd);
+    public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+    public const int SW_MINIMIZE = 6;
+    public static int minimizedCount = 0;
+
+    public static bool EnumWindowCallback(IntPtr hWnd, IntPtr lParam) {
+        if (!IsWindowVisible(hWnd)) return true;
+        StringBuilder title = new StringBuilder(512);
+        GetWindowText(hWnd, title, 512);
+        string titleStr = title.ToString();
+        if (titleStr.Contains("msedgewebview2.exe") || titleStr.Contains("DevTools")) {
+            ShowWindow(hWnd, SW_MINIMIZE);
+            minimizedCount++;
+        }
+        return true;
+    }
+
+    public static int MinimizeDevTools() {
+        minimizedCount = 0;
+        EnumWindows(EnumWindowCallback, IntPtr.Zero);
+        return minimizedCount;
+    }
+}
+"@
+[WindowMinimizer]::MinimizeDevTools() | Out-Null
+```
+
+### Create e2e/wdio.conf.js
+
+**CRITICAL: Use this EXACT config with DevTools minimizer:**
+
+```javascript
+import os from 'os';
+import path from 'path';
+import { spawn, execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const appPath = path.join(__dirname, '..', 'src-tauri', 'target', 'release', '[APP_NAME].exe');
+const minimizeScript = path.join(__dirname, 'minimize-devtools.ps1');
+
+let tauriDriver;
+let exit = false;
+let minimizeInterval;
+
+// Minimize DevTools windows (silent mode)
+function minimizeDevTools() {
+  try {
+    execSync(`powershell -ExecutionPolicy Bypass -File "${minimizeScript}"`, { stdio: 'ignore' });
+  } catch (e) { /* ignore */ }
+}
+
+export const config = {
+  host: '127.0.0.1',
+  port: 4444,
+  specs: ['./specs/*.e2e.js'],
+  maxInstances: 1,
+  capabilities: [{
+    maxInstances: 1,
+    'tauri:options': { application: appPath },
+  }],
+  reporters: ['spec'],
+  framework: 'mocha',
+  mochaOpts: { ui: 'bdd', timeout: 60000 },
+  beforeSession: () => {
+    tauriDriver = spawn(
+      path.resolve(os.homedir(), '.cargo', 'bin', 'tauri-driver'),
+      [],  // NO arguments - auto-detects msedgedriver
+      { stdio: [null, process.stdout, process.stderr] }
+    );
+    tauriDriver.on('error', (e) => { console.error(e); process.exit(1); });
+    tauriDriver.on('exit', (c) => { if (!exit) process.exit(1); });
+
+    // Minimize DevTools aggressively - every 50ms for first 10s, then every 2s
+    minimizeDevTools();
+    minimizeInterval = setInterval(minimizeDevTools, 50);
+    setTimeout(() => {
+      if (minimizeInterval) clearInterval(minimizeInterval);
+      minimizeInterval = setInterval(minimizeDevTools, 2000);
+    }, 10000);
+  },
+  afterSession: () => {
+    exit = true;
+    if (minimizeInterval) clearInterval(minimizeInterval);
+    tauriDriver?.kill();
+  },
+};
+```
+
+**Replace [APP_NAME] with app name from tauri.conf.json.**
+
+**DO NOT add:** browserName, webviewOptions, --native-driver flag
+
+- npm script: test:e2e
 
 ---
 
