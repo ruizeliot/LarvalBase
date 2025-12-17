@@ -163,7 +163,7 @@ $dashboardTitle = "Pipeline-Dashboard"
 $ForwardSlashPath = $ProjectPath -replace '\\', '/'
 
 # Use central dashboard from Pipeline-Office/lib/ (not local .pipeline/ copy)
-$dashboardScript = Join-Path $PSScriptRoot "dashboard-v2.cjs"
+$dashboardScript = Join-Path $PSScriptRoot "dashboard-v3.cjs"
 $dashboardScriptForward = $dashboardScript.Replace('\', '/')
 
 # Use conhost for consistency (WriteConsoleInput requires traditional console)
