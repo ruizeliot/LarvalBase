@@ -1,0 +1,43 @@
+{
+  "title": "US-003: User drags node from palette to canvas",
+  "level": 1,
+  "frameDelay": 600,
+  "frames": [
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │  [●]  │      │                │\n    │  [□]  │      │                │\n    │  [△]  │      │                │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "▶ Initial state - node in palette"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │ >[●]< │      │                │\n    │  [□]  │      │                │\n    │  [△]  │      │                │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "🖱️ Hover - node highlighted"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │ ╔[●]╗ │      │                │\n    │  [□]  │      │                │\n    │  [△]  │      │                │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "✊ Click - node grabbed"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │ ┌···┐ │ [●]  │                │\n    │  [□]  │  ↘   │                │\n    │  [△]  │      │                │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "↗️ Dragging - ghost shows origin"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │ ┌···┐ │      │    [●]         │\n    │  [□]  │ · · ·│· · · ↘         │\n    │  [△]  │      │                │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "➡️ Over canvas - approaching drop zone"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │    ┌─────┐     │\n    │ ┌···┐ │      │    │ [●] │     │\n    │  [□]  │      │    └─────┘     │\n    │  [△]  │      │    drop zone   │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "📍 Drop zone highlighted"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │  [●]  │      │      [●]       │\n    │  [□]  │      │       ↓        │\n    │  [△]  │      │                │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "✋ Released - node dropping"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │                │\n    │  [●]  │      │     ╔═══╗      │\n    │  [□]  │      │     ║ ● ║      │\n    │  [△]  │      │     ╚═══╝      │\n    │       │      │                │\n    └───────┘      └────────────────┘",
+      "caption": "✅ Node placed on canvas!"
+    },
+    {
+      "art": "     Palette          Canvas\n    ┌───────┐      ┌────────────────┐\n    │       │      │       ✨       │\n    │  [●]  │      │  ✨ ╔═══╗ ✨   │\n    │  [□]  │      │     ║ ● ║      │\n    │  [△]  │      │  ✨ ╚═══╝ ✨   │\n    │       │      │       ✨       │\n    └───────┘      └────────────────┘",
+      "caption": "🎉 Success! Node added to canvas"
+    }
+  ]
+}
