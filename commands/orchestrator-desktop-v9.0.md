@@ -212,34 +212,59 @@ Store these values. For v9.0 Desktop, STACK is always "desktop".
 
 ### R2b. Check/Run Calibration for SUB Cost
 
-**Check if calibration is needed (cached value older than 7 days or missing):**
+**Check if calibration exists and ask user whether to run fresh:**
 
 ```bash
 CALIB_FILE="C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/calibration.json"
 CALIB_DATE=$(cat "$CALIB_FILE" 2>/dev/null | jq -r '.calibrationDate // empty')
-NEEDS_CALIB="false"
+TOKENS_PER_PERCENT=$(cat "$CALIB_FILE" 2>/dev/null | jq -r '.tokensPerPercent // empty')
+```
 
+**If NO calibration exists → auto-run (no choice):**
+
+```bash
 if [ -z "$CALIB_DATE" ]; then
-  NEEDS_CALIB="true"
-  echo "No calibration found - will run calibration"
-else
-  # Check if older than 7 days
-  CALIB_AGE=$(( ($(date +%s) - $(date -d "$CALIB_DATE" +%s 2>/dev/null || echo 0)) / 86400 ))
-  if [ "$CALIB_AGE" -gt 7 ]; then
-    NEEDS_CALIB="true"
-    echo "Calibration is $CALIB_AGE days old - will run calibration"
-  else
-    echo "Calibration is $CALIB_AGE days old - using cached value"
-  fi
-fi
-
-if [ "$NEEDS_CALIB" = "true" ]; then
-  echo "Running calibration (this takes ~2-3 minutes)..."
+  echo "No calibration found - running calibration (required, takes ~2-3 minutes)..."
   node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/calibration-test.js" 2>&1 | tail -5
+  TOKENS_PER_PERCENT=$(cat "$CALIB_FILE" | jq -r '.tokensPerPercent')
 fi
+```
 
-# Read calibration result and update manifest
-TOKENS_PER_PERCENT=$(cat "$CALIB_FILE" | jq -r '.tokensPerPercent')
+**If calibration EXISTS → ask user whether to run fresh:**
+
+Use `AskUserQuestion` tool:
+
+```
+AskUserQuestion({
+  questions: [{
+    question: "Calibration found from <CALIB_DATE> (<AGE> days ago). Run fresh calibration?",
+    header: "Calibration",
+    options: [
+      { label: "Use cached", description: "Use existing calibration (~" + TOKENS_PER_PERCENT + " tokens/%). Faster startup." },
+      { label: "Run fresh", description: "Run new calibration (~2-3 min). More accurate if API pricing changed." }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+**Based on user response:**
+
+- If user selects "Run fresh":
+  ```bash
+  echo "Running fresh calibration (takes ~2-3 minutes)..."
+  node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/calibration-test.js" 2>&1 | tail -5
+  TOKENS_PER_PERCENT=$(cat "$CALIB_FILE" | jq -r '.tokensPerPercent')
+  ```
+
+- If user selects "Use cached":
+  ```bash
+  echo "Using cached calibration: $TOKENS_PER_PERCENT tokens per 1%"
+  ```
+
+**Update manifest with calibration value:**
+
+```bash
 echo "Calibration: $TOKENS_PER_PERCENT tokens per 1%"
 cat ".pipeline/manifest.json" | jq ".tokensPerPercent = $TOKENS_PER_PERCENT" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 ```
