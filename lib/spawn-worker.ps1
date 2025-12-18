@@ -15,6 +15,9 @@ param(
     [string]$OutputStyle = "",
 
     [Parameter(Mandatory=$false)]
+    [string]$OBSLabel = "",  # v9.0+: OBS recording label (e.g., "Phase2_Technical")
+
+    [Parameter(Mandatory=$false)]
     [string]$Position = "right",  # left, right, or "X,Y,W,H"
 
     [Parameter(Mandatory=$false)]
@@ -422,6 +425,14 @@ if (Test-Path $sessionInfoPath) {
     Write-Host "Session ID captured: $sessionId"
 } else {
     Write-Host "WARNING: session-info.txt not found - hook may not have fired"
+}
+
+# Start OBS recording if label provided (v9.0+)
+if ($OBSLabel -ne "") {
+    Write-Host "Starting OBS recording: $OBSLabel"
+    $obsScript = Join-Path $PSScriptRoot "obs-control.cjs"
+    $obsResult = & node $obsScript start $OBSLabel $ProjectPath 2>&1
+    Write-Host "OBS result: $obsResult"
 }
 
 # Output JSON for easy parsing - workerPid is the CMD process (for reading console buffer)
