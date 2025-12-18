@@ -9,7 +9,10 @@ param(
     [string]$Position = "left",  # left, right, or "X,Y,W,H"
 
     [Parameter(Mandatory=$false)]
-    [int]$WidthPercent = 50
+    [int]$WidthPercent = 50,
+
+    [Parameter(Mandatory=$false)]
+    [switch]$NoOBSRecorder = $false  # Set to skip OBS recorder spawn
 )
 
 # Resolve relative path to absolute path
@@ -205,3 +208,28 @@ $quickEditResult = [DashboardWindowManager]::DisableQuickEdit($childPid)
 Write-Host "Quick Edit disable result: $quickEditResult"
 
 Write-Host "Dashboard spawned"
+
+# ============ OBS RECORDER ============
+# Spawn OBS recorder alongside dashboard (runs in background, no window)
+
+if (-not $NoOBSRecorder) {
+    $obsRecorderScript = Join-Path $PSScriptRoot "obs-recorder.cjs"
+
+    if (Test-Path $obsRecorderScript) {
+        Write-Host ""
+        Write-Host "Spawning OBS recorder..."
+
+        # Run OBS recorder in background (hidden window, no console)
+        $obsProc = Start-Process node -ArgumentList "`"$obsRecorderScript`" `"$ForwardSlashPath`"" -WindowStyle Hidden -PassThru
+
+        Write-Host "OBS Recorder PID: $($obsProc.Id)"
+        Write-Host "OBS Recorder will auto-record phases/epics"
+    } else {
+        Write-Host ""
+        Write-Host "NOTE: OBS recorder not found at $obsRecorderScript"
+        Write-Host "      Skipping OBS auto-recording (install with: npm install obs-websocket-js)"
+    }
+} else {
+    Write-Host ""
+    Write-Host "OBS recorder skipped (-NoOBSRecorder flag set)"
+}
