@@ -15,7 +15,7 @@ param(
     [string]$OutputStyle = "",
 
     [Parameter(Mandatory=$false)]
-    [string]$OBSLabel = "",  # v9.0+: OBS recording label (e.g., "Phase2_Technical")
+    [string]$OBSLabel = ""  # DEPRECATED: Auto-detected from manifest now
 
     [Parameter(Mandatory=$false)]
     [string]$Position = "right",  # left, right, or "X,Y,W,H"
@@ -427,12 +427,46 @@ if (Test-Path $sessionInfoPath) {
     Write-Host "WARNING: session-info.txt not found - hook may not have fired"
 }
 
-# Start OBS recording if label provided (v9.0+)
-if ($OBSLabel -ne "") {
-    Write-Host "Starting OBS recording: $OBSLabel"
+# Auto-detect OBS label from manifest if not provided (v9.0+)
+$manifestPath = Join-Path $ProjectPath ".pipeline\manifest.json"
+$autoOBSLabel = ""
+
+if (Test-Path $manifestPath) {
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    $phase = $manifest.currentPhase
+
+    # Build label based on phase
+    $phaseNames = @{
+        "1" = "Brainstorm"
+        "2" = "Technical"
+        "3" = "Bootstrap"
+        "4" = "Implement"
+        "5" = "Finalize"
+    }
+
+    if ($phase -eq "4" -and $manifest.epics -and $manifest.currentEpic) {
+        # Phase 4: Use epic name
+        $epicIndex = [int]$manifest.currentEpic - 1
+        if ($epicIndex -ge 0 -and $epicIndex -lt $manifest.epics.Count) {
+            $epicName = $manifest.epics[$epicIndex].name -replace '[^a-zA-Z0-9]', ''
+            $autoOBSLabel = "Epic$($manifest.currentEpic)_$epicName"
+        }
+    } elseif ($phaseNames.ContainsKey($phase)) {
+        $autoOBSLabel = "Phase${phase}_$($phaseNames[$phase])"
+    }
+}
+
+# Use provided label or auto-detected one
+$finalOBSLabel = if ($OBSLabel -ne "") { $OBSLabel } else { $autoOBSLabel }
+
+# Start OBS recording
+if ($finalOBSLabel -ne "") {
+    Write-Host "Starting OBS recording: $finalOBSLabel"
     $obsScript = Join-Path $PSScriptRoot "obs-control.cjs"
-    $obsResult = & node $obsScript start $OBSLabel $ProjectPath 2>&1
+    $obsResult = & node $obsScript start $finalOBSLabel $ProjectPath 2>&1
     Write-Host "OBS result: $obsResult"
+} else {
+    Write-Host "OBS: No label available, skipping recording"
 }
 
 # Output JSON for easy parsing - workerPid is the CMD process (for reading console buffer)
