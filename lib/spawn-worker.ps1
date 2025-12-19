@@ -15,7 +15,7 @@ param(
     [string]$OutputStyle = "",
 
     [Parameter(Mandatory=$false)]
-    [string]$OBSLabel = ""  # DEPRECATED: Auto-detected from manifest now
+    [string]$OBSLabel = "",  # DEPRECATED: Auto-detected from manifest now
 
     [Parameter(Mandatory=$false)]
     [string]$Position = "right",  # left, right, or "X,Y,W,H"
