@@ -9,9 +9,6 @@ param(
     [string]$PhaseCommand,
 
     [Parameter(Mandatory=$false)]
-    [string]$BaseRules = "",  # v8.0+: Base rules command to inject BEFORE phase command
-
-    [Parameter(Mandatory=$false)]
     [string]$OutputStyle = "",
 
     [Parameter(Mandatory=$false)]
@@ -25,8 +22,28 @@ param(
 )
 
 $claudePath = "$env:APPDATA\npm\claude.cmd"
+$pipelineOffice = "C:\Users\ahunt\Documents\IMT Claude\Pipeline-Office"
 $title = "Worker-Phase-$PhaseNumber"
 $sessionInfoPath = Join-Path $ProjectPath ".pipeline\session-info.txt"
+
+Write-Host "=========================================="
+Write-Host "  Spawning Worker - Phase $PhaseNumber"
+Write-Host "=========================================="
+
+# Copy phase-specific CLAUDE.md (v10.0 - rules in system prompt)
+$claudeMdSource = "$pipelineOffice\claude-md\phase-$PhaseNumber.md"
+$claudeDir = Join-Path $ProjectPath ".claude"
+$claudeMdDest = Join-Path $claudeDir "CLAUDE.md"
+
+if (Test-Path $claudeMdSource) {
+    if (-not (Test-Path $claudeDir)) {
+        New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null
+    }
+    Copy-Item $claudeMdSource $claudeMdDest -Force
+    Write-Host "Copied phase-$PhaseNumber.md to .claude/CLAUDE.md"
+} else {
+    Write-Host "WARNING: Phase CLAUDE.md not found: $claudeMdSource"
+}
 
 Write-Host "Spawning worker for phase $PhaseNumber"
 Write-Host "Position: $Position, Width: $WidthPercent%"
@@ -389,18 +406,7 @@ if ($OutputStyle -ne "") {
     Start-Sleep -Seconds 2
 }
 
-# If BaseRules specified, inject it before phase command (v8.0+)
-if ($BaseRules -ne "") {
-    Write-Host "Injecting base rules: $BaseRules"
-    $baseResult = [ConsoleInjector]::InjectText($childPid, $BaseRules)
-    Write-Host "Base rules text injection: $baseResult"
-    Start-Sleep -Milliseconds 500
-    $baseEnter = [ConsoleInjector]::InjectEnter($childPid)
-    Write-Host "Base rules enter injection: $baseEnter"
-    # Wait 30 seconds for base rules to load before phase command
-    Write-Host "Waiting 30 seconds for base rules to load..."
-    Start-Sleep -Seconds 30
-}
+# v10.0: BaseRules removed - rules are now in .claude/CLAUDE.md which stays in system prompt
 
 # Now inject the phase command (without Enter)
 $result = [ConsoleInjector]::InjectText($childPid, $PhaseCommand)
