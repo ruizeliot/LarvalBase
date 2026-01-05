@@ -30,19 +30,33 @@ Write-Host "=========================================="
 Write-Host "  Spawning Worker - Phase $PhaseNumber"
 Write-Host "=========================================="
 
-# Copy phase-specific CLAUDE.md (v10.0 - rules in system prompt)
+# Copy phase-specific CLAUDE.md + append worker-base (v10.1 - single source of truth)
 $claudeMdSource = "$pipelineOffice\claude-md\phase-$PhaseNumber.md"
+$workerBaseSource = "$env:USERPROFILE\.claude\commands\worker-base-desktop-v9.0.md"
 $claudeDir = Join-Path $ProjectPath ".claude"
 $claudeMdDest = Join-Path $claudeDir "CLAUDE.md"
 
+if (-not (Test-Path $claudeDir)) {
+    New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null
+}
+
+# Start with phase-specific content
 if (Test-Path $claudeMdSource) {
-    if (-not (Test-Path $claudeDir)) {
-        New-Item -ItemType Directory -Path $claudeDir -Force | Out-Null
-    }
     Copy-Item $claudeMdSource $claudeMdDest -Force
     Write-Host "Copied phase-$PhaseNumber.md to .claude/CLAUDE.md"
 } else {
     Write-Host "WARNING: Phase CLAUDE.md not found: $claudeMdSource"
+    # Create empty file to append to
+    "" | Out-File -FilePath $claudeMdDest -Encoding utf8
+}
+
+# Append worker-base rules (single source of truth)
+if (Test-Path $workerBaseSource) {
+    Add-Content -Path $claudeMdDest -Value "`n`n---`n`n# Worker Base Rules (Appended)`n"
+    Get-Content $workerBaseSource | Add-Content -Path $claudeMdDest
+    Write-Host "Appended worker-base-desktop-v9.0.md to .claude/CLAUDE.md"
+} else {
+    Write-Host "WARNING: Worker base not found: $workerBaseSource"
 }
 
 Write-Host "Spawning worker for phase $PhaseNumber"
@@ -192,26 +206,29 @@ if ($Position -match "^\d+,\d+,\d+,\d+$") {
 
 Write-Host "Window placement: X=$windowX, Y=$windowY, W=$windowWidth, H=$windowHeight"
 
-# Spawn conhost with cmd running claude (no command argument - we'll inject it)
-$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $title && cd /d `"$ProjectPath`" && `"$claudePath`" --dangerously-skip-permissions" -PassThru
+# Spawn conhost with PowerShell running claude
+# Using conhost.exe directly ensures we get a traditional console (not Windows Terminal)
+# PowerShell -NoExit keeps the window open after claude exits
+$psCommand = "Set-Location -Path '$ProjectPath'; `$Host.UI.RawUI.WindowTitle = '$title'; & '$claudePath' --dangerously-skip-permissions"
+$proc = Start-Process conhost.exe -ArgumentList "powershell.exe -NoExit -Command `"$psCommand`"" -PassThru
 
 Write-Host "Worker conhost PID: $($proc.Id)"
 
-# Wait for child cmd.exe process to start
+# Wait for child powershell.exe process to start
 Start-Sleep -Seconds 1
 
-# Find the cmd.exe child process - needed for both window positioning and WriteConsoleInput
+# Find the powershell.exe child process - needed for both window positioning and WriteConsoleInput
 $children = Get-WmiObject Win32_Process | Where-Object { $_.ParentProcessId -eq $proc.Id }
 $childPid = $null
 foreach ($child in $children) {
     Write-Host "  Child process: $($child.Name) (PID: $($child.ProcessId))"
-    if ($child.Name -eq "cmd.exe") {
+    if ($child.Name -eq "powershell.exe") {
         $childPid = $child.ProcessId
     }
 }
 
 if (-not $childPid) {
-    Write-Host "WARNING: Could not find child cmd.exe process"
+    Write-Host "WARNING: Could not find child powershell.exe process"
     $childPid = $proc.Id
 }
 
