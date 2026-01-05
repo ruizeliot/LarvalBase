@@ -334,9 +334,10 @@ Comprehensive audit completed across 4 projects:
 
 **Category:** Worker Behavior
 **Severity:** Critical
+**Status:** ✅ RESOLVED
 
 **Observation:**
-When a test failed in Phase 4 Epic 1, worker immediately corrected the test code instead of first checking if the implementation was wrong.
+When a test failed in Phase 4 Epic 1, worker sometimes corrected the test code instead of first checking if the implementation was wrong.
 
 **Impact:**
 - Bugs get hidden, not fixed
@@ -344,7 +345,17 @@ When a test failed in Phase 4 Epic 1, worker immediately corrected the test code
 - App will fail in real use despite passing tests
 
 **Resolution:**
-_To be discussed_
+Added Section 11 "Test Failure Investigation Order" to worker-base-desktop-v9.0.md:
+
+```
+When test fails, ALWAYS investigate in this order:
+1. FIRST → Check implementation code (is the code wrong?)
+2. ONLY THEN → Check test code (is the test wrong?)
+
+NEVER fix a test without first verifying the implementation is correct.
+```
+
+This rule ensures workers always check implementation before modifying tests.
 
 ---
 
@@ -625,7 +636,7 @@ _To be discussed_
 | 7 | Need Step Mode | Medium | ✅ Resolved |
 | 8 | Worker Skills Review | Medium | ✅ Resolved |
 | 9 | E2E Parallelism Unknown | Medium | ✅ Resolved |
-| 10 | Worker Fixes Test Not Implementation | Critical | Open |
+| 10 | Worker Fixes Test Not Implementation | Critical | ✅ Resolved |
 | 11 | Testing/Fixing Bottleneck | Critical | ✅ Resolved |
 | 12 | Regression in Epic 1 + Redundancy | Medium | ✅ Resolved |
 | 13 | Need Verification Agent | Medium | Open |
@@ -638,11 +649,11 @@ _To be discussed_
 | 20 | Workers Don't Search Online | High | Open |
 | 21 | E2E Tests Black Box | Medium | Open |
 
-**Resolved:** 11
-**Open:** 10
+**Resolved:** 12
+**Open:** 9
 
 **By Severity (Open only):**
-- Critical: 1
+- Critical: 0
 - High: 2
 - Medium: 6
 - Low: 2
