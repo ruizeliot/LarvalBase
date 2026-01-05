@@ -462,6 +462,7 @@ Two changes made:
 
 **Category:** Feature Request
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 Suggestion: Launch independent Haiku 4.5 agent between epics to:
@@ -475,7 +476,20 @@ Suggestion: Launch independent Haiku 4.5 agent between epics to:
 - Issues only caught late (or never)
 
 **Resolution:**
-_To be discussed_
+Added section 8.1d "EPIC VERIFICATION: Anti-Cheat Check" to orchestrator-desktop-v9.0.md (v9.1):
+
+**5 Verification Checks:**
+1. Hardcoded returns - Grep for `return` with `// test/mock/fake` comments
+2. Skipped tests - Grep for `.skip` without `// REASON:` annotation
+3. Mocks in production - Grep for jest/vitest mock functions in `src/`
+4. Empty catch blocks - Grep for `catch {}` that swallow errors
+5. Incomplete markers - Count TODO/FIXME in implementation
+
+**Behavior:**
+- Runs after each epic completes in Phase 4
+- If issues found: respawns worker with fix instructions (max 2 retries)
+- After 3 failures: escalates to user but continues (flagged for review)
+- Results stored in `manifest.epics[].verification`
 
 ---
 
@@ -483,6 +497,7 @@ _To be discussed_
 
 **Category:** Test Infrastructure
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 When something breaks, the system waits through long timeouts before failing. Too much dead time where nothing happens.
@@ -493,7 +508,28 @@ When something breaks, the system waits through long timeouts before failing. To
 - Hard to tell if test is slow or stuck
 
 **Resolution:**
-_To be discussed_
+Implemented tiered timeout system in v9.1:
+
+**1. Updated wdio.conf.dev.template.ts:**
+- `bail: 1` - Stop on first failure (was 0)
+- `connectionRetryTimeout: 15000` - 15s (was 30s)
+- `connectionRetryCount: 1` - 1 retry (was 2)
+- Max connection wait: 30s (was 60s)
+
+**2. Created wdio.conf.smoke.template.ts:**
+- `waitforTimeout: 3000` - 3s (vs 5s dev)
+- `connectionRetryTimeout: 10000` - 10s
+- `mochaOpts.timeout: 5000` - 5s per test (vs 15s dev)
+- `bail: 1` - Fail fast
+
+**Tiered Config System:**
+| Config | Test Timeout | Connection | Use Case |
+|--------|--------------|------------|----------|
+| smoke | 5s | 10s | Quick sanity check |
+| dev | 15s | 15s | Development iteration |
+| release | 30s | 30s | Final validation |
+
+**Time saved:** Up to 60s on connection failures, minutes on broken builds
 
 ---
 
@@ -532,6 +568,7 @@ Separated file ownership:
 
 **Category:** Architecture
 **Severity:** Medium
+**Status:** ✅ RESOLVED (Non-Issue)
 
 **Observation:**
 Standard practice says CLAUDE.md should be under 40k characters. But orchestrator and workers need detailed instructions that exceed this limit.
@@ -542,7 +579,23 @@ Standard practice says CLAUDE.md should be under 40k characters. But orchestrato
 - Need architectural solution
 
 **Resolution:**
-_To be discussed_
+Analyzed and determined current architecture already solves this:
+
+**File Sizes:**
+| File | Size | Type |
+|------|------|------|
+| orchestrator-desktop-v9.0.md | 65KB | Slash command (not CLAUDE.md) |
+| worker-base-desktop-v9.0.md | 20KB | Appended at spawn |
+| phase-N.md | 9-20KB | Copied to CLAUDE.md |
+| **Worker CLAUDE.md total** | ~31KB | Under 40k limit |
+
+**Why it's not an issue:**
+1. Slash commands load on invocation, NOT via CLAUDE.md
+2. Worker CLAUDE.md = phase-specific (11KB) + worker-base (20KB) = ~31KB
+3. 31KB < 40KB guideline
+4. Orchestrator runs as slash command, not CLAUDE.md
+
+**Architecture documented:** spawn-worker.ps1 copies phase-N.md + appends worker-base to keep CLAUDE.md under limit while slash commands can be larger.
 
 ---
 
@@ -550,6 +603,7 @@ _To be discussed_
 
 **Category:** UX Bug
 **Severity:** Low
+**Status:** ✅ RESOLVED (Won't Fix)
 
 **Observation:**
 When worker produces output, TUI scrolls to bottom automatically. Cannot scroll up to read earlier conversation while worker is active.
@@ -560,7 +614,18 @@ When worker produces output, TUI scrolls to bottom automatically. Cannot scroll 
 - Poor monitoring experience
 
 **Resolution:**
-_To be discussed_
+Marked as **Won't Fix** - this is a known Claude Code bug, not pipeline code.
+
+**Research findings:**
+- Tracked across multiple GitHub issues: [#826](https://github.com/anthropics/claude-code/issues/826), [#1422](https://github.com/anthropics/claude-code/issues/1422), [#3648](https://github.com/anthropics/claude-code/issues/3648), [#12668](https://github.com/anthropics/claude-code/issues/12668), [#14692](https://github.com/anthropics/claude-code/issues/14692), [#16040](https://github.com/anthropics/claude-code/issues/16040)
+- Tagged as `area:tui` bug, confirmed as regression
+- No configuration option to disable auto-scroll
+
+**Workarounds:**
+1. Use `/compact` command to reduce conversation length
+2. Restart Claude Code sessions via `/quit` periodically
+3. Use Step Mode (Issue 7) for natural review points
+4. Review transcripts after phase completion
 
 ---
 
@@ -568,6 +633,7 @@ _To be discussed_
 
 **Category:** Epic Design
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 Phase 4 has disproportionate test-to-implementation ratio. Possible cause: Epic 1 "App Core Shell" has most work done in Phase 3 (skeleton), leaving little actual implementation for Phase 4.
@@ -578,7 +644,38 @@ Phase 4 has disproportionate test-to-implementation ratio. Possible cause: Epic 
 - Inefficient resource allocation
 
 **Resolution:**
-_To be discussed_
+Updated Phase 1 command (1-new-pipeline-desktop-v9.0.md) with v9.1 epic scoping rules:
+
+**1. Step 9 - Epic Sizing Rules:**
+- Minimum: 3 stories (smaller = merge)
+- Maximum: 10 stories (larger = split)
+- Target: 5-7 stories
+
+**2. Step 9 - Feature-First Rule:**
+- Every epic must answer: "What can the user DO?"
+- ✅ Good: "User can create/manage files"
+- ❌ Bad: "App window displays correctly"
+
+**3. Step 9 - No "App Shell" Epic:**
+- Infrastructure embedded in first feature epic
+- Shell gets built AS NEEDED by Epic 1's features
+
+**4. Step 10 - Verification Algorithm:**
+```
+For each epic E:
+  1. Can E's tests run with ONLY E's code?
+  2. Does E deliver USER-VISIBLE capability?
+  3. Is E sized correctly (3-10 stories)?
+```
+
+**5. Added Prohibitions (You Must NOT):**
+- Create infrastructure-only epics
+- Create epics < 3 or > 10 stories
+- Define Epic 1 as non-feature
+
+**6. Updated Example Table:**
+- Removed "App Shell" from template
+- Shows feature-first epic pattern
 
 ---
 
@@ -586,6 +683,7 @@ _To be discussed_
 
 **Category:** Monitoring Gap
 **Severity:** Low
+**Status:** ✅ RESOLVED (Won't Fix)
 
 **Observation:**
 Analysis worker was paused, so Epic 1 completion wasn't analyzed. Metrics gap in pipeline history.
@@ -596,7 +694,7 @@ Analysis worker was paused, so Epic 1 completion wasn't analyzed. Metrics gap in
 - Incomplete pipeline metrics
 
 **Resolution:**
-_To be discussed_
+Marked as **Won't Fix** - this was a one-time operational gap during a specific test run, not a systemic issue. The analysis system itself works correctly when enabled. No code changes required.
 
 ---
 
@@ -634,6 +732,7 @@ Added "AUTOMATIC WebSearch Triggers" section to worker-base-desktop-v9.0.md:
 
 **Category:** Test Visibility
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 TUI shows minimal info during E2E runs. Only see things like "expected 1 received 0". Need better visibility or separate interface to understand what's happening.
@@ -644,7 +743,44 @@ TUI shows minimal info during E2E runs. Only see things like "expected 1 receive
 - Monitoring experience is poor
 
 **Resolution:**
-_To be discussed_
+Comprehensive E2E visibility system implemented (v9.1):
+
+**1. Verbose WDIO Config (`wdio.conf.verbose.template.ts`):**
+- `logLevel: 'info'` - shows WebDriver commands
+- `beforeCommand/afterCommand` hooks log every UI interaction
+- Real-time progress written to `.pipeline/e2e-progress.json`
+- Spec reporter with `realtimeReporting: true`
+
+**2. Progress Tracking File (`.pipeline/e2e-progress.json`):**
+- `status`: running/passed/failed
+- `currentSuite`/`currentTest`: what's being tested
+- `currentStep`: current WebDriver action (e.g., "findElement: css=.node")
+- `testsRun`/`testsPassed`/`testsFailed`: counts
+- `recentActions[]`: last 20 WebDriver commands
+- `lastError`: detailed failure info (test, message, selector, expected, actual, screenshot)
+
+**3. Dashboard E2E Section (`dashboard-v3.cjs`):**
+- New `readE2EProgress()` function reads progress file
+- E2E TESTING section appears when tests running
+- Shows: status icon, pass/fail counts, current suite/test
+- Shows current step (what WebDriver is doing)
+- Lists last 3 actions (click, findElement, etc.)
+- On failure: shows test name, error message, selector, expected vs actual, screenshot path
+
+**4. Verbose Helpers (`e2e-helpers.template.ts`):**
+- `waitForElement()` - logs selector, reports found/timeout with timing
+- `clickElement()` - logs target, checks if displayed/enabled
+- `typeInto()` - shows what's being typed where
+- `expectText()` - shows expected vs actual on mismatch
+- `expectVisible()` - detailed visibility assertions
+- `expectCount()` - element count assertions
+- `checkpoint()` - labeled screenshots at key moments
+- `step()` - test step annotations for readability
+
+**Files created/updated:**
+- `Pipeline-Office/lib/templates/wdio.conf.verbose.template.ts` (new)
+- `Pipeline-Office/lib/templates/e2e-helpers.template.ts` (new)
+- `Pipeline-Office/lib/dashboard-v3.cjs` (E2E section + readE2EProgress)
 
 ---
 
@@ -664,31 +800,33 @@ _To be discussed_
 | 10 | Worker Fixes Test Not Implementation | Critical | ✅ Resolved |
 | 11 | Testing/Fixing Bottleneck | Critical | ✅ Resolved |
 | 12 | Regression in Epic 1 + Redundancy | Medium | ✅ Resolved |
-| 13 | Need Verification Agent | Medium | Open |
-| 14 | Test Timeouts Too Long | Medium | Open |
+| 13 | Need Verification Agent | Medium | ✅ Resolved |
+| 14 | Test Timeouts Too Long | Medium | ✅ Resolved |
 | 15 | Manifest File Conflict | High | ✅ Resolved |
-| 16 | CLAUDE.md Size Limit | Medium | Open |
-| 17 | TUI Scrolling Issue | Low | Open |
-| 18 | Test/Implementation Imbalance | Medium | Open |
-| 19 | Epic 1 Not Analyzed | Low | Open |
+| 16 | CLAUDE.md Size Limit | Medium | ✅ Resolved |
+| 17 | TUI Scrolling Issue | Low | ✅ Resolved (Won't Fix) |
+| 18 | Test/Implementation Imbalance | Medium | ✅ Resolved |
+| 19 | Epic 1 Not Analyzed | Low | ✅ Resolved (Won't Fix) |
 | 20 | Workers Don't Search Online | High | ✅ Resolved |
-| 21 | E2E Tests Black Box | Medium | Open |
+| 21 | E2E Tests Black Box | Medium | ✅ Resolved |
 
-**Resolved:** 14
-**Open:** 7
+**Resolved:** 21
+**Open:** 0
 
-**By Severity (Open only):**
-- Critical: 0
-- High: 0
-- Medium: 6
-- Low: 2
+**All issues resolved.**
 
 ---
 
 ## Next Steps
 
-Discuss each issue sequentially to determine:
-1. Root cause
-2. Proposed solution
-3. Implementation priority
-4. Effort estimate
+All 21 issues have been addressed. The pipeline is now at **v9.1**.
+
+**Key v9.1 improvements:**
+1. Epic verification agent between Phase 4 epics (anti-cheat)
+2. Tiered test timeout system (smoke/dev/release)
+3. Feature-first epic scoping rules in Phase 1
+4. Enhanced E2E visibility with custom WDIO hooks
+5. Step mode with iteration branching
+6. Worker web search triggers for autonomous problem-solving
+
+**Recommended next action:** Test pipeline v9.1 on a new project to validate all fixes.
