@@ -501,6 +501,7 @@ _To be discussed_
 
 **Category:** Infrastructure Bug
 **Severity:** High
+**Status:** ✅ RESOLVED
 
 **Observation:**
 Dashboard and worker both edit `.pipeline/manifest.json`. Worker gets "file unexpectedly modified" errors because dashboard is also writing to it.
@@ -511,7 +512,19 @@ Dashboard and worker both edit `.pipeline/manifest.json`. Worker gets "file unex
 - Race conditions between components
 
 **Resolution:**
-_To be discussed_
+Separated file ownership:
+
+| File | Owner | Contents |
+|------|-------|----------|
+| `manifest.json` | Orchestrator | Phase/epic status, gates, PIDs |
+| `dashboard-state.json` | Dashboard | Timer (activeMs), heartbeat count |
+
+**Changes to dashboard-v3.cjs:**
+1. Added `DASHBOARD_STATE_PATH` constant
+2. Modified `saveActiveMs()` to write to `dashboard-state.json`
+3. Updated initialization to read timer from `dashboard-state.json`
+
+**Result:** Dashboard no longer writes to manifest.json every 5 seconds. Only event-driven writes remain (phase complete, metrics) which rarely conflict with orchestrator.
 
 ---
 
@@ -641,7 +654,7 @@ _To be discussed_
 | 12 | Regression in Epic 1 + Redundancy | Medium | ✅ Resolved |
 | 13 | Need Verification Agent | Medium | Open |
 | 14 | Test Timeouts Too Long | Medium | Open |
-| 15 | Manifest File Conflict | High | Open |
+| 15 | Manifest File Conflict | High | ✅ Resolved |
 | 16 | CLAUDE.md Size Limit | Medium | Open |
 | 17 | TUI Scrolling Issue | Low | Open |
 | 18 | Test/Implementation Imbalance | Medium | Open |
@@ -649,12 +662,12 @@ _To be discussed_
 | 20 | Workers Don't Search Online | High | Open |
 | 21 | E2E Tests Black Box | Medium | Open |
 
-**Resolved:** 12
-**Open:** 9
+**Resolved:** 13
+**Open:** 8
 
 **By Severity (Open only):**
 - Critical: 0
-- High: 2
+- High: 1
 - Medium: 6
 - Low: 2
 
