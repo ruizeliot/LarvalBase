@@ -604,6 +604,7 @@ _To be discussed_
 
 **Category:** Worker Behavior
 **Severity:** High
+**Status:** ✅ RESOLVED
 
 **Observation:**
 When workers hit issues they can't solve, they don't use web search to find solutions. They struggle or fail instead of researching.
@@ -614,7 +615,18 @@ When workers hit issues they can't solve, they don't use web search to find solu
 - Missing critical skill for autonomous operation
 
 **Resolution:**
-_To be discussed_
+Added "AUTOMATIC WebSearch Triggers" section to worker-base-desktop-v9.0.md:
+
+| Trigger | Action |
+|---------|--------|
+| Same error after 2 fix attempts | WebSearch exact error |
+| Unfamiliar API/library | WebSearch examples |
+| Build fails with unclear error | WebSearch fix |
+| Test fails unexpectedly | WebSearch framework + assertion |
+| Don't know how to do something | WebSearch tutorial |
+| Considering workaround/mock | WebSearch original solution first |
+
+**Key rule:** "If you've tried the same approach twice without success, STOP and WebSearch."
 
 ---
 
@@ -659,15 +671,15 @@ _To be discussed_
 | 17 | TUI Scrolling Issue | Low | Open |
 | 18 | Test/Implementation Imbalance | Medium | Open |
 | 19 | Epic 1 Not Analyzed | Low | Open |
-| 20 | Workers Don't Search Online | High | Open |
+| 20 | Workers Don't Search Online | High | ✅ Resolved |
 | 21 | E2E Tests Black Box | Medium | Open |
 
-**Resolved:** 13
-**Open:** 8
+**Resolved:** 14
+**Open:** 7
 
 **By Severity (Open only):**
 - Critical: 0
-- High: 1
+- High: 0
 - Medium: 6
 - Low: 2
 
