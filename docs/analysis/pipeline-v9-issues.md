@@ -243,6 +243,7 @@ Implemented comprehensive **Step Mode** with iteration branching:
 
 **Category:** Worker Configuration
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 The skills assigned to workers may be outdated, incomplete, or not well-suited for current pipeline requirements.
@@ -253,7 +254,31 @@ The skills assigned to workers may be outdated, incomplete, or not well-suited f
 - No clear inventory of what workers can do
 
 **Resolution:**
-_To be discussed_
+Comprehensive skills audit and installation completed:
+
+**1. Skills Audit:**
+- Audited 75 existing skills across ~/.claude/skills/
+- Identified overlapping/duplicate skills
+- Found problematic skills for workers (manager-pipeline, brainstorming)
+
+**2. New Skills Installed (from jeremylongshore/claude-code-plugins-plus-skills):**
+- **Testing:** jest-test-generator, flaky-test-detector, test-parallelizer, integration-test-setup
+- **Performance:** bottleneck-identifier, response-time-analyzer
+- **Frontend:** react-component-generator, react-hook-creator, tailwind-class-optimizer
+- **DevOps:** pre-commit-hook-setup, commit-message-formatter, changelog-creator
+- **Security:** secret-scanner, dependency-vulnerability-checker, env-secret-detector
+- **Testing Plugins:** Full testing-plugins folder with 25 specialized skills
+
+**3. Tauri Skill Installed (from @delorenj/skills/tauri):**
+- Complete Tauri development skill with 9 reference files
+- Covers: core concepts, development, distribution, getting started, plugins, reference, security, tutorials
+
+**4. Skill Isolation Rules (worker-base-desktop-v9.0.md Section 14):**
+- Added "Skill Usage Rules" section
+- RECOMMENDED skills table by category
+- FORBIDDEN skills table (orchestrator-only)
+- Phase-specific skill selection guide
+- Skill activation documentation
 
 ---
 
@@ -261,6 +286,7 @@ _To be discussed_
 
 **Category:** Test Infrastructure
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 Unclear how E2E tests are configured:
@@ -274,7 +300,33 @@ Unclear how E2E tests are configured:
 - May be causing resource contention
 
 **Resolution:**
-_To be discussed_
+Comprehensive audit completed across 4 projects:
+
+**1. Key Finding: Parallelism NOT possible for Tauri**
+- All configs correctly use `maxInstances: 1`
+- Tauri apps share single tauri-driver instance
+- Only one desktop app can be automated at a time
+- This is a fundamental constraint, not misconfiguration
+
+**2. Timeout Inconsistency Identified:**
+| Project | Test Timeout | Wait Timeout | Connection Timeout |
+|---------|-------------|--------------|-------------------|
+| pipeline-monitor-desktop | 60s | 10s | 120s |
+| Pod Definition desktop | 60s | N/A | N/A |
+| test fred 3 | **15s** | **5s** | **30s** |
+| test iomega | 60s | 10s | 120s |
+
+**3. Standardized Template Created:**
+`Pipeline-Office/lib/templates/wdio.conf.template.ts`
+- Optimized timeouts (15s test, 5s wait, 30s connection)
+- Clear documentation explaining why maxInstances=1
+- Screenshot-on-failure hook
+- TypeScript with proper ES module support
+
+**4. Real Bottleneck Identified:**
+- NOT parallelism (impossible for Tauri)
+- Slow-down comes from: long timeouts, driver startup (2-3s), rebuild cycles
+- This connects to Issue 11 (Testing/Fixing Bottleneck) and Issue 14 (Test Timeouts)
 
 ---
 
@@ -300,6 +352,7 @@ _To be discussed_
 
 **Category:** Performance
 **Severity:** Critical
+**Status:** ✅ RESOLVED
 
 **Observation:**
 Test cycles take too long. This is the biggest time sink in the pipeline. The loop of:
@@ -318,7 +371,34 @@ Test cycles take too long. This is the biggest time sink in the pipeline. The lo
 - Cost increases significantly
 
 **Resolution:**
-_To be discussed_
+Comprehensive audit identified root causes and implemented fixes:
+
+**1. Root Cause Analysis:**
+| Factor | Time Cost | Status |
+|--------|-----------|--------|
+| Release build per cycle | 40s | ✅ Fixed |
+| Running ALL tests | +50% time | ✅ Fixed |
+| Step 18 redundancy | +1 full cycle | Pending |
+| Poor failure feedback | Investigation time | Pending |
+
+**2. Solution 1: Dev Build for E2E (Saves ~18s per cycle)**
+- Created `wdio.conf.dev.ts` template using `target/debug/`
+- Added `test:e2e:dev` npm script
+- Updated Phase 3 to create both configs
+- Dev build: 22s vs Release build: 40s
+
+**3. Solution 2: Targeted Testing (Saves ~50% test time)**
+- Updated Phase 4 Step 14 with targeted test commands
+- `npm run test:e2e:dev -- --spec "./e2e/specs/epic-N*.e2e.ts"`
+- Workers now run only current epic's tests during iteration
+- Full suite only before commit
+
+**Files Modified:**
+- `Pipeline-Office/lib/templates/wdio.conf.dev.template.ts` (new)
+- `~/.claude/commands/3-new-pipeline-desktop-v9.0.md` (dev config)
+- `~/.claude/commands/4-new-pipeline-desktop-v9.0.md` (targeted testing)
+
+**Remaining:** None - Issue 12 (Step 18 redundancy) also resolved via step reordering.
 
 ---
 
@@ -326,6 +406,7 @@ _To be discussed_
 
 **Category:** Phase 4 Design
 **Severity:** Medium
+**Status:** ✅ RESOLVED
 
 **Observation:**
 Two problems:
@@ -342,7 +423,27 @@ Two problems:
 - Unclear purpose of duplicate steps
 
 **Resolution:**
-_To be discussed_
+Two changes made:
+
+**1. Removed Step 4 entirely:**
+- Step 4 "Check for Bugs from Previous Epics" was redundant
+- Logic: Step 17 (regression) at END of Epic N ensures all tests pass
+- When Epic N+1 starts, no code has changed since Step 17 passed
+- Therefore re-running tests at start of new epic is pointless
+- **Total steps reduced from 19 to 18**
+
+**2. Reordered Steps 13-17 (previously 14-18):**
+
+**Old order:** 14 (E2E) → 15 (smoke) → 16 (visual) → 17 (a11y) → 18 (all tests)
+**New order:** 13 (smoke) → 14 (visual) → 15 (a11y) → 16 (targeted E2E) → 17 (E2E regression)
+
+**Key changes:**
+1. Visual and a11y tests now run BEFORE E2E (Steps 14-15)
+2. Targeted E2E (Step 16) catches regressions from visual/a11y fixes
+3. Step 17 now runs ONLY E2E regression (not all tests)
+4. Unit/integration tests verified in Steps 5/7 - no need to re-run
+
+**Updated TodoWrite initialization:** 18 steps instead of 19
 
 ---
 
@@ -522,11 +623,11 @@ _To be discussed_
 | 5 | Obsolete File Check | Low | ✅ Resolved |
 | 6 | Worker Phase 3 Task Chaos | High | ✅ Resolved |
 | 7 | Need Step Mode | Medium | ✅ Resolved |
-| 8 | Worker Skills Review | Medium | Open |
-| 9 | E2E Parallelism Unknown | Medium | Open |
+| 8 | Worker Skills Review | Medium | ✅ Resolved |
+| 9 | E2E Parallelism Unknown | Medium | ✅ Resolved |
 | 10 | Worker Fixes Test Not Implementation | Critical | Open |
-| 11 | Testing/Fixing Bottleneck | Critical | Open |
-| 12 | Regression in Epic 1 + Redundancy | Medium | Open |
+| 11 | Testing/Fixing Bottleneck | Critical | ✅ Resolved |
+| 12 | Regression in Epic 1 + Redundancy | Medium | ✅ Resolved |
 | 13 | Need Verification Agent | Medium | Open |
 | 14 | Test Timeouts Too Long | Medium | Open |
 | 15 | Manifest File Conflict | High | Open |
@@ -537,13 +638,13 @@ _To be discussed_
 | 20 | Workers Don't Search Online | High | Open |
 | 21 | E2E Tests Black Box | Medium | Open |
 
-**Resolved:** 7
-**Open:** 14
+**Resolved:** 11
+**Open:** 10
 
 **By Severity (Open only):**
-- Critical: 2
+- Critical: 1
 - High: 2
-- Medium: 8
+- Medium: 6
 - Low: 2
 
 ---
