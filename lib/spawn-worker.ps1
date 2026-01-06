@@ -333,8 +333,174 @@ if ($moveResult.StartsWith("OK")) {
 $quickEditResult = [WorkerWindowManager]::DisableQuickEdit($childPid)
 Write-Host "Quick Edit disable result: $quickEditResult"
 
-# Wait for Claude to start up
-Start-Sleep -Seconds 3
+# Wait for Claude to be ready (poll console buffer for prompt)
+Write-Host "Waiting for Claude to be ready..."
+$maxWaitSeconds = 30
+$pollIntervalMs = 500
+$startTime = Get-Date
+$claudeReady = $false
+
+# Add console buffer reader inline (same as read-console-buffer.ps1)
+Add-Type -TypeDefinition @"
+using System;
+using System.Text;
+using System.Runtime.InteropServices;
+
+public class ClaudeReadinessChecker
+{
+    private const uint GENERIC_READ = 0x80000000;
+    private const uint FILE_SHARE_READ = 0x00000001;
+    private const uint FILE_SHARE_WRITE = 0x00000002;
+    private const uint OPEN_EXISTING = 3;
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct COORD
+    {
+        public short X;
+        public short Y;
+        public COORD(short x, short y) { X = x; Y = y; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SMALL_RECT
+    {
+        public short Left;
+        public short Top;
+        public short Right;
+        public short Bottom;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct CONSOLE_SCREEN_BUFFER_INFO
+    {
+        public COORD dwSize;
+        public COORD dwCursorPosition;
+        public ushort wAttributes;
+        public SMALL_RECT srWindow;
+        public COORD dwMaximumWindowSize;
+    }
+
+    [StructLayout(LayoutKind.Explicit, CharSet = CharSet.Unicode)]
+    public struct CHAR_INFO
+    {
+        [FieldOffset(0)] public char UnicodeChar;
+        [FieldOffset(0)] public byte AsciiChar;
+        [FieldOffset(2)] public ushort Attributes;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool FreeConsole();
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool AttachConsole(int dwProcessId);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    private static extern IntPtr CreateFile(string lpFileName, uint dwDesiredAccess,
+        uint dwShareMode, IntPtr lpSecurityAttributes, uint dwCreationDisposition,
+        uint dwFlagsAndAttributes, IntPtr hTemplateFile);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool GetConsoleScreenBufferInfo(IntPtr hConsoleOutput,
+        out CONSOLE_SCREEN_BUFFER_INFO lpConsoleScreenBufferInfo);
+
+    [DllImport("kernel32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+    private static extern bool ReadConsoleOutput(IntPtr hConsoleOutput,
+        [Out] CHAR_INFO[] lpBuffer, COORD dwBufferSize, COORD dwBufferCoord,
+        ref SMALL_RECT lpReadRegion);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool CloseHandle(IntPtr hObject);
+
+    public static string ReadLastLines(int pid, int lineCount)
+    {
+        FreeConsole();
+        if (!AttachConsole(pid)) return null;
+
+        try
+        {
+            IntPtr hOutput = CreateFile("CONOUT$", GENERIC_READ,
+                FILE_SHARE_READ | FILE_SHARE_WRITE, IntPtr.Zero, OPEN_EXISTING, 0, IntPtr.Zero);
+
+            if (hOutput == IntPtr.Zero || hOutput == new IntPtr(-1)) return null;
+
+            try
+            {
+                CONSOLE_SCREEN_BUFFER_INFO csbi;
+                if (!GetConsoleScreenBufferInfo(hOutput, out csbi)) return null;
+
+                int width = csbi.dwSize.X;
+                int cursorY = csbi.dwCursorPosition.Y;
+                int startRow = Math.Max(0, cursorY - lineCount + 1);
+                int rowsToRead = Math.Min(lineCount, cursorY + 1);
+
+                if (rowsToRead <= 0) return "";
+
+                CHAR_INFO[] buffer = new CHAR_INFO[width * rowsToRead];
+                COORD bufferSize = new COORD((short)width, (short)rowsToRead);
+                COORD bufferCoord = new COORD(0, 0);
+                SMALL_RECT readRegion = new SMALL_RECT
+                {
+                    Left = 0, Top = (short)startRow,
+                    Right = (short)(width - 1), Bottom = (short)(startRow + rowsToRead - 1)
+                };
+
+                if (!ReadConsoleOutput(hOutput, buffer, bufferSize, bufferCoord, ref readRegion))
+                    return null;
+
+                StringBuilder result = new StringBuilder();
+                for (int row = 0; row < rowsToRead; row++)
+                {
+                    StringBuilder line = new StringBuilder();
+                    for (int col = 0; col < width; col++)
+                    {
+                        char c = buffer[row * width + col].UnicodeChar;
+                        line.Append(c == '\0' ? ' ' : c);
+                    }
+                    result.AppendLine(line.ToString().TrimEnd());
+                }
+                return result.ToString();
+            }
+            finally { CloseHandle(hOutput); }
+        }
+        finally { FreeConsole(); }
+    }
+
+    public static bool IsClaudeReady(int pid)
+    {
+        string content = ReadLastLines(pid, 10);
+        if (content == null) return false;
+
+        // Claude is ready when we see the ">" prompt at the start of a line
+        // or other indicators that Claude CLI is waiting for input
+        return content.Contains("\n> ") ||
+               content.Contains("\r\n> ") ||
+               content.EndsWith("> ") ||
+               content.Contains("tip:") ||  // Claude shows tips when ready
+               content.Contains("What would you like");  // Claude greeting
+    }
+}
+"@ -ErrorAction SilentlyContinue
+
+while (-not $claudeReady) {
+    $elapsed = ((Get-Date) - $startTime).TotalSeconds
+    if ($elapsed -ge $maxWaitSeconds) {
+        Write-Host "WARNING: Timeout waiting for Claude prompt after ${maxWaitSeconds}s - proceeding anyway"
+        break
+    }
+
+    try {
+        $claudeReady = [ClaudeReadinessChecker]::IsClaudeReady($childPid)
+        if ($claudeReady) {
+            Write-Host "Claude is ready (detected prompt after $([math]::Round($elapsed, 1))s)"
+        } else {
+            Write-Host "  Waiting... ($([math]::Round($elapsed, 1))s)"
+            Start-Sleep -Milliseconds $pollIntervalMs
+        }
+    } catch {
+        Write-Host "  Check failed: $_"
+        Start-Sleep -Milliseconds $pollIntervalMs
+    }
+}
 
 # Now inject the slash command using WriteConsoleInput
 Write-Host "Injecting command: $PhaseCommand"
