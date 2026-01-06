@@ -108,8 +108,33 @@ public class WorkerWindowManager {
     [DllImport("user32.dll")]
     public static extern int GetSystemMetrics(int nIndex);
 
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern IntPtr GetStdHandle(int nStdHandle);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool SetConsoleScreenBufferSize(IntPtr hConsoleOutput, COORD dwSize);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    public static extern bool SetConsoleWindowInfo(IntPtr hConsoleOutput, bool bAbsolute, ref SMALL_RECT lpConsoleWindow);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct COORD {
+        public short X;
+        public short Y;
+        public COORD(short x, short y) { X = x; Y = y; }
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SMALL_RECT {
+        public short Left;
+        public short Top;
+        public short Right;
+        public short Bottom;
+    }
+
     public const int SM_CXSCREEN = 0;
     public const int SM_CYSCREEN = 1;
+    public const int STD_OUTPUT_HANDLE = -11;
 
     const uint GENERIC_READ = 0x80000000;
     const uint GENERIC_WRITE = 0x40000000;
@@ -173,6 +198,48 @@ public class WorkerWindowManager {
         bool result = MoveWindow(hwnd, x, y, w, h, true);
         FreeConsole();
         return result ? "OK:hwnd=" + hwnd : "MoveWindow failed";
+    }
+
+    // Set console buffer and window size in character dimensions
+    // This prevents the window from shrinking after MoveWindow
+    public static string SetConsoleSizeByPid(int pid, short cols, short rows) {
+        FreeConsole();
+        if (!AttachConsole(pid)) {
+            int err = Marshal.GetLastWin32Error();
+            return "AttachConsole failed: " + err;
+        }
+
+        IntPtr hOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+        if (hOutput == IntPtr.Zero || hOutput == new IntPtr(-1)) {
+            FreeConsole();
+            return "GetStdHandle failed";
+        }
+
+        // First shrink window to minimum to allow buffer resize
+        SMALL_RECT minWindow = new SMALL_RECT();
+        minWindow.Left = 0;
+        minWindow.Top = 0;
+        minWindow.Right = 1;
+        minWindow.Bottom = 1;
+        SetConsoleWindowInfo(hOutput, true, ref minWindow);
+
+        // Set buffer size
+        COORD bufferSize = new COORD(cols, rows);
+        if (!SetConsoleScreenBufferSize(hOutput, bufferSize)) {
+            FreeConsole();
+            return "SetConsoleScreenBufferSize failed: " + Marshal.GetLastWin32Error();
+        }
+
+        // Set window size to match buffer (0-indexed, so subtract 1)
+        SMALL_RECT windowSize = new SMALL_RECT();
+        windowSize.Left = 0;
+        windowSize.Top = 0;
+        windowSize.Right = (short)(cols - 1);
+        windowSize.Bottom = (short)(rows - 1);
+        bool result = SetConsoleWindowInfo(hOutput, true, ref windowSize);
+
+        FreeConsole();
+        return result ? "OK:size=" + cols + "x" + rows : "SetConsoleWindowInfo failed: " + Marshal.GetLastWin32Error();
     }
 }
 "@
@@ -239,6 +306,25 @@ Write-Host "MoveWindow result: $moveResult"
 
 if ($moveResult.StartsWith("OK")) {
     Write-Host "Worker window positioned successfully"
+
+    # Calculate character dimensions from pixel size
+    # Account for window decorations: title bar (~30px), borders (~8px total)
+    # Typical console font: ~8px wide, ~16px tall
+    $decorationHeight = 38  # title bar + borders
+    $decorationWidth = 8    # left + right borders
+    $fontWidth = 8
+    $fontHeight = 16
+
+    $cols = [math]::Floor(($windowWidth - $decorationWidth) / $fontWidth)
+    $rows = [math]::Floor(($windowHeight - $decorationHeight) / $fontHeight)
+
+    # Ensure minimum reasonable size
+    if ($cols -lt 80) { $cols = 80 }
+    if ($rows -lt 24) { $rows = 24 }
+
+    Write-Host "Setting console size: ${cols}x${rows} characters"
+    $sizeResult = [WorkerWindowManager]::SetConsoleSizeByPid($childPid, $cols, $rows)
+    Write-Host "SetConsoleSize result: $sizeResult"
 } else {
     Write-Host "WARNING: Could not position worker window"
 }
