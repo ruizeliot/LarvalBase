@@ -112,26 +112,26 @@ if ($Position -match "^\d+,\d+,\d+,\d+$") {
 
 Write-Host "Window placement: X=$windowX, Y=$windowY, W=$windowWidth, H=$windowHeight"
 
-# Spawn conhost with cmd running claude
-$proc = Start-Process conhost.exe -ArgumentList "cmd.exe /k title $title && cd /d `"$ProjectPath`" && `"$claudePath`" --dangerously-skip-permissions" -PassThru
+# Spawn conhost with powershell running claude
+$proc = Start-Process conhost.exe -ArgumentList "powershell.exe -NoExit -Command `"`$Host.UI.RawUI.WindowTitle='$title'; Set-Location -LiteralPath '$ProjectPath'; & '$claudePath' --model haiku --dangerously-skip-permissions`"" -PassThru
 
 Write-Host "Orchestrator conhost PID: $($proc.Id)"
 
-# Wait for child cmd.exe process to start
+# Wait for child powershell.exe process to start
 Start-Sleep -Seconds 1
 
-# Find the cmd.exe child process
+# Find the powershell.exe child process
 $children = Get-WmiObject Win32_Process | Where-Object { $_.ParentProcessId -eq $proc.Id }
 $childPid = $null
 foreach ($child in $children) {
     Write-Host "  Child process: $($child.Name) (PID: $($child.ProcessId))"
-    if ($child.Name -eq "cmd.exe") {
+    if ($child.Name -eq "powershell.exe") {
         $childPid = $child.ProcessId
     }
 }
 
 if (-not $childPid) {
-    Write-Host "WARNING: Could not find child cmd.exe process"
+    Write-Host "WARNING: Could not find child powershell.exe process"
     $childPid = $proc.Id
 }
 
