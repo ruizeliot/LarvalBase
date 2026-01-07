@@ -763,7 +763,8 @@ if (Test-Path $supervisorScript) {
 
     try {
         # Run spawn-supervisor and capture its output
-        $supervisorOutput = & $supervisorScript -ProjectPath $ProjectPath -DeveloperPid $childPid -Position $supervisorPosition 2>&1
+        # Pass conhostPid (for message injection) and session_id (for hook filtering)
+        $supervisorOutput = & $supervisorScript -ProjectPath $ProjectPath -DeveloperPid $childPid -DeveloperConhostPid $proc.Id -WorkerSessionId $sessionId -Position $supervisorPosition 2>&1
         Write-Host $supervisorOutput
 
         # Extract Supervisor PID from output

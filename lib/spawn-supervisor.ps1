@@ -6,6 +6,12 @@ param(
     [int]$DeveloperPid,
 
     [Parameter(Mandatory=$false)]
+    [int]$DeveloperConhostPid = 0,  # Conhost PID for message injection (owns console buffer)
+
+    [Parameter(Mandatory=$false)]
+    [string]$WorkerSessionId = "",  # Worker session ID for hook filtering
+
+    [Parameter(Mandatory=$false)]
     [string]$Position = "0,0,600,400"  # Default fallback; spawn-worker.ps1 calculates dynamically
 )
 
@@ -39,8 +45,11 @@ if (Test-Path $supervisorMdSource) {
 }
 
 # Store supervisor config for hook to use
+# Include workerSessionId so the hook can filter and only process the worker's TodoWrite calls
 $supervisorConfig = @{
     developerPid = $DeveloperPid
+    developerConhostPid = if ($DeveloperConhostPid -gt 0) { $DeveloperConhostPid } else { $DeveloperPid }
+    workerSessionId = $WorkerSessionId
     projectPath = $ProjectPath
     transcriptTracking = "$ProjectPath\.pipeline\todo-tracking.json"
 } | ConvertTo-Json
@@ -48,6 +57,8 @@ $supervisorConfig = @{
 $supervisorConfigPath = Join-Path $ProjectPath ".pipeline\supervisor-config.json"
 $supervisorConfig | Out-File -FilePath $supervisorConfigPath -Encoding utf8
 Write-Host "Wrote supervisor config to: $supervisorConfigPath"
+Write-Host "  Worker session ID: $WorkerSessionId"
+Write-Host "  Developer conhost PID: $(if ($DeveloperConhostPid -gt 0) { $DeveloperConhostPid } else { $DeveloperPid })"
 
 # Parse position
 $parts = $Position -split ","
@@ -262,8 +273,11 @@ public class SupervisorInjector {
 "@
 
 # Inject startup message with FULL instructions (text first, then Enter after delay)
+# Use conhost PID for message injection (owns the console buffer, not the powershell process)
+$targetPidForInjection = if ($DeveloperConhostPid -gt 0) { $DeveloperConhostPid } else { $DeveloperPid }
+
 $startupMsg = @"
-You are a Code Reviewer in a development pipeline. Your teammate (PID $DeveloperPid) will receive feedback from you.
+You are a Code Reviewer in a development pipeline. Your teammate will receive feedback from you.
 
 When you see 'CHECK TODO' messages, review the transcript for these issues:
 - V1: Claiming limitations without searching documentation first
@@ -274,7 +288,7 @@ When you see 'CHECK TODO' messages, review the transcript for these issues:
 - V6: Asking user questions during autonomous work
 
 IF ISSUE FOUND: Send feedback to your teammate by running:
-powershell.exe -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/inject-message.ps1" -TargetPid $DeveloperPid -Message "REVIEW FEEDBACK: [describe the issue]"
+powershell.exe -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/inject-message.ps1" -TargetPid $targetPidForInjection -Message "REVIEW FEEDBACK: [describe the issue]"
 
 IF NO ISSUES: Say 'Looks good' and wait.
 
@@ -290,10 +304,13 @@ $enterResult = [SupervisorInjector]::InjectEnter($childPid)
 Write-Host "Enter injection: $enterResult"
 
 # Store Supervisor PID for hook to use
+# developerConhostPid is the target for message injection (owns the console buffer)
 $supervisorInfo = @{
     conhostPid = $proc.Id
     supervisorPid = $childPid
     developerPid = $DeveloperPid
+    developerConhostPid = if ($DeveloperConhostPid -gt 0) { $DeveloperConhostPid } else { $DeveloperPid }
+    workerSessionId = $WorkerSessionId
 } | ConvertTo-Json
 
 $supervisorInfoPath = Join-Path $ProjectPath ".pipeline\supervisor-info.json"
