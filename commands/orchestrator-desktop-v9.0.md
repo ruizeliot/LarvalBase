@@ -205,10 +205,10 @@ powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claud
 ### R2. Read Config from Manifest
 
 ```bash
-cat ".pipeline/manifest.json" | jq -r '"STACK=\(.stack) MODE=\(.mode) OUTPUT_STYLE=\(.outputStyle) PHASE=\(.currentPhase) EPIC=\(.currentEpic)"'
+cat ".pipeline/manifest.json" | jq -r '"STACK=\(.stack) MODE=\(.mode) OUTPUT_STYLE=\(.outputStyle) WORKER_MODEL=\(.workerModel // "sonnet") PHASE=\(.currentPhase) EPIC=\(.currentEpic)"'
 ```
 
-Store these values. For v9.0 Desktop, STACK is always "desktop".
+Store these values. For v9.0 Desktop, STACK is always "desktop". WORKER_MODEL defaults to "sonnet" if not set.
 
 ### R2b. Check/Run Calibration for SUB Cost
 
@@ -456,7 +456,20 @@ options:
     description: "Plain English"
 ```
 
-Store as `MODE` (new/feature) and `OUTPUT_STYLE`. STACK is always "desktop".
+**Question 3: Worker Model**
+```
+header: "Model"
+question: "Which model for the worker?"
+options:
+  - label: "Sonnet (Recommended)"
+    description: "Default, best balance of cost/quality"
+  - label: "Haiku"
+    description: "Faster, cheaper, less capable"
+  - label: "Opus"
+    description: "Most capable, expensive"
+```
+
+Store as `MODE` (new/feature), `OUTPUT_STYLE`, and `WORKER_MODEL` (sonnet/haiku/opus). STACK is always "desktop".
 
 ```bash
 mkdir -p .claude && echo '{"outputStyle": "<OUTPUT_STYLE>"}' > .claude/settings.local.json
@@ -480,6 +493,7 @@ cat > ".pipeline/manifest.json" << EOF
   "stack": "desktop",
   "mode": "<MODE>",
   "outputStyle": "<OUTPUT_STYLE>",
+  "workerModel": "<WORKER_MODEL>",
   "onboardingLevel": null,
   "status": "initializing",
   "orchestratorPid": <YOUR_PID>,
@@ -561,7 +575,10 @@ if [ -z "$WORKER_ALIVE" ]; then
   ' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 
   # Spawn worker with BaseRules injection (v9.0 feature)
-  MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "1" -PhaseCommand "/1-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>" -BaseRules "/worker-base-desktop-v9.0"
+  WORKER_MODEL=$(cat ".pipeline/manifest.json" | jq -r '.workerModel // empty')
+  MODEL_ARG=""
+  [ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
+  MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "1" -PhaseCommand "/1-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>" $MODEL_ARG
 fi
 ```
 
@@ -1065,7 +1082,10 @@ if [ "$PHASE" = "4" ]; then
     NEXT_EPIC=$(cat ".pipeline/manifest.json" | jq '.currentEpic')
     cat ".pipeline/manifest.json" | jq ".epics[$NEXT_EPIC - 1].status = \"running\"" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 
-    MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "4" -PhaseCommand "/4-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>" -BaseRules "/worker-base-desktop-v9.0"
+    WORKER_MODEL=$(cat ".pipeline/manifest.json" | jq -r '.workerModel // empty')
+    MODEL_ARG=""
+    [ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
+    MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "4" -PhaseCommand "/4-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>" $MODEL_ARG
 
     # Return to step 7
   fi
@@ -1108,7 +1128,10 @@ if [ "$NEXT_PHASE" = "2" ]; then
   cat ".pipeline/manifest.json" | jq '.heartbeat.enabled = true' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 fi
 
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "$NEXT_PHASE" -PhaseCommand "/$NEXT_PHASE-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>" -BaseRules "/worker-base-desktop-v9.0"
+WORKER_MODEL=$(cat ".pipeline/manifest.json" | jq -r '.workerModel // empty')
+MODEL_ARG=""
+[ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "$NEXT_PHASE" -PhaseCommand "/$NEXT_PHASE-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>" $MODEL_ARG
 
 # Return to step 7
 ```

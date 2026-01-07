@@ -18,7 +18,10 @@ param(
     [string]$Position = "right",  # left, right, or "X,Y,W,H"
 
     [Parameter(Mandatory=$false)]
-    [int]$WidthPercent = 50
+    [int]$WidthPercent = 50,
+
+    [Parameter(Mandatory=$false)]
+    [string]$Model = ""  # Claude model: haiku, sonnet, opus (empty = default)
 )
 
 $claudePath = "$env:APPDATA\npm\claude.cmd"
@@ -28,6 +31,11 @@ $sessionInfoPath = Join-Path $ProjectPath ".pipeline\session-info.txt"
 
 Write-Host "=========================================="
 Write-Host "  Spawning Worker - Phase $PhaseNumber"
+if ($Model -ne "") {
+    Write-Host "  Model: $Model"
+} else {
+    Write-Host "  Model: (default)"
+}
 Write-Host "=========================================="
 
 # Copy phase-specific CLAUDE.md + append worker-base (v10.1 - single source of truth)
@@ -277,7 +285,8 @@ Write-Host "Window placement: X=$windowX, Y=$windowY, W=$windowWidth, H=$windowH
 # Spawn conhost with PowerShell running claude
 # Using conhost.exe directly ensures we get a traditional console (not Windows Terminal)
 # PowerShell -NoExit keeps the window open after claude exits
-$psCommand = "Set-Location -Path '$ProjectPath'; `$Host.UI.RawUI.WindowTitle = '$title'; & '$claudePath' --dangerously-skip-permissions"
+$modelArg = if ($Model -ne "") { "--model $Model " } else { "" }
+$psCommand = "Set-Location -Path '$ProjectPath'; `$Host.UI.RawUI.WindowTitle = '$title'; & '$claudePath' ${modelArg}--dangerously-skip-permissions"
 $proc = Start-Process conhost.exe -ArgumentList "powershell.exe -NoExit -Command `"$psCommand`"" -PassThru
 
 Write-Host "Worker conhost PID: $($proc.Id)"
