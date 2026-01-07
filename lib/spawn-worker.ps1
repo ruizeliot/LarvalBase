@@ -247,7 +247,8 @@ public class WorkerWindowManager {
 # Calculate window position
 $screenWidth = [WorkerWindowManager]::GetScreenWidth()
 $screenHeight = [WorkerWindowManager]::GetScreenHeight()
-$windowHeight = $screenHeight - 40  # Leave space for taskbar
+$availableHeight = $screenHeight - 40  # Leave space for taskbar
+$windowHeight = [math]::Floor($availableHeight * 0.75)  # Worker gets 75% of height
 
 if ($Position -match "^\d+,\d+,\d+,\d+$") {
     # Custom position: X,Y,W,H
@@ -744,6 +745,41 @@ if ($finalOBSLabel -ne "") {
     Write-Host "OBS: No label available, skipping recording"
 }
 
+# Spawn Supervisor (Haiku) to watch Developer for rule violations
+Write-Host ""
+Write-Host "=========================================="
+Write-Host "  Spawning Supervisor (Haiku)"
+Write-Host "=========================================="
+
+$supervisorScript = Join-Path $pipelineOffice "lib\spawn-supervisor.ps1"
+$supervisorPid = $null
+
+if (Test-Path $supervisorScript) {
+    # Position Supervisor below Worker (25% of screen height)
+    $supervisorHeight = [math]::Floor($availableHeight * 0.25)
+    $supervisorY = $windowY + $windowHeight
+    $supervisorPosition = "$windowX,$supervisorY,$windowWidth,$supervisorHeight"
+    Write-Host "Supervisor placement: X=$windowX, Y=$supervisorY, W=$windowWidth, H=$supervisorHeight"
+
+    try {
+        # Run spawn-supervisor and capture its output
+        $supervisorOutput = & $supervisorScript -ProjectPath $ProjectPath -DeveloperPid $childPid -Position $supervisorPosition 2>&1
+        Write-Host $supervisorOutput
+
+        # Extract Supervisor PID from output
+        $supervisorInfoPath = Join-Path $ProjectPath ".pipeline\supervisor-info.json"
+        if (Test-Path $supervisorInfoPath) {
+            $supervisorInfo = Get-Content $supervisorInfoPath -Raw | ConvertFrom-Json
+            $supervisorPid = $supervisorInfo.supervisorPid
+            Write-Host "Supervisor spawned with PID: $supervisorPid"
+        }
+    } catch {
+        Write-Host "WARNING: Failed to spawn Supervisor: $_"
+    }
+} else {
+    Write-Host "WARNING: Supervisor script not found: $supervisorScript"
+}
+
 # Output JSON for easy parsing - workerPid is the CMD process (for reading console buffer)
 $result = @{
     conhostPid = $proc.Id
@@ -751,6 +787,7 @@ $result = @{
     phase = $PhaseNumber
     command = $PhaseCommand
     sessionId = $sessionId
+    supervisorPid = $supervisorPid
 } | ConvertTo-Json -Compress
 
 Write-Host "WORKER_INFO:$result"
