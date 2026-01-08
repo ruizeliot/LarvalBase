@@ -204,19 +204,23 @@ Then STOP. Do not call any more tools until a message arrives.
 
 ---
 
-## IMPORTANT: Run Orchestrator in conhost (not Windows Terminal)
+## v10.0: Windows Terminal Mode
 
-The orchestrator **MUST** run in a conhost.exe window, NOT Windows Terminal.
+Pipeline v10.0 uses **Windows Terminal with split panes** - all components in one grouped window.
 
-**Why:** The heartbeat system uses WriteConsoleInput which only works with traditional consoles (conhost.exe). Windows Terminal uses ConPTY which doesn't support AttachConsole.
+**Spawn Scripts (v10.0):**
+| Script | Purpose | When |
+|--------|---------|------|
+| `spawn-dashboard-wt.ps1` | Creates NEW WT window with Dashboard | R5 / Step 4 |
+| `spawn-worker-wt.ps1` | Adds Worker pane to existing WT | R6 / Step 5 (after HEARTBEAT) |
+| `spawn-supervisor-wt.ps1` | Adds Supervisor pane | Called internally by worker script |
 
-**How to start:**
-1. Press `Win+R`
-2. Type: `conhost.exe powershell.exe -NoExit`
-3. Press Enter (a blue-style PowerShell window opens)
-4. Navigate to your project: `cd "C:\path\to\project"`
-5. Run: `claude`
-6. Type: `/pipeline`
+**DO NOT look for `spawn-wt-pipeline.ps1` - it does NOT exist.**
+
+**Spawn Sequence:**
+1. `spawn-dashboard-wt.ps1` → Creates WT window with Dashboard
+2. Wait for HEARTBEAT from dashboard
+3. `spawn-worker-wt.ps1` → Adds Worker + Supervisor panes to existing WT
 
 ---
 
@@ -353,10 +357,20 @@ TodoWrite([
 ### R1. Check/Get Orchestrator PID
 
 ```bash
-powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/get-conhost-pid.ps1"
+# Read orchestrator PID from file (written by spawn-orchestrator.ps1)
+if [ -f ".pipeline/orchestrator-pid.txt" ]; then
+  ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
+  echo "Orchestrator PID from file: $ORCH_PID"
+else
+  # Fallback: get current PowerShell PID
+  ORCH_PID=$(powershell.exe -Command '$PID' | tr -d '\r\n ')
+  echo "Orchestrator PID (fallback): $ORCH_PID"
+  mkdir -p ".pipeline"
+  echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
+fi
 ```
 
-**Returns:** A number like `1632` or `5428`. Save this as YOUR_PID.
+**Returns:** A number like `1632` or `5428`. This is stored in $ORCH_PID.
 
 ### R2. Read Config from Manifest
 
@@ -487,15 +501,19 @@ cp "$SOURCE" "$DEST"
 echo "Dashboard script copied"
 ```
 
-### R6. Spawn Fresh Dashboard
+### R6. Spawn Fresh Dashboard (Windows Terminal)
 
 **IMPORTANT: In AUTO-RESUME-NO-QUESTION mode, the dashboard auto-kills itself when it detects this mode. DO NOT manually kill dashboards - just spawn a fresh one.**
 
+**v10.0 uses Windows Terminal with split panes. This creates a NEW WT window.**
+
 ```bash
-# Spawn fresh dashboard with new orchestrator PID
+# Spawn fresh dashboard in NEW Windows Terminal window
 # The old dashboard will auto-terminate when it detects the new one
-powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard.ps1" -ProjectPath "." -OrchestratorPID "<YOUR_PID>"
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" -ProjectPath "." -OrchestratorPID "<YOUR_PID>"
 ```
+
+**THEN STOP AND WAIT FOR HEARTBEAT.** After dashboard spawns, you MUST wait for the first HEARTBEAT message before spawning workers.
 
 ### R7. Check Worker Alive Using Known PIDs -> Decide Action
 
@@ -593,10 +611,20 @@ fi
 ### 1. Check/Get Orchestrator PID
 
 ```bash
-powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/get-conhost-pid.ps1"
+# Read orchestrator PID from file (written by spawn-orchestrator.ps1)
+if [ -f ".pipeline/orchestrator-pid.txt" ]; then
+  ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
+  echo "Orchestrator PID from file: $ORCH_PID"
+else
+  # Fallback: get current PowerShell PID
+  ORCH_PID=$(powershell.exe -Command '$PID' | tr -d '\r\n ')
+  echo "Orchestrator PID (fallback): $ORCH_PID"
+  mkdir -p ".pipeline"
+  echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
+fi
 ```
 
-Save this as YOUR_PID.
+This is stored in $ORCH_PID.
 
 ### 2. Ask User for Mode and Output Style
 
@@ -701,17 +729,23 @@ cat ".pipeline/manifest.json" | jq ".tokensPerPercent = $TOKENS_PER_PERCENT" > /
 ```
 
 
-### 4. Check Dashboard Alive -> Spawn if Dead
+### 4. Check Dashboard Alive -> Spawn if Dead (Windows Terminal)
+
+**v10.0 uses Windows Terminal. This creates a NEW WT window with Dashboard pane.**
 
 ```bash
 DASHBOARD_RUNNING=$(powershell.exe -Command "Get-Process -Name node -ErrorAction SilentlyContinue | Where-Object { \$_.MainWindowTitle -like '*Dashboard*' }" 2>/dev/null)
 
 if [ -z "$DASHBOARD_RUNNING" ]; then
-  powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard.ps1" -ProjectPath "." -OrchestratorPID "<YOUR_PID>"
+  MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" -ProjectPath "." -OrchestratorPID "<YOUR_PID>"
 fi
 ```
 
-### 5. Check Worker Alive -> Spawn if Dead
+**THEN STOP AND WAIT FOR HEARTBEAT.** After dashboard spawns, you MUST wait for the first HEARTBEAT message before spawning workers (Step 5).
+
+### 5. Check Worker Alive -> Spawn if Dead (Windows Terminal)
+
+**v10.0 adds Worker pane to existing WT window (created in Step 4). Also spawns Supervisor pane internally.**
 
 ```bash
 WORKER_PID=$(cat ".pipeline/manifest.json" | jq -r '.workerPid // empty')
@@ -728,8 +762,8 @@ if [ -z "$WORKER_ALIVE" ]; then
     .phases["1"].startedAt = (now | todate)
   ' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 
-  # Spawn worker (spawn script copies appropriate CLAUDE.md automatically)
-  MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "1" -PhaseCommand "/1-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>"
+  # Spawn worker in existing WT window (spawn-worker-wt.ps1 also spawns supervisor internally)
+  MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" -ProjectPath "." -PhaseNumber "1" -PhaseCommand "/1-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>"
 fi
 ```
 
@@ -1233,7 +1267,8 @@ if [ "$PHASE" = "4" ]; then
     NEXT_EPIC=$(cat ".pipeline/manifest.json" | jq '.currentEpic')
     cat ".pipeline/manifest.json" | jq ".epics[$NEXT_EPIC - 1].status = \"running\"" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 
-    MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "4" -PhaseCommand "/4-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>"
+    # Spawn worker in existing WT window (adds pane to existing Windows Terminal)
+    MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" -ProjectPath "." -PhaseNumber "4" -PhaseCommand "/4-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>"
 
     # Return to step 7
   fi
@@ -1276,7 +1311,8 @@ if [ "$NEXT_PHASE" = "2" ]; then
   cat ".pipeline/manifest.json" | jq '.heartbeat.enabled = true' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 fi
 
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker.ps1" -ProjectPath "." -PhaseNumber "$NEXT_PHASE" -PhaseCommand "/$NEXT_PHASE-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>"
+# Spawn worker in existing WT window (adds pane to existing Windows Terminal)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" -ProjectPath "." -PhaseNumber "$NEXT_PHASE" -PhaseCommand "/$NEXT_PHASE-<MODE>-pipeline-desktop-v9.0" -OutputStyle "<OUTPUT_STYLE>"
 
 # Return to step 7
 ```
@@ -1308,7 +1344,9 @@ cat ".pipeline/manifest.json" | jq '.heartbeat.intervalMs = 120000' > /tmp/manif
 
 ## Important Notes
 
-- **Run in PowerShell (conhost.exe)** - NOT Windows Terminal
+- **v10.0 uses Windows Terminal** - Dashboard, Worker, and Supervisor all run in split panes within one WT window
+- **Spawn sequence is critical**: Dashboard first (creates WT) → wait for HEARTBEAT → Worker + Supervisor (add panes)
+- **DO NOT look for spawn-wt-pipeline.ps1** - it does NOT exist. Use spawn-dashboard-wt.ps1 and spawn-worker-wt.ps1
 - **NEVER use Edit/Write tools** - use bash/jq instead
 - **NEVER use bash sleep** - wait for HEARTBEAT messages instead
 - **Every action has a smart check** - never blindly spawn/kill
