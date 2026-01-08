@@ -6,7 +6,10 @@ param(
     [int]$DeveloperPid,
 
     [Parameter(Mandatory=$false)]
-    [string]$WorkerSessionId = ""  # Worker session ID for hook filtering
+    [string]$WorkerSessionId = "",  # Worker session ID for hook filtering
+
+    [Parameter(Mandatory=$false)]
+    [double]$SplitSize = 0.35  # Pane split ratio (0.0-1.0), default 35%
 )
 
 # Resolve relative path to absolute path
@@ -89,7 +92,7 @@ $wtArgs = @(
     "--window", $wtWindowName,
     "split-pane",
     "-H",
-    "-s", "0.35",
+    "-s", "$SplitSize",
     "--title", $title,
     "powershell.exe", "-NoExit", "-EncodedCommand", $encodedCommand
 )

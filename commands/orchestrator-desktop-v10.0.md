@@ -35,17 +35,29 @@ fi
 
 ## Spawn Scripts
 
+**v10.2 (Split-Pane Layout):**
 | Script | Purpose | When to Call |
 |--------|---------|--------------|
-| `spawn-dashboard-wt.ps1` | Creates NEW WT window with Dashboard | Section R5 / Step 4 |
-| `spawn-worker-wt.ps1` | Adds Worker pane to EXISTING WT | Section R6 / Step 5 (after HEARTBEAT) |
-| `spawn-supervisor-wt.ps1` | Adds Supervisor pane | Called INTERNALLY by spawn-worker-wt.ps1 |
+| `spawn-wt-tabs.ps1` | Creates WT window with split-pane layout | Section R5 / Step 4+5 combined |
 
-**Full paths:**
+**Layout:**
 ```
-C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1
-C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1
-C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-supervisor-wt.ps1
++---------------------------+
+|           |    Worker     |
+| Dashboard +---------------+
+|           |  Supervisor   |
++---------------------------+
+```
+
+**Pane Size Parameters:**
+| Parameter | Script | Default | Description |
+|-----------|--------|---------|-------------|
+| `-WorkerSplit` | spawn-wt-tabs.ps1 | 0.5 | Worker pane width ratio (0.0-1.0) |
+| `-SupervisorSplit` | spawn-wt-tabs.ps1 | 0.5 | Supervisor pane height ratio |
+
+**Full path:**
+```
+C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1
 ```
 
 ---
@@ -254,34 +266,36 @@ if [ "$CURRENT_STYLE" != "$MANIFEST_STYLE" ]; then
 fi
 ```
 
-### R5. Spawn Dashboard
+### R5+R6. Spawn Split-Pane Layout (Resume)
 
-```bash
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" -ProjectPath "." -OrchestratorPID "$ORCH_PID"
-```
-
-After running, output: "Dashboard spawned in Windows Terminal. Waiting for HEARTBEAT..."
-
-**STOP HERE and wait for HEARTBEAT message from dashboard.**
-
-### R6. Spawn Worker (After HEARTBEAT)
-
-**When you receive HEARTBEAT, run this command:**
+**v10.2 spawns all components at once:**
 
 ```bash
 PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
 MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
+OUTPUT_STYLE=$(cat ".pipeline/manifest.json" | jq -r '.outputStyle')
 WORKER_MODEL=$(cat ".pipeline/manifest.json" | jq -r '.workerModel // empty')
+WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
+SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
+
 MODEL_ARG=""
 [ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
 
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" -ProjectPath "." -PhaseNumber "$PHASE" -PhaseCommand "/$PHASE-$MODE-pipeline-desktop-v9.0" $MODEL_ARG
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
+  -ProjectPath "." \
+  -OrchestratorPID "$ORCH_PID" \
+  -PhaseNumber "$PHASE" \
+  -PhaseCommand "/$PHASE-$MODE-pipeline-desktop-v9.0" \
+  -OutputStyle "$OUTPUT_STYLE" \
+  -WorkerSplit $WORKER_SPLIT \
+  -SupervisorSplit $SUPERVISOR_SPLIT \
+  $MODEL_ARG
 ```
 
-The spawn-worker-wt.ps1 script handles everything:
-- Adds Worker pane to existing WT window
-- Internally spawns Supervisor pane
-- Updates manifest with PIDs
+The spawn-wt-tabs.ps1 script creates a single window with split panes:
+- Left: Dashboard
+- Right top: Worker
+- Right bottom: Supervisor
 
 ### R7. Check Worker Status
 
@@ -329,13 +343,17 @@ cp "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/dashboard-v3.cjs" ".
 
 cat > ".pipeline/manifest.json" << EOF
 {
-  "version": "10.0",
+  "version": "10.0.1",
   "project": { "name": "<PROJECT_NAME>", "path": "<PROJECT_PATH>" },
   "stack": "desktop",
   "mode": "<MODE>",
   "outputStyle": "<OUTPUT_STYLE>",
   "workerModel": "<WORKER_MODEL>",
   "wtMode": true,
+  "paneSizes": {
+    "workerSplit": 0.5,
+    "supervisorSplit": 0.35
+  },
   "status": "initializing",
   "orchestratorPid": $ORCH_PID,
   "dashboardPid": null,
@@ -370,7 +388,9 @@ TOKENS_PER_PERCENT=$(cat "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/li
 cat ".pipeline/manifest.json" | jq ".tokensPerPercent = $TOKENS_PER_PERCENT" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 ```
 
-### 4. Spawn Dashboard
+### 4+5. Spawn Split-Pane Layout (Dashboard + Worker + Supervisor)
+
+**v10.2 uses a single script that creates all panes at once:**
 
 ```bash
 cat ".pipeline/manifest.json" | jq '
@@ -380,36 +400,32 @@ cat ".pipeline/manifest.json" | jq '
   .phases["1"].startedAt = (now | todate)
 ' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" \
-  -ProjectPath "." \
-  -OrchestratorPID "$ORCH_PID"
-```
-
-**Output status and STOP - wait for HEARTBEAT message from dashboard**
-
-```
-Dashboard spawned in Windows Terminal. Waiting for HEARTBEAT to spawn Worker...
-```
-
-### 5. Spawn Worker+Supervisor (After First HEARTBEAT)
-
-**This section runs AFTER receiving first HEARTBEAT from dashboard**
-
-```bash
 MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
 OUTPUT_STYLE=$(cat ".pipeline/manifest.json" | jq -r '.outputStyle')
 WORKER_MODEL=$(cat ".pipeline/manifest.json" | jq -r '.workerModel // empty')
+WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
+SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
 
 MODEL_ARG=""
 [ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
 
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" \
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
   -ProjectPath "." \
+  -OrchestratorPID "$ORCH_PID" \
   -PhaseNumber "1" \
   -PhaseCommand "/1-$MODE-pipeline-desktop-v9.0" \
   -OutputStyle "$OUTPUT_STYLE" \
+  -WorkerSplit $WORKER_SPLIT \
+  -SupervisorSplit $SUPERVISOR_SPLIT \
   $MODEL_ARG
 ```
+
+This creates a single window with split panes:
+- **Left**: Dashboard
+- **Right top**: Worker
+- **Right bottom**: Supervisor
+
+**No need to wait for HEARTBEAT** - all components spawn together.
 
 ### 6. Phase 1: Wait for User Completion
 
@@ -539,6 +555,8 @@ NEXT_PHASE=$((CURRENT_PHASE + 1))
 MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
 OUTPUT_STYLE=$(cat ".pipeline/manifest.json" | jq -r '.outputStyle')
 WORKER_MODEL=$(cat ".pipeline/manifest.json" | jq -r '.workerModel // empty')
+WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
+SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
 
 cat ".pipeline/manifest.json" | jq "
   .currentPhase = \"$NEXT_PHASE\" |
@@ -553,11 +571,14 @@ fi
 MODEL_ARG=""
 [ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
 
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" \
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
   -ProjectPath "." \
+  -OrchestratorPID "$ORCH_PID" \
   -PhaseNumber "$NEXT_PHASE" \
   -PhaseCommand "/$NEXT_PHASE-$MODE-pipeline-desktop-v9.0" \
   -OutputStyle "$OUTPUT_STYLE" \
+  -WorkerSplit $WORKER_SPLIT \
+  -SupervisorSplit $SUPERVISOR_SPLIT \
   $MODEL_ARG
 ```
 

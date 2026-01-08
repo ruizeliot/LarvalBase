@@ -12,7 +12,13 @@ param(
     [string]$OutputStyle = "",
 
     [Parameter(Mandatory=$false)]
-    [string]$Model = ""  # Claude model: haiku, sonnet, opus (empty = default)
+    [string]$Model = "",  # Claude model: haiku, sonnet, opus (empty = default)
+
+    [Parameter(Mandatory=$false)]
+    [double]$SplitSize = 0.5,  # Worker pane split ratio (0.0-1.0), default 50%
+
+    [Parameter(Mandatory=$false)]
+    [double]$SupervisorSplitSize = 0.35  # Supervisor pane split ratio (0.0-1.0), default 35%
 )
 
 # Resolve relative path to absolute path
@@ -106,7 +112,7 @@ $wtArgs = @(
     "--window", $wtWindowName,
     "split-pane",
     "-V",
-    "-s", "0.5",
+    "-s", "$SplitSize",
     "--title", $title,
     "powershell.exe", "-NoExit", "-EncodedCommand", $encodedCommand
 )
@@ -546,7 +552,7 @@ $supervisorPid = $null
 if (Test-Path $supervisorScript) {
     try {
         # Run spawn-supervisor-wt and capture its output
-        $supervisorOutput = & $supervisorScript -ProjectPath $ProjectPath -DeveloperPid $workerPid -WorkerSessionId $sessionId 2>&1
+        $supervisorOutput = & $supervisorScript -ProjectPath $ProjectPath -DeveloperPid $workerPid -WorkerSessionId $sessionId -SplitSize $SupervisorSplitSize 2>&1
         Write-Host $supervisorOutput
 
         # Extract Supervisor PID from output
