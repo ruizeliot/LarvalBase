@@ -497,41 +497,53 @@ echo "Dashboard script copied"
 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard.ps1" -ProjectPath "." -OrchestratorPID "<YOUR_PID>"
 ```
 
-### R7. Find Worker by Console Content -> Decide Action
+### R7. Check Worker Alive Using Known PIDs -> Decide Action
 
-**On resume, find workers by reading console content instead of trusting manifest PID.**
+**On resume, check if the known worker process is still alive. Do NOT scan random processes.**
 
 ```bash
 PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
 EPIC=$(cat ".pipeline/manifest.json" | jq -r '.currentEpic')
+CONHOST_PID=$(cat ".pipeline/manifest.json" | jq -r '.workerConhostPid // empty')
+WORKER_PID=$(cat ".pipeline/manifest.json" | jq -r '.workerPid // empty')
 
-# Find worker by reading console buffer content of all cmd.exe processes
-echo "Searching for active worker..."
-CMD_PIDS=$(powershell.exe -Command "Get-Process -Name cmd -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id" 2>/dev/null | tr -d '\r')
-
+echo "Checking worker status..."
 FOUND_WORKER_PID=""
-for PID in $CMD_PIDS; do
-  CONTENT=$(powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/read-console-buffer.ps1" -ProcessId $PID -Lines 50 2>/dev/null)
+WORKER_ALIVE=""
 
-  # Worker indicators: TodoWrite, task status, phase/epic mentions
-  if echo "$CONTENT" | grep -qE "(TodoWrite|in_progress|pending.*completed|Phase [0-9]|Epic [0-9]|Running|Waiting)"; then
-    FOUND_WORKER_PID=$PID
-    echo "Found active worker at PID $PID"
-    break
+# Method 1: Check if known worker conhost is alive
+if [ -n "$CONHOST_PID" ]; then
+  CONHOST_ALIVE=$(powershell.exe -Command "Get-Process -Id $CONHOST_PID -ErrorAction SilentlyContinue" 2>/dev/null)
+  if [ -n "$CONHOST_ALIVE" ]; then
+    echo "Worker conhost alive (PID $CONHOST_PID)"
+    # Find the powershell/cmd child of this conhost
+    CHILD_PID=$(powershell.exe -Command "(Get-WmiObject Win32_Process | Where-Object { \$_.ParentProcessId -eq $CONHOST_PID }).ProcessId" 2>/dev/null | head -1 | tr -d '\r')
+    if [ -n "$CHILD_PID" ]; then
+      FOUND_WORKER_PID=$CHILD_PID
+      WORKER_ALIVE="true"
+      echo "Found worker process: PID $FOUND_WORKER_PID (child of conhost $CONHOST_PID)"
+    fi
+  else
+    echo "Worker conhost dead (PID $CONHOST_PID was not found)"
   fi
-done
-
-# Update manifest if worker found with different PID
-if [ -n "$FOUND_WORKER_PID" ]; then
-  MANIFEST_PID=$(cat ".pipeline/manifest.json" | jq -r '.workerPid // empty')
-  if [ "$FOUND_WORKER_PID" != "$MANIFEST_PID" ]; then
-    echo "Updating manifest with correct worker PID: $MANIFEST_PID -> $FOUND_WORKER_PID"
-    cat ".pipeline/manifest.json" | jq ".workerPid = $FOUND_WORKER_PID" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
+# Method 2: Fallback - check if known workerPid is alive
+elif [ -n "$WORKER_PID" ]; then
+  WORKER_CHECK=$(powershell.exe -Command "Get-Process -Id $WORKER_PID -ErrorAction SilentlyContinue" 2>/dev/null)
+  if [ -n "$WORKER_CHECK" ]; then
+    FOUND_WORKER_PID=$WORKER_PID
+    WORKER_ALIVE="true"
+    echo "Worker alive (PID $WORKER_PID)"
+  else
+    echo "Worker dead (PID $WORKER_PID was not found)"
   fi
-  WORKER_ALIVE="true"
 else
-  echo "No active worker found"
-  WORKER_ALIVE=""
+  echo "No worker PID in manifest - worker never spawned or was cleaned up"
+fi
+
+# Update manifest if worker PID changed
+if [ -n "$FOUND_WORKER_PID" ] && [ "$FOUND_WORKER_PID" != "$WORKER_PID" ]; then
+  echo "Updating manifest workerPid: $WORKER_PID -> $FOUND_WORKER_PID"
+  cat ".pipeline/manifest.json" | jq ".workerPid = $FOUND_WORKER_PID" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 fi
 
 # Decide action based on phase status and worker
