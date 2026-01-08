@@ -213,12 +213,20 @@ TodoWrite([
 ### R1. Get Orchestrator PID
 
 ```bash
-# Try to get Windows Terminal PID (for WT mode)
-WT_PID=$(powershell.exe -Command "Get-Process -Name 'WindowsTerminal' -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty Id" 2>/dev/null)
-echo "Orchestrator PID: $WT_PID"
+# Read orchestrator PID from file (written by spawn-orchestrator.ps1)
+if [ -f ".pipeline/orchestrator-pid.txt" ]; then
+  ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
+  echo "Orchestrator PID from file: $ORCH_PID"
+else
+  # Fallback: get current PowerShell PID
+  ORCH_PID=$(powershell.exe -Command '$PID' | tr -d '\r\n ')
+  echo "Orchestrator PID (fallback): $ORCH_PID"
+  # Save it for future use
+  echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
+fi
 ```
 
-Use this PID for YOUR_PID below.
+Use this PID ($ORCH_PID) for YOUR_PID below.
 
 ### R2. Read Config from Manifest
 
@@ -235,7 +243,7 @@ cat ".pipeline/manifest.json" | jq -r '"STACK=\(.stack) MODE=\(.mode) OUTPUT_STY
 ### R3. Update Manifest PID
 
 ```bash
-cat ".pipeline/manifest.json" | jq ".orchestratorPid = $WT_PID | .status = \"running\" | .version = \"10.0\" | .wtMode = true" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
+cat ".pipeline/manifest.json" | jq ".orchestratorPid = $ORCH_PID | .status = \"running\" | .version = \"10.0\" | .wtMode = true" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 ```
 
 ### R4. Check Output Style
@@ -253,7 +261,7 @@ fi
 **DO NOT look for any other scripts. DO NOT improvise. Run this EXACT command:**
 
 ```bash
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" -ProjectPath "." -OrchestratorPID "$WT_PID"
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" -ProjectPath "." -OrchestratorPID "$ORCH_PID"
 ```
 
 After running, output: "Dashboard spawned in Windows Terminal. Waiting for HEARTBEAT..."
@@ -302,7 +310,17 @@ fi
 ### 1. Check/Get Orchestrator PID
 
 ```bash
-powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/get-conhost-pid.ps1"
+# Read orchestrator PID from file (written by spawn-orchestrator.ps1)
+if [ -f ".pipeline/orchestrator-pid.txt" ]; then
+  ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
+  echo "Orchestrator PID from file: $ORCH_PID"
+else
+  # Fallback: get current PowerShell PID
+  ORCH_PID=$(powershell.exe -Command '$PID' | tr -d '\r\n ')
+  echo "Orchestrator PID (fallback): $ORCH_PID"
+  mkdir -p ".pipeline"
+  echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
+fi
 ```
 
 ### 2. Ask User for Mode and Output Style
@@ -325,7 +343,7 @@ cat > ".pipeline/manifest.json" << EOF
   "workerModel": "<WORKER_MODEL>",
   "wtMode": true,
   "status": "initializing",
-  "orchestratorPid": <YOUR_PID>,
+  "orchestratorPid": $ORCH_PID,
   "dashboardPid": null,
   "workerPid": null,
   "supervisorPid": null,
@@ -372,7 +390,7 @@ cat ".pipeline/manifest.json" | jq '
 
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" \
   -ProjectPath "." \
-  -OrchestratorPID "<YOUR_PID>"
+  -OrchestratorPID "$ORCH_PID"
 ```
 
 **Output status and STOP - wait for HEARTBEAT message from dashboard**
