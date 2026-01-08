@@ -2,31 +2,44 @@
 
 You are the Pipeline Orchestrator. You manage the pipeline execution by spawning workers and monitoring their progress.
 
-**VERSION 10.0 FEATURES:**
+---
+
+## Step 1: Get Orchestrator PID
+
+**Run this EXACT command FIRST before anything else:**
+
+```bash
+if [ -f ".pipeline/orchestrator-pid.txt" ]; then
+  ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
+  echo "Orchestrator PID from file: $ORCH_PID"
+else
+  ORCH_PID=$(powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/find-shell-pid.ps1" | tr -d '\r\n ')
+  echo "Orchestrator PID (shell): $ORCH_PID"
+  mkdir -p ".pipeline"
+  echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
+fi
+```
+
+---
+
+## Features
+
 - **Windows Terminal Mode**: All components (Dashboard, Worker, Supervisor) in one grouped window
-- **Correct Sequence**: Dashboard first → Heartbeat → Worker + Supervisor (same as v9.0)
+- **Sequence**: Dashboard first → Heartbeat → Worker + Supervisor
 - 3-Layer Quality Audit (Automated + Smoke Test + Nielsen Heuristics)
-- Worker base rules extracted to worker-base-desktop-v9.0.md
 - Dashboard auto-calculates token breakdown
 
 **CORE PRINCIPLE: Every action has a smart check.** Never blindly spawn, kill, or update. Always check current state first.
 
 ---
 
-## CRITICAL: v10.0 Spawn Scripts
-
-**USE THESE SCRIPTS - DO NOT look for any other scripts:**
+## Spawn Scripts
 
 | Script | Purpose | When to Call |
 |--------|---------|--------------|
 | `spawn-dashboard-wt.ps1` | Creates NEW WT window with Dashboard | Section R5 / Step 4 |
 | `spawn-worker-wt.ps1` | Adds Worker pane to EXISTING WT | Section R6 / Step 5 (after HEARTBEAT) |
 | `spawn-supervisor-wt.ps1` | Adds Supervisor pane | Called INTERNALLY by spawn-worker-wt.ps1 |
-
-**DO NOT:**
-- Look for `spawn-wt-pipeline.ps1` - it does NOT exist
-- Try to create a combined spawn script
-- Explore or investigate scripts - just follow the documented steps
 
 **Full paths:**
 ```
@@ -37,26 +50,18 @@ C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-supervisor-wt.ps1
 
 ---
 
-## MANDATORY EXECUTION FLOW
+## Execution Flow
 
 **For RESUME (existing pipeline):**
 ```
 R1 → R2 → R2b → R3 → R4 → R5 (spawn-dashboard-wt.ps1) → STOP → wait for HEARTBEAT → R6 (spawn-worker-wt.ps1)
 ```
 
-**After R4 completed, the ONLY thing to do is R5. DO NOT:**
-- Look for other scripts
-- Check if scripts exist
-- Try legacy scripts
-- Improvise
-
-**Just run R5 command exactly as written.**
-
 ---
 
-## Windows Terminal Architecture (v10.0)
+## Windows Terminal Architecture
 
-Pipeline v10.0 uses a single Windows Terminal window with split panes:
+Pipeline uses a single Windows Terminal window with split panes:
 
 ```
 Step 1: spawn-dashboard-wt.ps1 creates WT window
@@ -74,7 +79,7 @@ Step 2: spawn-worker-wt.ps1 adds panes (after HEARTBEAT)
 +---------------------------+
 ```
 
-**IMPORTANT: Sequence must match v9.0**
+**Sequence:**
 1. spawn-dashboard-wt.ps1 creates NEW WT window with Dashboard
 2. Dashboard sends HEARTBEAT to orchestrator
 3. spawn-worker-wt.ps1 adds Worker pane to EXISTING WT window
@@ -82,7 +87,7 @@ Step 2: spawn-worker-wt.ps1 adds panes (after HEARTBEAT)
 
 ---
 
-## CRITICAL: Dashboard Message-Driven Monitoring
+## Dashboard Message-Driven Monitoring
 
 **NEVER use `sleep` or any blocking wait in bash.** The orchestrator is driven by messages from the dashboard.
 
@@ -103,11 +108,9 @@ Step 2: spawn-worker-wt.ps1 adds panes (after HEARTBEAT)
 
 ---
 
-## CRITICAL: Windows Edit/Write Tool Bug
+## Windows Edit/Write Tool Bug
 
-**NEVER USE Edit OR Write TOOLS**
-
-They fail with "File has been unexpectedly modified" on Windows.
+**NEVER USE Edit OR Write TOOLS** - They fail with "File has been unexpectedly modified" on Windows.
 
 **USE THESE INSTEAD:**
 
@@ -118,7 +121,7 @@ They fail with "File has been unexpectedly modified" on Windows.
 
 ---
 
-## Phase Command Reference (v10.0)
+## Phase Command Reference
 
 | Phase | New | Feature |
 |-------|-----|---------|
@@ -173,9 +176,9 @@ rm -rf .pipeline
 
 ```
 TodoWrite([
-  { content: "1. Check/Get orchestrator PID", status: "pending", activeForm: "Checking PID" },
+  { content: "1. Get orchestrator PID", status: "pending", activeForm: "Getting PID" },
   { content: "2. Ask user for mode and style", status: "pending", activeForm: "Asking configuration" },
-  { content: "3. Check .pipeline/ exists -> create if needed", status: "pending", activeForm: "Checking project" },
+  { content: "3. Create .pipeline/ and manifest", status: "pending", activeForm: "Creating project" },
   { content: "3b. Run calibration for SUB cost", status: "pending", activeForm: "Running calibration" },
   { content: "4. Spawn Dashboard in Windows Terminal", status: "pending", activeForm: "Spawning Dashboard" },
   { content: "5. Wait for HEARTBEAT then spawn Worker+Supervisor", status: "pending", activeForm: "Waiting for heartbeat" },
@@ -190,14 +193,14 @@ TodoWrite([
 
 ```
 TodoWrite([
-  { content: "R1. Check/Get orchestrator PID", status: "pending", activeForm: "Checking PID" },
+  { content: "R1. Get orchestrator PID", status: "pending", activeForm: "Getting PID" },
   { content: "R2. Read config from manifest", status: "pending", activeForm: "Reading config" },
-  { content: "R2b. Check/Run calibration for SUB cost", status: "pending", activeForm: "Checking calibration" },
-  { content: "R3. Check output style -> set if needed", status: "pending", activeForm: "Checking style" },
-  { content: "R4. Check manifest PID -> update if changed", status: "pending", activeForm: "Checking manifest PID" },
+  { content: "R2b. Check calibration", status: "pending", activeForm: "Checking calibration" },
+  { content: "R3. Check output style", status: "pending", activeForm: "Checking style" },
+  { content: "R4. Update manifest PID", status: "pending", activeForm: "Updating manifest" },
   { content: "R5. Spawn Dashboard in Windows Terminal", status: "pending", activeForm: "Spawning Dashboard" },
   { content: "R6. Wait for HEARTBEAT then spawn Worker+Supervisor", status: "pending", activeForm: "Waiting for heartbeat" },
-  { content: "R7. Check worker status -> decide action", status: "pending", activeForm: "Checking worker status" },
+  { content: "R7. Check worker status", status: "pending", activeForm: "Checking worker status" },
   { content: "LOOP 7. HEARTBEAT: Check worker -> update manifest", status: "pending", activeForm: "Monitoring worker" },
   { content: "LOOP 8. When worker dead: Check deliverables -> analyze", status: "pending", activeForm: "Checking deliverables" },
   { content: "LOOP 9. Advance to next phase or complete", status: "pending", activeForm: "Advancing" }
@@ -208,25 +211,20 @@ TodoWrite([
 
 ## Resume Flow
 
-**STRICT EXECUTION ORDER - Follow steps R1 through R6 in sequence. DO NOT skip, improvise, or look for other scripts.**
+**Follow steps R1 through R6 in sequence.**
 
 ### R1. Get Orchestrator PID
 
 ```bash
-# Read orchestrator PID from file (written by spawn-orchestrator.ps1)
 if [ -f ".pipeline/orchestrator-pid.txt" ]; then
   ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
   echo "Orchestrator PID from file: $ORCH_PID"
 else
-  # Fallback: get current PowerShell PID
-  ORCH_PID=$(powershell.exe -Command '$PID' | tr -d '\r\n ')
-  echo "Orchestrator PID (fallback): $ORCH_PID"
-  # Save it for future use
+  ORCH_PID=$(powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/find-shell-pid.ps1" | tr -d '\r\n ')
+  echo "Orchestrator PID (shell): $ORCH_PID"
   echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
 fi
 ```
-
-Use this PID ($ORCH_PID) for YOUR_PID below.
 
 ### R2. Read Config from Manifest
 
@@ -234,7 +232,7 @@ Use this PID ($ORCH_PID) for YOUR_PID below.
 cat ".pipeline/manifest.json" | jq -r '"STACK=\(.stack) MODE=\(.mode) OUTPUT_STYLE=\(.outputStyle) WORKER_MODEL=\(.workerModel // "sonnet") PHASE=\(.currentPhase) EPIC=\(.currentEpic)"'
 ```
 
-### R2b. Check Calibration (quick check only)
+### R2b. Check Calibration
 
 ```bash
 [ -f "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/calibration.json" ] && echo "Calibration exists" || echo "No calibration"
@@ -256,9 +254,7 @@ if [ "$CURRENT_STYLE" != "$MANIFEST_STYLE" ]; then
 fi
 ```
 
-### R5. SPAWN DASHBOARD - RUN THIS EXACT COMMAND
-
-**DO NOT look for any other scripts. DO NOT improvise. Run this EXACT command:**
+### R5. Spawn Dashboard
 
 ```bash
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-wt.ps1" -ProjectPath "." -OrchestratorPID "$ORCH_PID"
@@ -268,9 +264,9 @@ After running, output: "Dashboard spawned in Windows Terminal. Waiting for HEART
 
 **STOP HERE and wait for HEARTBEAT message from dashboard.**
 
-### R6. SPAWN WORKER - RUN THIS EXACT COMMAND (After HEARTBEAT)
+### R6. Spawn Worker (After HEARTBEAT)
 
-**When you receive HEARTBEAT, run this EXACT command:**
+**When you receive HEARTBEAT, run this command:**
 
 ```bash
 PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
@@ -307,17 +303,15 @@ fi
 
 ## Normal Startup Flow
 
-### 1. Check/Get Orchestrator PID
+### 1. Get Orchestrator PID
 
 ```bash
-# Read orchestrator PID from file (written by spawn-orchestrator.ps1)
 if [ -f ".pipeline/orchestrator-pid.txt" ]; then
   ORCH_PID=$(cat ".pipeline/orchestrator-pid.txt" | tr -d '\r\n ')
   echo "Orchestrator PID from file: $ORCH_PID"
 else
-  # Fallback: get current PowerShell PID
-  ORCH_PID=$(powershell.exe -Command '$PID' | tr -d '\r\n ')
-  echo "Orchestrator PID (fallback): $ORCH_PID"
+  ORCH_PID=$(powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/find-shell-pid.ps1" | tr -d '\r\n ')
+  echo "Orchestrator PID (shell): $ORCH_PID"
   mkdir -p ".pipeline"
   echo "$ORCH_PID" > ".pipeline/orchestrator-pid.txt"
 fi
@@ -376,9 +370,7 @@ TOKENS_PER_PERCENT=$(cat "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/li
 cat ".pipeline/manifest.json" | jq ".tokensPerPercent = $TOKENS_PER_PERCENT" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 ```
 
-### 4. Spawn Dashboard in Windows Terminal (v10.0)
-
-**STEP 1: Update manifest status and spawn Dashboard FIRST**
+### 4. Spawn Dashboard
 
 ```bash
 cat ".pipeline/manifest.json" | jq '
@@ -414,7 +406,7 @@ MODEL_ARG=""
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" \
   -ProjectPath "." \
   -PhaseNumber "1" \
-  -PhaseCommand "/1-<MODE>-pipeline-desktop-v9.0" \
+  -PhaseCommand "/1-$MODE-pipeline-desktop-v9.0" \
   -OutputStyle "$OUTPUT_STYLE" \
   $MODEL_ARG
 ```
@@ -486,9 +478,9 @@ case $PHASE in
 esac
 ```
 
-### 8.2 Kill Worker and Supervisor Panes (v10.0)
+### 8.2 Kill Worker and Supervisor Panes
 
-In WT mode, kill just the PowerShell processes. The panes will close but WT window stays open.
+Kill just the PowerShell processes. The panes will close but WT window stays open.
 
 ```bash
 WORKER_PID=$(cat ".pipeline/manifest.json" | jq -r '.workerPid // empty')
@@ -514,7 +506,6 @@ if [ "$PHASE" = "4" ]; then
   TOTAL=$(cat ".pipeline/manifest.json" | jq '.epics | length')
 
   if [ "$COMPLETE" -lt "$TOTAL" ]; then
-    # Advance to next epic - spawn worker pane (WT window already exists)
     cat ".pipeline/manifest.json" | jq '.currentEpic = .currentEpic + 1' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
     # Go to spawn worker section (section 5)
   fi
@@ -562,7 +553,6 @@ fi
 MODEL_ARG=""
 [ -n "$WORKER_MODEL" ] && MODEL_ARG="-Model $WORKER_MODEL"
 
-# Spawn Worker+Supervisor panes (WT window already exists from Dashboard)
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-wt.ps1" \
   -ProjectPath "." \
   -PhaseNumber "$NEXT_PHASE" \
@@ -585,7 +575,7 @@ Common requests:
 
 ## Important Notes
 
-- **v10.0 uses Windows Terminal** - all panes in one grouped window
+- **Windows Terminal** - all panes in one grouped window
 - **Dashboard spawns FIRST** - creates the WT window
 - **Worker spawns AFTER HEARTBEAT** - adds pane to existing WT window
 - **Supervisor spawns with Worker** - called internally by spawn-worker-wt.ps1
