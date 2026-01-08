@@ -39,9 +39,10 @@ $bytes = [System.Text.Encoding]::Unicode.GetBytes($psCommand)
 $encodedCommand = [Convert]::ToBase64String($bytes)
 
 # Spawn NEW Windows Terminal window with Dashboard pane
-# Using profile-based approach which works reliably (new-window powershell.exe doesn't)
-Write-Host "Creating new Windows Terminal window..."
-$wtCommand = "wt.exe -p `"Windows PowerShell`" -- powershell.exe -NoExit -EncodedCommand $encodedCommand"
+# Using named window with unique ID so worker/supervisor can target it reliably
+$wtWindowName = "Pipeline-$OrchestratorPID"
+Write-Host "Creating new Windows Terminal window (named '$wtWindowName')..."
+$wtCommand = "wt.exe -w $wtWindowName -p `"Windows PowerShell`" -- powershell.exe -NoExit -EncodedCommand $encodedCommand"
 cmd /c $wtCommand
 
 # Wait for PID file to be created by spawned process
@@ -70,15 +71,16 @@ if (Test-Path $pidFile) {
     Write-Host "WARNING: Could not identify dashboard PowerShell PID (timeout after $maxWait seconds)"
 }
 
-# Update manifest with wtMode flag
+# Update manifest with wtMode flag and window name
 $manifestPath = Join-Path $ProjectPath ".pipeline\manifest.json"
 if (Test-Path $manifestPath) {
     try {
         $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
         $manifest.wtMode = $true
+        $manifest.wtWindowName = $wtWindowName
         $manifest.dashboardPid = $dashboardPid
         $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
-        Write-Host "Manifest updated with wtMode=true, dashboardPid=$dashboardPid"
+        Write-Host "Manifest updated with wtMode=true, wtWindowName=$wtWindowName, dashboardPid=$dashboardPid"
     } catch {
         Write-Host "WARNING: Could not update manifest: $_"
     }

@@ -9,6 +9,9 @@ param(
     [string]$WorkerSessionId = ""  # Worker session ID for hook filtering
 )
 
+# Resolve relative path to absolute path
+$ProjectPath = (Resolve-Path $ProjectPath).Path
+
 $claudePath = "$env:APPDATA\npm\claude.cmd"
 $pipelineOffice = "C:\Users\ahunt\Documents\IMT Claude\Pipeline-Office"
 $title = "Supervisor"
@@ -69,11 +72,21 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 $beforePids = @(Get-Process -Name powershell -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id)
 Write-Host "PowerShell PIDs before spawn: $($beforePids -join ', ')"
 
-# Add Supervisor pane to EXISTING Windows Terminal window using --window 0
+# Read window name from manifest
+$manifestPath = Join-Path $ProjectPath ".pipeline\manifest.json"
+$wtWindowName = "Pipeline"  # fallback
+if (Test-Path $manifestPath) {
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    if ($manifest.wtWindowName) {
+        $wtWindowName = $manifest.wtWindowName
+    }
+}
+
+# Add Supervisor pane to EXISTING Windows Terminal window using named window
 # Split horizontally (-H) to create bottom pane below worker
-Write-Host "Adding Supervisor pane to existing WT window..."
+Write-Host "Adding Supervisor pane to window '$wtWindowName'..."
 $wtArgs = @(
-    "--window", "0",
+    "--window", $wtWindowName,
     "split-pane",
     "-H",
     "-s", "0.35",

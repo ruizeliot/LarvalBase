@@ -15,6 +15,9 @@ param(
     [string]$Model = ""  # Claude model: haiku, sonnet, opus (empty = default)
 )
 
+# Resolve relative path to absolute path
+$ProjectPath = (Resolve-Path $ProjectPath).Path
+
 $claudePath = "$env:APPDATA\npm\claude.cmd"
 $pipelineOffice = "C:\Users\ahunt\Documents\IMT Claude\Pipeline-Office"
 $title = "Worker-Phase-$PhaseNumber"
@@ -80,11 +83,27 @@ $encodedCommand = [Convert]::ToBase64String($bytes)
 $beforePids = @(Get-Process -Name powershell -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id)
 Write-Host "PowerShell PIDs before spawn: $($beforePids -join ', ')"
 
-# Add Worker pane to EXISTING Windows Terminal window using --window 0
+# Read window name from manifest
+$manifestPath = Join-Path $ProjectPath ".pipeline\manifest.json"
+$wtWindowName = "Pipeline"  # fallback
+Write-Host "Reading manifest from: $manifestPath"
+if (Test-Path $manifestPath) {
+    $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+    Write-Host "Manifest wtWindowName: $($manifest.wtWindowName)"
+    if ($manifest.wtWindowName) {
+        $wtWindowName = $manifest.wtWindowName
+    } else {
+        Write-Host "WARNING: wtWindowName not found in manifest, using fallback"
+    }
+} else {
+    Write-Host "WARNING: Manifest not found at $manifestPath"
+}
+
+# Add Worker pane to EXISTING Windows Terminal window using named window
 # Split vertically (-V) to create right-side pane
-Write-Host "Adding Worker pane to existing WT window..."
+Write-Host "Adding Worker pane to window '$wtWindowName'..."
 $wtArgs = @(
-    "--window", "0",
+    "--window", $wtWindowName,
     "split-pane",
     "-V",
     "-s", "0.5",
