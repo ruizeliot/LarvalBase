@@ -1,7 +1,7 @@
 # Architecture Documentation
 
 **Created:** 2026-01-08
-**Updated:** 2026-01-12 (Redesigned Analyzer v2 as outcome-based learning system 15-17)
+**Updated:** 2026-01-12 (Added Phase 1 Redesign 25-26, Analyzer v2 redesign 15-17)
 **Version:** v11
 
 Reference specifications for Pipeline v11 architecture.
@@ -74,6 +74,13 @@ Reference specifications for Pipeline v11 architecture.
 | 23 | [android-environment-setup.md](./23-android-environment-setup.md) | Android SDK/NDK installation and configuration |
 | 24 | [android-testing-setup.md](./24-android-testing-setup.md) | WebdriverIO + Appium 2 for mobile E2E testing |
 
+### Phase 1 Redesign (25-26)
+
+| # | File | Description |
+|---|------|-------------|
+| 25 | [phase-1-redesign.md](./25-phase-1-redesign.md) | Remove Phase 1 from pipeline, make pre-pipeline activity |
+| 26 | [live-canvas-spec.md](./26-live-canvas-spec.md) | Real-time visualization MCP server + skill |
+
 ---
 
 ## Key Principles (v11)
@@ -85,32 +92,39 @@ Reference specifications for Pipeline v11 architecture.
 5. **Ralph-Style Implementation** - Autonomous loop until test passes (max 20 iterations)
 6. **Progress Tracking** - `.pipeline/implementation-progress.json` for long-running work
 7. **Outcome-Based Learning** - User Likert ratings as ground truth for correlation analysis
+8. **Write Immediately** - During brainstorming, save ideas to file after EVERY discussion (not at todo completion)
 
 ---
 
 ## Phase Flow
 
 ```
-Phase 1 (Interactive)     Phase 2-5 (Autonomous)
-      │                         │
-      ▼                         ▼
-┌───────────┐            ┌─────────────┐
-│ Brainstorm│            │ Fixed Start │
-│ with user │            │   todos     │
-└─────┬─────┘            └──────┬──────┘
-      │                         │
-      ▼                         ▼
-┌───────────┐            ┌─────────────┐
-│  Confirm  │            │  Free Zone  │
-│  design   │            │ (Phase 4)   │
-└─────┬─────┘            └──────┬──────┘
-      │                         │
-      ▼                         ▼
-   docs/                 ┌─────────────┐
-brainstorm-notes.md      │  Fixed End  │
- user-stories.md         │   todos     │
-                         └─────────────┘
+PRE-PIPELINE (Interactive)          PIPELINE (Autonomous)
+┌───────────────────────┐           ┌─────────────────────────────────┐
+│    /brainstorm        │           │     Phases 2-5                  │
+│    (skill)            │           │     (orchestrator)              │
+├───────────────────────┤           ├─────────────────────────────────┤
+│                       │           │                                 │
+│  ┌─────────────────┐  │           │  ┌───────┐ ┌───────┐ ┌───────┐ │
+│  │ Discuss ideas   │  │           │  │Phase 2│→│Phase 3│→│Phase 4│ │
+│  │ with Live Canvas│  │  ──────►  │  │Stories│ │ Tests │ │ Impl  │ │
+│  └────────┬────────┘  │           │  └───────┘ └───────┘ └───┬───┘ │
+│           │           │           │                          │     │
+│           ▼           │           │                          ▼     │
+│  ┌─────────────────┐  │           │                    ┌───────┐   │
+│  │ Write ideas     │  │           │                    │Phase 5│   │
+│  │ IMMEDIATELY     │  │           │                    │Polish │   │
+│  └────────┬────────┘  │           │                    └───────┘   │
+│           │           │           │                                 │
+│           ▼           │           └─────────────────────────────────┘
+│  docs/brainstorm-     │
+│  notes.md             │
+│  docs/user-stories.md │
+└───────────────────────┘
 ```
+
+**Key change in v11:** Brainstorming is a **separate pre-pipeline skill**, not Phase 1.
+The pipeline (Phases 2-5) is fully autonomous. See [25-phase-1-redesign.md](./25-phase-1-redesign.md).
 
 ---
 
@@ -149,6 +163,8 @@ Current phase documents (09-13) are for **New Mode** only (creating apps from sc
 
 | Feature | Branch Name | Base Branch |
 |---------|-------------|-------------|
+| Phase 1 Redesign | `feature/phase-1-redesign` | `master` |
+| Live Canvas | `feature/live-canvas` | `master` |
 | Step Mode | `feature/step-mode` | `master` |
 | Unity Pipeline | `feature/unity-pipeline` | `master` |
 | Android Pipeline | `feature/android-pipeline` | `master` |
@@ -281,6 +297,42 @@ User Ratings → Rating Collection → Dataset Entry
 - Minimum 10 pipeline runs for basic pattern detection
 - 50+ runs for high-confidence correlations
 - 100+ runs for reliable predictions
+
+### Phase 1 Redesign Implementation (Pending)
+
+**Status:** Design complete ([25-26](./25-phase-1-redesign.md)), implementation pending
+
+Phase 1 (brainstorming) is being **removed from the pipeline** and made a **pre-pipeline skill**.
+
+**Key Changes:**
+- **Brainstorming is separate** - Not managed by orchestrator
+- **Write immediately rule** - Ideas saved after EVERY discussion, not at todo completion
+- **Live Canvas (experimental)** - Real-time visualization during brainstorming
+- **Pipeline requires files** - Must have `docs/brainstorm-notes.md` and `docs/user-stories.md` to start
+
+**Architecture:**
+```
+User runs /brainstorm skill → Interactive session with Live Canvas
+                                    ↓
+                            docs/brainstorm-notes.md
+                            docs/user-stories.md
+                                    ↓
+User runs /orchestrator → Validates files exist → Starts Phase 2
+```
+
+**Implementation tasks:**
+1. Create `/brainstorm` skill with write-immediately rule
+2. Update orchestrator to require brainstorm files (skip Phase 1)
+3. Configure MCP servers: `claude-mermaid` + `mcp-obsidian` (or custom `live-canvas-mcp`)
+4. Create Live Viewer web app (optional, for full Live Canvas)
+5. Update documentation (deprecate Phase 1 commands)
+
+**MCP Options (use existing or build custom):**
+| Function | Existing MCP | Custom |
+|----------|-------------|--------|
+| Notes | `mcp-obsidian` | `live-canvas-mcp` |
+| Diagrams | `claude-mermaid` | integrated |
+| Canvas | `mcp_excalidraw` | integrated |
 
 ### Known Issues
 
