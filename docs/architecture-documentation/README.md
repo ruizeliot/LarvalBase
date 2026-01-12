@@ -1,7 +1,7 @@
 # Architecture Documentation
 
 **Created:** 2026-01-08
-**Updated:** 2026-01-12 (Added Analyzer v2 docs 15-17, Step Mode 18, Unity Pipeline 19-21, Android Pipeline 22-24)
+**Updated:** 2026-01-12 (Redesigned Analyzer v2 as outcome-based learning system 15-17)
 **Version:** v11
 
 Reference specifications for Pipeline v11 architecture.
@@ -48,9 +48,9 @@ Reference specifications for Pipeline v11 architecture.
 
 | # | File | Description |
 |---|------|-------------|
-| 15 | [analyzer-v2-design.md](./15-analyzer-v2-design.md) | Multi-level analysis architecture |
-| 16 | [skill-gap-detection-spec.md](./16-skill-gap-detection-spec.md) | Pattern detection and skill mapping |
-| 17 | [analyzer-skills-spec.md](./17-analyzer-skills-spec.md) | Skills for the analyzer agent |
+| 15 | [analyzer-v2-design.md](./15-analyzer-v2-design.md) | Outcome-based learning system architecture |
+| 16 | [outcome-correlation-spec.md](./16-outcome-correlation-spec.md) | Likert ratings, feature extraction, correlation methods |
+| 17 | [analyzer-skills-spec.md](./17-analyzer-skills-spec.md) | Data collection, analysis, and utility skills |
 
 ### Step Mode (18)
 
@@ -84,6 +84,7 @@ Reference specifications for Pipeline v11 architecture.
 4. **Mandatory Standards** - A11y, completeness pairs enforced automatically
 5. **Ralph-Style Implementation** - Autonomous loop until test passes (max 20 iterations)
 6. **Progress Tracking** - `.pipeline/implementation-progress.json` for long-running work
+7. **Outcome-Based Learning** - User Likert ratings as ground truth for correlation analysis
 
 ---
 
@@ -238,18 +239,48 @@ Android pipeline enables mobile app development using Tauri 2.0 (same codebase a
 
 ### Analyzer v2 Implementation (Pending)
 
-**Status:** Design complete, implementation pending
+**Status:** Design complete ([15-17](./15-analyzer-v2-design.md)), implementation pending
 
-The analyzer system has been redesigned to provide:
-- Multi-level analysis (todo → phase → pipeline)
-- Skill gap detection (pattern matching to skill recommendations)
-- Analyzer agent with its own skills (transcript-parser, pattern-detector, skill-recommender)
+The analyzer system has been redesigned as an **outcome-based learning system**:
+
+**Key Changes from v1:**
+- **End-of-pipeline analysis** - Analyze once at pipeline completion (full context), not after each phase
+- **User Likert ratings** - 1-5 scale feedback as ground truth (Overall, UI/Design, Navigation, Performance, Code Quality, Test Coverage, Functionality)
+- **Feature extraction** - Extract metrics from transcripts (phase durations, pattern counts, violation flags)
+- **Correlation learning** - Build dataset over time to learn which execution patterns lead to good/bad outcomes
+- **Predictive insights** - After sufficient data (~50 runs), predict quality issues before they happen
+
+**Learning Architecture:**
+```
+Pipeline Execution → Feature Extraction → Dataset Entry
+                                               ↓
+User Ratings → Rating Collection → Dataset Entry
+                                               ↓
+                              Learning Dataset (.jsonl)
+                                               ↓
+                              Correlation Analysis
+                                               ↓
+                              Predictive Insights
+```
+
+**New Skills:**
+- Data Collection: `transcript-parser`, `feature-extractor`, `rating-collector`
+- Analysis: `correlator`, `predictor`, `report-generator`
+- Utility: `dataset-manager`, `insight-generator`
 
 **Implementation tasks:**
-1. Enhance `lib/analyze-worker-transcript.cjs` with skill gap detection
-2. Create `lib/analyze-pipeline.cjs` for cross-phase analysis
-3. Create analyzer skills in `.claude/skills/analyzer/`
-4. Integrate with orchestrator for automatic post-phase analysis
+1. Create `lib/analyzer/feature-extractor.cjs` - Extract metrics from transcripts
+2. Create `lib/analyzer/rating-collector.cjs` - CLI interface for Likert ratings
+3. Create `lib/analyzer/correlator.cjs` - Pearson/point-biserial correlation
+4. Create `lib/analyzer/predictor.cjs` - Regression-based predictions
+5. Create `.pipeline/learning-dataset.jsonl` schema and management
+6. Integrate with orchestrator for end-of-pipeline analysis trigger
+7. Create analyzer skills in `.claude/skills/analyzer/`
+
+**Cold Start Requirements:**
+- Minimum 10 pipeline runs for basic pattern detection
+- 50+ runs for high-confidence correlations
+- 100+ runs for reliable predictions
 
 ### Known Issues
 
