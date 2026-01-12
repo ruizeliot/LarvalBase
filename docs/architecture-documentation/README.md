@@ -142,6 +142,40 @@ Current phase documents (09-13) are for **New Mode** only (creating apps from sc
 - Must not break existing tests
 - Must integrate with existing user-stories.md and test-specs.md
 
+## Development Branching Strategy
+
+**All new pipeline implementations MUST be developed in separate Git branches.**
+
+| Feature | Branch Name | Base Branch |
+|---------|-------------|-------------|
+| Step Mode | `feature/step-mode` | `master` |
+| Unity Pipeline | `feature/unity-pipeline` | `master` |
+| Android Pipeline | `feature/android-pipeline` | `master` |
+| Analyzer v2 | `feature/analyzer-v2` | `master` |
+| Feature Mode | `feature/feature-mode` | `master` |
+
+**Workflow:**
+```bash
+# Create feature branch
+git checkout -b feature/android-pipeline
+
+# Develop and commit
+git add .
+git commit -m "feat(android): add phase commands"
+
+# When complete, merge to master
+git checkout master
+git merge feature/android-pipeline
+```
+
+**Why branches:**
+- Keeps `master` stable with working desktop pipeline
+- Allows parallel development of multiple features
+- Enables proper code review before merge
+- Easy rollback if implementation has issues
+
+---
+
 ### Step Mode Implementation (Pending)
 
 **Status:** Design complete ([18-step-mode-spec.md](./18-step-mode-spec.md)), implementation pending
