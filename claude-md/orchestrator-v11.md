@@ -244,7 +244,8 @@ MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/
   -PhaseNumber "$PHASE" \
   -PhaseCommand "/$PHASE-$MODE-pipeline-desktop-v11.0" \
   -WorkerSplit $WORKER_SPLIT \
-  -SupervisorSplit $SUPERVISOR_SPLIT
+  -SupervisorSplit $SUPERVISOR_SPLIT \
+  -DashboardVersion v11
 ```
 
 ### R6. Check Worker Status
@@ -422,7 +423,8 @@ MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/
   -PhaseNumber "2" \
   -PhaseCommand "/2-$MODE-pipeline-desktop-v11.0" \
   -WorkerSplit $WORKER_SPLIT \
-  -SupervisorSplit $SUPERVISOR_SPLIT
+  -SupervisorSplit $SUPERVISOR_SPLIT \
+  -DashboardVersion v11
 ```
 
 **Then STOP and wait for HEARTBEAT messages.**
@@ -559,7 +561,8 @@ MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/
   -PhaseNumber "$NEXT_PHASE" \
   -PhaseCommand "/$NEXT_PHASE-$MODE-pipeline-desktop-v11.0" \
   -WorkerSplit $WORKER_SPLIT \
-  -SupervisorSplit $SUPERVISOR_SPLIT
+  -SupervisorSplit $SUPERVISOR_SPLIT \
+  -DashboardVersion v11
 ```
 
 ---

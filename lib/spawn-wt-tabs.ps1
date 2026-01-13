@@ -21,7 +21,11 @@ param(
     [double]$WorkerSplit = 0.5,
 
     [Parameter(Mandatory=$false)]
-    [double]$SupervisorSplit = 0.5
+    [double]$SupervisorSplit = 0.5,
+
+    [Parameter(Mandatory=$false)]
+    [ValidateSet("v9", "v10", "v11", "auto")]
+    [string]$DashboardVersion = "auto"
 )
 
 # Resolve relative path to absolute path
@@ -29,7 +33,39 @@ $ProjectPath = (Resolve-Path $ProjectPath).Path
 
 $claudePath = "$env:APPDATA\npm\claude.cmd"
 $pipelineOffice = "C:\Users\ahunt\Documents\IMT Claude\Pipeline-Office"
-$dashboardScript = Join-Path $pipelineOffice "lib\dashboard-v3.cjs"
+
+# Dashboard script mapping by version
+$dashboardScripts = @{
+    "v9" = "dashboard-v2.cjs"
+    "v10" = "dashboard-v3.cjs"
+    "v11" = "dashboard-runner-v11.cjs"
+}
+
+# Auto-detect version from manifest if needed
+if ($DashboardVersion -eq "auto") {
+    $manifestPath = Join-Path $ProjectPath ".pipeline\manifest.json"
+    if (Test-Path $manifestPath) {
+        try {
+            $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
+            $manifestVersion = $manifest.version
+            if ($manifestVersion -match "^11") {
+                $DashboardVersion = "v11"
+            } elseif ($manifestVersion -match "^10") {
+                $DashboardVersion = "v10"
+            } else {
+                $DashboardVersion = "v9"
+            }
+        } catch {
+            $DashboardVersion = "v11"  # Default to v11
+        }
+    } else {
+        $DashboardVersion = "v11"  # Default to v11 for new projects
+    }
+}
+
+$dashboardScriptName = $dashboardScripts[$DashboardVersion]
+$dashboardScript = Join-Path $pipelineOffice "lib\$dashboardScriptName"
+Write-Host "Dashboard version: $DashboardVersion -> $dashboardScriptName"
 
 Write-Host "=========================================="
 Write-Host "  spawn-wt-tabs.ps1 (v10.2)"
