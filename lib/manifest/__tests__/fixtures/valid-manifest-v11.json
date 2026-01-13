@@ -1,0 +1,88 @@
+{
+  "version": "11.0.0",
+  "project": {
+    "name": "test-project",
+    "path": "/path/to/test-project"
+  },
+  "stack": "desktop",
+  "mode": "new",
+  "userMode": "dev",
+  "status": "running",
+  "brainstorm": {
+    "completed": true,
+    "completedAt": "2026-01-13T10:00:00.000Z",
+    "notesFile": "docs/brainstorm-notes.md",
+    "storiesFile": "docs/user-stories.md",
+    "epicCount": 3,
+    "storyCount": 12
+  },
+  "currentPhase": "4",
+  "currentAgent": null,
+  "currentEpic": 2,
+  "phases": {
+    "2": {
+      "status": "complete",
+      "startedAt": "2026-01-13T10:30:00.000Z",
+      "completedAt": "2026-01-13T11:00:00.000Z",
+      "duration": 1800000,
+      "cost": 0.45,
+      "agents": null,
+      "currentEpic": null,
+      "epicStatuses": null
+    },
+    "3": {
+      "status": "complete",
+      "startedAt": "2026-01-13T11:00:00.000Z",
+      "completedAt": "2026-01-13T12:00:00.000Z",
+      "duration": 3600000,
+      "cost": 1.20,
+      "agents": null,
+      "currentEpic": null,
+      "epicStatuses": null
+    },
+    "4": {
+      "status": "running",
+      "startedAt": "2026-01-13T12:00:00.000Z",
+      "completedAt": null,
+      "duration": 0,
+      "cost": 0,
+      "agents": null,
+      "currentEpic": 2,
+      "epicStatuses": [
+        { "id": 1, "status": "complete" },
+        { "id": 2, "status": "running" },
+        { "id": 3, "status": "pending" }
+      ]
+    },
+    "5": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "duration": 0,
+      "cost": 0,
+      "agents": null,
+      "currentEpic": null,
+      "epicStatuses": null
+    }
+  },
+  "totalCost": 1.65,
+  "totalDuration": 5400000,
+  "workers": {
+    "current": {
+      "pid": 12345,
+      "phase": "4",
+      "startedAt": "2026-01-13T12:00:00.000Z"
+    },
+    "supervisor": {
+      "pid": 12346,
+      "startedAt": "2026-01-13T12:00:00.000Z"
+    }
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalMs": 300000,
+    "lastSeen": "2026-01-13T12:30:00.000Z"
+  },
+  "createdAt": "2026-01-13T10:00:00.000Z",
+  "updatedAt": "2026-01-13T12:30:00.000Z"
+}

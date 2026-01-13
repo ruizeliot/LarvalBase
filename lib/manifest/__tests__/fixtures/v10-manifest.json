@@ -1,0 +1,82 @@
+{
+  "version": "10.0.0",
+  "project": {
+    "name": "legacy-project",
+    "path": "/path/to/legacy-project"
+  },
+  "stack": "desktop",
+  "mode": "new",
+  "userMode": "dev",
+  "status": "in-progress",
+  "currentPhase": "3",
+  "currentAgent": null,
+  "currentEpic": null,
+  "phases": {
+    "1": {
+      "status": "completed",
+      "startedAt": "2025-12-01T10:00:00.000Z",
+      "completedAt": "2025-12-01T11:00:00.000Z",
+      "duration": 3600000,
+      "cost": 0.50
+    },
+    "2": {
+      "status": "completed",
+      "startedAt": "2025-12-01T11:00:00.000Z",
+      "completedAt": "2025-12-01T12:00:00.000Z",
+      "duration": 3600000,
+      "cost": 0.75
+    },
+    "3": {
+      "status": "in-progress",
+      "startedAt": "2025-12-01T12:00:00.000Z",
+      "completedAt": null,
+      "duration": 0,
+      "cost": 0
+    },
+    "4": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "duration": 0,
+      "cost": 0
+    },
+    "5": {
+      "status": "pending",
+      "startedAt": null,
+      "completedAt": null,
+      "duration": 0,
+      "cost": 0
+    }
+  },
+  "totalCost": 1.25,
+  "totalDuration": 7200000,
+  "epics": [
+    {
+      "id": 1,
+      "name": "User Authentication",
+      "stories": [
+        { "id": "US-001", "name": "User login" },
+        { "id": "US-002", "name": "User logout" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Dashboard",
+      "stories": [
+        { "id": "US-003", "name": "View dashboard" },
+        { "id": "US-004", "name": "Export data" }
+      ]
+    }
+  ],
+  "workers": {
+    "current": null,
+    "supervisor": null
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalMs": 300000,
+    "lastSeen": null
+  },
+  "createdAt": "2025-12-01T10:00:00.000Z",
+  "updatedAt": "2025-12-01T12:30:00.000Z"
+}

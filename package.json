@@ -1,14 +1,27 @@
 {
   "name": "pipeline-office",
-  "version": "9.0.0",
-  "description": "Pipeline orchestration system with dashboard and OBS recording",
+  "version": "11.0.0",
+  "description": "Pipeline orchestration system v11 with modular architecture",
   "type": "commonjs",
   "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "dashboard": "node lib/dashboard-v3.cjs",
     "obs-recorder": "node lib/obs-recorder.cjs"
   },
   "dependencies": {
     "obs-websocket-js": "^5.0.6"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testMatch": [
+      "**/__tests__/**/*.test.cjs"
+    ],
+    "verbose": true
   },
   "engines": {
     "node": ">=18.0.0"

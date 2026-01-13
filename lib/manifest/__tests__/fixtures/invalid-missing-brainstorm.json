@@ -1,0 +1,39 @@
+{
+  "version": "11.0.0",
+  "project": {
+    "name": "incomplete-project",
+    "path": "/path/to/incomplete-project"
+  },
+  "stack": "desktop",
+  "mode": "new",
+  "userMode": "dev",
+  "status": "pending",
+  "brainstorm": {
+    "completed": false,
+    "completedAt": null,
+    "notesFile": "docs/brainstorm-notes.md",
+    "storiesFile": "docs/user-stories.md",
+    "epicCount": 0,
+    "storyCount": 0
+  },
+  "currentPhase": null,
+  "currentAgent": null,
+  "currentEpic": null,
+  "phases": {
+    "2": { "status": "pending" },
+    "3": { "status": "pending" },
+    "4": { "status": "pending" },
+    "5": { "status": "pending" }
+  },
+  "totalCost": 0,
+  "totalDuration": 0,
+  "workers": {
+    "current": null,
+    "supervisor": null
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalMs": 300000,
+    "lastSeen": null
+  }
+}
