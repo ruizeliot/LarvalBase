@@ -465,18 +465,17 @@ Projects started with v10 (Phase 1 in pipeline):
 
 ---
 
-## 9. Open Questions
+## 9. Related Documents
+
+- [26-live-canvas-spec.md](./26-live-canvas-spec.md) - Live visualization during brainstorming
+- [09-phase-1-discovery-planning.md](./09-phase-1-discovery-planning.md) - Legacy Phase 1 (deprecated)
+- [08-new-pipeline-structure.md](./08-new-pipeline-structure.md) - Pipeline overview (needs update)
+
+---
+
+## 10. Open Questions
 
 1. **Should brainstorm notes be versioned?** (git commits during session)
 2. **Should there be a "quick start" mode?** (skip brainstorm for simple apps)
 3. **How to handle multiple brainstorm sessions?** (iterating on design)
 4. **Should Live Canvas be required or optional?** (current: optional)
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-12 | Initial design |
-| 2026-01-13 | Made standalone (removed external dependencies) |

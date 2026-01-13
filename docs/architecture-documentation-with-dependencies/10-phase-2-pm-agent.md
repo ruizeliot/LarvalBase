@@ -23,6 +23,8 @@ Phase 2 transforms the brainstorm output into actionable user stories.
 **Output:** `docs/user-stories.md`
 **Mode:** Autonomous (no user interaction)
 
+**References:** [14-mandatory-standards.md](./14-mandatory-standards.md)
+
 ---
 
 ## Agent Skills (Invoke with Skill tool)
@@ -334,12 +336,3 @@ Score >= 95?
 ## Status
 
 Under Review - Ready for implementation as agent CLAUDE.md
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-09 | Initial document |
-| 2026-01-13 | Made standalone (removed reference to mandatory-standards.md, inlined completeness pairs) |

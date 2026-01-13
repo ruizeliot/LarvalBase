@@ -687,7 +687,14 @@ Agent: [Calls update_shape for sidebar]
 
 ---
 
-## 11. Research Sources
+## 11. Related Documents
+
+- [25-phase-1-redesign.md](./25-phase-1-redesign.md) - Phase 1 as pre-pipeline activity
+- [09-phase-1-discovery-planning.md](./09-phase-1-discovery-planning.md) - Legacy Phase 1 (deprecated)
+
+---
+
+## 12. Research Sources
 
 ### MCP Servers Referenced
 
@@ -709,19 +716,10 @@ Agent: [Calls update_shape for sidebar]
 
 ---
 
-## 12. Open Questions
+## 13. Open Questions
 
 1. **Single vs multiple MCPs?** - Use existing MCPs or build unified?
 2. **Viewer hosting** - Embedded in MCP or separate process?
 3. **Collaboration** - Support multiple viewers (for screen sharing)?
 4. **Offline** - Work without viewer open (file-only mode)?
 5. **Mobile** - Responsive viewer for mobile devices?
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-12 | Initial specification |
-| 2026-01-13 | Made standalone (removed external dependencies) |

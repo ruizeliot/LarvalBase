@@ -262,4 +262,3 @@ Add Meta's scoped registry to `Packages/manifest.json`:
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Initial setup guide (pending installation) |
-| 2026-01-13 | Made standalone (confirmed no external dependencies) |

@@ -40,9 +40,9 @@ This guide covers setting up E2E testing for Tauri Android apps using WebdriverI
 
 ## Prerequisites
 
-- Android development environment configured (ANDROID_HOME, NDK_HOME, Java, Android SDK)
-- Emulator running or device connected (`adb devices` shows device)
-- Built APK available (`pnpm tauri android build`)
+- Android environment set up (see [23-android-environment-setup.md](./23-android-environment-setup.md))
+- Emulator running or device connected
+- Built APK available
 
 ---
 
@@ -611,4 +611,3 @@ jobs:
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Initial testing guide |
-| 2026-01-13 | Made standalone (removed external dependencies) |

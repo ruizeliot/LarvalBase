@@ -33,6 +33,8 @@ Phase 5 performs final quality assurance and prepares the application for deploy
 **Output:** Production-ready application, README, deployment artifacts
 **Mode:** Autonomous
 
+**References:** [14-mandatory-standards.md](./14-mandatory-standards.md)
+
 ---
 
 ## Agent Skills (Invoke with Skill tool)
@@ -523,12 +525,3 @@ git tag -a v1.0.0 -m "Release v1.0.0"
 ## Status
 
 Under Review - Ready for implementation as agent CLAUDE.md
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-09 | Initial document |
-| 2026-01-13 | Made standalone (removed reference to mandatory-standards.md, inlined axe-core and Nielsen heuristics) |

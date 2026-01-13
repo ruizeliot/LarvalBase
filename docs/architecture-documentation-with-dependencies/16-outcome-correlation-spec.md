@@ -3,6 +3,7 @@
 **Version:** v11
 **Created:** 2026-01-12
 **Status:** Design Draft
+**Related:** [15-analyzer-v2-design.md](./15-analyzer-v2-design.md)
 
 ---
 
@@ -622,4 +623,3 @@ Dashboard can display:
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Complete redesign: outcome-based correlation (replaces skill-gap-detection) |
-| 2026-01-13 | Made standalone (removed reference to analyzer-v2-design.md) |

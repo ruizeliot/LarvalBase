@@ -410,12 +410,3 @@ Skill tool → e2e-rapid-fix           (invoke for E2E failures)
 | **secret-scanner** | Security scan for exposed credentials | 5 |
 
 **How to Invoke:** `Skill tool → skill-name`
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-09 | Initial document |
-| 2026-01-13 | Made standalone (confirmed no external dependencies) |

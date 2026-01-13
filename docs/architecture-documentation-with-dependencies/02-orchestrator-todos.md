@@ -1,71 +1,26 @@
-# Pipeline Execution Flow
+# Orchestrator Todos
 
 **Created:** 2026-01-08
-**Status:** Complete Reference
 
 ---
 
-## Overview
-
-This document describes the complete pipeline execution flow from user initiation through phase completion. The pipeline uses a multi-window architecture with an orchestrator coordinating workers, supervisors, and a dashboard.
-
----
-
-## Step 1: User Runs Launcher
-
-**Step 1a:** User opens Claude in project directory
-```
-cd "C:\Users\ahunt\Documents\IMT Claude\my-project"
-claude
-```
-
-**Step 1b:** User types launcher command
-```
-/pipeline-launcher-v10
-```
-
-**Step 1c:** Launcher prepares the orchestrator's CLAUDE.md
-```bash
-cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
-```
-
-**Step 1d:** Launcher spawns the orchestrator window
-```bash
-# Spawn new Claude session in project directory
-```
-
-**Step 1e:** Launcher injects start message to orchestrator
-```bash
-# Inject "BEGIN" or similar message to trigger orchestrator
-```
-
----
-
-## Step 2: Orchestrator Starts
-
-**Step 2a:** Orchestrator session starts with `orchestrator.md` loaded as CLAUDE.md
-
-**Step 2b:** Orchestrator receives injected start message
-
-**Step 2c:** Orchestrator begins executing based on CLAUDE.md instructions
-
----
-
-## Step 3: Orchestrator Initialization Tasks
-
-### Task 1: Get Orchestrator PID
+## Todo 1: Get orchestrator PID
 
 - Run `find-shell-pid.ps1` to get current shell's process ID
 - Save to `.pipeline/orchestrator-pid.txt`
 - Used later for message injection back to orchestrator
 
-### Task 2: Ask User About Calibration
+---
+
+## Todo 2: Ask user about calibration
 
 - AskUserQuestion: "Run calibration? (measures tokens-per-percent for cost tracking)"
 - If yes: run `calibration-test.js`, save result to `calibration.json`
 - If no: skip (use previous calibration if exists)
 
-### Task 3: Create .pipeline/ and Manifest
+---
+
+## Todo 3: Create .pipeline/ and manifest
 
 - Create `.pipeline/` folder in project
 - Copy `dashboard-v3.cjs` to `.pipeline/dashboard.cjs`
@@ -73,21 +28,23 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
   - version: "10.0.1"
   - status: "initializing"
   - currentPhase: "1"
-  - orchestratorPid: (from task 1)
+  - orchestratorPid: (from todo 1)
   - dashboardPid: null
   - workerPid: null
   - supervisorPid: null
   - phases: 1-5 all "pending"
   - paneSizes: { workerSplit: 0.5, supervisorSplit: 0.5 }
 
-### Task 4: Spawn Dashboard
+---
+
+## Todo 4: Spawn Dashboard
 
 - Run `spawn-dashboard-wt.ps1`
 - Creates NEW Windows Terminal window named "Pipeline-{OrchestratorPID}"
 - Dashboard takes 100% of window initially
 - Dashboard runs `node dashboard-v3.cjs` monitoring manifest
 - Dashboard PID saved to manifest
-- Layout after task 4:
+- Layout after todo 4:
   ```
   +---------------------------+
   |                           |
@@ -97,13 +54,17 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
   +---------------------------+
   ```
 
-### Task 5: Wait for HEARTBEAT
+---
+
+## Todo 5: Wait for HEARTBEAT
 
 - Dashboard sends HEARTBEAT message to orchestrator via injection
 - Orchestrator STOPS and waits until message received
 - HEARTBEAT confirms Dashboard is ready
 
-### Task 6: Spawn Worker
+---
+
+## Todo 6: Spawn Worker
 
 - Run `spawn-worker-wt.ps1`
 - Adds Worker pane to EXISTING WT window (right side, 50% width)
@@ -113,7 +74,7 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
 - Worker Claude starts with `--dangerously-skip-permissions`
 - Phase command injected after Claude ready
 - Worker PID saved to manifest
-- Layout after task 6:
+- Layout after todo 6:
   ```
   +---------------------------+
   |           |               |
@@ -123,7 +84,9 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
   +---------------------------+
   ```
 
-### Task 7: Spawn Supervisor
+---
+
+## Todo 7: Spawn Supervisor
 
 - Run `spawn-supervisor-wt.ps1`
 - Adds Supervisor pane to EXISTING WT window (below Worker, 50% of Worker area)
@@ -133,7 +96,7 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
 - Supervisor Claude starts with `--model haiku --dangerously-skip-permissions`
 - Startup message injected with reviewer instructions
 - Supervisor PID saved to manifest
-- Layout after task 7:
+- Layout after todo 7:
   ```
   +---------------------------+
   |           |    Worker     |
@@ -144,9 +107,7 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
 
 ---
 
-## Step 4: Orchestrator Monitoring Loop
-
-### Task 8: HEARTBEAT - Check Worker and Update Manifest
+## Todo 8: LOOP - HEARTBEAT: Check worker -> update manifest
 
 - Triggered every 5 minutes by Dashboard HEARTBEAT message
 - Check if Worker process is alive (Get-Process by PID)
@@ -154,9 +115,11 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
 - Extract todo progress (X/Y completed)
 - Update `manifest.phases[phase].workerProgress`
 
-### Task 9: Worker Exit - Check Deliverables
+---
 
-- Triggered when Worker process exits (detected in task 8)
+## Todo 9: LOOP - When worker dead: Check deliverables -> analyze
+
+- Triggered when Worker process exits (detected in todo 8)
 - Check phase deliverables exist:
   - Phase 1: `docs/user-stories.md`
   - Phase 2: `docs/test-specs.md`
@@ -166,42 +129,10 @@ cp "Pipeline-Office/claude-md/orchestrator.md" ".claude/CLAUDE.md"
 - Kill Worker and Supervisor processes (`taskkill`)
 - Set PIDs to null in manifest
 
-### Task 10: Advance to Next Phase or Complete
+---
 
-- If Phase 4 and more epics remain: increment currentEpic, go to task 6
+## Todo 10: LOOP - Advance to next phase or complete
+
+- If Phase 4 and more epics remain: increment currentEpic, go to todo 6
 - If final phase (5 for new, 3 for feature): mark pipeline "complete", generate report
-- Otherwise: increment currentPhase, update manifest, go to task 6 (spawn new Worker)
-
----
-
-## Manifest Status Values
-
-| Status | Description |
-|--------|-------------|
-| `initializing` | Pipeline starting up |
-| `running` | Worker executing phase |
-| `checkpoint` | Step mode pause for review |
-| `complete` | All phases finished |
-| `failed` | Unrecoverable error |
-
----
-
-## Window Layout Progression
-
-```
-INITIAL (Task 4):           WORKER ADDED (Task 6):       SUPERVISOR ADDED (Task 7):
-+------------------+        +----------+----------+      +----------+----------+
-|                  |        |          |          |      |          |  Worker  |
-|    Dashboard     |   ->   | Dashboard|  Worker  |  ->  | Dashboard+----------+
-|                  |        |          |          |      |          |Supervisor|
-+------------------+        +----------+----------+      +----------+----------+
-```
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-08 | Initial document |
-| 2026-01-13 | Made standalone (inlined orchestrator todos) |
+- Otherwise: increment currentPhase, update manifest, go to todo 6 (spawn new Worker)

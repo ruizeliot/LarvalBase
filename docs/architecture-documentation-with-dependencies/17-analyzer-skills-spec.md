@@ -3,6 +3,7 @@
 **Version:** v11
 **Created:** 2026-01-12
 **Status:** Design Draft
+**Related:** [15-analyzer-v2-design.md](./15-analyzer-v2-design.md), [16-outcome-correlation-spec.md](./16-outcome-correlation-spec.md)
 
 ---
 
@@ -1185,4 +1186,3 @@ Invoke in this order:
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Complete redesign for outcome-based learning approach |
-| 2026-01-13 | Made standalone (removed references to analyzer-v2-design.md and outcome-correlation-spec.md) |

@@ -2,6 +2,7 @@
 
 **Created:** 2026-01-12
 **Status:** Design Complete, Implementation Pending
+**Depends On:** [02-orchestrator-todos.md](./02-orchestrator-todos.md), [03-dashboard-features.md](./03-dashboard-features.md)
 
 ---
 
@@ -520,4 +521,3 @@ Add to orchestrator "User Interrupts" section:
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Initial specification |
-| 2026-01-13 | Made standalone (removed external dependencies) |

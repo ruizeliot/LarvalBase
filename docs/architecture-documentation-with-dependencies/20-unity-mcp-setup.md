@@ -352,4 +352,3 @@ Features: Works in compiled games, 50+ tools
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Initial setup guide, fixed configuration |
-| 2026-01-13 | Made standalone (confirmed no external dependencies) |

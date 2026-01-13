@@ -1,7 +1,14 @@
 # Dashboard Features
 
 **Created:** 2026-01-08
+**Status:** Complete Reference
 **File:** `lib/dashboard-v3.cjs`
+
+---
+
+## Overview
+
+The dashboard is a Node.js terminal application that provides real-time monitoring of pipeline execution. It displays phase progress, token usage, costs, and communicates with the orchestrator via heartbeat messages.
 
 ---
 
@@ -49,41 +56,44 @@
 | Element | Description |
 |---------|-------------|
 | **Project** | Project name (from manifest or folder name) |
-| **Mode** | `new` or `feature` |
-| **Step Mode** | `AUTO` (continuous) or `STEP` (paused at checkpoints) |
+| **Mode** | `new` (full pipeline) or `feature` (partial pipeline) |
+| **Step Mode** | `AUTO` (continuous execution) or `STEP` (paused at checkpoints) |
 | **Iteration** | `v1/3` when in step mode with multiple iterations |
-| **Timer** | `T H:MM:SS` active time (persists to manifest) |
-| **Heartbeat** | `H 4:32 (2/6)` countdown + count/refreshEvery |
-| **Checkpoint** | `CHECKPOINT Phase 2` when status is checkpoint |
+| **Timer** | `T H:MM:SS` active time (persisted to manifest) |
+| **Heartbeat** | `H 4:32 (2/6)` countdown timer + current count/refresh interval |
+| **Checkpoint** | `CHECKPOINT Phase 2` displayed when status is checkpoint |
 
 ---
 
 ## Phase Status Icons
 
-| Icon | Status |
-|------|--------|
-| `o` (dim) | pending |
-| `>` (yellow) | running |
-| `Y` (green) | complete |
-| `X` (red) | failed |
-| `~` (cyan) | analysis running |
-| `#` (magenta) | analysis complete |
-| `!` (yellow) | no sessionId (can't analyze) |
+| Icon | Status | Description |
+|------|--------|-------------|
+| `o` (dim) | pending | Phase not yet started |
+| `>` (yellow) | running | Phase currently executing |
+| `Y` (green) | complete | Phase finished successfully |
+| `X` (red) | failed | Phase encountered error |
+| `~` (cyan) | analysis running | Post-phase analysis in progress |
+| `#` (magenta) | analysis complete | Analysis results available |
+| `!` (yellow) | no sessionId | Cannot analyze (missing session) |
 
 ---
 
 ## Pricing Modes
 
-**API Mode** (default):
+### API Mode (default)
 - Columns: `tok|$`
 - Shows actual API cost based on Anthropic pricing
 - Per-model pricing (Opus, Sonnet, Haiku)
+- Most accurate for pay-per-use billing
 
-**SUB Mode** (subscription):
+### SUB Mode (subscription)
 - Columns: `tok|%|$`
-- `%` = percentage of 7-day usage
+- `%` = percentage of 7-day usage allowance
 - `$` = estimated subscription cost ($50/week budget)
-- Uses calibration: `tokensPerPercent` value
+- Uses calibration: `tokensPerPercent` value from calibration.json
+
+**Toggle:** Press `Space` to switch between modes
 
 ---
 
@@ -91,55 +101,71 @@
 
 | Column | Description |
 |--------|-------------|
-| **time** | Duration of phase (H:MM:SS) |
-| **regular** | Non-cached tokens and cost |
-| **cached** | Cache read tokens and cost |
-| **total** | Sum of regular + cached |
+| **time** | Duration of phase (H:MM:SS format) |
+| **regular** | Non-cached tokens and associated cost |
+| **cached** | Cache read tokens and associated cost (discounted) |
+| **total** | Sum of regular + cached tokens and costs |
 
 ---
 
-## Expanded Phase Details (Tab to expand)
+## Expanded Phase Details
 
-When phase is expanded, shows:
+Press `Tab` on a phase to expand details. Shows:
 
-1. **Execution Summary** (if analysis complete):
-   - Task health: `X clean, Y friction, Z struggled`
-   - Time/cost wasted
-   - What went well (top 3)
-   - Issues found (with count and recovery status)
-   - Recommendations (prioritized)
+### 1. Execution Summary (if analysis complete)
+- **Task health:** `X clean, Y friction, Z struggled`
+- **Time/cost wasted:** Estimated waste from retries
+- **What went well:** Top 3 positive observations
+- **Issues found:** Count and recovery status
+- **Recommendations:** Prioritized improvement suggestions
 
-2. **Todo Breakdown**:
-   - Individual todo items with time/tokens/cost
-   - Tree view for hierarchy
-   - Expandable todo analysis (if available)
+### 2. Todo Breakdown
+- Individual todo items with time/tokens/cost
+- Tree view for hierarchical display
+- Expandable todo analysis (if available)
 
 ---
 
 ## Heartbeat System
 
-- **Purpose**: Pings orchestrator periodically to trigger monitoring
-- **Default interval**: 5 minutes (300,000ms)
-- **Message format**: `HEARTBEAT: Read worker console, extract todo progress...`
-- **Configurable**: Adjust with +/- keys
-- **Pausable**: Toggle with P key
-- **Manual trigger**: Press Enter anytime
+| Property | Value |
+|----------|-------|
+| **Purpose** | Pings orchestrator periodically to trigger monitoring |
+| **Default interval** | 5 minutes (300,000ms) |
+| **Message format** | `HEARTBEAT: Read worker console, extract todo progress...` |
+| **Configurable** | Adjust with +/- keys |
+| **Pausable** | Toggle with P key |
+| **Manual trigger** | Press Enter anytime |
+
+### Heartbeat Behavior
+- Dashboard sends heartbeat to orchestrator via message injection
+- Orchestrator reads worker console output on heartbeat
+- Progress extracted and updated in manifest
+- Dashboard reads manifest update on next poll
 
 ---
 
 ## Auto-Analysis
 
-- Spawns `spawn-analysis-worker.ps1` on phase/epic complete
-- Analyzes transcript for struggles, issues, recommendations
-- Results stored in `manifest.phases[N].analysis`
-- Toggle with A key
-- Manual trigger with r key on selected item
+| Property | Value |
+|----------|-------|
+| **Trigger** | Phase or epic completion |
+| **Script** | `spawn-analysis-worker.ps1` |
+| **Output** | `manifest.phases[N].analysis` |
+| **Toggle** | Press `A` key |
+| **Manual** | Press `r` key on selected item |
+
+Analysis examines session transcript for:
+- Struggles and retries
+- Issues encountered
+- Recommendations for improvement
 
 ---
 
 ## Session Tracking
 
-Tracks all session IDs in manifest:
+Dashboard tracks all session IDs in manifest for analysis:
+
 ```json
 {
   "sessions": {
@@ -157,15 +183,47 @@ Tracks all session IDs in manifest:
 
 ## Files Used
 
-| File | Purpose |
-|------|---------|
-| `.pipeline/manifest.json` | Main state file (read every 1s) |
-| `.pipeline/dashboard-state.json` | Dashboard UI state (saved every 5s) |
-| `.pipeline/e2e-progress.json` | E2E test progress (optional) |
-| `.pipeline/session-info.txt` | Worker session ID (watched) |
+| File | Purpose | Update Frequency |
+|------|---------|------------------|
+| `.pipeline/manifest.json` | Main state file | Read every 1s |
+| `.pipeline/dashboard-state.json` | Dashboard UI state | Saved every 5s |
+| `.pipeline/e2e-progress.json` | E2E test progress | Optional, on change |
+| `.pipeline/session-info.txt` | Worker session ID | Watched for changes |
 
 ---
 
-## TODO
+## Manifest Schema (Dashboard-Relevant Fields)
 
-- [ ] Remove onboarding indicator (legacy feature)
+```json
+{
+  "project": { "name": "my-app", "path": "/path/to/project" },
+  "status": "running",
+  "mode": "new",
+  "currentPhase": "2",
+  "stepMode": false,
+  "currentIteration": 1,
+  "phases": {
+    "1": {
+      "status": "complete",
+      "duration": 2712000,
+      "cost": 2.65,
+      "tokens": { "regular": 125000, "cached": 50000 },
+      "analysis": { "summary": "...", "issues": [], "recommendations": [] }
+    },
+    "2": { "status": "running" }
+  },
+  "heartbeat": {
+    "enabled": true,
+    "intervalMs": 300000
+  }
+}
+```
+
+---
+
+## Version History
+
+| Date | Change |
+|------|--------|
+| 2026-01-08 | Initial document |
+| 2026-01-13 | Made standalone (added manifest schema and full context) |

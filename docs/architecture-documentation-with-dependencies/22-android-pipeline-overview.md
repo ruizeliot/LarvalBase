@@ -330,4 +330,3 @@ PATH += %ANDROID_HOME%\platform-tools
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Initial design draft |
-| 2026-01-13 | Made standalone (confirmed no external dependencies) |

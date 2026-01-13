@@ -419,4 +419,3 @@ sdkmanager --licenses
 | Date | Change |
 |------|--------|
 | 2026-01-12 | Initial setup guide |
-| 2026-01-13 | Made standalone (confirmed no external dependencies) |

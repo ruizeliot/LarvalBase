@@ -37,6 +37,8 @@ Phase 4 implements the application using Test-Driven Development (TDD) with a **
 **Output:** Working implementation with all E2E tests passing
 **Mode:** Autonomous (three-part structure with Ralph loop)
 
+**References:** [14-mandatory-standards.md](./14-mandatory-standards.md)
+
 ---
 
 ## Agent Skills (Invoke with Skill tool)
@@ -584,12 +586,3 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 ## Status
 
 Under Review - Ready for implementation as agent CLAUDE.md
-
----
-
-## Version History
-
-| Date | Change |
-|------|--------|
-| 2026-01-09 | Initial document |
-| 2026-01-13 | Made standalone (removed reference to mandatory-standards.md, inlined detection commands and completeness pairs) |

@@ -1,12 +1,10 @@
 # Architecture Documentation
 
 **Created:** 2026-01-08
-**Updated:** 2026-01-13 (Made all documents standalone - no cross-dependencies)
+**Updated:** 2026-01-12 (Added Phase 1 Redesign 25-26, Analyzer v2 redesign 15-17)
 **Version:** v11
 
 Reference specifications for Pipeline v11 architecture.
-
-> **Note:** All documents in this folder are **standalone** - each can be read and understood independently without needing to read other documents. Cross-references have been removed and critical information inlined.
 
 ---
 
