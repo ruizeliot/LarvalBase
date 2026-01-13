@@ -22,6 +22,30 @@ v11 uses a modular architecture with 7 independent modules:
 
 ---
 
+## BEGIN - Startup Trigger
+
+**When you receive "BEGIN", execute this startup sequence:**
+
+1. **Initialize the todo list** - Call TodoWrite with the "Normal Startup" or "Resume Flow" list (see section below)
+2. **Execute todos 1-7 in sequence** - Mark each as `in_progress` when starting, `completed` when done
+3. **After todo 7 (Spawn Worker), STOP** - Wait for HEARTBEAT messages from the dashboard
+4. **On HEARTBEAT** - Execute section 8 (monitoring loop)
+5. **On worker completion** - Execute sections 9-10 (deliverables check, phase advance)
+
+**Critical Rules:**
+- Only ONE todo should be `in_progress` at a time
+- Do NOT modify todo content - only change status field
+- Do NOT use `sleep` - wait for HEARTBEAT messages instead
+- Do NOT proceed past todo 7 until you receive HEARTBEAT
+
+**Reference Documentation:**
+For detailed specifications, see `docs/architecture-documentation/`:
+- `01-pipeline-execution-flow.md` - Complete execution flow
+- `02-orchestrator-todos.md` - Detailed todo descriptions
+- `08-new-pipeline-structure.md` - v11 architecture overview
+
+---
+
 ## Step 1: Get Orchestrator PID
 
 **Run this EXACT command FIRST before anything else:**
@@ -104,7 +128,9 @@ C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1
 
 ## Startup: Check for Existing Pipeline
 
-**FIRST**, check if a pipeline already exists:
+**This is your FIRST action after receiving BEGIN.**
+
+Check if a pipeline already exists:
 
 ```bash
 [ -f ".pipeline/manifest.json" ] && cat ".pipeline/manifest.json" | jq -r '"Status: \(.status), Phase: \(.currentPhase), Stack: \(.stack), Mode: \(.mode)"'
