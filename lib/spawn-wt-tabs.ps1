@@ -68,7 +68,7 @@ $dashboardScript = Join-Path $pipelineOffice "lib\$dashboardScriptName"
 Write-Host "Dashboard version: $DashboardVersion -> $dashboardScriptName"
 
 Write-Host "=========================================="
-Write-Host "  spawn-wt-tabs.ps1 (v10.2)"
+Write-Host "  spawn-wt-tabs.ps1 (v11.0)"
 Write-Host "  Creating Split-Pane Layout"
 Write-Host "=========================================="
 Write-Host "Project: $ProjectPath"
@@ -91,7 +91,8 @@ if (Test-Path $sessionInfoPath) { Remove-Item $sessionInfoPath -Force }
 
 # Copy phase-specific CLAUDE.md
 $claudeMdSource = "$pipelineOffice\claude-md\phase-$PhaseNumber.md"
-$workerBaseSource = "$env:USERPROFILE\.claude\commands\worker-base-desktop-v9.0.md"
+# v11: Worker base rules are in Pipeline-Office/claude-md/_worker-base.md
+$workerBaseSource = "$pipelineOffice\claude-md\_worker-base.md"
 $claudeDir = Join-Path $ProjectPath ".claude"
 $claudeMdDest = Join-Path $claudeDir "CLAUDE.md"
 
@@ -208,17 +209,22 @@ if (Test-Path $dashboardPidFile) {
 $allPwsh = Get-Process -Name powershell -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id
 Write-Host "PowerShell processes: $($allPwsh -join ', ')"
 
-# Update manifest
+# Update manifest (v11 schema)
 $manifestPath = Join-Path $ProjectPath ".pipeline\manifest.json"
 if (Test-Path $manifestPath) {
     try {
         $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-        $manifest.wtMode = $true
-        $manifest.wtWindowName = $wtWindowName
-        $manifest.dashboardPid = $dashboardPid
-        $manifest.layout = "4-tab"
+        # v11 schema uses nested workers object
+        if (-not $manifest.workers) {
+            $manifest | Add-Member -NotePropertyName "workers" -NotePropertyValue @{} -Force
+        }
+        if (-not $manifest.workers.current) {
+            $manifest.workers | Add-Member -NotePropertyName "current" -NotePropertyValue @{} -Force
+        }
+        $manifest.workers.current | Add-Member -NotePropertyName "wtWindowName" -NotePropertyValue $wtWindowName -Force
+        $manifest.workers.current | Add-Member -NotePropertyName "dashboardPid" -NotePropertyValue $dashboardPid -Force
         $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
-        Write-Host "Manifest updated"
+        Write-Host "Manifest updated (v11 schema)"
     } catch {
         Write-Host "WARNING: Could not update manifest: $_"
     }
@@ -376,20 +382,36 @@ public class TabInjector {
 }
 "@
 
-# Inject phase command into Worker
+# Inject BEGIN into Worker (v11: Worker reads instructions from CLAUDE.md)
 if ($workerPid) {
-    Write-Host "Injecting command into Worker (PID $workerPid): $PhaseCommand"
-    $textResult = [TabInjector]::InjectText($workerPid, $PhaseCommand)
+    Write-Host "Injecting BEGIN into Worker (PID $workerPid)"
+    Write-Host "  (CLAUDE.md contains phase-$PhaseNumber instructions)"
+    $textResult = [TabInjector]::InjectText($workerPid, "BEGIN")
     Write-Host "  Text: $textResult"
     Start-Sleep -Milliseconds 500
     $enterResult = [TabInjector]::InjectEnter($workerPid)
     Write-Host "  Enter: $enterResult"
 }
 
-# Inject supervisor instructions
+# Inject supervisor instructions (v11: Rule violation monitor)
 if ($supervisorPid) {
     Write-Host "Injecting instructions into Supervisor (PID $supervisorPid)"
-    $supervisorMsg = "You are a Code Reviewer. Watch for rule violations in the Worker's output. Say 'Reviewer ready' to confirm."
+    $supervisorMsg = @"
+You are a Pipeline Supervisor (v11). Monitor the Worker for rule violations.
+
+VIOLATION CODES:
+- V1: Mocking system APIs (jest.mock, vi.mock on @tauri-apps)
+- V2: Claiming limitation without WebSearch first
+- V3: Synthetic events in E2E (dispatchEvent, fake events)
+- V4: Test cheating (changing what test verifies)
+- V5: Empty handlers (onClick={() => {}})
+- V6: Using AskUserQuestion in phases 2-5
+
+When you detect a violation, write to .pipeline/violation.json:
+{"code":"V1","description":"...","severity":"high"}
+
+Say 'Supervisor ready' to confirm.
+"@
     $textResult = [TabInjector]::InjectText($supervisorPid, $supervisorMsg)
     Write-Host "  Text: $textResult"
     Start-Sleep -Milliseconds 500
@@ -397,14 +419,24 @@ if ($supervisorPid) {
     Write-Host "  Enter: $enterResult"
 }
 
-# Update manifest with PIDs
+# Update manifest with PIDs (v11 schema)
 if (Test-Path $manifestPath) {
     try {
         $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
-        $manifest.workerPid = $workerPid
-        $manifest.supervisorPid = $supervisorPid
+        # v11 schema uses nested workers object
+        if (-not $manifest.workers) {
+            $manifest | Add-Member -NotePropertyName "workers" -NotePropertyValue @{} -Force
+        }
+        if (-not $manifest.workers.current) {
+            $manifest.workers | Add-Member -NotePropertyName "current" -NotePropertyValue @{} -Force
+        }
+        if (-not $manifest.workers.supervisor) {
+            $manifest.workers | Add-Member -NotePropertyName "supervisor" -NotePropertyValue @{} -Force
+        }
+        $manifest.workers.current | Add-Member -NotePropertyName "pid" -NotePropertyValue $workerPid -Force
+        $manifest.workers.supervisor | Add-Member -NotePropertyName "pid" -NotePropertyValue $supervisorPid -Force
         $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
-        Write-Host "Manifest updated with Worker/Supervisor PIDs"
+        Write-Host "Manifest updated with Worker/Supervisor PIDs (v11 schema)"
     } catch {
         Write-Host "WARNING: Could not update manifest: $_"
     }
