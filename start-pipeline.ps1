@@ -75,21 +75,12 @@ if (-not (Test-Path $BrainstormNotes) -or -not (Test-Path $UserStories)) {
 # Create .claude directory if needed
 if (-not (Test-Path $ProjectClaudeDir)) {
     New-Item -ItemType Directory -Path $ProjectClaudeDir -Force | Out-Null
-    Write-Host "Created: $ProjectClaudeDir" -ForegroundColor Gray
 }
 
 # Copy orchestrator CLAUDE.md
 Copy-Item -Path $OrchestratorSource -Destination $ProjectClaudeMd -Force
-Write-Host "Copied orchestrator to: $ProjectClaudeMd" -ForegroundColor Green
 
-# Show what we did
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Pipeline Orchestrator v11 Ready" -ForegroundColor Cyan
-Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  Project: $ProjectPath"
-Write-Host "  CLAUDE.md: Orchestrator v11 loaded"
-Write-Host ""
+Write-Host "Pipeline v11 | $(Split-Path $ProjectPath -Leaf)" -ForegroundColor Cyan
 
 if ($NoLaunch) {
     Write-Host "NoLaunch specified. Start Claude manually:" -ForegroundColor Yellow
@@ -100,14 +91,11 @@ if ($NoLaunch) {
     exit 0
 }
 
-# Spawn orchestrator in a NEW Windows Terminal window (so we can inject BEGIN)
-Write-Host "Spawning orchestrator in new window..." -ForegroundColor Green
-
-# Use spawn-orchestrator-wt.ps1 to create the window
+# Spawn orchestrator in a NEW Windows Terminal window
 $spawnScript = Join-Path $PipelineOffice "lib\spawn-orchestrator-wt.ps1"
-& $spawnScript -ProjectPath $ProjectPath
+$spawnOutput = & $spawnScript -ProjectPath $ProjectPath 2>&1 | Out-String
 
-# Read the orchestrator PID from the file it creates
+# Read the orchestrator PID
 $pidFile = Join-Path $ProjectPath ".pipeline\orchestrator-powershell-pid.txt"
 $maxWait = 10
 $waited = 0
@@ -122,25 +110,13 @@ if (-not (Test-Path $pidFile)) {
 }
 
 $orchPid = [int](Get-Content $pidFile).Trim()
-Write-Host "Orchestrator PID: $orchPid" -ForegroundColor Cyan
 
-# Wait for Claude to initialize (it takes ~5-8 seconds to start)
-Write-Host "Waiting for Claude to initialize..." -ForegroundColor Gray
+# Wait for Claude to initialize
+Write-Host "Waiting for Claude..." -ForegroundColor Gray
 Start-Sleep -Seconds 8
 
-# Inject BEGIN message using inject-message.ps1 in a fresh PowerShell process
-Write-Host "Injecting BEGIN message..." -ForegroundColor Green
+# Inject BEGIN message
 $injectScript = Join-Path $PipelineOffice "lib\inject-message.ps1"
+$injectOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '$injectScript' -TargetPid $orchPid -Message 'BEGIN'" 2>&1 | Out-String
 
-# Run injection in a separate PowerShell process (avoids console attachment issues from Git Bash)
-$injectOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '$injectScript' -TargetPid $orchPid -Message 'BEGIN'"
-Write-Host $injectOutput -ForegroundColor Gray
-
-Write-Host ""
-Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Pipeline Started!" -ForegroundColor Green
-Write-Host "========================================" -ForegroundColor Green
-Write-Host "  Orchestrator PID: $orchPid"
-Write-Host "  BEGIN message injected automatically"
-Write-Host ""
-Write-Host "You can close this window." -ForegroundColor Gray
+Write-Host "Started (PID: $orchPid)" -ForegroundColor Green
