@@ -286,28 +286,28 @@ fi
 
 **v11 requires brainstorming to be completed BEFORE starting the pipeline.**
 
-```bash
-NOTES_EXISTS=false
-STORIES_EXISTS=false
-[ -f "docs/brainstorm-notes.md" ] && NOTES_EXISTS=true
-[ -f "docs/user-stories.md" ] && STORIES_EXISTS=true
+**Note:** Only `brainstorm-notes.md` is required. Phase 2 (PM Agent) creates `user-stories.md`.
 
-if [ "$NOTES_EXISTS" = "true" ] && [ "$STORIES_EXISTS" = "true" ]; then
-  echo "PASS: Brainstorm files exist"
-  STORY_COUNT=$(grep -c "^## US-" docs/user-stories.md 2>/dev/null || echo 0)
-  EPIC_COUNT=$(grep -c "^# Epic" docs/user-stories.md 2>/dev/null || echo 0)
-  echo "Stories: $STORY_COUNT, Epics: $EPIC_COUNT"
+```bash
+if [ -f "docs/brainstorm-notes.md" ]; then
+  echo "PASS: Brainstorm notes exist"
+  # Check if user-stories already exists (resume case)
+  if [ -f "docs/user-stories.md" ]; then
+    STORY_COUNT=$(grep -c "^## US-" docs/user-stories.md 2>/dev/null || echo 0)
+    EPIC_COUNT=$(grep -c "^# Epic" docs/user-stories.md 2>/dev/null || echo 0)
+    echo "User stories already exist: $STORY_COUNT stories, $EPIC_COUNT epics"
+  else
+    echo "User stories will be created by Phase 2"
+  fi
 else
-  echo "FAIL: Missing brainstorm files"
-  echo "  Notes: $NOTES_EXISTS"
-  echo "  Stories: $STORIES_EXISTS"
+  echo "FAIL: Missing docs/brainstorm-notes.md"
   echo ""
-  echo "Run /brainstorm first to create these files."
+  echo "Run /brainstorm first to create this file."
   exit 1
 fi
 ```
 
-**If files don't exist:** Stop and tell user to run `/brainstorm` skill first.
+**If brainstorm-notes.md doesn't exist:** Stop and tell user to run `/brainstorm` skill first.
 
 ### 3. Ask User for Mode and Configuration
 
@@ -346,8 +346,16 @@ questions:
 mkdir -p ".pipeline"
 PROJECT_NAME=$(basename "$(pwd)")
 PROJECT_PATH=$(pwd)
-STORY_COUNT=$(grep -c "^## US-" docs/user-stories.md 2>/dev/null || echo 0)
-EPIC_COUNT=$(grep -c "^# Epic" docs/user-stories.md 2>/dev/null || echo 0)
+
+# Note: user-stories.md may not exist yet (Phase 2 creates it)
+# If it exists (resume case), read counts; otherwise set to 0
+if [ -f "docs/user-stories.md" ]; then
+  STORY_COUNT=$(grep -c "^## US-" docs/user-stories.md 2>/dev/null || echo 0)
+  EPIC_COUNT=$(grep -c "^# Epic" docs/user-stories.md 2>/dev/null || echo 0)
+else
+  STORY_COUNT=0
+  EPIC_COUNT=0
+fi
 
 cat > ".pipeline/manifest.json" << EOF
 {
