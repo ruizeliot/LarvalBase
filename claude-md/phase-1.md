@@ -99,9 +99,97 @@ Agent:
 
 ---
 
-## Startup: Initialize File and Todos
+## Using Live Canvas (If Enabled)
 
-**First, create/read the brainstorm notes file:**
+**If user enabled Live Canvas in startup, use these tools during brainstorming:**
+
+**When writing ideas:**
+```
+Instead of direct file edits, use:
+- append_notes({ section: "Core Concept", content: "- Your idea here" })
+- append_notes({ section: "Features", content: "- Feature description" })
+
+This updates BOTH the file AND the live viewer.
+```
+
+**When showing diagrams:**
+```
+After creating ASCII mockups in chat, also call:
+- render_mermaid({ diagram: "flowchart...", title: "User Flow" })
+- render_ascii({ content: "ASCII art...", title: "Layout Option 1" })
+
+This displays diagrams in the live viewer for easier viewing.
+```
+
+**If Live Canvas was NOT enabled:**
+- Use normal file operations (Read/Write/Edit tools)
+- All functionality works, just without live preview
+
+---
+
+## Startup Sequence (MUST FOLLOW THIS ORDER)
+
+**STEP 0: Ask setup questions BEFORE doing anything else.**
+
+These questions come FIRST, before reading files, before initializing todos, before anything.
+
+### 0a. Ask About Live Canvas (ALWAYS ASK)
+
+**ALWAYS ask this question first, before anything else:**
+```
+AskUserQuestion({
+  questions: [{
+    header: "Live Canvas",
+    question: "Would you like to use Live Canvas for real-time visual brainstorming?",
+    options: [
+      { label: "Yes, open viewer", description: "Opens http://localhost:3456 in browser for live updates" },
+      { label: "No, text only", description: "Standard brainstorming without live preview" }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+**If "Yes":**
+1. Run `start http://localhost:3456` to open browser
+2. Use `append_notes` and `render_mermaid` tools during session
+
+**If "No":** Use normal file operations.
+
+### 0b. Check Stack and Ask if Not Set
+
+Read `.pipeline/manifest.json` and check if `stack` is null or missing.
+
+**If stack is null/missing, ASK:**
+```
+AskUserQuestion({
+  questions: [{
+    header: "Stack",
+    question: "What platform are you building for?",
+    options: [
+      { label: "Desktop (Tauri)", description: "Windows, macOS, Linux desktop app with Tauri v2" },
+      { label: "Unity (XR/VR)", description: "Unity 3D project with Meta XR SDK for Quest" },
+      { label: "Android (Tauri Mobile)", description: "Android app using Tauri mobile support" }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+**After user answers, update manifest:**
+```bash
+# Update stack in manifest (use jq or similar)
+```
+
+### 0c. THEN Continue to File/Todo Setup
+
+Only after both questions are answered, proceed to initialize file and todos.
+
+---
+
+## Initialize File and Todos
+
+**Create/read the brainstorm notes file:**
 
 ```markdown
 # Brainstorm Notes: [Project Name]
@@ -189,17 +277,13 @@ Should we continue from where we left off?"
 
 ---
 
-## Stack Constraints (Boundaries)
+## Stack Constraints (Reference)
 
-The pipeline is designed for a specific stack. These constraints guide brainstorming:
-
-| Constraint | Value |
-|------------|-------|
-| **Platform** | Desktop (Windows, macOS, Linux) |
-| **Framework** | Tauri v2 |
-| **Frontend** | React + TypeScript |
-| **Backend** | Rust |
-| **Styling** | Tailwind CSS |
+| Stack | Platform | Framework | Frontend | Backend | Test Framework |
+|-------|----------|-----------|----------|---------|----------------|
+| **Desktop** | Windows/macOS/Linux | Tauri v2 | React + TypeScript | Rust | Jest + WebdriverIO |
+| **Unity** | Meta Quest | Unity 6+ | Unity UI | C# | Unity Test Framework |
+| **Android** | Android | Tauri Mobile | React + TypeScript | Rust | Jest + Appium |
 
 **Why constraints help:** Prevents scope creep, guides UI patterns, focuses research.
 

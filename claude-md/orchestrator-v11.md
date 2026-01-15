@@ -115,12 +115,19 @@ C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1
 
 ## Phase Command Reference (v11)
 
+**Command format:** `/[phase]-[mode]-pipeline-v11.0` (generic - reads stack from manifest)
+
 | Phase | Command | Agent Role |
 |-------|---------|------------|
-| 2 | `/2-new-pipeline-desktop-v11.0` | PM Agent (User Stories) |
-| 3 | `/3-new-pipeline-desktop-v11.0` | Test Architect |
-| 4 | `/4-new-pipeline-desktop-v11.0` | Developer |
-| 5 | `/5-new-pipeline-desktop-v11.0` | QA Agent |
+| 2 | `/2-new-pipeline-v11.0` | PM Agent (Functionality Specs) |
+| 3 | `/3-new-pipeline-v11.0` | Test Architect (Bootstrap) |
+| 4 | `/4-new-pipeline-v11.0` | Developer (Implementation) |
+| 5 | `/5-new-pipeline-v11.0` | QA Agent (Polish) |
+
+**Stack-specific details** are in `worker-base-{stack}-v11.md` files:
+- `worker-base-desktop-v11.md` - Tauri v2, React, Rust
+- `worker-base-unity-v11.md` - Unity 3D, Meta XR SDK
+- `worker-base-android-v11.md` - Tauri Mobile, Android
 
 **Note:** Phase 1 is `/brainstorm` skill, NOT an orchestrator-managed phase.
 
@@ -234,15 +241,20 @@ cat ".pipeline/manifest.json" | jq ".workers.current.orchestratorPid = $ORCH_PID
 
 ```bash
 PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
+STACK=$(cat ".pipeline/manifest.json" | jq -r '.stack')
 MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
 WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
 SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
+
+# Build phase command dynamically based on stack
+# Generic command - reads stack from manifest internally
+PHASE_COMMAND="/$PHASE-$MODE-pipeline-v11.0"
 
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
   -ProjectPath "." \
   -OrchestratorPID "$ORCH_PID" \
   -PhaseNumber "$PHASE" \
-  -PhaseCommand "/$PHASE-$MODE-pipeline-desktop-v11.0" \
+  -PhaseCommand "$PHASE_COMMAND" \
   -WorkerSplit $WORKER_SPLIT \
   -SupervisorSplit $SUPERVISOR_SPLIT \
   -DashboardVersion v11
@@ -309,12 +321,22 @@ fi
 
 **If brainstorm-notes.md doesn't exist:** Stop and tell user to run `/brainstorm` skill first.
 
-### 3. Ask User for Mode and Configuration
+### 3. Ask User for Stack, Mode and Configuration
 
 Use **AskUserQuestion** with these questions:
 
 ```
 questions:
+  - header: "Stack"
+    question: "What platform are you building for?"
+    options:
+      - label: "Desktop (Tauri)"
+        description: "Windows, macOS, Linux desktop app with Tauri v2"
+      - label: "Unity (XR/VR)"
+        description: "Unity 3D project with Meta XR SDK"
+      - label: "Android (Tauri Mobile)"
+        description: "Android app using Tauri mobile support"
+
   - header: "Mode"
     question: "What type of project is this?"
     options:
@@ -340,6 +362,11 @@ questions:
         description: "Pause after each task for review"
 ```
 
+**Stack mapping:**
+- "Desktop (Tauri)" → `stack: "desktop"`
+- "Unity (XR/VR)" → `stack: "unity"`
+- "Android (Tauri Mobile)" → `stack: "android"`
+
 ### 4. Create .pipeline/ and Manifest (v11 Schema)
 
 ```bash
@@ -361,7 +388,7 @@ cat > ".pipeline/manifest.json" << EOF
 {
   "version": "11.0.0",
   "project": { "name": "$PROJECT_NAME", "path": "$PROJECT_PATH" },
-  "stack": "desktop",
+  "stack": "<STACK>",
   "mode": "<MODE>",
   "userMode": "<USER_MODE>",
   "stepMode": "<STEP_MODE>",
@@ -421,15 +448,21 @@ The v11 Composer module handles this:
 ### 7. Spawn Worker + Supervisor
 
 ```bash
+STACK=$(cat ".pipeline/manifest.json" | jq -r '.stack')
 MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
 WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
 SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
+
+# Build phase command dynamically based on stack
+# Format: /[phase]-[mode]-pipeline-[stack]-v11.0
+# Generic command - reads stack from manifest internally
+PHASE_COMMAND="/2-$MODE-pipeline-v11.0"
 
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
   -ProjectPath "." \
   -OrchestratorPID "$ORCH_PID" \
   -PhaseNumber "2" \
-  -PhaseCommand "/2-$MODE-pipeline-desktop-v11.0" \
+  -PhaseCommand "$PHASE_COMMAND" \
   -WorkerSplit $WORKER_SPLIT \
   -SupervisorSplit $SUPERVISOR_SPLIT \
   -DashboardVersion v11
@@ -550,6 +583,7 @@ fi
 ```bash
 CURRENT_PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
 NEXT_PHASE=$((CURRENT_PHASE + 1))
+STACK=$(cat ".pipeline/manifest.json" | jq -r '.stack')
 MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
 WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
 SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
@@ -563,11 +597,15 @@ cat ".pipeline/manifest.json" | jq "
 # Compose CLAUDE.md for next phase (use lib/composer)
 # Then spawn worker
 
+# Build phase command dynamically based on stack
+# Generic command - reads stack from manifest internally
+PHASE_COMMAND="/$NEXT_PHASE-$MODE-pipeline-v11.0"
+
 MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
   -ProjectPath "." \
   -OrchestratorPID "$ORCH_PID" \
   -PhaseNumber "$NEXT_PHASE" \
-  -PhaseCommand "/$NEXT_PHASE-$MODE-pipeline-desktop-v11.0" \
+  -PhaseCommand "$PHASE_COMMAND" \
   -WorkerSplit $WORKER_SPLIT \
   -SupervisorSplit $SUPERVISOR_SPLIT \
   -DashboardVersion v11

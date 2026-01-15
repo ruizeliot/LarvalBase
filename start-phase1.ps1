@@ -112,7 +112,7 @@ $Manifest = @{
         name = $ProjectName
         path = $ProjectPath
     }
-    stack = "desktop"
+    stack = $null  # Will be set during brainstorming - Claude MUST ask
     mode = "new"
     status = "brainstorming"
     currentPhase = "1"
