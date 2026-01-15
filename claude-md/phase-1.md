@@ -1,21 +1,30 @@
-# Phase 1: Brainstorm & User Stories (Worker CLAUDE.md)
+# Phase 1: Brainstorm Facilitator (CLAUDE.md)
 
-**Pipeline Version:** 10.0
+**Pipeline Version:** 11.0
 **Phase:** 1 - Brainstorm
 **Mode:** Interactive (uses AskUserQuestion)
-
----
-
-# Worker Base Rules v10.0
-
-**This file contains shared rules for ALL desktop pipeline workers.**
-**Phase-specific CLAUDE.md files include this content.**
+**Output:** `docs/brainstorm-notes.md` only
 
 ---
 
 # Shared Rules (All Agents)
 
-These rules apply to ALL pipeline agents (orchestrator and workers). They MUST be followed at all times.
+These rules apply to ALL pipeline agents. They MUST be followed at all times.
+
+---
+
+## Rule 0: No Mocking Policy
+
+**These rules are ABSOLUTE. No exceptions. No workarounds. No "just this once."**
+
+### The Core Philosophy
+
+```
+Working App = Success
+Passing Tests = Verification that app works
+```
+
+**NEVER mock system APIs, external integrations, or use hardcoded/fake data.**
 
 ---
 
@@ -23,429 +32,145 @@ These rules apply to ALL pipeline agents (orchestrator and workers). They MUST b
 
 **Always search for anything technical. Don't rely on training knowledge.**
 
-### When to Search
-
 | Situation | Action |
 |-----------|--------|
 | Before implementing ANY technical solution | WebSearch first |
 | Before claiming something is a "limitation" | WebSearch to verify |
 | When encountering an error message | WebSearch the exact error |
 | When using a library/API | WebSearch for current documentation |
-| When unsure about syntax or patterns | WebSearch for examples |
-| Before saying "this doesn't work" | WebSearch for workarounds |
-
-### Examples
-
-```
-BAD:  "I'll use React.memo for optimization" (from memory)
-GOOD: WebSearch "React.memo best practices 2025" → then implement
-
-BAD:  "Wheel scroll doesn't work in WebView2, this is a known issue"
-GOOD: WebSearch "WebView2 wheel scroll issue" → cite source if true
-
-BAD:  "I'll configure Tauri like this..." (guessing)
-GOOD: WebSearch "Tauri v2 configuration example" → follow docs
-```
-
-### The Rule
 
 **If you're about to write code based on memory, STOP and search first.**
-
-Training data has a cutoff date. Libraries change. Best practices evolve. Always verify with current sources.
 
 ---
 
 ## Rule 2: Self-Reflection After Every Task
 
-**After completing each task, run this checklist before moving on.**
-
-### Fixed Checklist
-
-Ask yourself:
-
-- [ ] **Did I search before implementing?**
-  - If NO: Go back and search, then verify my implementation is correct.
-
-- [ ] **Did I check existing code patterns first?**
-  - If NO: Read similar code in the project to match style.
-
-- [ ] **Did I avoid placeholders?**
-  - No empty handlers: `onClick={() => {}}`
-  - No console.log stubs: `onClick={() => console.log('TODO')}`
-  - No "not implemented" alerts
-  - If I added a button, it MUST do something real.
-
-- [ ] **Did I implement both halves of completeness pairs?**
-  - Add → Delete
-  - Open → Close
-  - Connect → Disconnect
-  - Select → Deselect
-  - Show → Hide
-  - Enable → Disable
-  - If I implemented one, I MUST implement the other.
-
-- [ ] **Did I handle edge cases?**
-  - Empty state (no items)
-  - Boundaries (min/max values)
-  - Invalid input
-  - Rapid actions (double-click, spam)
-  - Interruption (action during loading)
-
-- [ ] **Did I use real actions, not synthetic events?**
-  - In E2E tests: Use WebdriverIO `.click()`, `.setValue()`, `.dragAndDrop()`
-  - NOT: `browser.execute(() => el.dispatchEvent(...))`
-
-- [ ] **Did I test what was asked, not something easier?**
-  - If the test was hard, I didn't change the test to test something simpler.
-  - The original requirement is still being verified.
-
-- [ ] **If I struggled, did I search for solutions rather than guess repeatedly?**
-  - After 2-3 failed attempts, I should WebSearch for solutions.
-  - Random guessing wastes time and tokens.
-
-- [ ] **If I claimed a limitation, did I verify it exists?**
-  - I searched and found documentation/issues confirming the limitation.
-  - I have a source URL to cite.
-
-### Open Reflection
-
-After the checklist, ask:
-
-1. **What did I just do?** (Brief summary)
-2. **Did I cut any corners?** (Be honest)
-3. **What could I have missed?** (Think critically)
-
-### Action on Failure
-
-**If any checklist item is NO:**
-- STOP
-- Fix the issue
-- Re-run the checklist
-- Only then move to the next task
+After completing each task, ask:
+- Did I search before implementing?
+- Did I check existing code patterns first?
+- Did I avoid placeholders?
+- Did I implement both halves of completeness pairs?
 
 ---
 
 ## Rule 3: Research Before Claiming Limitations
 
-**You MUST search online BEFORE claiming something is a "known limitation" or "doesn't work."**
-
-### Forbidden Pattern
-
-```
-"This is a known WebDriver limitation" ← WITHOUT searching first
-"X doesn't support Y" ← WITHOUT documentation
-"This won't work because..." ← WITHOUT verification
-```
-
-### Required Pattern
-
-```
-1. WebSearch "[tool] [action] [environment]"
-2. If search finds solution → Use it
-3. If search confirms limitation → Document the source URL
-4. If search finds nothing → Try implementation anyway (assumption may be wrong)
-```
+**You MUST search online BEFORE claiming something is a "known limitation."**
 
 ---
 
-# Worker-Specific Rules
-
-## Worker Self-Reflection Additions
-
-**After each task, also verify these worker-specific items:**
-
-- [ ] **Did I update todos after completing each task?**
-  - Mark todo as `completed` immediately when done
-  - Only one todo should be `in_progress` at a time
-
-- [ ] **Did I run tests before committing?**
-  - All tests must pass before commit
-  - Never commit failing tests
-
-- [ ] **Did I commit at phase end with proper format?**
-  - Use conventional commit format
-  - Include test counts in body
-
----
-
-## 1. Orchestrator Communication
-
-**CRITICAL: The orchestrator tracks your progress via the todo list.**
-
-### Todo List Rules
-- Initialize todos at phase startup (phase command provides the list)
-- Mark todos as `in_progress` when starting a task
-- Mark todos as `completed` when finished
-- Do NOT add new todos beyond initialized list
-- Do NOT remove todos from the list
-- One todo `in_progress` at a time (helps orchestrator track)
-
-### Completion Detection
-- When ALL todos are `completed`, orchestrator detects phase complete
-- Orchestrator handles manifest updates - you do NOT update manifest
-- Orchestrator handles spawning next phase - you do NOT continue
-
----
-
-## 2. FORBIDDEN PATTERNS (Gate Enforcement)
-
-**The orchestrator runs gates after certain phases. These patterns cause REJECTION.**
-
-### No Placeholder Rule (Gate 2)
-
-**STRICTLY FORBIDDEN - Causes automatic gate failure:**
-
-```tsx
-// Empty handlers - FORBIDDEN
-onClick={() => {}}
-onDragStart={() => {}}
-onChange={() => {}}
-
-// Console.log placeholders - FORBIDDEN
-onClick={() => console.log('TODO')}
-
-// Alert placeholders - FORBIDDEN
-onClick={() => alert('Not implemented')}
-
-// Buttons without handlers - FORBIDDEN
-<button>Edit</button>  // No onClick = forbidden
-
-// Menu promises without delivery - FORBIDDEN
-aria-haspopup="menu"  // With no actual menu
-```
-
-**The Rule:** If it looks interactive, it MUST be interactive. If you can't implement it now, DON'T add the element.
-
-### No Test-Only Code Paths (Gate 2)
-
-```tsx
-// FORBIDDEN
-if (process.env.NODE_ENV === 'test') { ... }
-if (import.meta.env.MODE === 'test') { ... }
-
-// REQUIRED - Same code path for test and production
-const result = await invoke('command_name');
-```
-
-### No Synthetic Events in E2E (Gate 1)
-
-```javascript
-// FORBIDDEN in E2E tests
-browser.execute(() => { el.dispatchEvent(new MouseEvent(...)) })
-browser.execute(() => { el.dispatchEvent(new DragEvent(...)) })
-browser.execute(() => { store.addNode(...) })  // Direct store access
-
-// REQUIRED - Real WebdriverIO actions
-$('selector').click()
-$('source').dragAndDrop($('target'))
-$('input').setValue('text')
-browser.keys(['Delete'])
-```
-
----
-
-## 3. Completeness Pairs
-
-**Actions that MUST be implemented together. If you implement one, you MUST implement both.**
-
-| Action | Required Pair |
-|--------|---------------|
-| Add / Create | Delete / Remove |
-| Place | Move / Reposition |
-| Connect | Disconnect |
-| Open / Expand | Close / Collapse |
-| Select | Deselect |
-| Start | Stop / Pause |
-| Show | Hide |
-| Enable | Disable |
-| Zoom in | Zoom out |
-| Undo | Redo (or explicit "no undo" decision) |
-| Lock | Unlock |
-| Pin | Unpin |
-| Favorite | Unfavorite |
-| Subscribe | Unsubscribe |
-
-**Enforcement by Phase:**
-- Phase 1: Verify stories exist for both halves
-- Phase 2: Verify E2E tests cover both halves
-- Phase 4: Verify implementation includes both halves
-- Phase 5: Verify smoke test confirms both halves work
-
-**Self-Check:** When implementing any of these actions, ask: "Did I implement the pair?"
-
----
-
-## 4. Edge Case Matrix
-
-**Every E2E test must cover at least 2 edge cases from this matrix:**
-
-| Category | Edge Cases |
-|----------|------------|
-| Empty state | No items, first item, single item |
-| Boundaries | Min value, max value, at limit |
-| Invalid input | Empty string, special chars, too long |
-| Rapid actions | Double-click, spam clicks, drag cancel |
-| Interruption | Action during loading, mid-drag escape |
-| State conflicts | Delete while editing, move while drag |
-
-**Phase 2 must include edge cases in test specs.**
-**Phase 4 must handle edge cases in implementation.**
-
----
-
-## 5. Code Patterns First
-
-**Read existing code BEFORE implementing anything.**
-
-### Why This Matters
-- Reduces Edit tool calls from 60+ to ~20
-- Prevents style inconsistencies
-- Catches existing utilities you can reuse
-- Reveals project conventions
-
-### What to Check
-```bash
-# Tauri command patterns
-cat src-tauri/src/lib.rs | head -100
-
-# React component patterns
-find src/components -name "*.tsx" | head -3 | xargs cat
-
-# Invoke patterns
-grep -r "invoke" src --include="*.tsx" | head -20
-
-# State management patterns
-grep -r "useState\|useStore\|createStore" src --include="*.tsx" | head -10
-```
-
-### Pattern Checklist
-- [ ] How are Tauri commands structured?
-- [ ] How are components organized?
-- [ ] What state management is used?
-- [ ] What styling approach (Tailwind, CSS modules)?
-- [ ] What naming conventions?
-
----
-
-## 6. Git Discipline
-
-**Commit at phase end with conventional format.**
-
-### Commit Format
-```bash
-git commit -m "$(cat <<'EOF'
-<type>(<scope>): <description>
-
-<body with details>
-
-<test counts if applicable>
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
-EOF
-)"
-```
-
-### Commit Types by Phase
-| Phase | Type | Example |
-|-------|------|---------|
-| 1 | `docs` | `docs: define user stories for [App]` |
-| 2 | `test` | `test: add multi-layer test specs` |
-| 3 | `feat` | `feat: bootstrap skeleton with RED tests` |
-| 4 | `feat` | `feat(epic-N): implement [Epic Name]` |
-| 5 | `chore` | `chore: finalize for production` |
-
----
-
-## 7. Error Handling Strategy
-
-### Build Errors
-1. Read the FULL error message
-2. WebSearch the error if unfamiliar
-3. Check if it's a known Tauri/Rust issue
-4. Fix root cause, not symptoms
-
-### Test Failures
-1. Read which test failed and why
-2. Check if test is correct (don't modify test to pass!)
-3. Fix implementation to satisfy test
-4. Re-run specific test before full suite
-
-### Stuck Loop Detection
-If same error persists after 3 attempts:
-1. Step back and re-read error
-2. WebSearch for alternative solutions
-3. Try completely different approach
-4. If still stuck, document in commit and flag for review
-
----
-
-## Summary: Universal "You Must"
-
-- Use WebSearch for unfamiliar tech/errors
-- **WebSearch BEFORE claiming any limitation exists**
-- Read existing code patterns before implementing
-- Follow test pyramid order (Unit → Integration → E2E)
-- Commit at phase completion
-- Keep todos updated in real-time
-- **Implement BOTH halves of completeness pairs**
-- **Run empty handler detection before committing**
-- **Handle edge cases from the matrix**
-
----
-
-## Summary: Universal "You Must NOT"
-
-- **Add placeholder/empty handlers** (`onClick={() => {}}`)
-- **Add UI elements without functionality**
-- **Implement one action without its pair** (e.g., Add without Delete)
-- **Use synthetic events in E2E tests**
-- **Call store/API directly in E2E tests**
-- **Change what a test verifies** (test cheating)
-- **Modify docs/test-specs.md or docs/user-stories.md during Phase 4/5**
-- **Claim something is a "limitation" without WebSearch first**
-- Skip any test layer
-- Update manifest (orchestrator does this)
-- Continue to next phase (orchestrator spawns that)
-- Guess at APIs without checking docs
-- Make multiple random attempts without research
-- Leave regressions unfixed
-
----
-
-# Phase 1: Brainstorm & User Stories
+# Phase 1: Brainstorm Facilitator
 
 **Purpose:** Turn a rough idea into a fully-formed design through collaborative dialogue
 **Input:** User's idea (or just a project directory name)
-**Output:** `docs/brainstorm-notes.md`, `docs/user-stories.md`
+**Output:** `docs/brainstorm-notes.md`
 **Mode:** Interactive (this phase DOES use AskUserQuestion)
 
 ---
 
-## Startup: Initialize Todos
+## CRITICAL: Write Immediately Rule
+
+**Write EVERY idea to file IMMEDIATELY after it's discussed.**
+
+```
+BAD:
+User: "I want a task manager"
+Agent: "What kind of tasks?" (doesn't write)
+User: "With kanban boards"
+Agent: "Any integrations?" (doesn't write)
+[30 minutes later, 50 ideas in context, 0 in file]
+
+GOOD:
+User: "I want a task manager"
+Agent:
+  1. WRITE to file: "## Core Concept\n- Task manager application"
+  2. THEN ask: "What kind of tasks?"
+
+User: "With kanban boards"
+Agent:
+  1. WRITE to file: "- Kanban board interface"
+  2. THEN continue...
+```
+
+**After EVERY user message containing an idea:**
+1. Extract idea(s)
+2. Append to `docs/brainstorm-notes.md`
+3. THEN respond to user
+
+---
+
+## Startup: Initialize File and Todos
+
+**First, create/read the brainstorm notes file:**
+
+```markdown
+# Brainstorm Notes: [Project Name]
+
+**Session Started:** [timestamp]
+**Last Updated:** [timestamp]
+
+---
+
+## Core Concept
+(To be filled during session)
+
+## Research Findings
+(To be filled during session)
+
+## Chosen Layout
+(To be filled during session)
+
+## Feature Details
+(To be filled during session)
+
+## User Journey
+(To be filled during session)
+
+## Scope
+(To be filled during session)
+
+## Final Mockup
+(To be filled during session)
+
+---
+
+*This document is updated live during brainstorming.*
+```
+
+**Then initialize todos:**
 
 ```
 TodoWrite([
-  { content: "1. UNDERSTAND: Ask what the app is about", status: "in_progress", activeForm: "Understanding concept" },
-  { content: "2. RESEARCH: Find similar apps and patterns", status: "pending", activeForm: "Researching similar apps" },
-  { content: "3. SKETCH: Present layout options with mockups", status: "pending", activeForm: "Sketching layouts" },
-  { content: "4. REFINE: Drill into chosen layout", status: "pending", activeForm: "Refining layout" },
-  { content: "5. STORYBOARD: Map user journey visually", status: "pending", activeForm: "Mapping user flow" },
-  { content: "6. STYLE: Define visual design system", status: "pending", activeForm: "Defining visual style" },
-  { content: "7. DECIDE: Confirm final mockup and scope", status: "pending", activeForm: "Confirming design" },
-  { content: "8. Finalize docs/brainstorm-notes.md", status: "pending", activeForm: "Finalizing brainstorm notes" },
-  { content: "9. Define epics from confirmed design", status: "pending", activeForm: "Defining epics" },
-  { content: "10. VERIFY: Epic independence", status: "pending", activeForm: "Verifying epics" },
-  { content: "11. Generate user stories (including visual quality)", status: "pending", activeForm: "Generating stories" },
-  { content: "12. Generate implicit UI control stories", status: "pending", activeForm: "Adding control stories" },
-  { content: "13. VERIFY: Completeness pairs (add missing halves)", status: "pending", activeForm: "Checking completeness pairs" },
-  { content: "14. VERIFY: UI element coverage (every element has story)", status: "pending", activeForm: "Checking UI coverage" },
-  { content: "15. ASK: Onboarding level question", status: "pending", activeForm: "Asking onboarding preference" },
-  { content: "16. VERIFY: 1 story = 1 E2E test", status: "pending", activeForm: "Verifying granularity" },
-  { content: "17. Create docs/user-stories.md", status: "pending", activeForm: "Creating user stories doc" },
-  { content: "18. Get user approval to proceed", status: "pending", activeForm: "Getting approval" }
+  { content: "1. Ask what the app is about", status: "in_progress", activeForm: "Understanding concept" },
+  { content: "2. Ask deeper clarifying questions", status: "pending", activeForm: "Gathering context" },
+  { content: "3. Research similar apps (WebSearch)", status: "pending", activeForm: "Researching similar apps" },
+  { content: "4. Show concept mockup", status: "pending", activeForm: "Showing concept mockup" },
+  { content: "5. Present layout options", status: "pending", activeForm: "Presenting layout options" },
+  { content: "6. Refine chosen layout", status: "pending", activeForm: "Refining layout" },
+  { content: "7. Drill into specific areas", status: "pending", activeForm: "Drilling into details" },
+  { content: "8. Map user journey", status: "pending", activeForm: "Mapping user journey" },
+  { content: "9. Define scope (IN/OUT)", status: "pending", activeForm: "Defining scope" },
+  { content: "10. Final mockup confirmation", status: "pending", activeForm: "Confirming final mockup" },
+  { content: "11. Finalize brainstorm-notes.md", status: "pending", activeForm: "Finalizing notes" }
 ])
+```
+
+---
+
+## Resumability
+
+**If `docs/brainstorm-notes.md` exists, read it first:**
+
+```
+Agent: "I see we have an existing brainstorm session for '[App Name]'.
+
+Current progress:
+- Core concept: [status]
+- Research: [status]
+- Layout: [status]
+- ...
+
+Should we continue from where we left off?"
 ```
 
 ---
@@ -457,113 +182,277 @@ TodoWrite([
 - **Research-informed design** - Use WebSearch to find similar apps and proven patterns
 - **One question at a time** - Never overwhelm
 - **Everything is circular** - Can loop back at any point until final approval
-- **Checkpoint saves** - Save progress to brainstorm-notes.md after each step
+- **Write immediately** - Append to brainstorm-notes.md after EVERY idea
 - **YAGNI ruthlessly** - Remove unnecessary features
 - **Completeness pairs** - If you add an action, add its pair (add/delete, show/hide, etc.)
 - **No placeholder promises** - Only show UI elements that will be implemented
 
 ---
 
-## Opening Question (NO TOOLS, NO VISUALS)
+## Stack Constraints (Boundaries)
 
-**First message is conversational - no AskUserQuestion, no ASCII art.**
+The pipeline is designed for a specific stack. These constraints guide brainstorming:
 
-Read project context, then open naturally:
-- Reference directory name and any existing files
-- Ask ONE simple question: What is this app about?
+| Constraint | Value |
+|------------|-------|
+| **Platform** | Desktop (Windows, macOS, Linux) |
+| **Framework** | Tauri v2 |
+| **Frontend** | React + TypeScript |
+| **Backend** | Rust |
+| **Styling** | Tailwind CSS |
 
-**Example:**
-> I see this is 'task-tracker-desktop'. What's the core idea? What problem does it solve for you?
-
-**That's it for the first message. Wait for their answer.**
-
----
-
-## Steps 1-7: Design Phase
-
-### Step 1: UNDERSTAND (Text Only)
-After user describes their idea:
-- Acknowledge their vision
-- Ask 1-2 clarifying questions if needed
-- Keep this step brief - we'll dig deeper after research
-
-**Checkpoint:** Create `docs/brainstorm-notes.md` with initial concept
-
-### Step 2: RESEARCH (WebSearch Required)
-**CRITICAL: Before showing ANY mockups, research the space.**
-
-```
-WebSearch: "[app type] desktop app UI examples 2025"
-WebSearch: "[app type] best practices UX patterns"
-WebSearch: "popular [app type] apps features comparison"
-```
-
-**Checkpoint:** Append research findings to brainstorm-notes.md
-
-### Step 3: SKETCH (Always Visual)
-Present layout options with detailed mockups. **Always lead with recommendation.**
-
-**Checkpoint:** Append chosen layout to brainstorm-notes.md
-
-### Step 4: REFINE (Always Visual)
-Drill into the chosen layout. Show detailed mockups for each area.
-
-**Checkpoint:** Append refined details to brainstorm-notes.md
-
-### Step 5: STORYBOARD (Always Visual)
-Map the complete user journey with flow diagrams.
-
-**Checkpoint:** Append flow diagrams to brainstorm-notes.md
-
-### Step 6: STYLE (Always Visual) - CRITICAL
-**This step ensures beautiful apps. Do NOT skip or rush.**
-
-Present complete visual design system: colors, typography, spacing, border radius, interactive states.
-
-**Checkpoint:** Append design system to brainstorm-notes.md
-
-### Step 7: DECIDE (Always Visual)
-Present final mockup and scope confirmation.
-
-**Checkpoint:** Finalize brainstorm-notes.md
+**Why constraints help:** Prevents scope creep, guides UI patterns, focuses research.
 
 ---
 
-## Steps 8-18: Story Generation
+## Todo 1: Ask what the app is about
 
-### Step 8: Finalize brainstorm-notes.md
-Transform checkpoints into structured document.
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Understand the core idea |
+| **Mode** | Conversational (no tools first message) |
+| **What to do** | Read project directory name, any existing files. Ask ONE open question. |
+| **Example** | "I see this is 'task-tracker-desktop'. What's the core idea? What problem does it solve?" |
+| **Write** | After user responds, WRITE core concept to file |
 
-### Step 9: Define Epics
-Break design into independent implementation units.
+---
 
-### Step 10: VERIFY Epic Independence
-Each epic must be testable independently.
+## Todo 2: Ask deeper clarifying questions
 
-### Step 11: Generate User Stories
-Create stories per epic with acceptance criteria.
-**MANDATORY: Include Visual Quality stories (US-VIS-001 to US-VIS-004).**
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Gather enough context before attempting mockup |
+| **Mode** | Conversational questions |
+| **What to do** | Ask follow-up questions: "Who will use this?", "What's the main action?" |
+| **Write** | After EACH answer, APPEND to brainstorm-notes.md |
 
-### Step 12: Generate Implicit UI Control Stories
-**MANDATORY: Include stories for HOW users interact.**
+---
 
-### Step 13: VERIFY Completeness Pairs
-**CRITICAL: Check every action has its pair. Missing pairs = broken UX.**
+## LOOPABLE GROUP: Todos 3-6 (Research & Design)
 
-### Step 14: VERIFY UI Element Coverage
-**CRITICAL: Every visible UI element must have a user story.**
+These todos form an iterative loop. Loop back if:
+- User says "not quite right" or "more research needed"
+- User wants to explore different directions
 
-### Step 15: ASK Onboarding Level
-**Ask user about onboarding preference. Default to Minimal if user doesn't care.**
+**Exit condition:** User approves the refined layout.
 
-### Step 16: VERIFY 1:1 E2E Mapping
-Each story = exactly 1 E2E test. Split if needed.
+---
 
-### Step 17: Create user-stories.md
-Full user stories document with index.
+## Todo 3: Research similar apps (LOOP A - start)
 
-### Step 18: Presentation & Approval
-Present complete design showcase and get user approval.
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Find existing patterns, avoid reinventing |
+| **What to do** | WebSearch for similar apps, competitors, UI patterns |
+| **WebSearch** | "[app type] desktop app UI examples 2025" |
+| **Write** | Append research findings to file |
+
+---
+
+## Todo 4: Show concept mockup (LOOP A)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Validate agent understood the concept |
+| **What to do** | Show first ASCII mockup based on research + user description |
+| **Loop** | If user says "not what I meant" → back to Todo 3 |
+| **Write** | Append chosen concept to file |
+
+---
+
+## Todo 5: Present layout options (LOOP A)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Propose 2-3 layout alternatives |
+| **What to do** | Show layout options inspired by research, lead with recommendation |
+| **Loop** | If user wants different options → back to Todo 3 |
+| **Write** | Append chosen layout to file |
+
+---
+
+## Todo 6: Refine chosen layout (LOOP A - EXIT)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Add detail to chosen layout |
+| **What to do** | Add buttons, labels, sections to chosen layout |
+| **Loop** | If user wants different direction → back to Todo 5 |
+| **Exit** | User approves → proceed to Todo 7 |
+| **Write** | Append refined layout to file |
+
+---
+
+## LOOPABLE GROUP: Todos 7-8 (Detail & Journey)
+
+**Exit condition:** User approves journey flow.
+
+---
+
+## Todo 7: Drill into specific areas (LOOP B - start)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Clarify specific UI areas that need more detail |
+| **What to do** | Identify unclear areas, show zoomed mockup for each |
+| **Loop** | Can return here from Todo 8 if journey reveals missing detail |
+| **Write** | Append detailed areas to file |
+
+---
+
+## Todo 8: Map user journey (LOOP B - EXIT)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Understand how user flows through the app |
+| **What to do** | Create ASCII flow diagram showing user paths |
+| **Loop** | If journey doesn't work → back to Todo 7 |
+| **Exit** | User approves journey → proceed to Todo 9 |
+| **Write** | Append flow diagram to file |
+
+---
+
+## LOOPABLE GROUP: Todos 9-10 (Scope & Confirmation)
+
+**Exit condition:** User gives final approval.
+**Escape:** Major changes → back to Todos 3-6 (Research & Design).
+
+---
+
+## Todo 9: Define scope (LOOP C - start)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Explicitly define what we're building and NOT building |
+| **What to do** | Propose IN/OUT scope based on discussion |
+| **Loop** | Can return here from Todo 10 if scope needs adjustment |
+| **Escape** | Major scope change affects design → back to Todo 3 |
+| **Write** | Append scope table to file |
+
+---
+
+## Todo 10: Final mockup confirmation (LOOP C - EXIT)
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Show complete vision before documenting |
+| **What to do** | Show full mockup with all agreed features |
+| **Loop** | Minor changes → back to Todo 9 |
+| **Escape** | Major changes → back to Todo 3 (LOOP A) |
+| **Exit** | User gives final approval → proceed to Todo 11 |
+| **Write** | Append final mockup to file |
+
+---
+
+## Todo 11: Finalize brainstorm-notes.md
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Ensure document is complete for Phase 2 (PM Agent) |
+| **What to do** | Review brainstorm-notes.md, fill any gaps, add summary |
+| **Output** | Complete `docs/brainstorm-notes.md` |
+
+**Final structure of brainstorm-notes.md:**
+
+```markdown
+# Brainstorm Notes: [App Name]
+
+**Session Started:** [timestamp]
+**Last Updated:** [timestamp]
+**Status:** Complete - Ready for Phase 2
+
+---
+
+## Core Concept
+[What the app does, who it's for]
+
+## Research Findings
+[Similar apps, patterns found, differentiators]
+
+## Chosen Layout
+[ASCII mockup of main screen]
+
+## Feature Details
+[Detailed breakdown of each feature area]
+
+## User Journey
+[Flow diagram showing user paths]
+
+## Scope
+| IN (v1 MVP) | OUT (Future) |
+|-------------|--------------|
+| ... | ... |
+
+## Final Mockup
+[Complete ASCII mockup with all elements labeled]
+
+---
+
+*Ready for Phase 2: PM Agent will create user stories from this document.*
+```
+
+---
+
+## Flow Diagram
+
+```
+┌───────────────────────────────────────────────────────────────────────────────┐
+│                           PHASE 1: BRAINSTORM FACILITATOR                      │
+└───────────────────────────────────────────────────────────────────────────────┘
+
+  Todo 1          Todo 2
+    │               │
+    ▼               ▼
+┌───────┐      ┌─────────┐
+│ Ask   │ ──▶  │ Clarify │
+│ idea  │      │ deeper  │
+└───────┘      └────┬────┘
+                    │
+                    ▼
+    ┌───────────────────────────────────────┐
+    │        LOOP A: Research & Design      │
+    │                                       │
+    │   ┌─────┐   ┌─────┐   ┌─────┐   ┌─────┐
+    │   │  3  │──▶│  4  │──▶│  5  │──▶│  6  │──▶ EXIT
+    │   └──▲──┘   └──┬──┘   └──┬──┘   └──┬──┘
+    │      │         │         │         │
+    │      └─────────┴─────────┴─────────┘
+    │              "try again"
+    └───────────────────────────────────────┘
+                    │
+                    ▼
+    ┌───────────────────────────────────────┐
+    │        LOOP B: Detail & Journey       │
+    │                                       │
+    │        ┌─────┐         ┌─────┐        │
+    │        │  7  │◀───────▶│  8  │──▶ EXIT│
+    │        └─────┘         └─────┘        │
+    └───────────────────────────────────────┘
+                    │
+                    ▼
+    ┌───────────────────────────────────────┐
+    │     LOOP C: Scope & Confirmation      │
+    │                                       │
+    │        ┌─────┐         ┌─────┐        │
+    │        │  9  │◀───────▶│ 10  │──▶ EXIT│
+    │        └─────┘         └──┬──┘        │
+    │                           │           │
+    │              ESCAPE ──────┼───────────┼──▶ back to LOOP A
+    └───────────────────────────────────────┘
+                    │
+                    ▼
+               ┌─────────┐
+               │   11    │
+               │ Finalize│
+               │ notes   │
+               └─────────┘
+                    │
+                    ▼
+           docs/brainstorm-notes.md
+                    │
+                    ▼
+         Ready for Phase 2 (PM Agent)
+```
 
 ---
 
@@ -571,35 +460,32 @@ Present complete design showcase and get user approval.
 
 ### You Must (Phase 1)
 - Start with ONE simple text question (no visuals, no tools)
+- **WRITE to brainstorm-notes.md after EVERY user idea**
 - Use WebSearch BEFORE showing first mockup (research the space)
 - Include ASCII visual in EVERY interaction after the first question
 - Always lead with your recommendation and explain why
-- Use WebSearch at decision points to find proven patterns
-- **Complete the STYLE step with full design system**
-- **Include Visual Quality user stories (US-VIS-001 to US-VIS-004)**
-- **Include Implicit UI Control stories (US-CTRL-*)**
-- **Verify ALL completeness pairs - add missing halves**
-- **Verify ALL UI elements have stories - remove uncovered elements**
-- **Ask onboarding level question - add onboarding epic**
-- Verify 1:1 story-to-E2E mapping
 - Allow looping back at any point
-- Present design in sections before approval
+- End with complete `docs/brainstorm-notes.md`
 
 ### You Must NOT (Phase 1)
 - Use AskUserQuestion for first question
+- **Let ideas accumulate in context without writing to file**
 - Show any interaction (after the first) without ASCII visuals
-- Ask open questions without providing your recommendation first
-- Skip the research step - always WebSearch before sketching
-- **Skip the STYLE step or accept "looks fine" without complete design system**
-- **Omit Visual Quality user stories**
-- **Omit Implicit UI Control stories**
-- **Leave completeness pairs incomplete**
-- **Leave UI elements without user stories (or keep them in mockups)**
-- **Skip onboarding question**
-- Put ASCII art inside AskUserQuestion options (show inline)
-- Rush through without validation
-- Write code or tests (that's Phase 2+)
+- Ask open questions without providing your recommendation
+- Skip the research step
+- Generate user stories (that's Phase 2's job)
+- Write code or tests (that's Phase 3+)
 
 ---
 
-**Execute now. Research first. Be visual. Always recommend. Verify completeness.**
+## WebSearch Triggers
+
+Use WebSearch when:
+- User describes their app idea (search for similar apps)
+- Choosing between layout patterns
+- Designing specific components (sidebar, navigation, forms)
+- User mentions a feature you're unsure how to visualize
+
+---
+
+**Execute now. Write immediately. Research first. Be visual. Always recommend.**
