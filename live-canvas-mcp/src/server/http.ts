@@ -2,14 +2,23 @@ import express from "express";
 import { createServer } from "http";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
-import { initWebSocket } from "./websocket.js";
+import { initWebSocket, broadcast, getConnectedClients } from "./websocket.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Local state for HTTP API (mirrors MCP state)
+const httpState = {
+  notes: new Map<string, string>(),
+  diagrams: new Map<string, { code: string; type: string; title?: string }>(),
+};
+
 export async function startHttpServer(port: number, autoOpen: boolean): Promise<void> {
   const app = express();
   const server = createServer(app);
+
+  // Parse JSON bodies
+  app.use(express.json());
 
   // Initialize WebSocket on same server
   initWebSocket(server);
@@ -17,6 +26,72 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
   // Serve static viewer files
   const viewerPath = join(__dirname, "../../viewer/dist");
   app.use(express.static(viewerPath));
+
+  // ============ HTTP API ENDPOINTS ============
+  // These allow agents to update the viewer via curl (no MCP dependency)
+
+  // POST /api/notes - Append or update notes section
+  app.post("/api/notes", (req, res) => {
+    const { section, content, action = "append" } = req.body;
+
+    if (!section || !content) {
+      return res.status(400).json({ error: "section and content required" });
+    }
+
+    if (action === "append") {
+      const existing = httpState.notes.get(section) || "";
+      httpState.notes.set(section, existing + "\n" + content);
+    } else {
+      httpState.notes.set(section, content);
+    }
+
+    // Broadcast to viewers
+    broadcast({
+      type: "notes_update",
+      section,
+      content: httpState.notes.get(section),
+      action,
+    });
+
+    res.json({ success: true, section, action });
+  });
+
+  // POST /api/diagram - Render a diagram
+  app.post("/api/diagram", (req, res) => {
+    const { type = "mermaid", code, id, title } = req.body;
+
+    if (!code) {
+      return res.status(400).json({ error: "code required" });
+    }
+
+    const diagramId = id || `diagram-${Date.now()}`;
+    httpState.diagrams.set(diagramId, { code, type, title });
+
+    // Broadcast to viewers
+    broadcast({
+      type: "diagram_update",
+      id: diagramId,
+      diagramType: type,
+      code,
+      title,
+      action: "create",
+    });
+
+    res.json({ success: true, id: diagramId, type });
+  });
+
+  // GET /api/status - Check server and viewer status
+  app.get("/api/status", (req, res) => {
+    res.json({
+      status: "ok",
+      viewers: getConnectedClients(),
+      notes: Array.from(httpState.notes.keys()),
+      diagrams: Array.from(httpState.diagrams.keys()),
+      timestamp: new Date().toISOString(),
+    });
+  });
+
+  // ============ END HTTP API ============
 
   // Fallback: serve inline HTML if viewer not built
   app.get("/", (req, res) => {

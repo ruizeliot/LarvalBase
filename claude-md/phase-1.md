@@ -101,24 +101,38 @@ Agent:
 
 ## Using Live Canvas (If Enabled)
 
-**If user enabled Live Canvas in startup, use these tools during brainstorming:**
+**If user enabled Live Canvas in startup, use the HTTP API to send updates:**
 
-**When writing ideas:**
+**When writing ideas - use curl to send notes:**
+```bash
+# Append to a section
+curl -X POST http://localhost:3456/api/notes \
+  -H "Content-Type: application/json" \
+  -d '{"section": "Core Concept", "content": "- Your idea here", "action": "append"}'
+
+# Replace a section
+curl -X POST http://localhost:3456/api/notes \
+  -H "Content-Type: application/json" \
+  -d '{"section": "Features", "content": "Complete new content", "action": "replace"}'
 ```
-Instead of direct file edits, use:
-- append_notes({ section: "Core Concept", content: "- Your idea here" })
-- append_notes({ section: "Features", content: "- Feature description" })
 
-This updates BOTH the file AND the live viewer.
+**When showing diagrams - use curl to render:**
+```bash
+# Mermaid diagram
+curl -X POST http://localhost:3456/api/diagram \
+  -H "Content-Type: application/json" \
+  -d '{"type": "mermaid", "code": "flowchart TD\n  A-->B", "title": "User Flow"}'
+
+# ASCII art
+curl -X POST http://localhost:3456/api/diagram \
+  -H "Content-Type: application/json" \
+  -d '{"type": "ascii", "code": "┌───────┐\n│ App   │\n└───────┘", "title": "Layout"}'
 ```
 
-**When showing diagrams:**
-```
-After creating ASCII mockups in chat, also call:
-- render_mermaid({ diagram: "flowchart...", title: "User Flow" })
-- render_ascii({ content: "ASCII art...", title: "Layout Option 1" })
-
-This displays diagrams in the live viewer for easier viewing.
+**Check if server is ready:**
+```bash
+curl http://localhost:3456/api/status
+# Returns: {"status":"ok","viewers":1,...}
 ```
 
 **If Live Canvas was NOT enabled:**
@@ -151,10 +165,22 @@ AskUserQuestion({
 ```
 
 **If "Yes":**
-1. Run `start http://localhost:3456` to open browser
-2. Use `append_notes` and `render_mermaid` tools during session
+1. Start the Live Canvas server in background:
+   ```bash
+   node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js" > /dev/null 2>&1 &
+   ```
+2. Wait for server to be ready (check health endpoint):
+   ```bash
+   sleep 2 && curl -s http://localhost:3456/health
+   ```
+3. Open browser to viewer:
+   ```bash
+   start http://localhost:3456
+   ```
+4. Confirm to user: "Live Canvas is running. Updates will appear in your browser."
+5. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
 
-**If "No":** Use normal file operations.
+**If "No":** Use normal file operations (no server, no viewer).
 
 ### 0b. Check Stack and Ask if Not Set
 

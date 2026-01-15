@@ -10,7 +10,7 @@
     },
     "live-canvas": {
       "command": "node",
-      "args": ["C:/Users/ahunt/Documents/IMT Claude/live-canvas-mcp/dist/index.js"],
+      "args": ["C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js"],
       "env": {
         "CANVAS_PORT": "3456",
         "CANVAS_AUTO_OPEN": "false"
