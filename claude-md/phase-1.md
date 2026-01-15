@@ -101,43 +101,89 @@ Agent:
 
 ## Using Live Canvas (If Enabled)
 
-**If user enabled Live Canvas in startup, use the HTTP API to send updates:**
+Live Canvas has two panels:
+- **Left: Notes** - Editable by both you and the user (syncs in real-time)
+- **Right: Whiteboard** - Interactive canvas where you and user can draw
 
-**When writing ideas - use curl to send notes:**
+### Notes API (Left Panel)
+
 ```bash
-# Append to a section
+# Set notes content (replaces all)
 curl -X POST http://localhost:3456/api/notes \
   -H "Content-Type: application/json" \
-  -d '{"section": "Core Concept", "content": "- Your idea here", "action": "append"}'
+  -d '{"content": "# Brainstorm Notes\n\n## Core Concept\n- Main idea here"}'
 
-# Replace a section
+# Append to notes
 curl -X POST http://localhost:3456/api/notes \
   -H "Content-Type: application/json" \
-  -d '{"section": "Features", "content": "Complete new content", "action": "replace"}'
+  -d '{"content": "\n## New Section\n- More ideas", "append": true}'
+
+# Get current notes (see what user wrote)
+curl http://localhost:3456/api/notes
 ```
 
-**When showing diagrams - use curl to render:**
+### Whiteboard API (Right Panel)
+
+**Draw shapes to illustrate concepts:**
 ```bash
-# Mermaid diagram
-curl -X POST http://localhost:3456/api/diagram \
+# Add a labeled box (for architecture diagrams)
+curl -X POST http://localhost:3456/api/canvas/rect \
   -H "Content-Type: application/json" \
-  -d '{"type": "mermaid", "code": "flowchart TD\n  A-->B", "title": "User Flow"}'
+  -d '{"left": 50, "top": 50, "width": 120, "height": 60, "label": "Frontend"}'
 
-# ASCII art
-curl -X POST http://localhost:3456/api/diagram \
+# Add another box
+curl -X POST http://localhost:3456/api/canvas/rect \
   -H "Content-Type: application/json" \
-  -d '{"type": "ascii", "code": "┌───────┐\n│ App   │\n└───────┘", "title": "Layout"}'
+  -d '{"left": 50, "top": 150, "width": 120, "height": 60, "label": "Backend", "stroke": "#22c55e"}'
+
+# Connect with arrow
+curl -X POST http://localhost:3456/api/canvas/arrow \
+  -H "Content-Type: application/json" \
+  -d '{"x1": 110, "y1": 110, "x2": 110, "y2": 150}'
+
+# Add text label
+curl -X POST http://localhost:3456/api/canvas/text \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Data Flow", "left": 130, "top": 125, "fill": "#94a3b8"}'
+
+# Clear whiteboard
+curl -X POST http://localhost:3456/api/canvas/clear
 ```
 
-**Check if server is ready:**
+**Canvas object types:**
+- `rect` - Rectangle (use for boxes/components)
+- `circle` - Circle
+- `text` - Text label
+- `line` - Line
+- `arrow` - Arrow with arrowhead
+
+**Colors available:**
+- Blue: `#3b82f6` (default)
+- Green: `#22c55e`
+- Orange: `#f59e0b`
+- Red: `#ef4444`
+- White: `#e2e8f0`
+
+### Check Status
 ```bash
 curl http://localhost:3456/api/status
-# Returns: {"status":"ok","viewers":1,...}
+# Returns: {"status":"ok","viewers":1,"notesLength":123,"objectCount":5}
 ```
 
-**If Live Canvas was NOT enabled:**
+### When to Use Whiteboard
+
+Use the whiteboard to visually show:
+- **Architecture diagrams** - boxes connected with arrows
+- **UI mockups** - rough layout with rectangles and labels
+- **Flow diagrams** - user journey with connected boxes
+- **Concept maps** - ideas connected visually
+
+**User can also draw** - they may add annotations, move things around, or sketch their own ideas. Check the whiteboard state periodically.
+
+### If Live Canvas was NOT enabled
 - Use normal file operations (Read/Write/Edit tools)
-- All functionality works, just without live preview
+- Create ASCII diagrams in chat instead
+- All functionality works, just without interactive preview
 
 ---
 
