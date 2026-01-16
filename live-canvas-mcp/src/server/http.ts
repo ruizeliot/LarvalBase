@@ -2,7 +2,9 @@ import express from "express";
 import { createServer } from "http";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { initWebSocket, broadcast, getConnectedClients, setMessageHandler } from "./websocket.js";
+import { setClaudePid, getClaudePid, injectInteractiveInput, injectMessage } from "./inject.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,7 +12,8 @@ const __dirname = dirname(__filename);
 // Shared state for HTTP API and WebSocket
 export const canvasState = {
   notes: "" as string, // Full markdown content
-  objects: [] as CanvasObject[], // Whiteboard objects
+  objects: [] as CanvasObject[], // Whiteboard objects (for legacy Fabric.js viewer)
+  projectDir: process.cwd(), // Project directory for file sync
 };
 
 export interface CanvasObject {
@@ -32,33 +35,152 @@ export interface CanvasObject {
 
 let objectCounter = 0;
 
+// Notes file path (relative to project)
+function getNotesFilePath(): string {
+  const docsDir = join(canvasState.projectDir, "docs");
+  if (!existsSync(docsDir)) {
+    mkdirSync(docsDir, { recursive: true });
+  }
+  return join(docsDir, "brainstorm-notes.md");
+}
+
+// Load notes from file
+function loadNotesFromFile(): string {
+  const filePath = getNotesFilePath();
+  if (existsSync(filePath)) {
+    return readFileSync(filePath, "utf-8");
+  }
+  return "";
+}
+
+// Save notes to file
+function saveNotesToFile(content: string): void {
+  const filePath = getNotesFilePath();
+  writeFileSync(filePath, content, "utf-8");
+}
+
+// Debounced file save
+let saveDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSaveNotes(content: string, delay = 500): void {
+  if (saveDebounceTimer) {
+    clearTimeout(saveDebounceTimer);
+  }
+  saveDebounceTimer = setTimeout(() => {
+    saveNotesToFile(content);
+    saveDebounceTimer = null;
+  }, delay);
+}
+
+// Save whiteboard image to file
+function saveWhiteboardImage(base64Data: string): string {
+  const pipelineDir = join(canvasState.projectDir, ".pipeline");
+  if (!existsSync(pipelineDir)) {
+    mkdirSync(pipelineDir, { recursive: true });
+  }
+
+  const timestamp = Date.now();
+  const filename = `whiteboard-${timestamp}.png`;
+  const filePath = join(pipelineDir, filename);
+
+  // Remove data URL prefix if present
+  const base64Content = base64Data.replace(/^data:image\/\w+;base64,/, "");
+  const buffer = Buffer.from(base64Content, "base64");
+  writeFileSync(filePath, buffer);
+
+  return filePath;
+}
+
 export async function startHttpServer(port: number, autoOpen: boolean): Promise<void> {
   const app = express();
   const server = createServer(app);
 
-  // Parse JSON bodies
-  app.use(express.json({ limit: '10mb' }));
+  // Parse JSON bodies (larger limit for base64 images)
+  app.use(express.json({ limit: '50mb' }));
 
   // Initialize WebSocket on same server
   initWebSocket(server);
 
+  // Load initial notes from file
+  canvasState.notes = loadNotesFromFile();
+
   // Handle messages from viewer (user edits)
-  setMessageHandler((msg: any) => {
+  setMessageHandler((msg: Record<string, unknown>) => {
     if (msg.type === "notes_edit") {
       // User edited notes
-      canvasState.notes = msg.content;
+      canvasState.notes = msg.content as string;
+      // Save to file (debounced)
+      debouncedSaveNotes(canvasState.notes);
       // Broadcast to other viewers (not back to sender)
       broadcast({ type: "notes_sync", content: msg.content, fromUser: true });
+    } else if (msg.type === "user_input") {
+      // New unified input from React viewer (with optional whiteboard and notes)
+      const payload: Record<string, unknown> = {
+        type: "user_input",
+        message: msg.message,
+        timestamp: new Date().toISOString(),
+      };
+
+      // Save whiteboard image if included
+      let whiteboardPath: string | undefined;
+      if (msg.whiteboard && typeof msg.whiteboard === 'string') {
+        whiteboardPath = saveWhiteboardImage(msg.whiteboard);
+        payload.whiteboardPath = whiteboardPath;
+      }
+
+      // Include notes if present
+      if (msg.notes) {
+        payload.notes = msg.notes;
+      }
+
+      // Log for debugging
+      console.error(`[USER INPUT] ${JSON.stringify(payload)}`);
+
+      // Broadcast to all viewers
+      broadcast(payload);
+
+      // Inject into Claude TUI if PID is set
+      const claudePid = getClaudePid();
+      if (claudePid) {
+        injectInteractiveInput({
+          message: msg.message as string,
+          whiteboardPath,
+          notes: msg.notes as string | undefined,
+        }).then((result) => {
+          if (result.success) {
+            console.error(`[USER INPUT] Injected to Claude PID ${claudePid}`);
+          } else {
+            console.error(`[USER INPUT] Injection failed: ${result.error}`);
+          }
+          // Notify viewer of injection status
+          broadcast({
+            type: "injection_status",
+            success: result.success,
+            error: result.error,
+          });
+        });
+      } else {
+        console.error(`[USER INPUT] No Claude PID set - message not injected`);
+        broadcast({
+          type: "injection_status",
+          success: false,
+          error: "Claude PID not set. Use /api/inject/pid to set it.",
+        });
+      }
     } else if (msg.type === "canvas_object_add") {
-      // User added object on canvas
-      const obj = { ...msg.object, id: msg.object.id || `user-${++objectCounter}` };
+      // User added object on canvas (legacy Fabric.js)
+      const msgObject = msg.object as Record<string, unknown>;
+      const obj = {
+        ...msgObject,
+        id: (msgObject.id as string) || `user-${++objectCounter}`
+      } as CanvasObject;
       canvasState.objects.push(obj);
       broadcast({ type: "canvas_object_added", object: obj, fromUser: true });
     } else if (msg.type === "canvas_object_modify") {
       // User modified object
-      const idx = canvasState.objects.findIndex(o => o.id === msg.object.id);
+      const msgObject = msg.object as Record<string, unknown>;
+      const idx = canvasState.objects.findIndex(o => o.id === msgObject.id);
       if (idx >= 0) {
-        canvasState.objects[idx] = { ...canvasState.objects[idx], ...msg.object };
+        canvasState.objects[idx] = { ...canvasState.objects[idx], ...msgObject } as CanvasObject;
         broadcast({ type: "canvas_object_modified", object: canvasState.objects[idx], fromUser: true });
       }
     } else if (msg.type === "canvas_object_delete") {
@@ -67,13 +189,15 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       broadcast({ type: "canvas_object_deleted", id: msg.id, fromUser: true });
     } else if (msg.type === "canvas_sync") {
       // User sends full canvas state
-      canvasState.objects = msg.objects || [];
+      canvasState.objects = (msg.objects as CanvasObject[]) || [];
     }
   });
 
-  // Serve static viewer files
+  // Serve static viewer files (React build)
   const viewerPath = join(__dirname, "../../viewer/dist");
-  app.use(express.static(viewerPath));
+  if (existsSync(viewerPath)) {
+    app.use(express.static(viewerPath));
+  }
 
   // ============ HTTP API ENDPOINTS ============
 
@@ -91,6 +215,9 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       canvasState.notes = content;
     }
 
+    // Save to file
+    saveNotesToFile(canvasState.notes);
+
     // Broadcast to viewers
     broadcast({
       type: "notes_sync",
@@ -104,6 +231,13 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
   // GET /api/notes - Get current notes
   app.get("/api/notes", (req, res) => {
     res.json({ content: canvasState.notes });
+  });
+
+  // POST /api/notes/reload - Reload notes from file
+  app.post("/api/notes/reload", (req, res) => {
+    canvasState.notes = loadNotesFromFile();
+    broadcast({ type: "notes_sync", content: canvasState.notes, fromAI: true });
+    res.json({ success: true, length: canvasState.notes.length });
   });
 
   // POST /api/canvas/add - Add object to whiteboard (AI draws)
@@ -250,15 +384,92 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       viewers: getConnectedClients(),
       notesLength: canvasState.notes.length,
       objectCount: canvasState.objects.length,
+      projectDir: canvasState.projectDir,
       timestamp: new Date().toISOString(),
     });
   });
 
+  // POST /api/project - Set project directory
+  app.post("/api/project", (req, res) => {
+    const { projectDir } = req.body;
+    if (projectDir) {
+      canvasState.projectDir = projectDir;
+      canvasState.notes = loadNotesFromFile();
+      broadcast({ type: "notes_sync", content: canvasState.notes, fromAI: true });
+      res.json({ success: true, projectDir: canvasState.projectDir });
+    } else {
+      res.status(400).json({ error: "projectDir required" });
+    }
+  });
+
+  // ============ INJECTION API ============
+
+  // POST /api/inject/pid - Set Claude PID for injection
+  app.post("/api/inject/pid", (req, res) => {
+    const { pid } = req.body;
+    if (pid && typeof pid === "number") {
+      setClaudePid(pid);
+      res.json({ success: true, pid });
+    } else {
+      res.status(400).json({ error: "pid (number) required" });
+    }
+  });
+
+  // GET /api/inject/pid - Get current Claude PID
+  app.get("/api/inject/pid", (req, res) => {
+    const pid = getClaudePid();
+    res.json({ pid, isSet: pid !== null });
+  });
+
+  // POST /api/inject - Inject a message into Claude
+  app.post("/api/inject", async (req, res) => {
+    const { message, whiteboardPath, notes, noEnter, interrupt } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "message required" });
+    }
+
+    const result = await injectInteractiveInput({
+      message,
+      whiteboardPath,
+      notes,
+    });
+
+    if (result.success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ success: false, error: result.error });
+    }
+  });
+
+  // POST /api/inject/raw - Inject raw text (no formatting)
+  app.post("/api/inject/raw", async (req, res) => {
+    const { message, noEnter, interrupt } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "message required" });
+    }
+
+    const result = await injectMessage(message, { noEnter, interrupt });
+
+    if (result.success) {
+      res.json({ success: true });
+    } else {
+      res.status(500).json({ success: false, error: result.error });
+    }
+  });
+
   // ============ END HTTP API ============
 
-  // Fallback: serve inline HTML if viewer not built
-  app.get("/", (req, res) => {
-    res.send(getInlineViewer());
+  // Serve React viewer index.html for SPA routing
+  app.get("*", (req, res) => {
+    const indexPath = join(viewerPath, "index.html");
+    if (existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      // Fallback to inline viewer
+      res.send(getInlineViewer());
+    }
   });
 
   // Health check
@@ -287,609 +498,40 @@ function getInlineViewer(): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Live Canvas - Collaborative Brainstorm</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <title>Live Canvas - Build Required</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: #0f172a;
       color: #e2e8f0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
-      overflow: hidden;
+      margin: 0;
     }
-    .header {
+    .message {
+      text-align: center;
+      max-width: 500px;
+      padding: 2rem;
+    }
+    h1 { color: #3b82f6; margin-bottom: 1rem; }
+    code {
       background: #1e293b;
-      padding: 0.75rem 1.5rem;
-      border-bottom: 1px solid #334155;
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      height: 50px;
-    }
-    .header h1 {
-      font-size: 1.1rem;
-      font-weight: 600;
-    }
-    .status {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      font-size: 0.8rem;
-    }
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ef4444;
-    }
-    .status-dot.connected { background: #22c55e; }
-    .container {
-      display: grid;
-      grid-template-columns: 1fr 1.5fr;
-      height: calc(100vh - 50px);
-    }
-    .panel {
-      display: flex;
-      flex-direction: column;
-      border-right: 1px solid #334155;
-    }
-    .panel:last-child { border-right: none; }
-    .panel-header {
-      background: #334155;
       padding: 0.5rem 1rem;
-      font-weight: 500;
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .panel-header .hint {
-      font-size: 0.7rem;
-      color: #94a3b8;
-      font-weight: normal;
-      text-transform: none;
-    }
-    .panel-content {
-      flex: 1;
-      overflow: auto;
-      position: relative;
-    }
-
-    /* Notes panel - editable */
-    #notes-editor {
-      width: 100%;
-      height: 100%;
-      padding: 1rem;
-      background: #1e293b;
-      color: #e2e8f0;
-      border: none;
-      outline: none;
-      font-family: inherit;
-      font-size: 0.9rem;
-      line-height: 1.6;
-      resize: none;
-    }
-    #notes-editor:focus {
-      background: #1e3a5f;
-    }
-
-    /* Canvas panel */
-    #canvas-container {
-      background: #1a1a2e;
-      width: 100%;
-      height: 100%;
-    }
-    #whiteboard {
-      width: 100%;
-      height: 100%;
-    }
-
-    /* Toolbar */
-    .toolbar {
-      display: flex;
-      gap: 0.25rem;
-      padding: 0.5rem;
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-    }
-    .toolbar button {
-      padding: 0.4rem 0.8rem;
-      background: #334155;
-      border: 1px solid #475569;
       border-radius: 4px;
-      color: #e2e8f0;
-      cursor: pointer;
-      font-size: 0.75rem;
-    }
-    .toolbar button:hover { background: #475569; }
-    .toolbar button.active { background: #3b82f6; border-color: #60a5fa; }
-    .toolbar .separator {
-      width: 1px;
-      background: #475569;
-      margin: 0 0.5rem;
-    }
-    .color-btn {
-      width: 24px !important;
-      height: 24px !important;
-      padding: 0 !important;
-      border-radius: 50% !important;
+      display: block;
+      margin: 1rem 0;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <h1>Live Canvas</h1>
-    <span style="color: #64748b">Collaborative Brainstorm</span>
-    <div class="status">
-      <div class="status-dot" id="status-dot"></div>
-      <span id="status-text">Disconnected</span>
-    </div>
+  <div class="message">
+    <h1>Live Canvas Viewer Not Built</h1>
+    <p>The React viewer needs to be built first.</p>
+    <code>cd live-canvas-mcp/viewer && npm install && npm run build</code>
+    <p>Then restart the MCP server.</p>
   </div>
-
-  <div class="container">
-    <!-- Left: Editable Notes -->
-    <div class="panel">
-      <div class="panel-header">
-        Notes
-        <span class="hint">(editable - changes sync to AI)</span>
-      </div>
-      <div class="panel-content">
-        <textarea id="notes-editor" placeholder="Start typing notes here...&#10;&#10;Both you and the AI can edit this."></textarea>
-      </div>
-    </div>
-
-    <!-- Right: Whiteboard -->
-    <div class="panel">
-      <div class="panel-header">
-        Whiteboard
-        <span class="hint">(draw, drag, edit - AI can also draw here)</span>
-      </div>
-      <div class="toolbar">
-        <button id="tool-select" class="active" title="Select & Move">↖ Select</button>
-        <button id="tool-rect" title="Rectangle">▢ Rect</button>
-        <button id="tool-circle" title="Circle">○ Circle</button>
-        <button id="tool-text" title="Text">T Text</button>
-        <button id="tool-line" title="Line">╱ Line</button>
-        <button id="tool-draw" title="Freehand">✎ Draw</button>
-        <div class="separator"></div>
-        <button class="color-btn" style="background:#3b82f6" data-color="#3b82f6"></button>
-        <button class="color-btn" style="background:#22c55e" data-color="#22c55e"></button>
-        <button class="color-btn" style="background:#f59e0b" data-color="#f59e0b"></button>
-        <button class="color-btn" style="background:#ef4444" data-color="#ef4444"></button>
-        <button class="color-btn" style="background:#e2e8f0" data-color="#e2e8f0"></button>
-        <div class="separator"></div>
-        <button id="tool-delete" title="Delete Selected">🗑 Delete</button>
-        <button id="tool-clear" title="Clear All">Clear</button>
-      </div>
-      <div class="panel-content" id="canvas-container">
-        <canvas id="whiteboard"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <script>
-    // ============ STATE ============
-    let ws = null;
-    let canvas = null;
-    let currentTool = 'select';
-    let currentColor = '#3b82f6';
-    let isDrawing = false;
-    let ignoreNextChange = false;
-
-    // ============ WEBSOCKET ============
-    function connect() {
-      ws = new WebSocket('ws://' + window.location.host);
-
-      ws.onopen = () => {
-        document.getElementById('status-dot').classList.add('connected');
-        document.getElementById('status-text').textContent = 'Connected';
-      };
-
-      ws.onclose = () => {
-        document.getElementById('status-dot').classList.remove('connected');
-        document.getElementById('status-text').textContent = 'Disconnected';
-        setTimeout(connect, 2000);
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const msg = JSON.parse(event.data);
-          handleServerMessage(msg);
-        } catch (e) {
-          console.error('Parse error:', e);
-        }
-      };
-    }
-
-    function send(msg) {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify(msg));
-      }
-    }
-
-    function handleServerMessage(msg) {
-      switch (msg.type) {
-        case 'notes_sync':
-          if (msg.fromAI) {
-            document.getElementById('notes-editor').value = msg.content;
-          }
-          break;
-
-        case 'canvas_object_added':
-          if (msg.fromAI) {
-            addObjectToCanvas(msg.object);
-          }
-          break;
-
-        case 'canvas_object_modified':
-          if (msg.fromAI) {
-            updateObjectOnCanvas(msg.object);
-          }
-          break;
-
-        case 'canvas_object_deleted':
-          if (msg.fromAI) {
-            removeObjectFromCanvas(msg.id);
-          }
-          break;
-
-        case 'canvas_clear':
-          if (msg.fromAI) {
-            canvas.clear();
-            canvas.backgroundColor = '#1a1a2e';
-            canvas.renderAll();
-          }
-          break;
-      }
-    }
-
-    // ============ CANVAS SYNC ============
-    function addObjectToCanvas(obj) {
-      let fabricObj = null;
-      const baseProps = {
-        left: obj.left,
-        top: obj.top,
-        fill: obj.fill || 'transparent',
-        stroke: obj.stroke || '#3b82f6',
-        strokeWidth: obj.strokeWidth || 2,
-        id: obj.id,
-      };
-
-      switch (obj.type) {
-        case 'rect':
-          fabricObj = new fabric.Rect({
-            ...baseProps,
-            width: obj.width || 100,
-            height: obj.height || 60,
-          });
-          break;
-        case 'circle':
-          fabricObj = new fabric.Circle({
-            ...baseProps,
-            radius: obj.radius || 30,
-          });
-          break;
-        case 'text':
-          fabricObj = new fabric.IText(obj.text || 'Text', {
-            left: obj.left,
-            top: obj.top,
-            fill: obj.fill || '#e2e8f0',
-            fontSize: obj.fontSize || 16,
-            fontFamily: 'sans-serif',
-            id: obj.id,
-          });
-          break;
-        case 'line':
-          fabricObj = new fabric.Line(obj.points || [0, 0, 100, 100], {
-            stroke: obj.stroke || '#3b82f6',
-            strokeWidth: obj.strokeWidth || 2,
-            id: obj.id,
-          });
-          break;
-        case 'arrow':
-          // Simple arrow as line with triangle
-          const [x1, y1, x2, y2] = obj.points || [0, 0, 100, 100];
-          fabricObj = new fabric.Line([x1, y1, x2, y2], {
-            stroke: obj.stroke || '#3b82f6',
-            strokeWidth: obj.strokeWidth || 2,
-            id: obj.id,
-          });
-          // Add arrowhead
-          const angle = Math.atan2(y2 - y1, x2 - x1);
-          const headLen = 15;
-          const triangle = new fabric.Triangle({
-            left: x2,
-            top: y2,
-            width: headLen,
-            height: headLen,
-            fill: obj.stroke || '#3b82f6',
-            angle: (angle * 180 / Math.PI) + 90,
-            originX: 'center',
-            originY: 'center',
-            id: obj.id + '-head',
-          });
-          canvas.add(fabricObj, triangle);
-          canvas.renderAll();
-          return;
-        case 'path':
-          fabricObj = new fabric.Path(obj.path, {
-            stroke: obj.stroke || '#3b82f6',
-            strokeWidth: obj.strokeWidth || 2,
-            fill: 'transparent',
-            id: obj.id,
-          });
-          break;
-      }
-
-      if (fabricObj) {
-        canvas.add(fabricObj);
-        canvas.renderAll();
-      }
-    }
-
-    function updateObjectOnCanvas(obj) {
-      const fabricObj = canvas.getObjects().find(o => o.id === obj.id);
-      if (fabricObj) {
-        fabricObj.set(obj);
-        canvas.renderAll();
-      }
-    }
-
-    function removeObjectFromCanvas(id) {
-      const objs = canvas.getObjects().filter(o => o.id === id || o.id === id + '-head');
-      objs.forEach(o => canvas.remove(o));
-      canvas.renderAll();
-    }
-
-    // ============ USER ACTIONS ============
-    function sendObjectToServer(fabricObj, action = 'add') {
-      const obj = {
-        id: fabricObj.id,
-        type: fabricObj.type === 'i-text' ? 'text' : fabricObj.type,
-        left: fabricObj.left,
-        top: fabricObj.top,
-        width: fabricObj.width,
-        height: fabricObj.height,
-        radius: fabricObj.radius,
-        text: fabricObj.text,
-        fill: fabricObj.fill,
-        stroke: fabricObj.stroke,
-        strokeWidth: fabricObj.strokeWidth,
-        fontSize: fabricObj.fontSize,
-      };
-
-      if (action === 'add') {
-        send({ type: 'canvas_object_add', object: obj });
-      } else if (action === 'modify') {
-        send({ type: 'canvas_object_modify', object: obj });
-      }
-    }
-
-    // ============ TOOLBAR ============
-    function setTool(tool) {
-      currentTool = tool;
-      document.querySelectorAll('.toolbar button').forEach(b => b.classList.remove('active'));
-      document.getElementById('tool-' + tool)?.classList.add('active');
-
-      canvas.isDrawingMode = (tool === 'draw');
-      canvas.selection = (tool === 'select');
-
-      if (tool === 'draw') {
-        canvas.freeDrawingBrush.color = currentColor;
-        canvas.freeDrawingBrush.width = 2;
-      }
-    }
-
-    function setColor(color) {
-      currentColor = color;
-      document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('active'));
-      event.target.classList.add('active');
-      if (canvas.isDrawingMode) {
-        canvas.freeDrawingBrush.color = color;
-      }
-    }
-
-    // ============ INIT ============
-    function initCanvas() {
-      const container = document.getElementById('canvas-container');
-      const rect = container.getBoundingClientRect();
-
-      canvas = new fabric.Canvas('whiteboard', {
-        width: rect.width,
-        height: rect.height - 40, // toolbar height
-        backgroundColor: '#1a1a2e',
-        selection: true,
-      });
-
-      // Object created (by user)
-      canvas.on('object:added', (e) => {
-        if (e.target && !e.target.id) {
-          e.target.id = 'user-' + Date.now();
-          sendObjectToServer(e.target, 'add');
-        }
-      });
-
-      // Object modified (by user)
-      canvas.on('object:modified', (e) => {
-        if (e.target && e.target.id) {
-          sendObjectToServer(e.target, 'modify');
-        }
-      });
-
-      // Mouse events for drawing shapes
-      let startX, startY, tempObj;
-
-      canvas.on('mouse:down', (e) => {
-        if (currentTool === 'select' || currentTool === 'draw') return;
-
-        const pointer = canvas.getPointer(e.e);
-        startX = pointer.x;
-        startY = pointer.y;
-        isDrawing = true;
-
-        if (currentTool === 'rect') {
-          tempObj = new fabric.Rect({
-            left: startX,
-            top: startY,
-            width: 0,
-            height: 0,
-            fill: 'transparent',
-            stroke: currentColor,
-            strokeWidth: 2,
-          });
-        } else if (currentTool === 'circle') {
-          tempObj = new fabric.Circle({
-            left: startX,
-            top: startY,
-            radius: 0,
-            fill: 'transparent',
-            stroke: currentColor,
-            strokeWidth: 2,
-          });
-        } else if (currentTool === 'line') {
-          tempObj = new fabric.Line([startX, startY, startX, startY], {
-            stroke: currentColor,
-            strokeWidth: 2,
-          });
-        } else if (currentTool === 'text') {
-          tempObj = new fabric.IText('Text', {
-            left: startX,
-            top: startY,
-            fill: currentColor,
-            fontSize: 18,
-            fontFamily: 'sans-serif',
-          });
-          tempObj.id = 'user-' + Date.now();
-          canvas.add(tempObj);
-          canvas.setActiveObject(tempObj);
-          tempObj.enterEditing();
-          sendObjectToServer(tempObj, 'add');
-          tempObj = null;
-          isDrawing = false;
-          setTool('select');
-          return;
-        }
-
-        if (tempObj) {
-          canvas.add(tempObj);
-        }
-      });
-
-      canvas.on('mouse:move', (e) => {
-        if (!isDrawing || !tempObj) return;
-
-        const pointer = canvas.getPointer(e.e);
-
-        if (currentTool === 'rect') {
-          const w = pointer.x - startX;
-          const h = pointer.y - startY;
-          tempObj.set({
-            width: Math.abs(w),
-            height: Math.abs(h),
-            left: w < 0 ? pointer.x : startX,
-            top: h < 0 ? pointer.y : startY,
-          });
-        } else if (currentTool === 'circle') {
-          const r = Math.sqrt(Math.pow(pointer.x - startX, 2) + Math.pow(pointer.y - startY, 2));
-          tempObj.set({ radius: r });
-        } else if (currentTool === 'line') {
-          tempObj.set({ x2: pointer.x, y2: pointer.y });
-        }
-
-        canvas.renderAll();
-      });
-
-      canvas.on('mouse:up', () => {
-        if (isDrawing && tempObj) {
-          tempObj.id = 'user-' + Date.now();
-          tempObj.setCoords();
-          sendObjectToServer(tempObj, 'add');
-        }
-        isDrawing = false;
-        tempObj = null;
-      });
-
-      // Freehand drawing done
-      canvas.on('path:created', (e) => {
-        e.path.id = 'user-' + Date.now();
-        send({
-          type: 'canvas_object_add',
-          object: {
-            id: e.path.id,
-            type: 'path',
-            path: e.path.path.map(p => p.join(' ')).join(' '),
-            stroke: e.path.stroke,
-            strokeWidth: e.path.strokeWidth,
-            left: e.path.left,
-            top: e.path.top,
-          }
-        });
-      });
-
-      // Resize canvas on window resize
-      window.addEventListener('resize', () => {
-        const rect = container.getBoundingClientRect();
-        canvas.setDimensions({ width: rect.width, height: rect.height - 40 });
-      });
-    }
-
-    function initToolbar() {
-      document.getElementById('tool-select').onclick = () => setTool('select');
-      document.getElementById('tool-rect').onclick = () => setTool('rect');
-      document.getElementById('tool-circle').onclick = () => setTool('circle');
-      document.getElementById('tool-text').onclick = () => setTool('text');
-      document.getElementById('tool-line').onclick = () => setTool('line');
-      document.getElementById('tool-draw').onclick = () => setTool('draw');
-
-      document.querySelectorAll('.color-btn').forEach(btn => {
-        btn.onclick = () => setColor(btn.dataset.color);
-      });
-
-      document.getElementById('tool-delete').onclick = () => {
-        const active = canvas.getActiveObjects();
-        active.forEach(obj => {
-          send({ type: 'canvas_object_delete', id: obj.id });
-          canvas.remove(obj);
-        });
-        canvas.discardActiveObject();
-        canvas.renderAll();
-      };
-
-      document.getElementById('tool-clear').onclick = () => {
-        if (confirm('Clear the entire whiteboard?')) {
-          canvas.clear();
-          canvas.backgroundColor = '#1a1a2e';
-          canvas.renderAll();
-          send({ type: 'canvas_sync', objects: [] });
-        }
-      };
-    }
-
-    function initNotes() {
-      const editor = document.getElementById('notes-editor');
-      let debounceTimer;
-
-      editor.addEventListener('input', () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          send({ type: 'notes_edit', content: editor.value });
-        }, 300);
-      });
-    }
-
-    // ============ START ============
-    document.addEventListener('DOMContentLoaded', () => {
-      connect();
-      initCanvas();
-      initToolbar();
-      initNotes();
-    });
-  </script>
 </body>
 </html>`;
 }

@@ -1,0 +1,12 @@
+# Whisper Transcription Server Dependencies
+
+# Core
+faster-whisper>=1.0.0
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+python-multipart>=0.0.6  # Required for file uploads
+
+# Optional: For GPU acceleration (uncomment if using NVIDIA GPU)
+# torch>=2.0.0
+# nvidia-cublas-cu12
+# nvidia-cudnn-cu12

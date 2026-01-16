@@ -241,22 +241,64 @@ AskUserQuestion({
 
 **If stack already set:** Skip this question.
 
-### 0c. Start Live Canvas (ALWAYS - NO QUESTION)
+### 0c. Ask Interactive Mode
 
-**Live Canvas is always part of brainstorming. Start it automatically:**
+**Ask user if they want voice input and visual whiteboard:**
 
-1. Start the Live Canvas server with auto-open enabled:
+```
+AskUserQuestion({
+  questions: [{
+    header: "Mode",
+    question: "Would you like to use Interactive Mode for brainstorming?",
+    options: [
+      { label: "Yes - Voice + Live Canvas (Recommended)", description: "Voice input with push-to-talk, visual whiteboard, live notes in browser" },
+      { label: "No - Text only", description: "Traditional terminal-only brainstorming" }
+    ],
+    multiSelect: false
+  }]
+})
+```
+
+**If user chooses "Yes - Voice + Live Canvas":**
+
+1. Start the Whisper server (voice transcription):
+   ```bash
+   # Check if Whisper server is running
+   curl -s http://localhost:5000/health || (
+     cd "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/whisper-server" && \
+     python server.py > /dev/null 2>&1 &
+   )
+   ```
+
+2. Start the Live Canvas server with auto-open enabled:
    ```bash
    CANVAS_AUTO_OPEN=true node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js" > /dev/null 2>&1 &
    ```
-2. Wait for server to be ready:
+
+3. Wait for servers to be ready:
    ```bash
-   sleep 2 && curl -s http://localhost:3456/health
+   sleep 3 && curl -s http://localhost:3456/health && curl -s http://localhost:5000/health
    ```
-3. The browser will open automatically via the `open` npm package.
-4. Confirm to user: "Live Canvas is running at http://localhost:3456"
-5. If resuming: Load existing notes into Live Canvas
-6. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
+
+4. The browser will open automatically to Live Canvas.
+
+5. Confirm to user:
+   ```
+   "Interactive Mode enabled:
+   - 🎤 Voice input: Push-to-talk in browser (Whisper running)
+   - 🎨 Live Canvas: http://localhost:3456
+   - 📝 Notes sync to docs/brainstorm-notes.md in real-time"
+   ```
+
+6. If resuming: Load existing notes into Live Canvas
+
+7. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
+
+**If user chooses "No - Text only":**
+
+1. Skip Whisper and Live Canvas startup
+2. Confirm to user: "Text-only mode - let's brainstorm in the terminal!"
+3. Continue with standard terminal-based brainstorming
 
 ### 0d. THEN Continue to File/Todo Setup
 
