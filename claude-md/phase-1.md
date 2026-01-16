@@ -180,55 +180,41 @@ Use the whiteboard to visually show:
 
 **User can also draw** - they may add annotations, move things around, or sketch their own ideas. Check the whiteboard state periodically.
 
-### If Live Canvas was NOT enabled
-- Use normal file operations (Read/Write/Edit tools)
-- Create ASCII diagrams in chat instead
-- All functionality works, just without interactive preview
-
 ---
 
 ## Startup Sequence (MUST FOLLOW THIS ORDER)
 
-**STEP 0: Ask setup questions BEFORE doing anything else.**
+**STEP 0: Check state and ask setup questions BEFORE doing anything else.**
 
-These questions come FIRST, before reading files, before initializing todos, before anything.
+### 0a. Check for Existing Brainstorm Notes (FIRST!)
 
-### 0a. Ask About Live Canvas (ALWAYS ASK)
+**Before asking ANY questions, check if `docs/brainstorm-notes.md` exists:**
 
-**ALWAYS ask this question first, before anything else:**
-```
-AskUserQuestion({
-  questions: [{
-    header: "Live Canvas",
-    question: "Would you like to use Live Canvas for real-time visual brainstorming?",
-    options: [
-      { label: "Yes, open viewer", description: "Opens http://localhost:3456 in browser for live updates" },
-      { label: "No, text only", description: "Standard brainstorming without live preview" }
-    ],
-    multiSelect: false
-  }]
-})
+```bash
+# Check if brainstorm notes exist
+ls docs/brainstorm-notes.md
 ```
 
-**If "Yes":**
-1. Start the Live Canvas server in background:
-   ```bash
-   node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js" > /dev/null 2>&1 &
+**If file EXISTS (resuming session):**
+1. Read the file to understand current progress
+2. Summarize what's been done:
    ```
-2. Wait for server to be ready (check health endpoint):
-   ```bash
-   sleep 2 && curl -s http://localhost:3456/health
-   ```
-3. Open browser to viewer:
-   ```bash
-   start http://localhost:3456
-   ```
-4. Confirm to user: "Live Canvas is running. Updates will appear in your browser."
-5. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
+   "I see we have an existing brainstorm session for '[App Name]'.
 
-**If "No":** Use normal file operations (no server, no viewer).
+   Current progress:
+   - Core concept: ✓ defined
+   - Research: ✓ completed
+   - Layout options: ✓ explored
+   - User journey: [pending]
 
-### 0b. Check Stack and Ask if Not Set
+   Should we continue from where we left off, or start fresh?"
+   ```
+3. If continuing: Skip to 0c (Live Canvas), then adjust todos to resume
+4. If starting fresh: Delete old notes, continue to 0b
+
+**If file does NOT exist:** Continue to 0b.
+
+### 0b. Check Stack and Ask if Not Set (only for NEW sessions)
 
 Read `.pipeline/manifest.json` and check if `stack` is null or missing.
 
@@ -253,9 +239,31 @@ AskUserQuestion({
 # Update stack in manifest (use jq or similar)
 ```
 
-### 0c. THEN Continue to File/Todo Setup
+**If stack already set:** Skip this question.
 
-Only after both questions are answered, proceed to initialize file and todos.
+### 0c. Start Live Canvas (ALWAYS - NO QUESTION)
+
+**Live Canvas is always part of brainstorming. Start it automatically:**
+
+1. Start the Live Canvas server with auto-open enabled:
+   ```bash
+   CANVAS_AUTO_OPEN=true node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js" > /dev/null 2>&1 &
+   ```
+2. Wait for server to be ready:
+   ```bash
+   sleep 2 && curl -s http://localhost:3456/health
+   ```
+3. The browser will open automatically via the `open` npm package.
+4. Confirm to user: "Live Canvas is running at http://localhost:3456"
+5. If resuming: Load existing notes into Live Canvas
+6. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
+
+### 0d. THEN Continue to File/Todo Setup
+
+Only after all checks/questions are complete, proceed to initialize todos.
+
+**If resuming:** Adjust todo list to mark completed items and start from where left off.
+**If new:** Initialize full todo list from scratch.
 
 ---
 
@@ -313,24 +321,6 @@ TodoWrite([
   { content: "10. Final mockup confirmation", status: "pending", activeForm: "Confirming final mockup" },
   { content: "11. Finalize brainstorm-notes.md", status: "pending", activeForm: "Finalizing notes" }
 ])
-```
-
----
-
-## Resumability
-
-**If `docs/brainstorm-notes.md` exists, read it first:**
-
-```
-Agent: "I see we have an existing brainstorm session for '[App Name]'.
-
-Current progress:
-- Core concept: [status]
-- Research: [status]
-- Layout: [status]
-- ...
-
-Should we continue from where we left off?"
 ```
 
 ---
