@@ -280,9 +280,15 @@ AskUserQuestion({
    sleep 3 && curl -s http://localhost:3456/health && curl -s http://localhost:5000/health
    ```
 
-4. The browser will open automatically to Live Canvas.
+4. **CRITICAL: Register Claude PID for message injection:**
+   ```bash
+   powershell -NoProfile -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/register-claude-pid.ps1" -PipelineDir "$(pwd)"
+   ```
+   Without this step, messages sent from the browser will NOT be injected into the TUI.
 
-5. Confirm to user:
+5. The browser will open automatically to Live Canvas.
+
+6. Confirm to user:
    ```
    "Interactive Mode enabled:
    - 🎤 Voice input: Push-to-talk in browser (Whisper running)
@@ -290,9 +296,9 @@ AskUserQuestion({
    - 📝 Notes sync to docs/brainstorm-notes.md in real-time"
    ```
 
-6. If resuming: Load existing notes into Live Canvas
+7. If resuming: Load existing notes into Live Canvas
 
-7. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
+8. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
 
 **If user chooses "No - Text only":**
 
