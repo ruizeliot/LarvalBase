@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "\"C:\\Program Files\\Git\\bin\\bash.exe\" \"C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/auto-begin-hook.sh\"",
+            "command": "\"C:\\Program Files\\Git\\bin\\bash.exe\" -c \"source 'C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/auto-begin-hook.sh'\"",
             "timeout": 10
           }
         ]
