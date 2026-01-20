@@ -170,6 +170,26 @@ curl http://localhost:3456/api/status
 # Returns: {"status":"ok","viewers":1,"notesLength":123,"objectCount":5}
 ```
 
+### File Persistence
+
+Both notes and whiteboard are automatically saved to disk:
+- **Notes:** `docs/brainstorm-notes.md`
+- **Whiteboard:** `.pipeline/whiteboard.json`
+
+**Sync/Reload APIs:**
+```bash
+# Load project files (notes + whiteboard) - USE THIS WHEN RESUMING
+curl -X POST http://localhost:3456/api/project \
+  -H "Content-Type: application/json" \
+  -d '{"projectDir": "/path/to/project"}'
+
+# Reload just notes from file
+curl -X POST http://localhost:3456/api/notes/reload
+
+# Reload just whiteboard from file
+curl -X POST http://localhost:3456/api/canvas/reload
+```
+
 ### When to Use Whiteboard
 
 Use the whiteboard to visually show:
@@ -289,20 +309,28 @@ AskUserQuestion({
    ```
    Without this step, messages sent from the browser will NOT be injected into the TUI.
 
-5. **Open browser to Live Canvas:**
+5. **CRITICAL: Sync project files to Live Canvas:**
+   ```bash
+   # This loads BOTH notes (docs/brainstorm-notes.md) AND whiteboard (.pipeline/whiteboard.json)
+   curl -X POST http://localhost:3456/api/project \
+     -H "Content-Type: application/json" \
+     -d "{\"projectDir\": \"$(pwd)\"}"
+   ```
+   This is essential for resuming sessions - it loads all existing brainstorm data into Live Canvas.
+
+6. **Open browser to Live Canvas:**
    ```bash
    start http://localhost:3456
    ```
 
-6. Confirm to user:
+7. Confirm to user:
    ```
    "Interactive Mode enabled:
-   - 🎤 Voice input: Push-to-talk in browser (Whisper running)
-   - 🎨 Live Canvas: http://localhost:3456
-   - 📝 Notes sync to docs/brainstorm-notes.md in real-time"
+   - Voice input: Push-to-talk in browser (Whisper running)
+   - Live Canvas: http://localhost:3456
+   - Notes sync to docs/brainstorm-notes.md
+   - Whiteboard sync to .pipeline/whiteboard.json"
    ```
-
-7. If resuming: Load existing notes into Live Canvas
 
 8. Use HTTP API during session (see "Using Live Canvas" section above for curl commands)
 

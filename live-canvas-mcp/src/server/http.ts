@@ -3,7 +3,7 @@ import { createServer } from "http";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
-import { initWebSocket, broadcast, getConnectedClients, setMessageHandler } from "./websocket.js";
+import { initWebSocket, broadcast, getConnectedClients, setMessageHandler, getDiagrams } from "./websocket.js";
 import { setClaudePid, getClaudePid, injectInteractiveInput, injectMessage } from "./inject.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +42,53 @@ function getNotesFilePath(): string {
     mkdirSync(docsDir, { recursive: true });
   }
   return join(docsDir, "brainstorm-notes.md");
+}
+
+// Whiteboard file path (relative to project)
+function getWhiteboardFilePath(): string {
+  const pipelineDir = join(canvasState.projectDir, ".pipeline");
+  if (!existsSync(pipelineDir)) {
+    mkdirSync(pipelineDir, { recursive: true });
+  }
+  return join(pipelineDir, "whiteboard.json");
+}
+
+// Load whiteboard from file
+function loadWhiteboardFromFile(): CanvasObject[] {
+  const filePath = getWhiteboardFilePath();
+  if (existsSync(filePath)) {
+    try {
+      const data = readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed.objects) ? parsed.objects : [];
+    } catch (error) {
+      console.error(`[WHITEBOARD] Failed to load: ${error}`);
+      return [];
+    }
+  }
+  return [];
+}
+
+// Save whiteboard to file
+function saveWhiteboardToFile(): void {
+  const filePath = getWhiteboardFilePath();
+  const data = JSON.stringify({
+    objects: canvasState.objects,
+    savedAt: new Date().toISOString()
+  }, null, 2);
+  writeFileSync(filePath, data, "utf-8");
+}
+
+// Debounced whiteboard save
+let whiteboardSaveTimer: ReturnType<typeof setTimeout> | null = null;
+function debouncedSaveWhiteboard(delay = 500): void {
+  if (whiteboardSaveTimer) {
+    clearTimeout(whiteboardSaveTimer);
+  }
+  whiteboardSaveTimer = setTimeout(() => {
+    saveWhiteboardToFile();
+    whiteboardSaveTimer = null;
+  }, delay);
 }
 
 // Load notes from file
@@ -100,8 +147,10 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
   // Initialize WebSocket on same server
   initWebSocket(server);
 
-  // Load initial notes from file
+  // Load initial state from files
   canvasState.notes = loadNotesFromFile();
+  canvasState.objects = loadWhiteboardFromFile();
+  console.error(`[STARTUP] Loaded ${canvasState.notes.length} chars notes, ${canvasState.objects.length} whiteboard objects`);
 
   // Handle messages from viewer (user edits)
   setMessageHandler((msg: Record<string, unknown>) => {
@@ -175,6 +224,7 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       } as CanvasObject;
       canvasState.objects.push(obj);
       broadcast({ type: "canvas_object_added", object: obj, fromUser: true });
+      debouncedSaveWhiteboard();
     } else if (msg.type === "canvas_object_modify") {
       // User modified object
       const msgObject = msg.object as Record<string, unknown>;
@@ -182,14 +232,17 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       if (idx >= 0) {
         canvasState.objects[idx] = { ...canvasState.objects[idx], ...msgObject } as CanvasObject;
         broadcast({ type: "canvas_object_modified", object: canvasState.objects[idx], fromUser: true });
+        debouncedSaveWhiteboard();
       }
     } else if (msg.type === "canvas_object_delete") {
       // User deleted object
       canvasState.objects = canvasState.objects.filter(o => o.id !== msg.id);
       broadcast({ type: "canvas_object_deleted", id: msg.id, fromUser: true });
+      debouncedSaveWhiteboard();
     } else if (msg.type === "canvas_sync") {
       // User sends full canvas state
       canvasState.objects = (msg.objects as CanvasObject[]) || [];
+      debouncedSaveWhiteboard();
     }
   });
 
@@ -273,6 +326,7 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       fromAI: true,
     });
 
+    debouncedSaveWhiteboard();
     res.json({ success: true, id: obj.id });
   });
 
@@ -296,6 +350,7 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
 
     canvasState.objects.push(obj);
     broadcast({ type: "canvas_object_added", object: obj, fromAI: true });
+    debouncedSaveWhiteboard();
 
     res.json({ success: true, id: obj.id });
   });
@@ -338,6 +393,7 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
       broadcast({ type: "canvas_object_added", object: textObj, fromAI: true });
     }
 
+    debouncedSaveWhiteboard();
     res.json({ success: true, id: rectObj.id });
   });
 
@@ -361,6 +417,7 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
 
     canvasState.objects.push(obj);
     broadcast({ type: "canvas_object_added", object: obj, fromAI: true });
+    debouncedSaveWhiteboard();
 
     res.json({ success: true, id: obj.id });
   });
@@ -369,12 +426,25 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
   app.post("/api/canvas/clear", (req, res) => {
     canvasState.objects = [];
     broadcast({ type: "canvas_clear", fromAI: true });
+    saveWhiteboardToFile(); // Save immediately on clear
     res.json({ success: true });
+  });
+
+  // POST /api/canvas/reload - Reload whiteboard from file
+  app.post("/api/canvas/reload", (req, res) => {
+    canvasState.objects = loadWhiteboardFromFile();
+    broadcast({ type: "canvas_sync", objects: canvasState.objects, fromAI: true });
+    res.json({ success: true, objectCount: canvasState.objects.length });
   });
 
   // GET /api/canvas - Get current canvas state
   app.get("/api/canvas", (req, res) => {
     res.json({ objects: canvasState.objects });
+  });
+
+  // GET /api/diagrams - Get all diagrams (for initial load)
+  app.get("/api/diagrams", (req, res) => {
+    res.json({ diagrams: getDiagrams() });
   });
 
   // GET /api/status - Check server and viewer status
@@ -389,14 +459,24 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
     });
   });
 
-  // POST /api/project - Set project directory
+  // POST /api/project - Set project directory (loads notes and whiteboard)
   app.post("/api/project", (req, res) => {
     const { projectDir } = req.body;
     if (projectDir) {
       canvasState.projectDir = projectDir;
+      // Load both notes and whiteboard from project
       canvasState.notes = loadNotesFromFile();
+      canvasState.objects = loadWhiteboardFromFile();
+      // Broadcast to viewers
       broadcast({ type: "notes_sync", content: canvasState.notes, fromAI: true });
-      res.json({ success: true, projectDir: canvasState.projectDir });
+      broadcast({ type: "canvas_sync", objects: canvasState.objects, fromAI: true });
+      console.error(`[PROJECT] Loaded ${canvasState.notes.length} chars notes, ${canvasState.objects.length} whiteboard objects from ${projectDir}`);
+      res.json({
+        success: true,
+        projectDir: canvasState.projectDir,
+        notesLength: canvasState.notes.length,
+        objectCount: canvasState.objects.length
+      });
     } else {
       res.status(400).json({ error: "projectDir required" });
     }
