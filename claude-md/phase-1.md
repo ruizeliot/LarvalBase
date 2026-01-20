@@ -270,9 +270,12 @@ AskUserQuestion({
    )
    ```
 
-2. Start the Live Canvas server with auto-open enabled:
+2. Start the Live Canvas server (if not already running):
    ```bash
-   CANVAS_AUTO_OPEN=true node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js" > /dev/null 2>&1 &
+   # Check if Live Canvas is running, start if not
+   curl -s http://localhost:3456/health || (
+     node "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/live-canvas-mcp/dist/index.js" > /dev/null 2>&1 &
+   )
    ```
 
 3. Wait for servers to be ready:
@@ -286,7 +289,10 @@ AskUserQuestion({
    ```
    Without this step, messages sent from the browser will NOT be injected into the TUI.
 
-5. The browser will open automatically to Live Canvas.
+5. **Open browser to Live Canvas:**
+   ```bash
+   start http://localhost:3456
+   ```
 
 6. Confirm to user:
    ```
