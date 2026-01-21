@@ -38,12 +38,6 @@ v11 uses a modular architecture with 7 independent modules:
 - Do NOT use `sleep` - wait for HEARTBEAT messages instead
 - Do NOT proceed past todo 7 until you receive HEARTBEAT
 
-**Reference Documentation:**
-For detailed specifications, see `docs/architecture-documentation/`:
-- `01-pipeline-execution-flow.md` - Complete execution flow
-- `02-orchestrator-todos.md` - Detailed todo descriptions
-- `08-new-pipeline-structure.md` - v11 architecture overview
-
 ---
 
 ## Step 1: Get Orchestrator PID
