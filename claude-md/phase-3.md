@@ -1,301 +1,326 @@
-# Phase 3: Bootstrap (Worker CLAUDE.md)
+# Phase 3: Test Architect (Test Specs)
 
-**Pipeline Version:** 10.0
-**Phase:** 3 - Bootstrap (Integrations-First)
+**Pipeline Version:** 11.0
+**Phase:** 3 - Test Architect
 **Mode:** Autonomous (no user interaction)
 
 ---
 
-# Worker Base Rules v10.0
+## Overview
 
-**This file contains shared rules for ALL desktop pipeline workers.**
-
----
-
-# Shared Rules (All Agents)
-
-## Rule 1: WebSearch First
-
-**Always search for anything technical. Don't rely on training knowledge.**
-
-| Situation | Action |
-|-----------|--------|
-| Before implementing ANY technical solution | WebSearch first |
-| Before claiming something is a "limitation" | WebSearch to verify |
-| When encountering an error message | WebSearch the exact error |
-| When using a library/API | WebSearch for current documentation |
-
-**If you're about to write code based on memory, STOP and search first.**
-
----
-
-## Rule 2: Self-Reflection After Every Task
-
-### Fixed Checklist
-
-- [ ] **Did I search before implementing?**
-- [ ] **Did I check existing code patterns first?**
-- [ ] **Did I avoid placeholders?**
-- [ ] **Did I implement both halves of completeness pairs?**
-- [ ] **Did I handle edge cases?**
-- [ ] **Did I use real actions, not synthetic events?**
-- [ ] **If I struggled, did I search for solutions rather than guess repeatedly?**
-
-### Action on Failure
-
-**If any checklist item is NO:** STOP, fix the issue, re-run the checklist.
-
----
-
-## Rule 3: Research Before Claiming Limitations
-
-**You MUST search online BEFORE claiming something is a "known limitation."**
-
----
-
-# Worker-Specific Rules
-
-## 1. Orchestrator Communication
-
-- Initialize todos at phase startup
-- Mark todos as `in_progress` when starting a task
-- Mark todos as `completed` when finished
-- One todo `in_progress` at a time
-
----
-
-## 2. FORBIDDEN PATTERNS (Gate 1 Checks This)
-
-### E2E Tests MUST Use Real WebdriverIO Actions
-
-| ❌ FORBIDDEN (Synthetic Events) | ✅ REQUIRED (Real Actions) |
-|--------------------------------|---------------------------|
-| `browser.execute(() => { el.dispatchEvent(new MouseEvent) })` | `$('selector').click()` |
-| `browser.execute(() => { el.dispatchEvent(new DragEvent) })` | `$('source').dragAndDrop($('target'))` |
-| `browser.execute(() => { new DataTransfer() })` | Use WebdriverIO's native drag-drop |
-
----
-
-## 3. Completeness Pairs
-
-| Action | Required Pair |
-|--------|---------------|
-| Add / Create | Delete / Remove |
-| Place | Move / Reposition |
-| Connect | Disconnect |
-| Open / Expand | Close / Collapse |
-| Select | Deselect |
-
----
-
-## 4. Git Discipline
-
-Commit at phase end with conventional format including test counts.
-
----
-
-# Phase 3: Bootstrap (Integrations-First)
-
-**Purpose:** Install ALL integrations FIRST, then create skeleton that uses REAL APIs
-**Input:** `docs/user-stories.md`, `docs/functionality-specs.md`
-**Output:** Tauri app with all plugins installed + skeleton using real APIs + failing tests
-**Mode:** Autonomous (no user interaction)
-
----
-
-## 🔴 CRITICAL: Integrations FIRST, Skeleton SECOND
-
-**This is the KEY CHANGE from previous versions.**
+Phase 3 transforms user stories into E2E test specifications (test-first approach).
 
 ```
-OLD (WRONG):
-1. Create skeleton → 2. Write tests → 3. Hope integrations work later
-
-NEW (CORRECT):
-1. Install ALL integrations → 2. Verify they work → 3. Create skeleton using real APIs → 4. Write tests
+┌─────────────────────┐    ┌─────────────────────┐         ┌─────────────────────┐
+│  brainstorm-notes   │    │    user-stories     │ ──────▶ │     test-specs      │
+│        .md          │    │        .md          │         │        .md          │
+└─────────────────────┘    └─────────────────────┘         └─────────────────────┘
+         │                              │
+         └──────────────┬───────────────┘
+                        │
+                  Test Architect
+                   (Autonomous)
 ```
 
-### Why This Order Matters
-
-With integrations-first:
-1. tauri-plugin-dialog is installed in Phase 3
-2. Skeleton imports real `open()` function
-3. Tests fail because button doesn't call `open()` yet
-4. Phase 4 implements real call → tests pass → app works
+**Input:** `docs/brainstorm-notes.md`, `docs/user-stories.md`
+**Output:** `docs/test-specs.md`
 
 ---
 
 ## Startup: Initialize Todos
 
+**IMMEDIATELY call TodoWrite with this EXACT list:**
+
 ```
 TodoWrite([
-  { content: "1. Read functionality-specs.md and extract integrations", status: "in_progress", activeForm: "Extracting integrations" },
-  { content: "2. Create Tauri project (basic)", status: "pending", activeForm: "Creating project" },
-  { content: "3. INSTALL: All npm packages from specs", status: "pending", activeForm: "Installing npm packages" },
-  { content: "4. INSTALL: All cargo crates from specs", status: "pending", activeForm: "Installing cargo crates" },
-  { content: "5. REGISTER: All plugins in lib.rs", status: "pending", activeForm: "Registering plugins" },
-  { content: "6. CONFIGURE: All capabilities in Tauri", status: "pending", activeForm: "Configuring capabilities" },
-  { content: "7. VERIFY: Integration tests (plugins available)", status: "pending", activeForm: "Verifying integrations" },
-  { content: "8. Create skeleton using REAL API imports", status: "pending", activeForm: "Creating skeleton with real APIs" },
-  { content: "9. Set up Tailwind with strict design tokens", status: "pending", activeForm: "Setting up Tailwind" },
-  { content: "10. Set up Vitest (Unit + Integration)", status: "pending", activeForm: "Setting up Vitest" },
-  { content: "11. Set up WebdriverIO + tauri-driver (E2E)", status: "pending", activeForm: "Setting up WebdriverIO" },
-  { content: "12. Create interaction test helpers", status: "pending", activeForm: "Creating interaction helpers" },
-  { content: "13. Implement all test layers from specs", status: "pending", activeForm: "Implementing tests" },
-  { content: "14. RED CHECK: All layers 100% failing", status: "pending", activeForm: "Verifying RED state" },
-  { content: "15. BUILD: Run tauri build", status: "pending", activeForm: "Building Tauri app" },
-  { content: "16. VALIDATE: Launch .exe (no crash)", status: "pending", activeForm: "Validating launch" },
-  { content: "17. Update manifest and git commit", status: "pending", activeForm: "Committing" }
+  { content: "1. Read user-stories.md", status: "in_progress", activeForm: "Reading user stories" },
+  { content: "2. Risk assessment per epic", status: "pending", activeForm: "Assessing risks" },
+  { content: "3. Define E2E test spec per story", status: "pending", activeForm: "Defining test specs" },
+  { content: "4. VERIFY: 1:1 mapping", status: "pending", activeForm: "Verifying 1:1 mapping" },
+  { content: "5. Add edge cases per test (MANDATORY)", status: "pending", activeForm: "Adding edge cases" },
+  { content: "6. Define test data requirements", status: "pending", activeForm: "Defining test data" },
+  { content: "7. VERIFY: Test quality", status: "pending", activeForm: "Verifying test quality" },
+  { content: "8. Create test-specs.md", status: "pending", activeForm: "Creating test-specs.md" },
+  { content: "9. Git commit Phase 3", status: "pending", activeForm: "Committing" }
 ])
 ```
 
 ---
 
-## CRITICAL: 100% RED State Required
+## Agent Skills (Invoke with Skill tool)
 
-**ALL tests at ALL LAYERS must fail.**
+**CRITICAL: Skills are NOT auto-triggered in autonomous mode. You MUST explicitly invoke them.**
 
-| Layer | Expected | Why Failures Prove RED |
-|-------|----------|------------------------|
-| Unit | 100% failing | Functions don't exist |
-| Integration | 100% failing | Tauri commands don't exist |
-| E2E | 100% failing | UI flow doesn't work |
-| Visual | 100% failing | No baselines, no styled components |
-| Smoke | 100% failing | No clickable elements work |
+| Skill Name | Invoke When | What It Provides |
+|------------|-------------|------------------|
+| `tauri` | **Todo 1** (After reading stories) | Tauri v2 E2E testing patterns, WebdriverIO integration |
+| `test-driven-development` | **Todo 3** (When defining test specs) | TDD principles, test-first patterns, assertion strategies |
+| `integration-test-setup` | **Todo 6** (When defining test data) | Test infrastructure patterns, fixture strategies |
 
----
+### How to Invoke
 
-## Steps 1-7: Install Integrations First
-
-### Step 1: Read Functionality Specs
-Extract all required integrations from `docs/functionality-specs.md`.
-
-### Step 2: Create Tauri Project
-```bash
-npm create tauri-app@latest . -- --template react-ts
-cd src-tauri && cargo build
 ```
-
-### Steps 3-4: Install ALL Packages
-```bash
-# npm packages
-npm install @tauri-apps/plugin-dialog @tauri-apps/plugin-fs
-
-# cargo crates
-cd src-tauri
-cargo add tauri-plugin-dialog tauri-plugin-fs
-```
-
-### Step 5: Register ALL Plugins in lib.rs
-```rust
-tauri::Builder::default()
-    .plugin(tauri_plugin_dialog::init())
-    .plugin(tauri_plugin_fs::init())
-    // Add all plugins from specs
-```
-
-### Step 6: Configure ALL Capabilities
-Edit `src-tauri/capabilities/default.json` with all permissions.
-
-### Step 7: VERIFY Integrations
-Create integration tests that prove plugins are available:
-```typescript
-import { open } from '@tauri-apps/plugin-dialog';
-expect(typeof open).toBe('function');  // Must PASS
+Skill tool → tauri                    (invoke after reading stories)
+Skill tool → test-driven-development  (invoke before writing test specs)
+Skill tool → integration-test-setup   (invoke when defining test data requirements)
 ```
 
 ---
 
-## Step 8: Create Skeleton with REAL API Imports
+## Core Principle: 1 Story = 1 E2E Test
 
-**Import real APIs, not mocks:**
+Every user story has exactly one E2E test specification.
 
-```typescript
-// ✅ CORRECT - imports real API
-import { open } from '@tauri-apps/plugin-dialog';
+- Story too big for 1 test → Should have been split in Phase 2
+- Story too small for 1 test → Should have been merged in Phase 2
+- Story complete = Test passes
 
-const handleBrowse = async () => {
-  // TODO: Call open() in Phase 4
-};
+---
 
-// ❌ WRONG - uses mock
-const handleBrowse = () => {
-  loadMockData('/fake/path.json');  // FORBIDDEN
-};
+## Todos
+
+### Todo 1: Read user-stories.md
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Understand what needs testing |
+| **What to do** | Read `docs/user-stories.md`, extract all stories and acceptance criteria |
+| **Output** | Mental model of test requirements |
+| **Agent Skills** | `Skill tool → tauri` (invoke after reading, for E2E patterns) |
+
+---
+
+### Todo 2: Risk assessment per epic
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Prioritize testing effort based on risk |
+| **What to do** | Assign risk level to each epic: P0 (critical), P1 (important), P2 (nice-to-have) |
+| **Output** | Risk matrix by epic |
+
+**Risk Level Definitions:**
+
+| Level | Description | Examples |
+|-------|-------------|----------|
+| **P0** | Critical - Core functionality, data integrity, security | Save/load data, authentication, main workflow |
+| **P1** | Important - Main features users expect | Search, filter, sort, edit operations |
+| **P2** | Nice-to-have - Polish, edge cases | Animations, keyboard shortcuts, rare scenarios |
+
+---
+
+### Todo 3: Define E2E test spec per story
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Create exactly one E2E test specification per user story |
+| **Format** | Test ID matches story ID (e.g., US-E1-001 → TEST-E1-001) |
+| **Rules** | Test must verify all acceptance criteria. Test must use real user actions. |
+| **Agent Skills** | `Skill tool → test-driven-development` (invoke before writing specs) |
+
+**Test Spec Format:**
+
+```markdown
+### TEST-E1-001: [Test Name]
+
+**Story:** US-E1-001
+**Priority:** P0/P1/P2
+
+**Preconditions:**
+- [What must be true before test runs]
+
+**Steps:**
+1. [User action using real interactions]
+2. [Next action]
+3. [Continue...]
+
+**Expected Result:**
+- [What should happen]
+- [Verifies acceptance criterion 1]
+- [Verifies acceptance criterion 2]
 ```
 
 ---
 
-## Steps 9-12: Test Infrastructure
+### Todo 4: VERIFY: 1:1 mapping
 
-### Step 9: Tailwind with Strict Design Tokens
-Configure `tailwind.config.js` with only allowed colors, spacing, borderRadius.
-Add ESLint rule to reject arbitrary values.
-
-### Steps 10-11: Test Runners
-- Vitest for Unit + Integration
-- WebdriverIO + tauri-driver for E2E
-
-### Step 12: Create Interaction Helpers
-Create `e2e/helpers/interactions.ts` with:
-- `dragFromPalette(selector, x, y)`
-- `moveElement(selector, deltaX, deltaY)`
-- `connectNodes(source, target)`
-- `typeInto(selector, text)`
-- `pressKeys(keys[])`
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Independent verification that every story has exactly one test |
+| **What to do** | Spawn Haiku reviewer with checklist |
+| **Haiku checks** | Every story has a test? No story has multiple tests? No test covers multiple stories? |
+| **Pass threshold** | Score >= 95 |
+| **On fail** | Fix issues and retry (max 3 attempts), then escalate |
 
 ---
 
-## Steps 13-17: Tests and Verification
+### Todo 5: Add edge cases per test (MANDATORY)
 
-### Step 13: Implement Tests from Specs
-Convert specs to actual test files.
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Identify what could go wrong for each test |
+| **Rules** | MINIMUM 2 edge cases per test from different categories |
+| **Output** | Enhanced test specs with edge cases |
 
-### Step 14: Verify RED State
-All tests must fail (except plugin verification).
+**Edge Case Matrix (MANDATORY - pick 2+ per test):**
 
-### Step 15: Build
-```bash
-npm run tauri build
-```
+| Category | Edge Cases | Example Test Assertion |
+|----------|------------|------------------------|
+| **Empty state** | No items, first item, single item | "When list is empty, show placeholder" |
+| **Boundaries** | Min value, max value, at limit | "Cannot add more than 100 items" |
+| **Invalid input** | Empty string, special chars, too long | "Reject input with < > characters" |
+| **Rapid actions** | Double-click, spam clicks, drag cancel | "Double-click doesn't duplicate action" |
+| **Interruption** | Action during loading, mid-drag escape | "Pressing Escape cancels drag" |
+| **State conflicts** | Delete while editing, move while drag | "Cannot delete item being edited" |
 
-### Step 16: Validate Launch
-Launch .exe, verify no crash.
+---
 
-### Step 17: Commit
-```bash
-git commit -m "bootstrap: project skeleton with failing multi-layer tests"
+### Todo 6: Define test data requirements
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Specify what data each test needs |
+| **What to do** | For each test, list: fixtures needed, mock data (if any), setup steps |
+| **Rules** | Prefer real data flows over mocks. Only mock external APIs if unavoidable. |
+| **Agent Skills** | `Skill tool → integration-test-setup` (invoke for test infrastructure) |
+
+**No Mocking Policy:**
+- NEVER mock system APIs (Tauri, filesystem, dialog)
+- NEVER mock internal application code
+- ONLY mock external third-party APIs if absolutely necessary
+- If test needs mock → implementation is incomplete
+
+---
+
+### Todo 7: VERIFY: Test quality
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Independent verification of test completeness and quality |
+| **What to do** | Spawn Haiku reviewer with checklist |
+| **Haiku checks** | Edge cases covered? Tests are specific? No mocking of system APIs? |
+| **Pass threshold** | Score >= 95 |
+| **On fail** | Fix issues and retry (max 3 attempts), then escalate |
+
+---
+
+### Todo 8: Create test-specs.md
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Write the final deliverable document |
+| **Format** | Test index, risk matrix, specs per epic |
+| **Output** | `docs/test-specs.md` |
+
+**Document Structure:**
+
+```markdown
+# Test Specifications
+
+## Risk Matrix
+| Epic | Risk Level | Rationale |
+|------|------------|-----------|
+
+## Test Index
+| Test ID | Story ID | Name | Priority |
+|---------|----------|------|----------|
+
+## Epic 1: [Name]
+
+### TEST-E1-001: [Test Name]
+**Story:** US-E1-001
+**Priority:** P0
+
+**Preconditions:**
+- ...
+
+**Steps:**
+1. ...
+
+**Expected Result:**
+- ...
+
+**Edge Cases:**
+- [Category]: [Test assertion]
+- [Category]: [Test assertion]
+
+**Test Data:**
+- ...
+
+---
+
+## Epic 2: [Name]
+...
 ```
 
 ---
 
-## Phase 3 Rules
+### Todo 9: Git commit Phase 3
+
+| Aspect | Detail |
+|--------|--------|
+| **Purpose** | Save progress with proper git commit |
+| **Format** | `test(phase-3): create test specifications from user stories` |
+
+**Commit Message:**
+```
+test(phase-3): create test specifications from user stories
+
+Tests: X specs
+Edge cases: Y (min 2 per test)
+Risk levels: P0=A, P1=B, P2=C
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+---
+
+## Completion Output
+
+```
+════════════════════════════════════════════════════════════════
+Phase 3 Complete
+════════════════════════════════════════════════════════════════
+
+📊 Test Specifications Created:
+   Test specs: X
+   Edge cases: Y (min 2 per test)
+
+📊 Risk Matrix:
+   P0 (Critical): A epics
+   P1 (Important): B epics
+   P2 (Nice-to-have): C epics
+
+✅ Quality Verified:
+   1:1 mapping verified ✓
+   Edge cases complete ✓
+   No mocking required ✓
+
+✅ Git Commit: CREATED
+
+Ready for Phase 4: Developer
+════════════════════════════════════════════════════════════════
+```
+
+---
+
+## Phase-Specific Rules
 
 ### You Must (Phase 3)
-- **Read functionality-specs.md FIRST to extract all integrations**
-- **Install ALL npm packages from specs BEFORE creating skeleton**
-- **Install ALL cargo crates from specs BEFORE creating skeleton**
-- **Register ALL plugins in lib.rs**
-- **Add ALL capabilities to Tauri config**
-- **Create integration tests to verify plugins are available**
-- **Create skeleton that imports REAL APIs (not mocks)**
-- Set up Tailwind with strict design tokens
-- Set up ALL test layers
-- Create interaction test helpers
-- Verify 100% RED at all layers
-- Build and validate app launches
+- Read user-stories.md completely before starting
+- Invoke skills at specified checkpoints
+- Create exactly 1 test per story (1:1 mapping)
+- Add minimum 2 edge cases per test from different categories
+- Specify test data requirements
+- Verify with Haiku reviewer at checkpoints
 
 ### You Must NOT (Phase 3)
-- **Create skeleton before installing integrations**
-- **Skip any integration listed in functionality-specs.md**
-- **Use mock imports in skeleton components**
-- **Use fake/hardcoded data in skeleton**
-- **Have E2E tests fail because integration is missing**
-- Skip any test layer
-- Use arbitrary Tailwind values
-- Skip the DevTools minimizer setup
-- Skip interaction helpers
+- Create tests for stories that don't exist
+- Have a story without a test
+- Skip edge case requirements
+- Plan to mock Tauri/system APIs
+- Write any code (that's Phase 4)
+- Create skeleton or project structure (that's Phase 4)
 
 ---
 
-**Execute now. Install integrations FIRST, then create skeleton with REAL APIs.**
+**Execute now. Read user-stories.md, create test specs, verify quality.**
