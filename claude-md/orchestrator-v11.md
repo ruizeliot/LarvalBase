@@ -79,23 +79,33 @@ fi
 
 ## Spawn Scripts
 
-**v11 Split-Pane Layout:**
+**v11.1 Sequential Spawn (Orchestrator-First):**
+
 | Script | Purpose | When to Call |
 |--------|---------|--------------|
-| `spawn-wt-tabs.ps1` | Creates WT window with split-pane layout | Section 4+5 combined |
+| `spawn-orchestrator-wt.ps1` | Creates WT named window with orchestrator | start-pipeline.ps1 (automatic) |
+| `spawn-dashboard-pane.ps1` | Adds dashboard pane (right side) | Section 5 |
+| `spawn-worker-pane.ps1` | Adds worker pane (below orchestrator) | Section 7 |
+| `spawn-supervisor-pane.ps1` | Adds supervisor pane (below worker) | Section 7 |
 
-**Layout:**
+**Final Layout:**
 ```
 +---------------------------+
-|           |    Worker     |
-| Dashboard +---------------+
-|           |  Supervisor   |
+| Orchestrator |            |
++--------------+ Dashboard  |
+|    Worker    |            |
++--------------+            |
+|  Supervisor  |            |
 +---------------------------+
+   (left 50%)    (right 50%)
 ```
 
-**Full path:**
+**Full paths:**
 ```
-C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1
+C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-orchestrator-wt.ps1
+C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-pane.ps1
+C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-pane.ps1
+C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-supervisor-pane.ps1
 ```
 
 ---
@@ -237,27 +247,31 @@ cat ".pipeline/manifest.json" | jq -r '"STACK=\(.stack) MODE=\(.mode) USER_MODE=
 cat ".pipeline/manifest.json" | jq ".workers.current.orchestratorPid = $ORCH_PID | .status = \"running\" | .version = \"11.0.0\"" > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 ```
 
-### R4+R5. Spawn Split-Pane Layout (Resume)
+### R4. Spawn Dashboard (Resume)
+
+```bash
+# Spawn dashboard pane (adds to right side of orchestrator)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-pane.ps1" \
+  -ProjectPath "." \
+  -DashboardVersion v11
+```
+
+### R5. Spawn Worker + Supervisor (Resume)
 
 ```bash
 PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
-STACK=$(cat ".pipeline/manifest.json" | jq -r '.stack')
-MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
-WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
-SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
 
-# Build phase command dynamically based on stack
-# Generic command - reads stack from manifest internally
-PHASE_COMMAND="/$PHASE-$MODE-pipeline-v11.0"
-
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
+# Spawn worker pane (adds below orchestrator on left side)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-pane.ps1" \
   -ProjectPath "." \
-  -OrchestratorPID "$ORCH_PID" \
-  -PhaseNumber "$PHASE" \
-  -PhaseCommand "$PHASE_COMMAND" \
-  -WorkerSplit $WORKER_SPLIT \
-  -SupervisorSplit $SUPERVISOR_SPLIT \
-  -DashboardVersion v11
+  -PhaseNumber "$PHASE"
+
+# Wait for worker to be ready
+sleep 3
+
+# Spawn supervisor pane (adds below worker)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-supervisor-pane.ps1" \
+  -ProjectPath "."
 ```
 
 ### R6. Check Worker Status
@@ -429,12 +443,18 @@ EOF
 ### 5. Spawn Dashboard
 
 ```bash
+# Update manifest status
 cat ".pipeline/manifest.json" | jq '
   .status = "running" |
   .currentPhase = "2" |
   .phases["2"].status = "running" |
   .phases["2"].startedAt = (now | todate)
 ' > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
+
+# Spawn dashboard pane (adds to right side of orchestrator)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-dashboard-pane.ps1" \
+  -ProjectPath "." \
+  -DashboardVersion v11
 ```
 
 ### 6. Compose CLAUDE.md for Phase
@@ -448,24 +468,19 @@ The v11 Composer module handles this:
 ### 7. Spawn Worker + Supervisor
 
 ```bash
-STACK=$(cat ".pipeline/manifest.json" | jq -r '.stack')
-MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
-WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
-SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
+PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
 
-# Build phase command dynamically based on stack
-# Format: /[phase]-[mode]-pipeline-[stack]-v11.0
-# Generic command - reads stack from manifest internally
-PHASE_COMMAND="/2-$MODE-pipeline-v11.0"
-
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
+# Spawn worker pane (adds below orchestrator on left side)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-pane.ps1" \
   -ProjectPath "." \
-  -OrchestratorPID "$ORCH_PID" \
-  -PhaseNumber "2" \
-  -PhaseCommand "$PHASE_COMMAND" \
-  -WorkerSplit $WORKER_SPLIT \
-  -SupervisorSplit $SUPERVISOR_SPLIT \
-  -DashboardVersion v11
+  -PhaseNumber "$PHASE"
+
+# Wait for worker to be ready
+sleep 3
+
+# Spawn supervisor pane (adds below worker)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-supervisor-pane.ps1" \
+  -ProjectPath "."
 ```
 
 **Then STOP and wait for HEARTBEAT messages.**
@@ -583,10 +598,6 @@ fi
 ```bash
 CURRENT_PHASE=$(cat ".pipeline/manifest.json" | jq -r '.currentPhase')
 NEXT_PHASE=$((CURRENT_PHASE + 1))
-STACK=$(cat ".pipeline/manifest.json" | jq -r '.stack')
-MODE=$(cat ".pipeline/manifest.json" | jq -r '.mode')
-WORKER_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.workerSplit // 0.5')
-SUPERVISOR_SPLIT=$(cat ".pipeline/manifest.json" | jq -r '.paneSizes.supervisorSplit // 0.5')
 
 cat ".pipeline/manifest.json" | jq "
   .currentPhase = \"$NEXT_PHASE\" |
@@ -595,20 +606,19 @@ cat ".pipeline/manifest.json" | jq "
 " > /tmp/manifest.json && mv /tmp/manifest.json ".pipeline/manifest.json"
 
 # Compose CLAUDE.md for next phase (use lib/composer)
-# Then spawn worker
+# Then spawn worker and supervisor (dashboard already exists)
 
-# Build phase command dynamically based on stack
-# Generic command - reads stack from manifest internally
-PHASE_COMMAND="/$NEXT_PHASE-$MODE-pipeline-v11.0"
-
-MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-wt-tabs.ps1" \
+# Spawn worker pane (adds below orchestrator on left side)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-worker-pane.ps1" \
   -ProjectPath "." \
-  -OrchestratorPID "$ORCH_PID" \
-  -PhaseNumber "$NEXT_PHASE" \
-  -PhaseCommand "$PHASE_COMMAND" \
-  -WorkerSplit $WORKER_SPLIT \
-  -SupervisorSplit $SUPERVISOR_SPLIT \
-  -DashboardVersion v11
+  -PhaseNumber "$NEXT_PHASE"
+
+# Wait for worker to be ready
+sleep 3
+
+# Spawn supervisor pane (adds below worker)
+MSYS_NO_PATHCONV=1 powershell.exe -ExecutionPolicy Bypass -File "C:/Users/ahunt/Documents/IMT Claude/Pipeline-Office/lib/spawn-supervisor-pane.ps1" \
+  -ProjectPath "."
 ```
 
 ---
@@ -682,8 +692,9 @@ The Orchestrator module includes error classification and recovery:
 - **v11 requires brainstorm files** - Run `/brainstorm` skill first
 - **Phases start at 2** - Phase 1 is pre-pipeline brainstorming
 - **Modular architecture** - Use `lib/` modules for all operations
-- **Windows Terminal** - All panes in one grouped window
-- **Dashboard spawns FIRST** - Creates the WT window
+- **Windows Terminal** - All panes in one named window
+- **Orchestrator spawns FIRST** - start-pipeline.ps1 creates the WT window with orchestrator
+- **Sequential pane spawning** - Orchestrator spawns dashboard, worker, supervisor in order
 - **NEVER use Edit/Write tools** - Use bash/jq instead
 - **NEVER use bash sleep** - Wait for HEARTBEAT messages
 - **PIDs saved to manifest** - Spawn scripts update manifest directly

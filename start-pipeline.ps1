@@ -1,10 +1,16 @@
 <#
 .SYNOPSIS
-    Start Pipeline Orchestrator v11
+    Start Pipeline v11.1 (Orchestrator-First)
 
 .DESCRIPTION
-    Copies orchestrator CLAUDE.md to project and launches Claude.
-    The orchestrator handles everything else (manifest, workers, etc.)
+    Spawns orchestrator in a named Windows Terminal window.
+    The orchestrator then spawns dashboard/worker/supervisor panes when ready.
+
+    Final layout:
+    - Dashboard (left 50%)
+    - Orchestrator (top-right ~33%)
+    - Worker (middle-right ~33%)
+    - Supervisor (bottom-right ~33%)
 
 .PARAMETER ProjectPath
     Path to the project directory (required)
@@ -77,8 +83,23 @@ if (-not (Test-Path $ProjectClaudeDir)) {
     New-Item -ItemType Directory -Path $ProjectClaudeDir -Force | Out-Null
 }
 
+# Create .pipeline directory if needed
+$ProjectPipelineDir = Join-Path $ProjectPath ".pipeline"
+if (-not (Test-Path $ProjectPipelineDir)) {
+    New-Item -ItemType Directory -Path $ProjectPipelineDir -Force | Out-Null
+}
+
 # Copy orchestrator CLAUDE.md
 Copy-Item -Path $OrchestratorSource -Destination $ProjectClaudeMd -Force
+
+# Copy pipeline settings (includes SessionStart hook for auto-begin)
+$SettingsSource = Join-Path $PipelineOffice "templates\pipeline-settings.json"
+$SettingsDest = Join-Path $ProjectClaudeDir "settings.json"
+Copy-Item -Path $SettingsSource -Destination $SettingsDest -Force
+
+# Create auto-begin signal file (SessionStart hook will detect this)
+$AutoBeginFile = Join-Path $ProjectPipelineDir "auto-begin.txt"
+"BEGIN" | Out-File -FilePath $AutoBeginFile -Encoding ASCII -NoNewline
 
 Write-Host "Pipeline v11 | $(Split-Path $ProjectPath -Leaf)" -ForegroundColor Cyan
 
@@ -86,37 +107,41 @@ if ($NoLaunch) {
     Write-Host "NoLaunch specified. Start Claude manually:" -ForegroundColor Yellow
     Write-Host "  cd `"$ProjectPath`"" -ForegroundColor Gray
     Write-Host "  claude --dangerously-skip-permissions" -ForegroundColor Gray
-    Write-Host ""
-    Write-Host "Then type: BEGIN" -ForegroundColor Yellow
     exit 0
 }
 
-# Spawn orchestrator in a NEW Windows Terminal window
+# v11.1: Spawn orchestrator only - it will spawn dashboard/worker/supervisor when ready
+Write-Host "Spawning Orchestrator (it will spawn other panes)..." -ForegroundColor Cyan
+
 $spawnScript = Join-Path $PipelineOffice "lib\spawn-orchestrator-wt.ps1"
 $spawnOutput = & $spawnScript -ProjectPath $ProjectPath 2>&1 | Out-String
 
-# Read the orchestrator PID
-$pidFile = Join-Path $ProjectPath ".pipeline\orchestrator-powershell-pid.txt"
-$maxWait = 10
+# Wait for Claude to be ready (SessionStart hook creates this file)
+$readyFile = Join-Path $ProjectPipelineDir "claude-ready.txt"
+$pidFile = Join-Path $ProjectPipelineDir "orchestrator-powershell-pid.txt"
+$maxWait = 30
 $waited = 0
-while (-not (Test-Path $pidFile) -and $waited -lt $maxWait) {
-    Start-Sleep -Seconds 1
+
+Write-Host "Waiting for Claude..." -ForegroundColor Gray
+while (-not (Test-Path $readyFile) -and $waited -lt $maxWait) {
+    Start-Sleep -Milliseconds 500
     $waited++
 }
 
-if (-not (Test-Path $pidFile)) {
-    Write-Host "ERROR: Could not get orchestrator PID" -ForegroundColor Red
-    exit 1
+if (-not (Test-Path $readyFile)) {
+    Write-Host "Timeout waiting for Claude" -ForegroundColor Yellow
+    exit 0
 }
 
+# Small delay after ready signal for UI to stabilize
+Start-Sleep -Seconds 2
+
+# Inject BEGIN
 $orchPid = [int](Get-Content $pidFile).Trim()
-
-# Wait for Claude to initialize
-Write-Host "Waiting for Claude..." -ForegroundColor Gray
-Start-Sleep -Seconds 8
-
-# Inject BEGIN message
 $injectScript = Join-Path $PipelineOffice "lib\inject-message.ps1"
-$injectOutput = & powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '$injectScript' -TargetPid $orchPid -Message 'BEGIN'" 2>&1 | Out-String
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "& '$injectScript' -TargetPid $orchPid -Message 'BEGIN'" 2>&1 | Out-Null
 
-Write-Host "Started (PID: $orchPid)" -ForegroundColor Green
+# Cleanup
+Remove-Item -Path $readyFile -Force -ErrorAction SilentlyContinue
+
+Write-Host "Started" -ForegroundColor Green

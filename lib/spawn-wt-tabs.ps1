@@ -2,14 +2,14 @@ param(
     [Parameter(Mandatory=$true)]
     [string]$ProjectPath,
 
-    [Parameter(Mandatory=$true)]
-    [string]$OrchestratorPID,
+    [Parameter(Mandatory=$false)]
+    [string]$OrchestratorPID = "",
 
-    [Parameter(Mandatory=$true)]
-    [string]$PhaseNumber,
+    [Parameter(Mandatory=$false)]
+    [string]$PhaseNumber = "1",
 
-    [Parameter(Mandatory=$true)]
-    [string]$PhaseCommand,
+    [Parameter(Mandatory=$false)]
+    [string]$PhaseCommand = "",
 
     [Parameter(Mandatory=$false)]
     [string]$OutputStyle = "",
@@ -18,14 +18,20 @@ param(
     [string]$Model = "",
 
     [Parameter(Mandatory=$false)]
+    [double]$DashboardSplit = 0.5,
+
+    [Parameter(Mandatory=$false)]
+    [double]$OrchestratorSplit = 0.67,
+
+    [Parameter(Mandatory=$false)]
     [double]$WorkerSplit = 0.5,
 
     [Parameter(Mandatory=$false)]
-    [double]$SupervisorSplit = 0.5,
+    [ValidateSet("v9", "v10", "v11", "auto")]
+    [string]$DashboardVersion = "auto",
 
     [Parameter(Mandatory=$false)]
-    [ValidateSet("v9", "v10", "v11", "auto")]
-    [string]$DashboardVersion = "auto"
+    [switch]$IncludeOrchestrator
 )
 
 # Resolve relative path to absolute path
@@ -68,12 +74,13 @@ $dashboardScript = Join-Path $pipelineOffice "lib\$dashboardScriptName"
 Write-Host "Dashboard version: $DashboardVersion -> $dashboardScriptName"
 
 Write-Host "=========================================="
-Write-Host "  spawn-wt-tabs.ps1 (v11.0)"
+Write-Host "  spawn-wt-tabs.ps1 (v11.1)"
 Write-Host "  Creating Split-Pane Layout"
 Write-Host "=========================================="
 Write-Host "Project: $ProjectPath"
 Write-Host "Phase: $PhaseNumber"
 Write-Host "Command: $PhaseCommand"
+Write-Host "Include Orchestrator: $IncludeOrchestrator"
 
 # Create .pipeline directory if needed
 $pipelineDir = Join-Path $ProjectPath ".pipeline"
@@ -115,11 +122,17 @@ if (Test-Path $workerBaseSource) {
 $wtWindowName = "Pipeline-$OrchestratorPID"
 
 # ============================================
-# TAB 1: Main (Dashboard + Worker + Supervisor)
+# TAB 1: Main (Dashboard + Orchestrator + Worker + Supervisor)
+# Layout: Dashboard (left 50%) | Orchestrator/Worker/Supervisor (right 50%, 3 layers)
 # ============================================
 
 Write-Host ""
 Write-Host "--- Creating Tab 1: Main (Split View) ---"
+
+# Generate OrchestratorPID if not provided (for new launches)
+if (-not $OrchestratorPID) {
+    $OrchestratorPID = [System.Diagnostics.Process]::GetCurrentProcess().Id
+}
 
 # Dashboard command for Tab 1 (Main)
 $dashboardCmd = @"
@@ -131,9 +144,28 @@ node '$dashboardScript' '$ProjectPath' $OrchestratorPID
 $dashboardBytes = [System.Text.Encoding]::Unicode.GetBytes($dashboardCmd)
 $dashboardEncoded = [Convert]::ToBase64String($dashboardBytes)
 
-# Worker command
+# PID files for orchestrator, worker and supervisor
+$orchestratorPidFile = Join-Path $pipelineDir "orchestrator-powershell-pid.txt"
+$workerPidFile = Join-Path $pipelineDir "worker-powershell-pid.txt"
+$supervisorPidFile = Join-Path $pipelineDir "supervisor-powershell-pid.txt"
+if (Test-Path $orchestratorPidFile) { Remove-Item $orchestratorPidFile -Force }
+if (Test-Path $workerPidFile) { Remove-Item $workerPidFile -Force }
+if (Test-Path $supervisorPidFile) { Remove-Item $supervisorPidFile -Force }
+
+# Orchestrator command (saves PID first)
+$orchestratorCmd = @"
+`$PID | Out-File -FilePath '$orchestratorPidFile' -Encoding UTF8 -NoNewline
+Set-Location -Path '$ProjectPath'
+`$Host.UI.RawUI.WindowTitle = 'Orchestrator'
+& '$claudePath' --dangerously-skip-permissions
+"@
+$orchestratorBytes = [System.Text.Encoding]::Unicode.GetBytes($orchestratorCmd)
+$orchestratorEncoded = [Convert]::ToBase64String($orchestratorBytes)
+
+# Worker command (saves PID first)
 $modelArg = if ($Model -ne "") { "--model $Model " } else { "" }
 $workerCmd = @"
+`$PID | Out-File -FilePath '$workerPidFile' -Encoding UTF8 -NoNewline
 Set-Location -Path '$ProjectPath'
 `$Host.UI.RawUI.WindowTitle = 'Worker'
 & '$claudePath' ${modelArg}--dangerously-skip-permissions
@@ -141,8 +173,9 @@ Set-Location -Path '$ProjectPath'
 $workerBytes = [System.Text.Encoding]::Unicode.GetBytes($workerCmd)
 $workerEncoded = [Convert]::ToBase64String($workerBytes)
 
-# Supervisor command
+# Supervisor command (saves PID first)
 $supervisorCmd = @"
+`$PID | Out-File -FilePath '$supervisorPidFile' -Encoding UTF8 -NoNewline
 Set-Location -Path '$ProjectPath'
 `$Host.UI.RawUI.WindowTitle = 'Supervisor'
 & '$claudePath' --model haiku --dangerously-skip-permissions
@@ -157,31 +190,91 @@ cmd /c $wtCmd
 
 Start-Sleep -Seconds 2
 
-# Split Tab 1: Add Worker pane (right side, 50% width)
-Write-Host "Adding Worker pane to Main tab..."
-$wtArgs = @(
-    "--window", $wtWindowName,
-    "split-pane",
-    "-V",
-    "-s", "$WorkerSplit",
-    "--title", "Worker",
-    "powershell.exe", "-NoExit", "-EncodedCommand", $workerEncoded
-)
-Start-Process wt.exe -ArgumentList $wtArgs
-Start-Sleep -Seconds 2
+# Create signal files (hook will create ready files)
+$orchestratorSignalFile = Join-Path $pipelineDir "orchestrator-begin.txt"
+$workerSignalFile = Join-Path $pipelineDir "worker-begin.txt"
+$supervisorSignalFile = Join-Path $pipelineDir "supervisor-begin.txt"
+$orchestratorReadyFile = Join-Path $pipelineDir "orchestrator-ready.txt"
+$workerReadyFile = Join-Path $pipelineDir "worker-ready.txt"
+$supervisorReadyFile = Join-Path $pipelineDir "supervisor-ready.txt"
+if (Test-Path $orchestratorReadyFile) { Remove-Item $orchestratorReadyFile -Force }
+if (Test-Path $workerReadyFile) { Remove-Item $workerReadyFile -Force }
+if (Test-Path $supervisorReadyFile) { Remove-Item $supervisorReadyFile -Force }
+"BEGIN" | Out-File -FilePath $orchestratorSignalFile -Encoding ASCII -NoNewline
+"BEGIN" | Out-File -FilePath $workerSignalFile -Encoding ASCII -NoNewline
+"BEGIN" | Out-File -FilePath $supervisorSignalFile -Encoding ASCII -NoNewline
 
-# Split Worker pane: Add Supervisor below (50% of worker area)
-Write-Host "Adding Supervisor pane below Worker..."
-$wtArgs = @(
-    "--window", $wtWindowName,
-    "split-pane",
-    "-H",
-    "-s", "$SupervisorSplit",
-    "--title", "Supervisor",
-    "powershell.exe", "-NoExit", "-EncodedCommand", $supervisorEncoded
-)
-Start-Process wt.exe -ArgumentList $wtArgs
-Start-Sleep -Seconds 2
+if ($IncludeOrchestrator) {
+    # Layout: Dashboard | Orchestrator / Worker / Supervisor (3 layers on right)
+
+    # Split Tab 1: Add Orchestrator pane (right side, 50% width)
+    Write-Host "Adding Orchestrator pane to Main tab (right side)..."
+    $wtArgs = @(
+        "--window", $wtWindowName,
+        "split-pane",
+        "-V",
+        "-s", "$DashboardSplit",
+        "--title", "Orchestrator",
+        "powershell.exe", "-NoExit", "-EncodedCommand", $orchestratorEncoded
+    )
+    Start-Process wt.exe -ArgumentList $wtArgs
+    Start-Sleep -Seconds 2
+
+    # Split Orchestrator pane: Add Worker below (67% of orchestrator area -> Orch gets 33%, Worker+Super get 67%)
+    Write-Host "Adding Worker pane below Orchestrator..."
+    $wtArgs = @(
+        "--window", $wtWindowName,
+        "split-pane",
+        "-H",
+        "-s", "$OrchestratorSplit",
+        "--title", "Worker",
+        "powershell.exe", "-NoExit", "-EncodedCommand", $workerEncoded
+    )
+    Start-Process wt.exe -ArgumentList $wtArgs
+    Start-Sleep -Seconds 2
+
+    # Split Worker pane: Add Supervisor below (50% of worker area -> Worker gets 50%, Super gets 50%)
+    Write-Host "Adding Supervisor pane below Worker..."
+    $wtArgs = @(
+        "--window", $wtWindowName,
+        "split-pane",
+        "-H",
+        "-s", "$WorkerSplit",
+        "--title", "Supervisor",
+        "powershell.exe", "-NoExit", "-EncodedCommand", $supervisorEncoded
+    )
+    Start-Process wt.exe -ArgumentList $wtArgs
+    Start-Sleep -Seconds 2
+
+} else {
+    # Legacy layout: Dashboard | Worker / Supervisor (2 layers on right)
+
+    # Split Tab 1: Add Worker pane (right side, 50% width)
+    Write-Host "Adding Worker pane to Main tab..."
+    $wtArgs = @(
+        "--window", $wtWindowName,
+        "split-pane",
+        "-V",
+        "-s", "$DashboardSplit",
+        "--title", "Worker",
+        "powershell.exe", "-NoExit", "-EncodedCommand", $workerEncoded
+    )
+    Start-Process wt.exe -ArgumentList $wtArgs
+    Start-Sleep -Seconds 2
+
+    # Split Worker pane: Add Supervisor below (50% of worker area)
+    Write-Host "Adding Supervisor pane below Worker..."
+    $wtArgs = @(
+        "--window", $wtWindowName,
+        "split-pane",
+        "-H",
+        "-s", "$WorkerSplit",
+        "--title", "Supervisor",
+        "powershell.exe", "-NoExit", "-EncodedCommand", $supervisorEncoded
+    )
+    Start-Process wt.exe -ArgumentList $wtArgs
+    Start-Sleep -Seconds 2
+}
 
 
 # ============================================
@@ -205,7 +298,7 @@ if (Test-Path $dashboardPidFile) {
     Write-Host "Dashboard PID: $dashboardPid"
 }
 
-# Find Worker and Supervisor PIDs by looking for new PowerShell processes
+# Find PowerShell processes
 $allPwsh = Get-Process -Name powershell -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id
 Write-Host "PowerShell processes: $($allPwsh -join ', ')"
 
@@ -231,35 +324,75 @@ if (Test-Path $manifestPath) {
 }
 
 # ============================================
-# Wait for Claude to be ready, then inject command
+# Wait for Claude instances to be ready (via SessionStart hook)
 # ============================================
 
 Write-Host ""
-Write-Host "--- Waiting for Claude to be ready ---"
-Start-Sleep -Seconds 8
-
-# Find the Worker PowerShell process (most recent one with "Worker" in window title)
-# For now, we'll use a simple approach - inject into most recent powershell
-$recentPwsh = Get-Process -Name powershell -ErrorAction SilentlyContinue |
-    Sort-Object StartTime -Descending |
-    Select-Object -First 5
-
-Write-Host "Recent PowerShell processes:"
-foreach ($p in $recentPwsh) {
-    Write-Host "  PID $($p.Id) - Started $($p.StartTime)"
+if ($IncludeOrchestrator) {
+    Write-Host "--- Waiting for Orchestrator, Worker, and Supervisor to be ready ---"
+} else {
+    Write-Host "--- Waiting for Worker and Supervisor to be ready ---"
 }
 
-# Inject the phase command into the Worker
-# We need to find the right PID - for now use the second-newest (newest is likely supervisor)
+$maxWait = 60  # 30 seconds max
+$waited = 0
+
+if ($IncludeOrchestrator) {
+    while ((-not (Test-Path $orchestratorReadyFile) -or -not (Test-Path $workerReadyFile) -or -not (Test-Path $supervisorReadyFile)) -and $waited -lt $maxWait) {
+        Start-Sleep -Milliseconds 500
+        $waited++
+        if ($waited % 10 -eq 0) {
+            $oReady = if (Test-Path $orchestratorReadyFile) { "YES" } else { "no" }
+            $wReady = if (Test-Path $workerReadyFile) { "YES" } else { "no" }
+            $sReady = if (Test-Path $supervisorReadyFile) { "YES" } else { "no" }
+            Write-Host "  Waiting... Orchestrator: $oReady, Worker: $wReady, Supervisor: $sReady"
+        }
+    }
+} else {
+    while ((-not (Test-Path $workerReadyFile) -or -not (Test-Path $supervisorReadyFile)) -and $waited -lt $maxWait) {
+        Start-Sleep -Milliseconds 500
+        $waited++
+        if ($waited % 10 -eq 0) {
+            $wReady = if (Test-Path $workerReadyFile) { "YES" } else { "no" }
+            $sReady = if (Test-Path $supervisorReadyFile) { "YES" } else { "no" }
+            Write-Host "  Waiting... Worker: $wReady, Supervisor: $sReady"
+        }
+    }
+}
+
+# Small delay for UI to stabilize after ready signal
+Start-Sleep -Seconds 2
+
+# Read PIDs from files (saved by PowerShell commands)
+$orchestratorPid = $null
 $workerPid = $null
 $supervisorPid = $null
 
-if ($recentPwsh.Count -ge 2) {
-    # Assuming order: newest = supervisor, second = worker
-    $supervisorPid = $recentPwsh[0].Id
-    $workerPid = $recentPwsh[1].Id
-    Write-Host "Assuming Worker PID: $workerPid, Supervisor PID: $supervisorPid"
+if ($IncludeOrchestrator -and (Test-Path $orchestratorPidFile)) {
+    $orchestratorPid = [int](Get-Content $orchestratorPidFile).Trim()
+    Write-Host "Orchestrator PID: $orchestratorPid (from file)"
+} elseif ($IncludeOrchestrator) {
+    Write-Host "WARNING: Orchestrator PID file not found"
 }
+
+if (Test-Path $workerPidFile) {
+    $workerPid = [int](Get-Content $workerPidFile).Trim()
+    Write-Host "Worker PID: $workerPid (from file)"
+} else {
+    Write-Host "WARNING: Worker PID file not found"
+}
+
+if (Test-Path $supervisorPidFile) {
+    $supervisorPid = [int](Get-Content $supervisorPidFile).Trim()
+    Write-Host "Supervisor PID: $supervisorPid (from file)"
+} else {
+    Write-Host "WARNING: Supervisor PID file not found"
+}
+
+# Cleanup ready files
+Remove-Item -Path $orchestratorReadyFile -Force -ErrorAction SilentlyContinue
+Remove-Item -Path $workerReadyFile -Force -ErrorAction SilentlyContinue
+Remove-Item -Path $supervisorReadyFile -Force -ErrorAction SilentlyContinue
 
 # Add injection code
 Add-Type -TypeDefinition @"
@@ -382,6 +515,16 @@ public class TabInjector {
 }
 "@
 
+# Inject BEGIN into Orchestrator (if included)
+if ($IncludeOrchestrator -and $orchestratorPid) {
+    Write-Host "Injecting BEGIN into Orchestrator (PID $orchestratorPid)"
+    $textResult = [TabInjector]::InjectText($orchestratorPid, "BEGIN")
+    Write-Host "  Text: $textResult"
+    Start-Sleep -Milliseconds 500
+    $enterResult = [TabInjector]::InjectEnter($orchestratorPid)
+    Write-Host "  Enter: $enterResult"
+}
+
 # Inject BEGIN into Worker (v11: Worker reads instructions from CLAUDE.md)
 if ($workerPid) {
     Write-Host "Injecting BEGIN into Worker (PID $workerPid)"
@@ -433,10 +576,16 @@ if (Test-Path $manifestPath) {
         if (-not $manifest.workers.supervisor) {
             $manifest.workers | Add-Member -NotePropertyName "supervisor" -NotePropertyValue @{} -Force
         }
+        if ($IncludeOrchestrator) {
+            if (-not $manifest.workers.orchestrator) {
+                $manifest.workers | Add-Member -NotePropertyName "orchestrator" -NotePropertyValue @{} -Force
+            }
+            $manifest.workers.orchestrator | Add-Member -NotePropertyName "pid" -NotePropertyValue $orchestratorPid -Force
+        }
         $manifest.workers.current | Add-Member -NotePropertyName "pid" -NotePropertyValue $workerPid -Force
         $manifest.workers.supervisor | Add-Member -NotePropertyName "pid" -NotePropertyValue $supervisorPid -Force
         $manifest | ConvertTo-Json -Depth 10 | Set-Content $manifestPath -Encoding UTF8
-        Write-Host "Manifest updated with Worker/Supervisor PIDs (v11 schema)"
+        Write-Host "Manifest updated with PIDs (v11 schema)"
     } catch {
         Write-Host "WARNING: Could not update manifest: $_"
     }
@@ -446,15 +595,20 @@ Write-Host ""
 Write-Host "=========================================="
 Write-Host "  Pipeline Window Created!"
 Write-Host "=========================================="
-Write-Host "  Layout: Dashboard | Worker + Supervisor"
+if ($IncludeOrchestrator) {
+    Write-Host "  Layout: Dashboard | Orchestrator / Worker / Supervisor"
+} else {
+    Write-Host "  Layout: Dashboard | Worker / Supervisor"
+}
 Write-Host "=========================================="
 
 # Output result
 $result = @{
     wtWindowName = $wtWindowName
     dashboardPid = $dashboardPid
+    orchestratorPid = $orchestratorPid
     workerPid = $workerPid
     supervisorPid = $supervisorPid
-    layout = "split-pane"
+    layout = if ($IncludeOrchestrator) { "4-pane" } else { "3-pane" }
 }
 Write-Host "RESULT_JSON:$($result | ConvertTo-Json -Compress)"
