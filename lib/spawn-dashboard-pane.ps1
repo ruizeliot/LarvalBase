@@ -20,6 +20,13 @@ if (-not (Test-Path $windowNameFile)) {
 }
 $windowName = (Get-Content $windowNameFile).Trim()
 
+# Read orchestrator PID for dashboard to reference
+$orchPidFile = Join-Path $pipelineDir "orchestrator-powershell-pid.txt"
+$orchPid = "0"
+if (Test-Path $orchPidFile) {
+    $orchPid = (Get-Content $orchPidFile).Trim()
+}
+
 # Write project path to temp file for SessionStart hook
 $tempProjectFile = Join-Path $env:TEMP "pipeline-current-project.txt"
 $ProjectPath | Out-File -FilePath $tempProjectFile -Encoding ASCII -NoNewline
@@ -60,13 +67,6 @@ $dashboardScript = Join-Path $pipelineOffice "lib\$dashboardScriptName"
 $dashboardPidFile = Join-Path $pipelineDir "dashboard-pid.txt"
 if (Test-Path $dashboardPidFile) { Remove-Item $dashboardPidFile -Force }
 
-# Read orchestrator PID for dashboard to reference
-$orchPidFile = Join-Path $pipelineDir "orchestrator-powershell-pid.txt"
-$orchPid = "0"
-if (Test-Path $orchPidFile) {
-    $orchPid = (Get-Content $orchPidFile).Trim()
-}
-
 # Dashboard command
 $dashboardCmd = @"
 `$PID | Out-File -FilePath '$dashboardPidFile' -Encoding UTF8 -NoNewline
@@ -80,9 +80,8 @@ $dashboardEncoded = [Convert]::ToBase64String($dashboardBytes)
 Write-Host "Adding Dashboard pane to window: $windowName"
 
 # Split orchestrator pane vertically - dashboard appears on RIGHT (50%)
-# Note: Due to WT mechanics, dashboard will be on right, orch/worker/supervisor on left
 $wtArgs = @(
-    "--window", $windowName,
+    "-w", $windowName,
     "split-pane",
     "-V",
     "-s", "0.5",

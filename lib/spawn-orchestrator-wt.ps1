@@ -13,8 +13,9 @@ $claudePath = "$env:APPDATA\npm\claude.cmd"
 $pipelineDir = Join-Path $ProjectPath ".pipeline"
 $pidFilePath = Join-Path $pipelineDir "orchestrator-powershell-pid.txt"
 
-# Generate unique window name based on timestamp
-$windowName = "Pipeline-$(Get-Date -Format 'HHmmss')"
+# Generate unique window name based on UUID
+$uuid = [guid]::NewGuid().ToString().Substring(0, 8)
+$windowName = "pipeline-$uuid"
 
 # Ensure .pipeline directory exists
 if (-not (Test-Path $pipelineDir)) {

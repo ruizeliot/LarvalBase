@@ -43,7 +43,7 @@ Write-Host "Adding Supervisor pane to window: $windowName"
 #   Pane 1: Dashboard (right, full height)
 #   Pane 2: Worker (bottom-left)
 $focusArgs = @(
-    "--window", $windowName,
+    "-w", $windowName,
     "focus-pane",
     "--target", "2"
 )
@@ -55,7 +55,7 @@ Start-Sleep -Milliseconds 500
 #             [Worker (middle-left)  |                               ]
 #             [Supervisor (bot-left) |                               ]
 $wtArgs = @(
-    "--window", $windowName,
+    "-w", $windowName,
     "split-pane",
     "-H",
     "-s", "0.5",

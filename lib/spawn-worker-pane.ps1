@@ -13,6 +13,7 @@ param(
 $ProjectPath = (Resolve-Path $ProjectPath).Path
 
 $claudePath = "$env:APPDATA\npm\claude.cmd"
+$pipelineOffice = "C:\Users\ahunt\Documents\IMT Claude\Pipeline-Office"
 $pipelineDir = Join-Path $ProjectPath ".pipeline"
 
 # Read window name
@@ -22,6 +23,22 @@ if (-not (Test-Path $windowNameFile)) {
     exit 1
 }
 $windowName = (Get-Content $windowNameFile).Trim()
+
+# Copy phase-specific CLAUDE.md for worker (overwrites orchestrator's CLAUDE.md)
+$phaseClaudeMd = Join-Path $pipelineOffice "claude-md\phase-$PhaseNumber.md"
+$projectClaudeDir = Join-Path $ProjectPath ".claude"
+$projectClaudeMd = Join-Path $projectClaudeDir "CLAUDE.md"
+
+if (-not (Test-Path $projectClaudeDir)) {
+    New-Item -ItemType Directory -Path $projectClaudeDir -Force | Out-Null
+}
+
+if (Test-Path $phaseClaudeMd) {
+    Copy-Item -Path $phaseClaudeMd -Destination $projectClaudeMd -Force
+    Write-Host "Copied phase-$PhaseNumber.md to .claude/CLAUDE.md"
+} else {
+    Write-Host "WARNING: Phase CLAUDE.md not found: $phaseClaudeMd" -ForegroundColor Yellow
+}
 
 # Write project path to temp file for SessionStart hook
 $tempProjectFile = Join-Path $env:TEMP "pipeline-current-project.txt"
@@ -44,10 +61,10 @@ $workerEncoded = [Convert]::ToBase64String($workerBytes)
 
 Write-Host "Adding Worker pane to window: $windowName"
 
-# First, focus on the orchestrator pane (index 0) before splitting
+# Focus on the orchestrator pane (index 0) before splitting
 # This ensures we split the orchestrator pane, not the dashboard
 $focusArgs = @(
-    "--window", $windowName,
+    "-w", $windowName,
     "focus-pane",
     "--target", "0"
 )
@@ -58,7 +75,7 @@ Start-Sleep -Milliseconds 500
 # After this: [Orch (top-left) | Dashboard (right)]
 #             [Worker (bottom-left) |            ]
 $wtArgs = @(
-    "--window", $windowName,
+    "-w", $windowName,
     "split-pane",
     "-H",
     "-s", "0.67",
