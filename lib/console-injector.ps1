@@ -8,6 +8,7 @@ param(
     [int]$TargetPid,
 
     [Parameter(Mandatory=$true)]
+    [AllowEmptyString()]
     [string]$Text,
 
     [switch]$SendEnter
@@ -98,17 +99,23 @@ public class ConsoleInjector
         if (sendEnter)
         {
             int idx = text.Length * 2;
+            // Key down for Enter - need VirtualKeyCode AND ScanCode for control keys
             records[idx].EventType = KEY_EVENT;
             records[idx].KeyEvent.bKeyDown = 1;
             records[idx].KeyEvent.wRepeatCount = 1;
-            records[idx].KeyEvent.UnicodeChar = (char)13;
-            records[idx].KeyEvent.wVirtualKeyCode = 0x0D;
+            records[idx].KeyEvent.wVirtualKeyCode = 0x0D;  // VK_RETURN
+            records[idx].KeyEvent.wVirtualScanCode = 0x1C; // Enter scan code
+            records[idx].KeyEvent.UnicodeChar = (char)13;  // CR
+            records[idx].KeyEvent.dwControlKeyState = 0;
 
+            // Key up for Enter
             records[idx + 1].EventType = KEY_EVENT;
             records[idx + 1].KeyEvent.bKeyDown = 0;
             records[idx + 1].KeyEvent.wRepeatCount = 1;
-            records[idx + 1].KeyEvent.UnicodeChar = (char)13;
             records[idx + 1].KeyEvent.wVirtualKeyCode = 0x0D;
+            records[idx + 1].KeyEvent.wVirtualScanCode = 0x1C;
+            records[idx + 1].KeyEvent.UnicodeChar = (char)13;
+            records[idx + 1].KeyEvent.dwControlKeyState = 0;
         }
 
         uint written;
@@ -117,7 +124,12 @@ public class ConsoleInjector
         CloseHandle(hInput);
         FreeConsole();
 
-        return result ? "OK" : "WriteConsoleInput failed";
+        if (result)
+        {
+            return string.Format("OK: {0} events written (text={1}, enter={2})",
+                written, text.Length, sendEnter);
+        }
+        return "WriteConsoleInput failed: " + Marshal.GetLastWin32Error();
     }
 }
 '@
