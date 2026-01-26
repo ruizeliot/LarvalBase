@@ -7,6 +7,7 @@ import {
 import { registerNotesTools, handleNotesTool } from "./tools/notes.js";
 import { registerDiagramTools, handleDiagramTool } from "./tools/diagram.js";
 import { registerCanvasTools, handleCanvasTool } from "./tools/canvas.js";
+import { registerVisualizationTools, handleVisualizationTool } from "./tools/visualizations.js";
 import { startHttpServer } from "./server/http.js";
 import { broadcast, getConnectedClients } from "./server/websocket.js";
 
@@ -66,6 +67,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...registerNotesTools(),
       ...registerDiagramTools(),
       ...registerCanvasTools(),
+      ...registerVisualizationTools(),
       // Session info tool
       {
         name: "get_session",
@@ -97,6 +99,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   // Canvas tools
   if (name.startsWith("create_shape") || name.startsWith("update_shape") || name.startsWith("delete_shape") || name.startsWith("connect_shapes") || name.startsWith("clear_canvas")) {
     return handleCanvasTool(name, args || {}, state, broadcast);
+  }
+
+  // Visualization tools (high-level diagram generation)
+  if (name === "create_mindmap") {
+    return handleVisualizationTool(name, args || {}, state, broadcast);
   }
 
   // Session info
