@@ -69,27 +69,27 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | TBD | Pending |
-| VIS-02 | TBD | Pending |
-| VIS-03 | TBD | Pending |
-| VIS-04 | TBD | Pending |
-| FLOW-01 | TBD | Pending |
-| FLOW-02 | TBD | Pending |
-| FLOW-03 | TBD | Pending |
-| FLOW-04 | TBD | Pending |
-| COLLAB-01 | TBD | Pending |
-| COLLAB-02 | TBD | Pending |
-| COLLAB-03 | TBD | Pending |
-| COLLAB-04 | TBD | Pending |
-| CANVAS-01 | TBD | Pending |
-| CANVAS-02 | TBD | Pending |
-| CANVAS-03 | TBD | Pending |
+| VIS-01 | Phase 1 | Pending |
+| VIS-02 | Phase 1 | Pending |
+| VIS-03 | Phase 1 | Pending |
+| VIS-04 | Phase 1 | Pending |
+| FLOW-01 | Phase 2 | Pending |
+| FLOW-02 | Phase 2 | Pending |
+| FLOW-03 | Phase 2 | Pending |
+| FLOW-04 | Phase 2 | Pending |
+| COLLAB-01 | Phase 3 | Pending |
+| COLLAB-02 | Phase 3 | Pending |
+| COLLAB-03 | Phase 3 | Pending |
+| COLLAB-04 | Phase 3 | Pending |
+| CANVAS-01 | Phase 1 | Pending |
+| CANVAS-02 | Phase 1 | Pending |
+| CANVAS-03 | Phase 2 | Pending |
 
 **Coverage:**
 - v1 requirements: 15 total
-- Mapped to phases: 0
-- Unmapped: 15 ⚠️
+- Mapped to phases: 15
+- Unmapped: 0
 
 ---
 *Requirements defined: 2025-01-26*
-*Last updated: 2025-01-26 after initial definition*
+*Last updated: 2025-01-26 after roadmap creation*
