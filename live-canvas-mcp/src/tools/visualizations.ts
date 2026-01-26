@@ -23,6 +23,27 @@ import {
   PositionedNode,
   NodeConnection,
 } from "../layouts/tree.js";
+import {
+  layoutFlow,
+  FlowNode,
+  FlowEdge,
+  PositionedFlowNode,
+  PositionedFlowEdge,
+} from "../layouts/hierarchical.js";
+import {
+  layoutGrid,
+  MatrixCell,
+  PositionedMatrixElement,
+  quadrantToRowCol,
+} from "../layouts/grid.js";
+import {
+  layoutClusters,
+  Cluster,
+  PositionedClusterElement,
+} from "../layouts/cluster.js";
+import {
+  createTextSkeleton,
+} from "../elements/excalidraw.js";
 
 // =============================================================================
 // Tool Registration
@@ -91,6 +112,180 @@ export function registerVisualizationTools(): Tool[] {
         required: ["centralTopic"],
       },
     },
+    {
+      name: "create_flow",
+      description:
+        "Create a flow diagram to visualize a process, journey, or decision tree. " +
+        "Supports start/end nodes, process steps, and decision diamonds with Yes/No branches.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          title: {
+            type: "string",
+            description: "Optional title for the flow diagram",
+          },
+          nodes: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                id: {
+                  type: "string",
+                  description: "Unique node identifier",
+                },
+                label: {
+                  type: "string",
+                  description: "Node text",
+                },
+                type: {
+                  type: "string",
+                  enum: ["start", "end", "process", "decision"],
+                  description: "Node type: start (begin), end (terminate), process (action), decision (branch)",
+                },
+              },
+              required: ["id", "label", "type"],
+            },
+            description: "Flow diagram nodes",
+          },
+          edges: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                from: {
+                  type: "string",
+                  description: "Source node ID",
+                },
+                to: {
+                  type: "string",
+                  description: "Target node ID",
+                },
+                label: {
+                  type: "string",
+                  description: "Optional edge label (e.g., 'Yes', 'No' for decision branches)",
+                },
+              },
+              required: ["from", "to"],
+            },
+            description: "Edges connecting nodes",
+          },
+          direction: {
+            type: "string",
+            enum: ["TB", "LR"],
+            description: "Flow direction: TB (top-to-bottom) or LR (left-to-right). Default: TB",
+          },
+        },
+        required: ["nodes", "edges"],
+      },
+    },
+    {
+      name: "create_matrix",
+      description:
+        "Create a 2x2 matrix for comparing options along two dimensions " +
+        "(e.g., urgent/important, effort/impact). Items are placed in quadrants " +
+        "based on their high/low values for each axis.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          title: {
+            type: "string",
+            description: "Optional title for the matrix",
+          },
+          xAxis: {
+            type: "object",
+            properties: {
+              label: {
+                type: "string",
+                description: "X-axis label (e.g., 'Urgency')",
+              },
+              lowLabel: {
+                type: "string",
+                description: "Low end label (e.g., 'Low'). Default: 'Low'",
+              },
+              highLabel: {
+                type: "string",
+                description: "High end label (e.g., 'High'). Default: 'High'",
+              },
+            },
+            required: ["label"],
+          },
+          yAxis: {
+            type: "object",
+            properties: {
+              label: {
+                type: "string",
+                description: "Y-axis label (e.g., 'Importance')",
+              },
+              lowLabel: {
+                type: "string",
+                description: "Low end label. Default: 'Low'",
+              },
+              highLabel: {
+                type: "string",
+                description: "High end label. Default: 'High'",
+              },
+            },
+            required: ["label"],
+          },
+          items: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                text: {
+                  type: "string",
+                  description: "Item text/label",
+                },
+                quadrant: {
+                  type: "string",
+                  enum: ["high-high", "high-low", "low-high", "low-low"],
+                  description:
+                    "Which quadrant to place the item (format: yAxis-xAxis)",
+                },
+              },
+              required: ["text", "quadrant"],
+            },
+            description: "Items to place in the matrix quadrants",
+          },
+        },
+        required: ["xAxis", "yAxis"],
+      },
+    },
+    {
+      name: "create_affinity_diagram",
+      description:
+        "Create an affinity diagram to group related ideas into categories. " +
+        "Each group is displayed as a labeled cluster containing its items.",
+      inputSchema: {
+        type: "object" as const,
+        properties: {
+          title: {
+            type: "string",
+            description: "Optional title for the diagram",
+          },
+          groups: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                label: {
+                  type: "string",
+                  description: "Group/category name",
+                },
+                items: {
+                  type: "array",
+                  items: { type: "string" },
+                  description: "Items belonging to this group",
+                },
+              },
+              required: ["label", "items"],
+            },
+            description: "Groups of related items",
+          },
+        },
+        required: ["groups"],
+      },
+    },
   ];
 }
 
@@ -111,6 +306,18 @@ export async function handleVisualizationTool(
     switch (name) {
       case "create_mindmap": {
         return handleCreateMindmap(args, broadcast);
+      }
+
+      case "create_flow": {
+        return handleCreateFlow(args, broadcast);
+      }
+
+      case "create_matrix": {
+        return handleCreateMatrix(args, broadcast);
+      }
+
+      case "create_affinity_diagram": {
+        return handleCreateAffinityDiagram(args, broadcast);
       }
 
       default:
@@ -312,6 +519,219 @@ function generateMindmapElements(
         endBinding: { elementId: conn.toId },
       })
     );
+  }
+
+  return elements;
+}
+
+// =============================================================================
+// Flow Diagram Handler
+// =============================================================================
+
+interface FlowArgs {
+  title?: string;
+  nodes: Array<{
+    id: string;
+    label: string;
+    type: 'start' | 'end' | 'process' | 'decision';
+  }>;
+  edges: Array<{
+    from: string;
+    to: string;
+    label?: string;
+  }>;
+  direction?: 'TB' | 'LR';
+}
+
+/**
+ * Handle create_flow tool
+ */
+function handleCreateFlow(
+  args: Record<string, unknown>,
+  broadcast: (message: object) => void
+): { content: Array<{ type: "text"; text: string }>; isError?: boolean } {
+  const input = args as unknown as FlowArgs;
+
+  // Validate required fields
+  if (!input.nodes || !Array.isArray(input.nodes) || input.nodes.length === 0) {
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: "Error: nodes array is required and must not be empty",
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  if (!input.edges || !Array.isArray(input.edges)) {
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: "Error: edges array is required",
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  // Convert to layout types
+  const flowNodes: FlowNode[] = input.nodes.map(n => ({
+    id: n.id,
+    label: n.label,
+    type: n.type,
+  }));
+
+  const flowEdges: FlowEdge[] = input.edges.map(e => ({
+    from: e.from,
+    to: e.to,
+    label: e.label,
+  }));
+
+  // Calculate layout
+  const layout = layoutFlow(flowNodes, flowEdges, {
+    startX: 500,
+    startY: 50,
+    direction: input.direction || 'TB',
+    levelGap: 100,
+    nodeGap: 60,
+    nodeWidth: 140,
+    nodeHeight: 60,
+  });
+
+  // Generate element skeletons
+  const elements = generateFlowElements(layout);
+
+  // Broadcast to all connected clients
+  broadcast({
+    type: "diagram_elements",
+    diagramType: "flow",
+    elements,
+    action: "replace",
+  });
+
+  // Build response message
+  const title = input.title ? `"${input.title}"` : "flow diagram";
+  const nodeCount = layout.nodes.length;
+  const edgeCount = layout.edges.length;
+
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: `Created ${title} with ${nodeCount} nodes and ${edgeCount} connections`,
+      },
+    ],
+  };
+}
+
+/**
+ * Generate Excalidraw element skeletons from flow layout result
+ */
+function generateFlowElements(
+  layout: { nodes: PositionedFlowNode[]; edges: PositionedFlowEdge[] }
+): ExcalidrawElementSkeleton[] {
+  const elements: ExcalidrawElementSkeleton[] = [];
+
+  // Node colors by type
+  const nodeColors: Record<FlowNode['type'], string> = {
+    start: '#b2f2bb',    // Light green
+    end: '#ffc9c9',      // Light red
+    process: '#a5d8ff',  // Light blue
+    decision: '#ffec99', // Light yellow
+  };
+
+  // Create node elements
+  for (const node of layout.nodes) {
+    const backgroundColor = nodeColors[node.type];
+
+    if (node.type === 'start' || node.type === 'end') {
+      // Start/end nodes are ellipses (stadium shape)
+      elements.push(
+        createEllipseSkeleton({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          width: node.width,
+          height: node.height,
+          label: node.label,
+          backgroundColor,
+          fillStyle: "solid",
+        })
+      );
+    } else if (node.type === 'decision') {
+      // Decision nodes are diamonds - use a rectangle with rotation
+      // Note: We'll use a rectangle with a diamond-like aspect for now
+      // A proper diamond would require a custom polygon or rotation
+      elements.push(
+        createRectangleSkeleton({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          width: node.width,
+          height: node.height,
+          label: node.label,
+          backgroundColor,
+          fillStyle: "solid",
+          // Diamond effect via smaller roundness
+          roundness: { type: 2, value: 8 },
+        })
+      );
+    } else {
+      // Process nodes are rectangles
+      elements.push(
+        createRectangleSkeleton({
+          id: node.id,
+          x: node.x,
+          y: node.y,
+          width: node.width,
+          height: node.height,
+          label: node.label,
+          backgroundColor,
+          fillStyle: "solid",
+          roundness: { type: 3 }, // Rounded corners
+        })
+      );
+    }
+  }
+
+  // Create arrow elements for edges
+  for (const edge of layout.edges) {
+    elements.push(
+      createArrowSkeleton({
+        id: edge.id,
+        x: edge.startX,
+        y: edge.startY,
+        startX: edge.startX,
+        startY: edge.startY,
+        endX: edge.endX,
+        endY: edge.endY,
+        strokeColor: "#495057",
+        strokeWidth: 2,
+        startBinding: { elementId: edge.fromId },
+        endBinding: { elementId: edge.toId },
+      })
+    );
+
+    // Add edge label as text element if present
+    if (edge.label) {
+      const midX = (edge.startX + edge.endX) / 2;
+      const midY = (edge.startY + edge.endY) / 2;
+
+      elements.push({
+        type: "text",
+        id: `${edge.id}-label`,
+        x: midX - 15,
+        y: midY - 10,
+        text: edge.label,
+        fontSize: 14,
+        fontFamily: 1,
+        textAlign: "center",
+        strokeColor: "#495057",
+      });
+    }
   }
 
   return elements;

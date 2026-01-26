@@ -102,7 +102,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   }
 
   // Visualization tools (high-level diagram generation)
-  if (name === "create_mindmap") {
+  if (name === "create_mindmap" || name === "create_flow") {
     return handleVisualizationTool(name, args || {}, state, broadcast);
   }
 

@@ -1,21 +1,122 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { NotesPanel } from './components/NotesPanel';
-import { WhiteboardPanel, WhiteboardPanelRef } from './components/WhiteboardPanel';
+import { WhiteboardPanel, WhiteboardPanelRef, ServerCanvasObject, DiagramSkeleton } from './components/WhiteboardPanel';
+import { DiagramPanel, Diagram } from './components/DiagramPanel';
 import { InputArea } from './components/InputArea';
 import { useWebSocket } from './hooks/useWebSocket';
 
 export default function App() {
   const [notes, setNotes] = useState('');
+  const [serverObjects, setServerObjects] = useState<ServerCanvasObject[]>([]);
+  const [diagrams, setDiagrams] = useState<Diagram[]>([]);
   const whiteboardRef = useRef<WhiteboardPanelRef>(null);
 
   const { isConnected, send } = useWebSocket({
     onMessage: (msg) => {
+      // Notes sync from AI
       if (msg.type === 'notes_sync' && msg.fromAI) {
         setNotes(msg.content as string);
       }
-      // Whiteboard messages are handled internally by WhiteboardPanel
+
+      // Canvas object added (from AI via HTTP API)
+      if (msg.type === 'canvas_object_added' && msg.fromAI) {
+        const obj = msg.object as ServerCanvasObject;
+        setServerObjects(prev => [...prev, obj]);
+        console.log('[App] Canvas object added:', obj.id);
+      }
+
+      // Canvas object modified
+      if (msg.type === 'canvas_object_modified' && msg.fromAI) {
+        const obj = msg.object as ServerCanvasObject;
+        setServerObjects(prev => prev.map(o => o.id === obj.id ? obj : o));
+        console.log('[App] Canvas object modified:', obj.id);
+      }
+
+      // Canvas object deleted
+      if (msg.type === 'canvas_object_deleted' && msg.fromAI) {
+        const id = msg.id as string;
+        setServerObjects(prev => prev.filter(o => o.id !== id));
+        console.log('[App] Canvas object deleted:', id);
+      }
+
+      // Canvas cleared
+      if (msg.type === 'canvas_clear' && msg.fromAI) {
+        setServerObjects([]);
+        whiteboardRef.current?.clear();
+        console.log('[App] Canvas cleared');
+      }
+
+      // Diagram elements (from visualization tools like create_mindmap, create_flow)
+      if (msg.type === 'diagram_elements') {
+        const skeletons = msg.elements as DiagramSkeleton[];
+        const diagramType = msg.diagramType as string;
+        whiteboardRef.current?.handleDiagramElements(skeletons, diagramType);
+        console.log('[App] Diagram elements received:', diagramType, skeletons.length);
+      }
+
+      // Diagram update (from AI via MCP tools)
+      if (msg.type === 'diagram_update') {
+        const diagram: Diagram = {
+          id: msg.id as string,
+          diagramType: msg.diagramType as Diagram['diagramType'],
+          code: msg.code as string,
+          title: msg.title as string | undefined,
+          theme: msg.theme as string | undefined,
+        };
+
+        setDiagrams(prev => {
+          // Check if diagram already exists (update) or is new (create)
+          const existingIndex = prev.findIndex(d => d.id === diagram.id);
+          if (existingIndex >= 0) {
+            // Update existing
+            const updated = [...prev];
+            updated[existingIndex] = diagram;
+            console.log('[App] Diagram updated:', diagram.id);
+            return updated;
+          } else {
+            // Add new
+            console.log('[App] Diagram added:', diagram.id);
+            return [...prev, diagram];
+          }
+        });
+      }
     },
   });
+
+  // Fetch initial canvas state when connected
+  useEffect(() => {
+    if (isConnected) {
+      fetch('/api/canvas')
+        .then(res => res.json())
+        .then(data => {
+          if (data.objects && data.objects.length > 0) {
+            setServerObjects(data.objects);
+            console.log('[App] Loaded', data.objects.length, 'initial canvas objects');
+          }
+        })
+        .catch(err => console.error('[App] Failed to fetch canvas:', err));
+
+      fetch('/api/notes')
+        .then(res => res.json())
+        .then(data => {
+          if (data.content) {
+            setNotes(data.content);
+            console.log('[App] Loaded initial notes');
+          }
+        })
+        .catch(err => console.error('[App] Failed to fetch notes:', err));
+
+      fetch('/api/diagrams')
+        .then(res => res.json())
+        .then(data => {
+          if (data.diagrams && data.diagrams.length > 0) {
+            setDiagrams(data.diagrams);
+            console.log('[App] Loaded', data.diagrams.length, 'initial diagrams');
+          }
+        })
+        .catch(err => console.error('[App] Failed to fetch diagrams:', err));
+    }
+  }, [isConnected]);
 
   const handleNotesChange = useCallback((content: string) => {
     setNotes(content);
@@ -69,7 +170,8 @@ export default function App() {
           content={notes}
           onChange={handleNotesChange}
         />
-        <WhiteboardPanel ref={whiteboardRef} />
+        <WhiteboardPanel ref={whiteboardRef} serverObjects={serverObjects} />
+        <DiagramPanel diagrams={diagrams} />
         <InputArea onSend={handleSend} />
       </main>
     </div>
