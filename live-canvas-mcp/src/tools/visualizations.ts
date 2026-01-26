@@ -736,3 +736,473 @@ function generateFlowElements(
 
   return elements;
 }
+
+// =============================================================================
+// Matrix Handler
+// =============================================================================
+
+interface MatrixArgs {
+  title?: string;
+  xAxis: {
+    label: string;
+    lowLabel?: string;
+    highLabel?: string;
+  };
+  yAxis: {
+    label: string;
+    lowLabel?: string;
+    highLabel?: string;
+  };
+  items?: Array<{
+    text: string;
+    quadrant: 'high-high' | 'high-low' | 'low-high' | 'low-low';
+  }>;
+}
+
+/**
+ * Handle create_matrix tool
+ */
+function handleCreateMatrix(
+  args: Record<string, unknown>,
+  broadcast: (message: object) => void
+): { content: Array<{ type: "text"; text: string }>; isError?: boolean } {
+  const input = args as unknown as MatrixArgs;
+
+  // Validate required fields
+  if (!input.xAxis?.label) {
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: "Error: xAxis.label is required",
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  if (!input.yAxis?.label) {
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: "Error: yAxis.label is required",
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  // Build labels
+  const xHighLabel = input.xAxis.highLabel || 'High';
+  const xLowLabel = input.xAxis.lowLabel || 'Low';
+  const yHighLabel = input.yAxis.highLabel || 'High';
+  const yLowLabel = input.yAxis.lowLabel || 'Low';
+
+  // Convert items to MatrixCell array
+  // Quadrant mapping: high-high=0,0 (top-left), high-low=0,1 (top-right), etc.
+  const cellItems = new Map<string, string[]>();
+
+  for (const item of (input.items || [])) {
+    const { row, col } = quadrantToRowCol(item.quadrant);
+    const key = `${row},${col}`;
+    if (!cellItems.has(key)) {
+      cellItems.set(key, []);
+    }
+    cellItems.get(key)!.push(item.text);
+  }
+
+  const cells: MatrixCell[] = [];
+  cellItems.forEach((items, key) => {
+    const [row, col] = key.split(',').map(Number);
+    cells.push({ row, col, items });
+  });
+
+  // Calculate layout
+  const layout = layoutGrid(
+    cells,
+    {
+      top: [xHighLabel, xLowLabel],  // Column labels (left-to-right)
+      left: [yHighLabel, yLowLabel], // Row labels (top-to-bottom)
+    },
+    {
+      startX: 100,
+      startY: 100,
+      cellWidth: 250,
+      cellHeight: 200,
+      labelHeight: 50,
+      labelWidth: 100,
+      itemHeight: 35,
+      itemPadding: 15,
+    }
+  );
+
+  // Generate element skeletons
+  const elements = generateMatrixElements(layout, {
+    xAxisLabel: input.xAxis.label,
+    yAxisLabel: input.yAxis.label,
+    title: input.title,
+  });
+
+  // Broadcast to all connected clients
+  broadcast({
+    type: "diagram_elements",
+    diagramType: "matrix",
+    elements,
+    action: "replace",
+  });
+
+  // Build response message
+  const itemCount = (input.items || []).length;
+  const axisInfo = `${input.yAxis.label} vs ${input.xAxis.label}`;
+
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: `Created 2x2 matrix (${axisInfo}) with ${itemCount} items`,
+      },
+    ],
+  };
+}
+
+/**
+ * Generate Excalidraw element skeletons from matrix layout result
+ */
+function generateMatrixElements(
+  layout: { elements: PositionedMatrixElement[]; bounds: { width: number; height: number } },
+  meta: { xAxisLabel: string; yAxisLabel: string; title?: string }
+): ExcalidrawElementSkeleton[] {
+  const elements: ExcalidrawElementSkeleton[] = [];
+
+  // Quadrant background colors (subtle)
+  const quadrantColors: Record<string, string> = {
+    '0,0': '#d3f9d8', // high-high: light green (top priority)
+    '0,1': '#fff3bf', // high-low: light yellow
+    '1,0': '#d0ebff', // low-high: light blue
+    '1,1': '#f8f9fa', // low-low: light gray (low priority)
+  };
+
+  for (const el of layout.elements) {
+    switch (el.type) {
+      case 'axis-line': {
+        // Create a line using a very thin rectangle
+        elements.push(
+          createRectangleSkeleton({
+            id: el.id,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+            backgroundColor: '#495057',
+            fillStyle: 'solid',
+            strokeColor: '#495057',
+          })
+        );
+        break;
+      }
+
+      case 'label': {
+        // Labels are text elements
+        elements.push(
+          createTextSkeleton({
+            id: el.id,
+            x: el.x + el.width / 2 - 30, // Center text
+            y: el.y + el.height / 2 - 10,
+            text: el.text || '',
+            fontSize: 18,
+            fontFamily: 1,
+            textAlign: 'center',
+            strokeColor: '#212529',
+          })
+        );
+        break;
+      }
+
+      case 'cell': {
+        // Cell backgrounds
+        const colorKey = `${el.row},${el.col}`;
+        const backgroundColor = quadrantColors[colorKey] || '#f8f9fa';
+
+        elements.push(
+          createRectangleSkeleton({
+            id: el.id,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+            backgroundColor,
+            fillStyle: 'solid',
+            strokeColor: '#dee2e6',
+            strokeWidth: 1,
+          })
+        );
+        break;
+      }
+
+      case 'item': {
+        // Items are small rounded rectangles with text
+        elements.push(
+          createRectangleSkeleton({
+            id: el.id,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+            label: el.text,
+            backgroundColor: '#ffffff',
+            fillStyle: 'solid',
+            strokeColor: '#495057',
+            strokeWidth: 1,
+            roundness: { type: 3 },
+          })
+        );
+        break;
+      }
+    }
+  }
+
+  // Add axis labels (X-axis and Y-axis names)
+  const gridWidth = layout.bounds.width;
+  const gridHeight = layout.bounds.height;
+
+  // X-axis label (bottom center)
+  elements.push(
+    createTextSkeleton({
+      id: 'x-axis-label',
+      x: 100 + gridWidth / 2 - 50,
+      y: 100 + gridHeight + 20,
+      text: meta.xAxisLabel,
+      fontSize: 20,
+      fontFamily: 1,
+      textAlign: 'center',
+      strokeColor: '#212529',
+    })
+  );
+
+  // Y-axis label (left side, rotated text not supported, so place vertically)
+  elements.push(
+    createTextSkeleton({
+      id: 'y-axis-label',
+      x: 30,
+      y: 100 + gridHeight / 2,
+      text: meta.yAxisLabel,
+      fontSize: 20,
+      fontFamily: 1,
+      textAlign: 'center',
+      strokeColor: '#212529',
+    })
+  );
+
+  // Title if provided
+  if (meta.title) {
+    elements.push(
+      createTextSkeleton({
+        id: 'matrix-title',
+        x: 100 + gridWidth / 2 - 80,
+        y: 40,
+        text: meta.title,
+        fontSize: 24,
+        fontFamily: 1,
+        textAlign: 'center',
+        strokeColor: '#212529',
+      })
+    );
+  }
+
+  return elements;
+}
+
+// =============================================================================
+// Affinity Diagram Handler
+// =============================================================================
+
+interface AffinityArgs {
+  title?: string;
+  groups: Array<{
+    label: string;
+    items: string[];
+  }>;
+}
+
+/**
+ * Handle create_affinity_diagram tool
+ */
+function handleCreateAffinityDiagram(
+  args: Record<string, unknown>,
+  broadcast: (message: object) => void
+): { content: Array<{ type: "text"; text: string }>; isError?: boolean } {
+  const input = args as unknown as AffinityArgs;
+
+  // Validate required fields
+  if (!input.groups || !Array.isArray(input.groups) || input.groups.length === 0) {
+    return {
+      content: [
+        {
+          type: "text" as const,
+          text: "Error: groups array is required and must not be empty",
+        },
+      ],
+      isError: true,
+    };
+  }
+
+  // Convert input to Cluster array
+  const clusters: Cluster[] = input.groups.map((group, index) => ({
+    id: `cluster-${index}`,
+    label: group.label,
+    items: group.items,
+  }));
+
+  // Calculate layout
+  const layout = layoutClusters(clusters, {
+    startX: 100,
+    startY: input.title ? 150 : 100, // Leave room for title
+    clusterPadding: 25,
+    clusterGap: 50,
+    itemHeight: 40,
+    itemWidth: 200,
+    itemGap: 10,
+    maxClustersPerRow: 3,
+    labelHeight: 45,
+  });
+
+  // Generate element skeletons
+  const elements = generateAffinityElements(layout, {
+    title: input.title,
+  });
+
+  // Broadcast to all connected clients
+  broadcast({
+    type: "diagram_elements",
+    diagramType: "affinity",
+    elements,
+    action: "replace",
+  });
+
+  // Build response message
+  const groupCount = input.groups.length;
+  const totalItems = input.groups.reduce((sum, g) => sum + g.items.length, 0);
+  const titleInfo = input.title ? `"${input.title}" ` : '';
+
+  return {
+    content: [
+      {
+        type: "text" as const,
+        text: `Created ${titleInfo}affinity diagram with ${groupCount} groups and ${totalItems} items`,
+      },
+    ],
+  };
+}
+
+/**
+ * Generate Excalidraw element skeletons from affinity layout result
+ */
+function generateAffinityElements(
+  layout: { elements: PositionedClusterElement[]; bounds: { width: number; height: number } },
+  meta: { title?: string }
+): ExcalidrawElementSkeleton[] {
+  const elements: ExcalidrawElementSkeleton[] = [];
+
+  // Cluster colors (distinct but harmonious)
+  const clusterColors = [
+    '#d3f9d8', // Light green
+    '#a5d8ff', // Light blue
+    '#ffec99', // Light yellow
+    '#d0bfff', // Light purple
+    '#ffc9c9', // Light red
+    '#c5f6fa', // Light cyan
+    '#ffd8a8', // Light orange
+    '#e5dbff', // Light violet
+  ];
+
+  // Track cluster IDs to assign consistent colors
+  const clusterColorMap = new Map<string, string>();
+  let colorIndex = 0;
+
+  for (const el of layout.elements) {
+    // Assign color to cluster if not already assigned
+    if (el.clusterId && !clusterColorMap.has(el.clusterId)) {
+      clusterColorMap.set(el.clusterId, clusterColors[colorIndex % clusterColors.length]);
+      colorIndex++;
+    }
+
+    const clusterColor = el.clusterId ? clusterColorMap.get(el.clusterId)! : '#f8f9fa';
+
+    switch (el.type) {
+      case 'cluster-box': {
+        // Cluster container (rounded rectangle with subtle fill)
+        elements.push(
+          createRectangleSkeleton({
+            id: el.id,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+            backgroundColor: clusterColor,
+            fillStyle: 'solid',
+            strokeColor: '#495057',
+            strokeWidth: 2,
+            roundness: { type: 3, value: 16 },
+          })
+        );
+        break;
+      }
+
+      case 'cluster-label': {
+        // Cluster header text (bold, larger)
+        elements.push(
+          createTextSkeleton({
+            id: el.id,
+            x: el.x,
+            y: el.y,
+            text: el.text || '',
+            fontSize: 20,
+            fontFamily: 1,
+            textAlign: 'left',
+            strokeColor: '#212529',
+          })
+        );
+        break;
+      }
+
+      case 'item': {
+        // Items are small cards (rounded rectangles)
+        elements.push(
+          createRectangleSkeleton({
+            id: el.id,
+            x: el.x,
+            y: el.y,
+            width: el.width,
+            height: el.height,
+            label: el.text,
+            backgroundColor: '#ffffff',
+            fillStyle: 'solid',
+            strokeColor: '#868e96',
+            strokeWidth: 1,
+            roundness: { type: 3, value: 8 },
+          })
+        );
+        break;
+      }
+    }
+  }
+
+  // Add title if provided
+  if (meta.title) {
+    elements.push(
+      createTextSkeleton({
+        id: 'affinity-title',
+        x: 100,
+        y: 40,
+        text: meta.title,
+        fontSize: 28,
+        fontFamily: 1,
+        textAlign: 'left',
+        strokeColor: '#212529',
+      })
+    );
+  }
+
+  return elements;
+}
