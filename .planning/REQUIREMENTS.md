@@ -9,10 +9,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Visual Techniques
 
-- [ ] **VIS-01**: AI draws mind maps to expand and branch user ideas
-- [ ] **VIS-02**: AI creates 2x2 matrices for comparison and prioritization
-- [ ] **VIS-03**: AI builds affinity diagrams to group related ideas
-- [ ] **VIS-04**: AI renders user flow diagrams for journey/process mapping
+- [x] **VIS-01**: AI draws mind maps to expand and branch user ideas
+- [x] **VIS-02**: AI creates 2x2 matrices for comparison and prioritization
+- [x] **VIS-03**: AI builds affinity diagrams to group related ideas
+- [x] **VIS-04**: AI renders user flow diagrams for journey/process mapping
 
 ### Session Flow
 
@@ -30,8 +30,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Canvas Performance
 
-- [ ] **CANVAS-01**: Canvas updates in real-time as conversation progresses (no noticeable lag)
-- [ ] **CANVAS-02**: Visuals start simple and add detail progressively
+- [x] **CANVAS-01**: Canvas updates in real-time as conversation progresses (no noticeable lag)
+- [x] **CANVAS-02**: Visuals start simple and add detail progressively
 - [ ] **CANVAS-03**: AI detects and incorporates user edits to canvas/notes
 
 ## v2 Requirements
@@ -69,10 +69,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | Phase 1 | Pending |
-| VIS-02 | Phase 1 | Pending |
-| VIS-03 | Phase 1 | Pending |
-| VIS-04 | Phase 1 | Pending |
+| VIS-01 | Phase 1 | Complete |
+| VIS-02 | Phase 1 | Complete |
+| VIS-03 | Phase 1 | Complete |
+| VIS-04 | Phase 1 | Complete |
 | FLOW-01 | Phase 2 | Pending |
 | FLOW-02 | Phase 2 | Pending |
 | FLOW-03 | Phase 2 | Pending |
@@ -81,8 +81,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | COLLAB-02 | Phase 3 | Pending |
 | COLLAB-03 | Phase 3 | Pending |
 | COLLAB-04 | Phase 3 | Pending |
-| CANVAS-01 | Phase 1 | Pending |
-| CANVAS-02 | Phase 1 | Pending |
+| CANVAS-01 | Phase 1 | Complete |
+| CANVAS-02 | Phase 1 | Complete |
 | CANVAS-03 | Phase 2 | Pending |
 
 **Coverage:**
@@ -92,4 +92,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-26*
-*Last updated: 2025-01-26 after roadmap creation*
+*Last updated: 2026-01-26 after Phase 1 completion*
