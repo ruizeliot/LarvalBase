@@ -4,12 +4,22 @@ import { WhiteboardPanel, WhiteboardPanelRef, ServerCanvasObject, DiagramSkeleto
 import { DiagramPanel, Diagram } from './components/DiagramPanel';
 import { InputArea } from './components/InputArea';
 import { useWebSocket } from './hooks/useWebSocket';
+import { usePreferencesStore } from './stores/preferencesStore';
 
 export default function App() {
   const [notes, setNotes] = useState('');
   const [serverObjects, setServerObjects] = useState<ServerCanvasObject[]>([]);
   const [diagrams, setDiagrams] = useState<Diagram[]>([]);
+  const [showSettings, setShowSettings] = useState(false);
   const whiteboardRef = useRef<WhiteboardPanelRef>(null);
+
+  // Preferences from Zustand store
+  const {
+    proactivity, setProactivity,
+    animationSpeed, setAnimationSpeed,
+    defaultComplexity, setDefaultComplexity,
+    preferredDiagramStyle, setPreferredDiagramStyle,
+  } = usePreferencesStore();
 
   const { isConnected, send } = useWebSocket({
     onMessage: (msg) => {
@@ -127,15 +137,20 @@ export default function App() {
     message: string,
     options: { includeWhiteboard: boolean; includeNotes: boolean }
   ) => {
+    // Get current preferences
+    const preferences = usePreferencesStore.getState().getPreferences();
+
     // Build the message payload
     const payload: {
       type: string;
       message: string;
       whiteboard?: string;
       notes?: string;
+      preferences?: typeof preferences;
     } = {
       type: 'user_input',
       message,
+      preferences,  // Include preferences so AI can read them
     };
 
     // Capture whiteboard if requested
@@ -163,7 +178,58 @@ export default function App() {
           <div className={`status-dot ${isConnected ? 'connected' : ''}`} />
           <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
         </div>
+        <button
+          className="settings-btn"
+          onClick={() => setShowSettings(!showSettings)}
+          title="Settings"
+        >
+          Settings
+        </button>
       </header>
+
+      {showSettings && (
+        <div className="settings-panel">
+          <div className="settings-header">
+            <h3>Preferences</h3>
+            <button className="close-btn" onClick={() => setShowSettings(false)}>X</button>
+          </div>
+
+          <label>
+            <span>AI Proactivity</span>
+            <select value={proactivity} onChange={e => setProactivity(e.target.value as typeof proactivity)}>
+              <option value="low">Low (draw only when asked)</option>
+              <option value="medium">Medium (balanced)</option>
+              <option value="high">High (draw frequently)</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Animation Speed</span>
+            <select value={animationSpeed} onChange={e => setAnimationSpeed(e.target.value as typeof animationSpeed)}>
+              <option value="instant">Instant</option>
+              <option value="fast">Fast</option>
+              <option value="smooth">Smooth</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Default Complexity</span>
+            <select value={defaultComplexity} onChange={e => setDefaultComplexity(e.target.value as typeof defaultComplexity)}>
+              <option value="minimal">Minimal</option>
+              <option value="moderate">Moderate</option>
+              <option value="detailed">Detailed</option>
+            </select>
+          </label>
+
+          <label>
+            <span>Diagram Style</span>
+            <select value={preferredDiagramStyle} onChange={e => setPreferredDiagramStyle(e.target.value as typeof preferredDiagramStyle)}>
+              <option value="hand-drawn">Hand-drawn</option>
+              <option value="clean">Clean</option>
+            </select>
+          </label>
+        </div>
+      )}
 
       <main className="main-content">
         <NotesPanel
