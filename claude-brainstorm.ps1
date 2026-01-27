@@ -98,9 +98,9 @@ $Manifest | Out-File -FilePath $ManifestPath -Encoding UTF8
 Write-Host ""
 Write-Host "Phase 1 | $ProjectName" -ForegroundColor Cyan
 
-# Spawn Claude in a NEW Windows Terminal window
+# Spawn Claude in a NEW Windows Terminal window with Phase 1 template
 $spawnScript = Join-Path $PipelineOffice "lib\spawn-orchestrator-wt.ps1"
-$spawnOutput = & $spawnScript -ProjectPath $ProjectPath -Title "Brainstorm | $ProjectName" 2>&1 | Out-String
+$spawnOutput = & $spawnScript -ProjectPath $ProjectPath -Title "Brainstorm | $ProjectName" -Template "phase-1.md" 2>&1 | Out-String
 
 # Wait for Claude to be ready (SessionStart hook creates this file)
 $readyFile = Join-Path $ProjectPipelineDir "claude-ready.txt"

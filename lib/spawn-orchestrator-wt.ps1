@@ -3,7 +3,10 @@ param(
     [string]$ProjectPath,
 
     [Parameter(Mandatory=$false)]
-    [string]$Title = "Orchestrator"
+    [string]$Title = "Orchestrator",
+
+    [Parameter(Mandatory=$false)]
+    [string]$Template = "orchestrator-v11.md"
 )
 
 # Resolve relative path to absolute path
@@ -34,8 +37,8 @@ if (-not (Test-Path $orchestratorClaudeDir)) {
     New-Item -ItemType Directory -Path $orchestratorClaudeDir -Force | Out-Null
 }
 
-# Copy orchestrator CLAUDE.md template
-$orchestratorTemplate = Join-Path $pipelineOffice "claude-md\orchestrator-v11.md"
+# Copy CLAUDE.md template (use -Template parameter to specify which one)
+$orchestratorTemplate = Join-Path $pipelineOffice "claude-md\$Template"
 $orchestratorClaudeMd = Join-Path $orchestratorClaudeDir "CLAUDE.md"
 
 if (Test-Path $orchestratorTemplate) {
@@ -103,9 +106,9 @@ export PIPELINE_DIR="..." && cat "`$PIPELINE_DIR/manifest.json"
     # Combine injected content with processed template
     $fullContent = $injectedContent + "`n" + $templateContent
     $fullContent | Out-File -FilePath $orchestratorClaudeMd -Encoding UTF8
-    Write-Host "Created orchestrator CLAUDE.md with project context and literal paths"
+    Write-Host "Created CLAUDE.md from template: $Template"
 } else {
-    Write-Host "WARNING: Orchestrator template not found: $orchestratorTemplate" -ForegroundColor Yellow
+    Write-Host "WARNING: Template not found: $orchestratorTemplate" -ForegroundColor Yellow
 }
 
 # Copy pipeline settings.json (includes SessionStart hook for auto-begin)
