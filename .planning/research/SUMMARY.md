@@ -1,347 +1,193 @@
 # Project Research Summary
 
-**Project:** AI Visual Brainstorming Assistant
-**Domain:** Creative facilitation / AI-enhanced design thinking
-**Researched:** 2026-01-26
+**Project:** Live Canvas MCP - Brainstorm Visual System v2.0
+**Domain:** Multi-User Collaborative Brainstorming with Voice Input and Document Sharing
+**Researched:** 2026-01-27
 **Confidence:** HIGH
 
 ## Executive Summary
 
-This product is an AI-powered visual brainstorming facilitator that transforms verbal ideas into visual diagrams on an Excalidraw canvas. Expert facilitators in this domain emphasize the **Double Diamond** structure (diverge-converge cycles), human-first ideation, and proactive visual capture. The AI must act as a "language extension" - converting ideas to visuals without being asked - while avoiding the critical trap of doing the thinking for the user.
+The v2.0 milestone transforms the existing single-user AI brainstorming tool into a collaborative platform with three major additions: multi-user real-time collaboration (host mode with browser-based guest access), voice input via OpenAI Whisper (push-to-talk with EN/FR auto-detection), and a shared document gallery with drag-drop to AI context. The existing stack (React 18, Vite, Excalidraw, Zustand, WebSocket via `ws`) remains intact - these are additive features.
 
-The recommended approach is a **conversational-visual hybrid** where the AI continuously reads user signals (engagement, energy, blocks), selects appropriate brainstorming techniques from a curated inventory, and updates the canvas in real-time. The architecture centers on three components: conversation flow (detecting signals and managing phase transitions), technique engine (18 catalogued methods with trigger conditions), and real-time canvas synchronization. Start with simple technique selection and manual clustering before adding advanced features like adaptive technique switching.
+**Recommended approach:** Use Socket.IO rooms for session management (extending existing WebSocket infrastructure), OpenAI Whisper API for transcription (cost-effective at brainstorming volumes), and react-dropzone with local filesystem storage for documents. The research strongly recommends AGAINST Yjs/CRDT for this use case - the existing WebSocket sync is sufficient; we need room-based routing, not conflict-free merging. The key architectural decision is treating the AI conversation as a unified stream where all participants contribute to one conversation, not separate per-user threads.
 
-The primary risk is **user passivity** - when AI generates ideas too quickly, users stop thinking creatively and become passive evaluators. Research shows this leads to 94% idea overlap and cognitive atrophy. Mitigation requires **human-first ideation** (always solicit user ideas before AI suggestions), question-driven prompting instead of answer generation, and explicit diverge/converge phase separation to prevent premature judgment.
+**Critical risks:** (1) Race conditions during client connection can cause state divergence - mitigate with double-fetch strategy; (2) Last-write-wins on concurrent edits loses data - use version nonce pattern from Excalidraw; (3) iOS Safari MediaRecorder uses different audio formats - test on real devices and implement format fallbacks; (4) File upload security vulnerabilities in multi-user context - allowlist file types and validate content. The good news: these are well-documented problems with proven solutions.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The "stack" for this product is the **visual brainstorming technique inventory** - 18 documented methods ranging from mind maps to SWOT analysis, each with specific trigger conditions and complexity guidance.
+The stack extends the existing v1.0 foundation. No changes to core technologies - only additions.
 
-**Core techniques (MVP):**
-- **Mind Maps**: Radial exploration from central concept - trigger when user lists related ideas without structure
-- **2x2 Prioritization Matrix**: Impact vs. Effort quadrants - trigger when user asks "which should we do first?"
-- **Affinity Diagrams**: Clustering related ideas - trigger when 10+ scattered ideas need pattern recognition
-- **User Flow Diagrams**: Sequential task steps - trigger when user describes "how will this work?"
-- **How Might We framing**: Problem statement as opportunity - foundation for all sessions
+**Core additions:**
+- **Socket.IO (^4.8.3):** Room-based WebSocket management - replaces raw `ws` broadcast-to-all with room-scoped messaging
+- **socket.io-client (^4.8.1):** Client-side WebSocket with built-in reconnection and room joining
+- **react-dropzone (^14.3.8):** Drag-drop file upload UI - simple hook-based API, TypeScript support
+- **OpenAI Whisper API (whisper-1):** Speech-to-text - $0.006/min, no infrastructure, EN/FR auto-detect built-in
+- **MediaRecorder API (browser native):** Audio capture - produces WebM/Opus directly compatible with Whisper
 
-**Advanced techniques (post-MVP):**
-- **SCAMPER prompts**: Structured creativity (Substitute, Combine, Adapt...) - low complexity, high value differentiator
-- **Six Thinking Hats**: Parallel thinking with 6 perspectives (White=facts, Red=feelings, Yellow=benefits, Black=risks, Green=creativity, Blue=process)
-- **Starbursting**: 6 W's (Who, What, When, Where, Why, How) for comprehensive exploration
-- **Reverse Brainstorming**: Invert problem to break blocks
-- **Crazy 8's**: Rapid sketching in 8-minute cycles
-
-**Technique selection architecture:**
-- Default to simple (3-5 elements) unless user requests depth
-- Divergent techniques (generate ideas) vs. Convergent techniques (narrow/select)
-- Proactive trigger matrix: recognize patterns like "lists 3+ ideas" → draw mind map
+**What NOT to add:**
+- Yjs/CRDT - overkill for this use case; existing sync + rooms is sufficient
+- Self-hosted Whisper - only makes sense at 3000+ hours/month
+- Cloud storage (S3) - local-first tool doesn't need it
+- WebRTC peer-to-peer - server-mediated sync is simpler and more reliable
 
 ### Expected Features
 
 **Must have (table stakes):**
-- **Defer judgment during divergent phase** — IDEO's #1 rule, criticism kills ideation
-- **Visual capture of all ideas** — sticky-note thinking, nothing gets lost
-- **Clear problem framing (HMW)** — "How Might We" questions focus ideation
-- **Divergent-Convergent phases** — Double Diamond prevents premature convergence
-- **Idea grouping/clustering** — affinity mapping reveals patterns
-- **Warm-up exercises** — activate creative mindset (12% productivity boost)
-- **Session summary** — document decisions, next steps, and action items
+- Real-time cursor presence - users need to know where others are working
+- Simultaneous editing - multiple users edit canvas without conflicts
+- Join via URL/code - no software install for guests, browser-only access
+- Instant sync (<500ms perceived) - edits must feel real-time
+- Participant list - know who's in the session
+- Push-to-talk voice activation - prevents accidental recording
+- Visual recording indicator - user must know when mic is active
+- Drag-drop document upload - standard file upload pattern
+- Gallery visible to all users - shared resources for collaboration
 
-**Should have (competitive):**
-- **Technique selection intelligence** — detect stuck patterns, suggest pivots
-- **SCAMPER prompts** — structured modification questions (first differentiator to add)
-- **Real-time visual streaming** — canvas updates continuously as conversation flows
-- **Participation balance tracking** — ensure all voices heard (for multi-user future)
-- **Build-on connection lines** — show idea evolution visually
-- **Multi-criteria decision matrix** — structured evaluation for convergent phase
+**Should have (differentiators):**
+- AI sees unified stream - all participants treated as one "user" for simpler AI interaction
+- Anonymous participation - no accounts required, instant join
+- Local-only hosting - data stays on host machine, privacy advantage
+- EN/FR auto-detection per utterance - no manual language switching
+- AI reads document content - answer questions about uploaded PDFs/images
+- Edit transcription before send - allow correction of transcription errors
 
-**Defer (v2+):**
-- **Six Thinking Hats** — high complexity, requires user training
-- **Adaptive technique switching ML** — requires behavior analysis, complex implementation
-- **Step-Ladder Technique** — complex orchestration for staged entry
-- **AI-measured idea richness** — quantity + diversity + novelty metrics dashboard
+**Defer (v2.1+):**
+- Speaker attribution in transcripts - requires diarization, high complexity
+- Local Whisper processing - requires GPU infrastructure
+- Pin documents to canvas - medium complexity, not essential
+- Gallery search/filter - can ship without for MVP
 
-**Anti-features (deliberately avoid):**
-- **AI generates all ideas** — creates passivity, users lose ownership
-- **Critique during divergent phase** — kills creative flow
-- **Automatic idea filtering/ranking during generation** — premature convergence
-- **Blank board start** — causes analysis paralysis, overwhelming
-- **Generic prompts like "think outside the box"** — useless, needs specificity
+**Anti-features (explicitly DO NOT build):**
+- Live voice chat between users - use Discord/Teams for that
+- User accounts/authentication - adds friction, scope creep
+- Voice-activated (always listening) - privacy nightmare
+- Real-time streaming transcription - partial results confuse users
+- Complex permission systems - host/guest distinction is sufficient
 
 ### Architecture Approach
 
-The system follows a **session phase architecture** based on the Double Diamond model with six phases: Warm-up (lower inhibitions), Discover (explore problem space), Define (synthesize problem statement), Develop (generate solutions), Deliver (select and refine), and Close (consolidate learning). An AI facilitator operates in a continuous **read-adapt-respond loop**: observe user response, detect signals (engagement/energy/confusion/blocks), evaluate phase health, decide to continue/pivot/transition, respond with appropriate technique, update canvas in real-time.
+The architecture extends the existing single-host MCP server with room-based routing. Key pattern: Socket.IO rooms for session management where the host starts a session, gets a 6-character code, and guests join via browser URL. All canvas/voice/document updates broadcast to room only, not to all connected clients.
 
 **Major components:**
+1. **Room Manager** (`src/rooms/manager.ts`) - Session creation, join codes, host/guest role assignment
+2. **Voice Handler** (`src/voice/handler.ts`) - MediaRecorder capture, Whisper API integration, transcription broadcast
+3. **Document Gallery** (`src/gallery/store.ts`) - File storage in `.planning/sessions/{id}/documents/`, metadata sync
+4. **Socket.IO Layer** (replaces raw `ws`) - Room-scoped broadcast, reconnection handling, user presence
 
-1. **Signal Detection Engine** — monitors engagement level (response length, detail, questions), energy state (punctuation, speed, sentiment), cognitive state (clarity, coherence), emotional state (enthusiasm, frustration), and creative state (originality, connections, flow vs. stuck). Triggers technique switches based on patterns.
-
-2. **Technique Selection System** — 18 catalogued techniques organized into 5 categories (divergent, convergent, relational, sequential, structural). Each technique has: what it is, trigger conditions, complexity guidance, Excalidraw implementation. Decision matrix maps user signals to technique pivots.
-
-3. **Canvas Synchronization Layer** — real-time visual updates without explicit user request. Continuous streaming (update as conversation happens), sketch early/refine later, visual-first responses (drawing with annotation, not text with optional drawing), ambient drawing (AI sketches while user types).
-
-**Key patterns:**
-- **Never mix modes**: Keep divergent and convergent phases strictly separated
-- **Visible progress**: User always knows where they are, what's captured, what's next
-- **Safe container**: Never criticize ideas, celebrate wild ideas, use "Yes, and..." not "Yes, but..."
-- **Adaptive loop**: Continuously monitor signals and adjust technique/phase
+**Data flow pattern:**
+```
+User input (canvas/voice/doc) --> Socket.IO --> Room broadcast --> All room clients
+                                     |
+                                     v
+                              Claude via MCP (sees unified stream)
+```
 
 ### Critical Pitfalls
 
-1. **The Passivity Trap (AI does the thinking)** — When AI generates ideas too quickly, users stop engaging their own creativity and become passive evaluators. Leads to 94% idea overlap, creativity atrophy, autonomy frustration. **Prevention**: Human-first ideation (solicit user ideas BEFORE AI suggestions), ask questions instead of providing answers, alternating turns, require user contribution before AI assistance. **Warning signs**: User rarely contributes own ideas, says "just give me options" repeatedly, canvas shows only AI content.
+1. **Race Condition Window (M1)** - New clients miss events between fetching state and establishing WebSocket. **Mitigate:** Double-fetch strategy (fetch state again after WebSocket connects) or buffer events until initial load completes.
 
-2. **Blank Canvas Paralysis** — User faces empty canvas with no idea how to start. Assumes users know how to formulate prompts and think linearly. Causes 60-second abandonment. **Prevention**: AI draws something immediately (proactive first move), offer 2-3 starter templates, progressive disclosure, context detection from project name/files, show rough sketch and ask "is this roughly the direction?" **Recovery**: Draw SOMETHING to give user something to react to.
+2. **Last-Write-Wins Data Loss (M2)** - Two users editing same element concurrently causes silent data loss. **Mitigate:** Use version nonce pattern from Excalidraw - add `versionNonce` field with random integer for deterministic conflict resolution.
 
-3. **Design Fixation from Early AI Output** — Users fixate on first visual shown and stop exploring alternatives. Research shows AI image generators reduce variety and originality. **Prevention**: Show 3+ radically different directions before allowing iteration, include deliberately unusual options, separate divergent and convergent phases, track visual diversity metrics. **Warning signs**: Linear refinement of same structure, user says "just tweak this" instead of "show me something different."
+3. **iOS Safari MediaRecorder (M4)** - Different audio codecs than Chrome/Firefox cause Whisper failures. **Mitigate:** Smart format detection with fallbacks (`audio/webm;codecs=opus` -> `audio/webm` -> `audio/mp4` -> `audio/wav`), test on real iOS devices.
 
-4. **Visual Lag Behind Conversation** — Canvas doesn't update in real-time, visual and verbal tracks desync. User forgets about visual element. **Prevention**: Continuous visual streaming, sketch early/refine later, visual-first responses, ambient drawing while user types, canvas as primary output. **Warning signs**: User has to say "can you draw that?", canvas empty during active conversation.
+4. **File Upload Security (M5)** - Multi-user context means one user's upload is visible to all. **Mitigate:** Allowlist file types, validate content (don't trust MIME headers), store outside web root, rename to UUIDs, serve with `Content-Disposition: attachment`.
 
-5. **All Divergence, No Convergence** — AI generates endless options but provides no help narrowing down or deciding. Sessions produce ideas but no decisions. **Prevention**: Opinionated recommendations ("My recommendation is X because..."), structured convergence phases, decision frameworks, synthesis assistance, progress markers showing diverge/converge cycle position. **Warning signs**: Session ends with many ideas but no selections, user asks "so which one should I pick?"
-
-6. **Generic/Simplistic Visuals** — Basic boxes and stick figures that don't capture richness of ideas. User loses trust in visual capability. **Prevention**: Domain-specific visual vocabulary, visual complexity progression (start simple, offer "more detail"), style detection early, adaptive rendering. **Warning signs**: All outputs are boxes with labels, no visual hierarchy, user ignores canvas.
+5. **WebSocket Reconnection (M6)** - Network blips lose session context. **Mitigate:** Session tokens that map back to user identity, state recovery protocol on reconnect, exponential backoff (1s, 2s, 4s with jitter, max 30s).
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure builds from basic conversational-visual coordination to advanced adaptive facilitation:
+Based on research, suggested phase structure:
 
-### Phase 1: Conversational Foundation + Basic Visual Capture
-**Rationale:** Before anything visual works, the AI must understand what the user is saying and respond intelligently. The conversation layer is the foundation. Phase also delivers basic canvas integration to prove the visual concept.
+### Phase 1: Room Infrastructure
+**Rationale:** Foundation for all multi-user features - nothing else works without rooms
+**Delivers:** Room manager, join codes, room-scoped WebSocket routing, host/guest roles
+**Addresses:** Join via URL/code, participant list, host controls
+**Avoids:** Race condition window (M1) - design connection protocol correctly from start; Echo loops (M7) - exclude sender from broadcasts
 
-**Delivers:**
-- AI can conduct multi-turn conversation about user's idea
-- Basic signal detection (response length, engagement level)
-- Simple visual output (mind map, basic shapes) on canvas
-- HMW problem framing workflow
+### Phase 2: Multi-Client Sync
+**Rationale:** Depends on room infrastructure; enables all subsequent shared features
+**Delivers:** Canvas sync via room broadcast, notes sync, basic reconnection
+**Uses:** Socket.IO rooms from Phase 1
+**Implements:** Room-scoped state, version nonce pattern for conflict resolution
+**Avoids:** Last-write-wins data loss (M2), multiplayer undo corruption (M3 - clear undo stack on peer updates)
 
-**Addresses (from FEATURES.md):**
-- Clear problem framing (HMW)
-- Visual capture of ideas (table stakes)
-- Conversational memory (avoid robotic facilitator)
+### Phase 3: User Presence
+**Rationale:** Depends on sync infrastructure; high-value table stakes feature
+**Delivers:** Real-time cursor positions, user list with colors/names, "user is typing" indicators
+**Addresses:** Cursor presence (table stakes), participant list
+**Avoids:** Cursor flood (M12) - throttle updates to 50-100ms
 
-**Avoids (from PITFALLS.md):**
-- Blank Canvas Paralysis (proactive first drawing)
-- Robotic Facilitator (conversational warmth)
+### Phase 4: Voice Input
+**Rationale:** Can begin after rooms exist; parallel path with document gallery
+**Delivers:** Push-to-talk UI, MediaRecorder capture, Whisper API integration, transcription broadcast
+**Addresses:** Push-to-talk activation, visual recording indicator, transcription display, EN/FR auto-detect
+**Avoids:** iOS Safari incompatibility (M4) - test on real devices; 30-second chunking (M9) - use VAD-based chunking
 
-**Research flags:** LOW complexity - conversational AI and canvas integration are well-documented. Standard patterns available.
-
-### Phase 2: Technique Engine + Phase Management
-**Rationale:** Once conversation works, add the brainstorming structure. This phase implements the Double Diamond phases and core technique inventory. Order matters: can't do technique switching without having techniques first.
-
-**Delivers:**
-- Six session phases (Warm-up, Discover, Define, Develop, Deliver, Close)
-- 5 core techniques: Mind Map, 2x2 Matrix, Affinity Diagram, User Flow, Pros/Cons
-- Phase transition detection
-- Basic divergent/convergent mode separation
-
-**Addresses (from FEATURES.md):**
-- Divergent-Convergent phases (table stakes)
-- Warm-up exercises (table stakes)
-- Session summary (table stakes)
-- Basic technique selection
-
-**Avoids (from PITFALLS.md):**
-- All Divergence No Convergence (explicit convergent phase)
-- Wrong Timing for Input (phase awareness)
-
-**Research flags:** MEDIUM complexity - phase detection logic needs experimentation. Double Diamond framework is well-documented, but signal-to-transition mapping requires tuning.
-
-### Phase 3: Real-Time Canvas Synchronization
-**Rationale:** Techniques exist but visuals lag conversation. This phase closes the loop with continuous visual updates. Builds on Phase 1 (canvas basics) and Phase 2 (knowing WHAT to draw based on technique).
-
-**Delivers:**
-- Continuous canvas updates during conversation
-- Sketch early, refine later pattern
-- Visual-first responses (drawing with annotation)
-- Ambient drawing while user types
-
-**Addresses (from FEATURES.md):**
-- Real-time visual streaming (competitive feature)
-- Build-on connection lines (visual evolution)
-
-**Avoids (from PITFALLS.md):**
-- Visual Lag Behind Conversation (critical pitfall #4)
-- Generic/Simplistic Visuals (visual richness progression)
-
-**Research flags:** HIGH complexity - real-time collaboration has technical challenges (latency, sync conflicts). Will need research-phase for WebSocket patterns and Excalidraw collaboration APIs.
-
-### Phase 4: Human-First Ideation Guardrails
-**Rationale:** By this point, AI is generating ideas fluently - which creates the Passivity Trap risk. This phase adds the guardrails to keep user engaged and creative.
-
-**Delivers:**
-- User-idea-first prompting patterns
-- Question-driven facilitation (not answer generation)
-- Contribution tracking (ensure user generates ideas)
-- "Yes, and..." language enforcement
-- Curated suggestion presentation (3 max at once)
-
-**Addresses (from FEATURES.md):**
-- Build on ideas (IDEO rule)
-- Defer judgment (IDEO rule)
-- Prevent AI monopoly (anti-feature avoidance)
-
-**Avoids (from PITFALLS.md):**
-- The Passivity Trap (critical pitfall #1)
-- Idea Overload (moderate pitfall #6)
-- AI Generates All Ideas (anti-pattern)
-
-**Research flags:** LOW complexity - patterns are well-documented in human-AI collaboration literature. Implementation is mostly prompt engineering and conversation flow control.
-
-### Phase 5: Advanced Signal Detection + Adaptive Switching
-**Rationale:** System now has techniques, guardrails, and real-time visuals. This phase makes it intelligent - detecting when user is stuck and switching techniques proactively.
-
-**Delivers:**
-- Advanced signal detection (energy, confusion, creative blocks)
-- Technique switching triggers (stuck patterns, 3+ turns without new ideas)
-- Block-breaking sequences (SCAMPER, Reverse Brainstorm)
-- Confusion response protocol
-
-**Addresses (from FEATURES.md):**
-- Technique selection intelligence (competitive feature)
-- SCAMPER prompts (first differentiator)
-- Detect stuck patterns (competitive feature)
-
-**Avoids (from PITFALLS.md):**
-- Design Fixation (forced technique pivots break fixation)
-- Context Blindness (improved signal reading)
-
-**Research flags:** MEDIUM complexity - signal detection logic requires user testing and iteration. Trigger thresholds (e.g., "3 turns without new ideas") need empirical validation.
-
-### Phase 6: Convergent Phase Excellence
-**Rationale:** Divergent phase is strong by Phase 5, but convergent phase needs equal attention. This phase delivers structured decision-making tools.
-
-**Delivers:**
-- Multi-criteria decision matrix
-- Dot voting visualization
-- SWOT analysis per finalist
-- Opinionated recommendations with reasoning
-- Action item capture (owners + deadlines)
-
-**Addresses (from FEATURES.md):**
-- Selection criteria (table stakes)
-- Multi-criteria decision matrix (competitive feature)
-- Session summary with action items
-
-**Avoids (from PITFALLS.md):**
-- All Divergence No Convergence (structured selection tools)
-- Premature Convergence (criteria-based evaluation)
-
-**Research flags:** LOW complexity - convergent techniques are well-documented in decision science. Standard UX patterns for voting and matrices.
+### Phase 5: Document Gallery
+**Rationale:** Can begin after sync infrastructure exists; parallel with voice
+**Delivers:** react-dropzone upload, local file storage, gallery UI, metadata sync, drag to AI context
+**Addresses:** Drag-drop upload, image previews, gallery visible to all, drag to AI
+**Avoids:** File upload security (M5) - allowlist types, validate content, store outside web root
 
 ### Phase Ordering Rationale
 
-- **Conversation first (P1)** because nothing works without understanding user input
-- **Techniques second (P2)** because you need methods before you can switch between them
-- **Real-time sync third (P3)** because it builds on canvas basics (P1) and technique knowledge (P2)
-- **Guardrails fourth (P4)** because you can't prevent AI over-generation until AI is generating fluently
-- **Adaptive switching fifth (P5)** because you need working techniques (P2) and guardrails (P4) before automating decisions
-- **Convergent excellence last (P6)** because divergent phase must work well first (don't prematurely converge)
-
-This order also mirrors user journey: basic functionality → structured methods → real-time feel → safety from AI dominance → intelligence → decision quality.
+- **Rooms first (Phase 1)** - All multi-user features depend on room-scoped routing. Without this, broadcasts go to all clients (including other sessions).
+- **Sync before presence (Phase 2 before 3)** - Canvas sync is higher priority than cursors; presence is an enhancement to working sync.
+- **Voice and docs parallel (Phase 4-5)** - These features are independent after Phase 2 completes. Can be built in parallel or either order.
+- **Pitfall mitigation early** - Phase 1-2 must address connection race conditions, conflict resolution, and reconnection. Deferring these creates technical debt that compounds.
 
 ### Research Flags
 
 Phases likely needing deeper research during planning:
-- **Phase 3 (Real-time sync):** WebSocket patterns, Excalidraw collaboration API, latency optimization, conflict resolution
-- **Phase 5 (Adaptive switching):** Signal threshold calibration, technique effectiveness metrics, user testing for trigger accuracy
+- **Phase 4 (Voice):** iOS Safari audio format compatibility needs device testing; VAD-based chunking needs library evaluation
+- **Phase 5 (Documents):** PDF preview rendering (PDFjs?); AI document content extraction approach
 
 Phases with standard patterns (skip research-phase):
-- **Phase 1:** Conversational AI basics, Canvas API integration (well-documented)
-- **Phase 2:** Double Diamond framework, core brainstorming techniques (decades of literature)
-- **Phase 4:** Human-AI collaboration patterns (recent but well-researched)
-- **Phase 6:** Decision matrices, voting UX, SWOT templates (established patterns)
+- **Phase 1 (Rooms):** Socket.IO rooms are extremely well-documented, established pattern
+- **Phase 2 (Sync):** Excalidraw's version nonce pattern is documented in their blog
+- **Phase 3 (Presence):** Standard cursor sync pattern, no special research needed
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack (Techniques) | HIGH | 18 techniques sourced from IDEO, NN/g, IxDF, ASQ, MIT - authoritative sources with decades of facilitation research |
-| Features | HIGH | Table stakes validated across multiple sources (IDEO rules, Double Diamond, HMW framing), competitive features from peer-reviewed studies |
-| Architecture | HIGH | Double Diamond model is British Design Council standard (2004), signal detection patterns from conversational UX research, phase structure from multiple convergent sources |
-| Pitfalls | HIGH | All critical pitfalls backed by peer-reviewed research (Wharton, MIT, ACM DIS, SSRN) with documented consequences and prevention strategies |
+| Stack | HIGH | All libraries verified on npm with recent updates; Whisper API has official docs |
+| Features | HIGH | Based on competitive analysis (Miro, FigJam, Mural) and explicit PROJECT.md requirements |
+| Architecture | HIGH | Socket.IO rooms match existing WebSocket architecture; Excalidraw patterns documented |
+| Pitfalls | HIGH | Multiple sources for each pitfall; Excalidraw blog provides battle-tested solutions |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-**Technique effectiveness measurement** — Research documents WHAT techniques exist and WHEN to use them, but not HOW WELL they work in AI-assisted vs. human-only facilitation. During implementation, will need to instrument sessions to measure:
-- Idea count per technique
-- User engagement signals per technique
-- Time-to-decision by technique path
-- User satisfaction by session structure
+- **Whisper mixed-language utterances:** EN/FR code-switching within single utterance is poorly supported by Whisper. Need to decide: bias toward majority language, user preference, or segment-based detection. Recommend: per-utterance detection (push-to-talk encourages short utterances) with user preference fallback.
 
-**Approach:** Build instrumentation in Phase 2 (technique engine). Use data from early users to validate trigger conditions in Phase 5.
+- **Session persistence:** Research didn't definitively answer whether sessions should survive server restart. Recommend: no for MVP (keeps implementation simple), consider for v2.1.
 
-**Optimal visual complexity progression** — Research shows both "too simple" (generic boxes) and "too complex" (overwhelming) are problems, but exact threshold is unclear. What constitutes "appropriate detail" varies by user and domain.
+- **Document content extraction:** How does AI read uploaded PDFs? Need to evaluate: pdf-parse library, Claude's native PDF handling, or defer AI document reading to v2.1.
 
-**Approach:** Default to simple, add explicit "more detail" affordance. Track when users request more detail vs. when they don't. A/B test detail levels in Phase 3.
-
-**Signal detection thresholds** — Research indicates what signals to monitor (response length, energy, blocks), but not the exact thresholds. For example: "LOW engagement = response <20 words" is an inference, not a verified threshold.
-
-**Approach:** Start with literature-based thresholds in Phase 1, instrument actual user behavior, calibrate in Phase 5 based on data. Expect iteration.
-
-**Multi-user vs. single-user dynamics** — All research and roadmap assumes single-user sessions. Group brainstorming has different dynamics (social loafing, groupthink, participation imbalance). If multi-user becomes a requirement, will need additional research.
-
-**Approach:** Build for single-user first. If multi-user is needed, trigger research-phase specifically for: turn-taking protocols, participation balancing, consensus mechanisms, simultaneous canvas editing conflicts.
+- **Cursor sharing via Excalidraw:** Excalidraw has built-in collaboration features. Need to evaluate: use Excalidraw's native collab vs. custom cursor layer. Recommend: research Excalidraw's collaboration API during Phase 3 planning.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-
-**Brainstorming Fundamentals:**
-- IDEO Design Thinking Resources - https://designthinking.ideo.com/resources
-- Stanford d.school Tools - https://dschool.stanford.edu/tools/
-- NN/g (Nielsen Norman Group) Articles - Diverge-and-Converge, HMW Questions, Prioritization Matrices
-- Interaction Design Foundation - Ideation Methods, Affinity Diagrams, SCAMPER
-- British Design Council - Double Diamond Process Model
-- ASQ (American Society for Quality) - Affinity Diagrams, Fishbone Diagrams
-
-**Technique Documentation:**
-- De Bono Group - Six Thinking Hats official methodology
-- Tony Buzan - Mind Mapping inventor documentation
-- Google Design Sprint Kit - Crazy 8s, rapid ideation methods
-- Wikipedia - 6-3-5 Brainwriting, Double Diamond (well-cited)
-
-**AI-Human Collaboration Research:**
-- Wharton Study: "Does AI Limit Our Creativity?" (peer-reviewed)
-- MIT Study: "AI Use Could Weaken Brain Power" (neuroscience research)
-- ACM DIS 2024: "Design Fixation in Generative AI" (peer-reviewed)
-- SSRN: "Autonomy Frustration in Human-AI Creative Collaboration" (peer-reviewed)
-- Springer: "AI Brainstorming and Cognitive Load" (peer-reviewed)
-- arXiv: "Exploration vs Fixation in Human-AI Co-Creation" (preprint)
-
-**Facilitation Best Practices:**
-- SessionLab - 43 Brainstorming Techniques (practitioner guide with citations)
-- Miro, Mural, Figma - Templates and guides (industry standard tools)
-- Voltage Control, SmartStorming - Facilitation frameworks
+- [Socket.IO Rooms Documentation](https://socket.io/docs/v3/rooms/) - room-based routing patterns
+- [OpenAI Whisper API Documentation](https://platform.openai.com/docs/guides/speech-to-text) - transcription integration
+- [react-dropzone Documentation](https://react-dropzone.js.org/) - file upload patterns
+- [Excalidraw P2P Collaboration Blog](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/) - version nonce pattern, multiplayer challenges
 
 ### Secondary (MEDIUM confidence)
+- [Whisper API Pricing Analysis](https://brasstranscripts.com/blog/openai-whisper-api-pricing-2025-self-hosted-vs-managed) - cost comparison
+- [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) - security patterns
+- [WebSocket Architecture Best Practices](https://ably.com/topic/websocket-architecture-best-practices) - reconnection patterns
+- [Miro](https://miro.com/), [FigJam](https://www.figma.com/figjam/), [Mural](https://www.mural.co/) - competitive feature analysis
 
-**Industry Analysis:**
-- IDEO U Blog - Brainstorming rules, 10 idea generation activities
-- Mindtools - SCAMPER, Reverse Brainstorming, Starbursting (practitioner summaries)
-- Asana Resources - Brainstorming techniques compilation
-- Creately, Lucidspark Guides - Visual brainstorming techniques
-
-**UX Patterns:**
-- Medium/Design Bootcamp - Conversational UX for AI
-- Fastbots.ai - Making chatbots human and engaging
-- Reintech - Real-time canvas collaboration best practices
-- NN/g UX Articles - AI workshop facilitation, AI tool limitations
-
-**Cognitive Science:**
-- DTIC Research Note - Visible thinking and cognitive offloading
-- PMC (PubMed Central) - Cognitive mapping for learning
-- FasterCapital - Conversational engagement metrics
-
-### Tertiary (LOW confidence - needs validation)
-
-- The Design Gym - Facilitator tips (single practitioner perspective)
-- RAND Research - AI project failures (general tech, not brainstorming-specific)
-- LinkedIn Advice - Facilitation best practices (crowdsourced, unverified)
+### Tertiary (LOW confidence)
+- [iPhone Safari MediaRecorder Guide](https://www.buildwithmatija.com/blog/iphone-safari-mediarecorder-audio-recording-transcription) - iOS workarounds (needs device validation)
+- [Whisper Language Detection GitHub Discussions](https://github.com/openai/whisper/discussions/1456) - mixed-language handling (community solutions, not official)
 
 ---
-
-*Research completed: 2026-01-26*
+*Research completed: 2026-01-27*
 *Ready for roadmap: yes*

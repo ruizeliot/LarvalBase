@@ -432,3 +432,544 @@ All creative facilitation research emphasizes psychological safety. The AI must:
 - [Zen Ex Machina: Facilitation Techniques](https://zenexmachina.com/facilitation-techniques-when-to-use-and-why/)
 - [FasterCapital: Conversational Engagement Metrics](https://fastercapital.com/content/Conversational-engagement-metric-Measuring-User-Engagement--A-Deep-Dive-into-Conversational-Metrics.html)
 - [The Design Gym: Facilitator Tips for Unexpected Conversations](https://www.thedesigngym.com/facilitator-tips-for-unexpected-uncomfortable-conversations/)
+
+---
+---
+
+# Multi-User Technical Architecture (Milestone 2)
+
+**Added:** 2026-01-27
+**Focus:** Multi-user collaboration, voice input, document sharing integration
+**Confidence:** HIGH (verified against existing codebase + authoritative sources)
+
+---
+
+## Current Architecture (Baseline)
+
+The existing Live Canvas MCP system follows a single-host architecture:
+
+```
++-------------------------------------------------------------------+
+|                        Host Machine                                |
+|  +---------------+    +------------------+    +----------------+   |
+|  |   Claude      |    |   MCP Server     |    |    Viewer      |   |
+|  |   (stdio)     |<---|   (Node.js)      |<---|   (React)      |   |
+|  |               |    |   Port 3456      | WS |   Excalidraw   |   |
+|  +---------------+    +------------------+    +----------------+   |
+|         |                    |                      |              |
+|         |                    v                      |              |
+|         |            +------------------+           |              |
+|         +----------->|   State Store    |<----------+              |
+|           MCP tools  | - notes (Map)    |  WebSocket               |
+|                      | - diagrams (Map) |  messages                |
+|                      | - shapes (Map)   |                          |
+|                      | - sessionState   |                          |
+|                      +------------------+                          |
++-------------------------------------------------------------------+
+```
+
+### Key Integration Points (Existing)
+
+| Component | File | Responsibility |
+|-----------|------|----------------|
+| MCP Server | `src/index.ts` | Tool handlers, state management |
+| HTTP Server | `src/server/http.ts` | REST API, static serving, injection |
+| WebSocket | `src/server/websocket.ts` | Real-time sync, broadcast |
+| Session State | `src/session/state.ts` | Double Diamond phase tracking |
+| Edit Tracking | `src/session/edits.ts` | User vs AI edit attribution |
+| Viewer App | `viewer/src/App.tsx` | UI, state display |
+| Whiteboard | `viewer/src/components/WhiteboardPanel.tsx` | Excalidraw rendering |
+
+---
+
+## Recommended Architecture: Multi-User Collaboration
+
+### Architecture Overview
+
+```
++-----------------------------------------------------------------------------+
+|                             Host Machine                                     |
+|  +---------------+                                                           |
+|  |   Claude      |                                                           |
+|  |   (stdio)     |                                                           |
+|  +-------+-------+                                                           |
+|          | MCP tools                                                         |
+|          v                                                                   |
+|  +---------------------------------------------------------------------+    |
+|  |                    MCP Server (Enhanced)                             |    |
+|  |  +--------------+  +--------------+  +--------------------------+   |    |
+|  |  | Room Manager |  | Voice Handler|  |   Document Gallery       |   |    |
+|  |  | - sessions   |  | - transcribe |  |   - file storage         |   |    |
+|  |  | - host/guest |  | - queue audio|  |   - sync metadata        |   |    |
+|  |  +--------------+  +--------------+  +--------------------------+   |    |
+|  |                           |                                         |    |
+|  |                    +------+------+                                  |    |
+|  |                    |   Whisper   | (local or API)                   |    |
+|  |                    |   Worker    |                                  |    |
+|  |                    +-------------+                                  |    |
+|  +----------------------------------+----------------------------------+    |
+|                                     |                                       |
+|              +----------------------+----------------------+                |
+|              |                      |                      |                |
+|              v                      v                      v                |
+|  +------------------+  +--------------+  +----------------------+           |
+|  |   Host Viewer    |  |   Yjs Doc    |  |   Document Store     |           |
+|  |   (localhost)    |  |   (CRDT)     |  |   (.pipeline/docs/)  |           |
+|  +------------------+  +--------------+  +----------------------+           |
++-----------------------------------------------------------------------------+
+              |                      |
+              |    WebSocket         | (y-websocket)
+              v                      v
++-----------------------------------------------------------------------------+
+|                          Remote Clients (Browser)                            |
+|  +---------------------+        +---------------------+                      |
+|  |   Guest Viewer 1    |        |   Guest Viewer 2    |                      |
+|  |  +---------------+  |        |  +---------------+  |                      |
+|  |  | Yjs Provider  |  |        |  | Yjs Provider  |  |                      |
+|  |  | - canvas sync |  |        |  | - canvas sync |  |                      |
+|  |  | - notes sync  |  |        |  | - notes sync  |  |                      |
+|  |  | - awareness   |  |        |  | - awareness   |  |                      |
+|  |  +---------------+  |        |  +---------------+  |                      |
+|  |  +---------------+  |        |  +---------------+  |                      |
+|  |  | Voice Input   |  |        |  | Voice Input   |  |                      |
+|  |  | MediaRecorder |  |        |  | MediaRecorder |  |                      |
+|  |  +---------------+  |        |  +---------------+  |                      |
+|  +---------------------+        +---------------------+                      |
++-----------------------------------------------------------------------------+
+```
+
+### Why This Architecture
+
+**Recommendation: Use Yjs (CRDT) for canvas/notes sync, NOT Operational Transformation.**
+
+| Factor | OT | CRDT (Yjs) | Winner |
+|--------|----|-----------:|--------|
+| Central server required | Yes | No | CRDT |
+| Offline editing | Limited | Full support | CRDT |
+| Implementation complexity | High | Moderate (library) | CRDT |
+| Existing ecosystem | Custom | y-excalidraw, y-websocket | CRDT |
+| Merge conflicts | Server resolves | Automatic convergence | CRDT |
+| Latency tolerance | Low | High | CRDT |
+
+**Yjs integrates directly with Excalidraw** via the `@excalidraw/excalidraw` collaboration features, making it the natural choice for this canvas-based application.
+
+---
+
+## Component Boundaries
+
+### New Components to Build
+
+| Component | Location | Responsibility | Dependencies |
+|-----------|----------|----------------|--------------|
+| **Room Manager** | `src/rooms/manager.ts` | Session creation, join codes, host/guest roles | - |
+| **y-websocket Server** | `src/server/yjs-websocket.ts` | Yjs document sync, awareness | `y-websocket`, `yjs` |
+| **Voice Handler** | `src/voice/handler.ts` | Audio upload, Whisper integration | Whisper API or local |
+| **Document Gallery** | `src/gallery/store.ts` | File storage, metadata, sync | - |
+| **Awareness Provider** | `viewer/src/providers/awareness.ts` | Cursor sync, user presence | `y-protocols` |
+
+### Modified Components
+
+| Component | Current Location | Changes Needed |
+|-----------|-----------------|----------------|
+| **WebSocket Server** | `src/server/websocket.ts` | Add room-based routing, integrate Yjs |
+| **HTTP Server** | `src/server/http.ts` | Add room join endpoints, voice upload |
+| **Session State** | `src/session/state.ts` | Room-scoped state, multi-user phase tracking |
+| **Viewer App** | `viewer/src/App.tsx` | Yjs provider, voice UI, document panel |
+| **WhiteboardPanel** | `viewer/src/components/WhiteboardPanel.tsx` | Yjs collaboration integration |
+
+---
+
+## Data Flow
+
+### Canvas Sync (Yjs-Based)
+
+```
+User A draws    User B draws      Claude creates
+    |               |                  |
+    v               v                  v
++-------+      +-------+         +-----------+
+| Local |      | Local |         | MCP Tool  |
+| Yjs   |      | Yjs   |         | Handler   |
+| Doc   |      | Doc   |         |           |
++---+---+      +---+---+         +-----+-----+
+    |              |                   |
+    +--------------+-------------------+
+                   |
+                   v
+          +---------------+
+          | y-websocket   |
+          | Server        |
+          | (broadcasts)  |
+          +---------------+
+                   |
+    +--------------+--------------+
+    v              v              v
+User A          User B         Claude
+receives        receives       receives
+update          update         (via state sync)
+```
+
+### Voice Input Flow
+
+```
++-------------------------------------------------------------------+
+|                        Browser (Client)                            |
+|                                                                    |
+|  [Mic Button] --> MediaRecorder --> Audio Blob (WebM/PCM)         |
+|                                            |                       |
+|                                            v                       |
+|                                     POST /api/voice/upload         |
++--------------------------------------------+-----------------------+
+                                             |
+                                             v
++-------------------------------------------------------------------+
+|                        MCP Server                                  |
+|                                                                    |
+|  Voice Handler receives audio                                      |
+|         |                                                          |
+|         v                                                          |
+|  +-------------------------------------------------------------+  |
+|  | Option A: OpenAI Whisper API                                |  |
+|  |   POST https://api.openai.com/v1/audio/transcriptions       |  |
+|  |   + Simple, accurate, costs money                           |  |
+|  |                                                             |  |
+|  | Option B: Local Whisper (whisper.cpp + node binding)        |  |
+|  |   - Free, private, requires model download                  |  |
+|  |   - whisper-node or @nicepkg/whisper-node                   |  |
+|  +-------------------------------------------------------------+  |
+|         |                                                          |
+|         v                                                          |
+|  Transcription Text                                                |
+|         |                                                          |
+|         +--> Broadcast to room (WebSocket)                         |
+|         |         |                                                |
+|         |         +--> All viewers see transcription               |
+|         |                                                          |
+|         +--> Inject to Claude (existing injection mechanism)       |
+|                   |                                                |
+|                   +--> Claude responds as if user typed it         |
++-------------------------------------------------------------------+
+```
+
+### Document Gallery Flow
+
+```
++-------------------------------------------------------------------+
+|                     Host Uploads Document                          |
+|                                                                    |
+|  [File Picker] --> POST /api/gallery/upload                        |
+|                          |                                         |
+|                          v                                         |
+|                   .pipeline/gallery/                               |
+|                   +-- doc-abc123.pdf                               |
+|                   +-- image-def456.png                             |
+|                   +-- metadata.json                                |
+|                          |                                         |
+|                          v                                         |
+|                   Broadcast: gallery_item_added                    |
+|                          |                                         |
+|              +-----------+-----------+                             |
+|              v           v           v                             |
+|           Host        Guest 1     Guest 2                          |
+|           sees        fetches     fetches                          |
+|           item        thumbnail   thumbnail                        |
++-------------------------------------------------------------------+
+```
+
+---
+
+## Patterns to Follow
+
+### Pattern 1: Room-Based WebSocket Routing
+
+**What:** Partition WebSocket connections by session/room ID
+
+**When:** Multi-user sessions where messages should only reach participants
+
+**Implementation:**
+
+```typescript
+// src/rooms/manager.ts
+interface Room {
+  id: string;           // e.g., "abc123" (6-char code)
+  hostId: string;       // Socket ID of session starter
+  clients: Set<string>; // Socket IDs of all participants
+  yjsDoc: Y.Doc;        // Shared Yjs document for this room
+  state: SessionState;  // Room-scoped session state
+  createdAt: number;
+}
+
+// Room code generation
+function generateRoomCode(): string {
+  return crypto.randomBytes(3).toString('hex'); // "a1b2c3"
+}
+
+// Room joining
+socket.on('join_room', (roomCode: string, userName: string) => {
+  const room = rooms.get(roomCode);
+  if (!room) {
+    socket.emit('error', { message: 'Room not found' });
+    return;
+  }
+  socket.join(roomCode);
+  room.clients.add(socket.id);
+  // Broadcast user joined to room
+  io.to(roomCode).emit('user_joined', { id: socket.id, name: userName });
+});
+```
+
+### Pattern 2: Yjs Integration with Existing State
+
+**What:** Layer Yjs CRDT on top of existing broadcast mechanism
+
+**When:** Need conflict-free sync for canvas and notes
+
+**Implementation:**
+
+```typescript
+// src/server/yjs-websocket.ts
+import { setupWSConnection } from 'y-websocket/bin/utils';
+import * as Y from 'yjs';
+
+// One Yjs doc per room
+const roomDocs = new Map<string, Y.Doc>();
+
+function getOrCreateDoc(roomId: string): Y.Doc {
+  if (!roomDocs.has(roomId)) {
+    const doc = new Y.Doc();
+
+    // Set up shared types
+    const canvasElements = doc.getArray('canvas');
+    const notesText = doc.getText('notes');
+
+    // Observe changes for Claude awareness
+    canvasElements.observe(event => {
+      // Notify MCP server of canvas changes
+      broadcastToRoom(roomId, {
+        type: 'canvas_yjs_update',
+        changes: event.changes
+      });
+    });
+
+    roomDocs.set(roomId, doc);
+  }
+  return roomDocs.get(roomId)!;
+}
+```
+
+### Pattern 3: Voice Input with Graceful Degradation
+
+**What:** Support both API and local Whisper transcription
+
+**When:** Voice input feature with cost/privacy tradeoffs
+
+**Implementation:**
+
+```typescript
+// src/voice/handler.ts
+interface TranscriptionResult {
+  text: string;
+  confidence: number;
+  source: 'api' | 'local';
+}
+
+async function transcribe(audio: Buffer): Promise<TranscriptionResult> {
+  // Try local first if available
+  if (localWhisperAvailable) {
+    try {
+      const result = await localWhisper.transcribe(audio);
+      return { text: result.text, confidence: result.confidence, source: 'local' };
+    } catch (e) {
+      console.warn('Local Whisper failed, falling back to API');
+    }
+  }
+
+  // Fall back to OpenAI API
+  if (process.env.OPENAI_API_KEY) {
+    const result = await openaiWhisper.transcribe(audio);
+    return { text: result.text, confidence: 0.95, source: 'api' };
+  }
+
+  throw new Error('No transcription backend available');
+}
+```
+
+---
+
+## Anti-Patterns to Avoid
+
+### Anti-Pattern 1: Polling for Sync
+
+**What:** Using HTTP polling instead of WebSocket push
+
+**Why bad:** High latency, wasted bandwidth, poor UX
+
+**Instead:** Use existing WebSocket infrastructure with Yjs for real-time sync
+
+### Anti-Pattern 2: Full State Broadcast
+
+**What:** Broadcasting entire canvas state on every change
+
+**Why bad:** O(n) bandwidth per change, doesn't scale
+
+**Instead:** Yjs sends incremental updates (deltas only)
+
+### Anti-Pattern 3: Server-Authoritative Canvas State
+
+**What:** Making server the single source of truth for all edits
+
+**Why bad:**
+- High latency for drawing (must wait for server)
+- Server bottleneck
+- Offline editing impossible
+
+**Instead:**
+- CRDT (Yjs) allows local-first editing
+- Server is relay, not authority
+- Automatic conflict resolution
+
+### Anti-Pattern 4: Storing Audio in Memory
+
+**What:** Keeping uploaded audio blobs in Node.js memory
+
+**Why bad:** Memory exhaustion, no persistence
+
+**Instead:**
+- Stream directly to Whisper
+- Or write to temp file, delete after transcription
+
+### Anti-Pattern 5: Single Global Session State
+
+**What:** Using the existing singleton `sessionState` for multi-room
+
+**Why bad:** All rooms share same phase/turn count
+
+**Instead:** Room-scoped state: `room.state: SessionState`
+
+---
+
+## Build Order (Dependencies)
+
+The following phases represent logical groupings based on dependencies:
+
+```
+Phase 1: Room Infrastructure
++-- Room Manager (rooms/manager.ts)
++-- Join code generation
++-- Room-scoped WebSocket routing
++-- Host/Guest role assignment
+    |
+    | Depends on nothing new (uses existing WebSocket)
+    v
+Phase 2: Multi-Client Sync (Yjs)
++-- y-websocket server integration
++-- Yjs provider in viewer
++-- Canvas sync via Y.Array
++-- Notes sync via Y.Text
+    |
+    | Depends on: Phase 1 (room routing)
+    v
+Phase 3: User Awareness
++-- Cursor positions (y-protocols/awareness)
++-- User presence list
++-- User colors/names
++-- "User X is typing" indicators
+    |
+    | Depends on: Phase 2 (Yjs infrastructure)
+    v
+Phase 4: Voice Input
++-- MediaRecorder client component
++-- Voice upload endpoint
++-- Whisper integration (API first, local optional)
++-- Transcription injection to Claude
+    |
+    | Depends on: Phase 1 (room context for who's speaking)
+    v
+Phase 5: Document Gallery
++-- File upload endpoint
++-- Gallery storage (.pipeline/gallery/)
++-- Metadata sync
++-- Thumbnail generation
++-- Gallery UI component
+    |
+    | Depends on: Phase 2 (Yjs for metadata sync)
+```
+
+### Critical Path
+
+```
+Room Manager --> Yjs Integration --> Voice Input
+                       |
+                       +--> Document Gallery
+```
+
+Voice input and document gallery can be built in parallel after Yjs integration is complete.
+
+---
+
+## Scalability Considerations
+
+| Concern | At 2-5 users | At 10-20 users | At 100+ users |
+|---------|--------------|----------------|---------------|
+| WebSocket connections | Single Node.js | Single Node.js | Need horizontal scaling |
+| Yjs sync | Direct broadcast | Direct broadcast | Consider y-redis for pub/sub |
+| Voice transcription | OpenAI API | OpenAI API (rate limits) | Local Whisper required |
+| Document storage | Local filesystem | Local filesystem | Object storage (S3) |
+| Canvas elements | Full Yjs doc | Full Yjs doc | May need doc sharding |
+
+**For MVP (2-5 users):** Single server architecture is sufficient. No need for Redis, horizontal scaling, or complex infrastructure.
+
+---
+
+## Technology Recommendations
+
+### Multi-Client Sync
+
+| Technology | Recommendation | Rationale |
+|------------|---------------|-----------|
+| **Yjs** | USE | CRDT with Excalidraw support, proven ecosystem |
+| **y-websocket** | USE | Official Yjs WebSocket provider |
+| **y-protocols/awareness** | USE | Cursor sync, user presence |
+| OT (custom) | AVOID | High complexity, no library support |
+| Firebase | AVOID | Vendor lock-in, overkill for local-first |
+
+### Voice Transcription
+
+| Technology | Recommendation | Rationale |
+|------------|---------------|-----------|
+| **OpenAI Whisper API** | USE (primary) | Accurate, simple integration |
+| **whisper.cpp (node binding)** | USE (fallback) | Free, private, offline capable |
+| Browser WebSpeech API | AVOID | Inconsistent, requires online |
+| Google Cloud Speech | AVOID | More complex than Whisper API |
+
+### Document Storage
+
+| Technology | Recommendation | Rationale |
+|------------|---------------|-----------|
+| **Local filesystem** | USE (MVP) | Simple, fits existing pattern |
+| SQLite | CONSIDER (future) | Better metadata queries |
+| S3-compatible | CONSIDER (future) | If scaling beyond single host |
+
+---
+
+## Sources (Multi-User Architecture Section)
+
+### Multi-User WebSocket Architecture
+- [Socket.IO Rooms Documentation](https://socket.io/docs/v3/rooms/)
+- [Scalable WebSocket Architecture - Hathora](https://blog.hathora.dev/scalable-websocket-architecture/)
+- [WebSocket Architecture Best Practices - Ably](https://ably.com/topic/websocket-architecture-best-practices)
+
+### CRDT and Yjs
+- [y-websocket Documentation](https://docs.yjs.dev/ecosystem/connection-provider/y-websocket)
+- [Yjs GitHub - y-websocket](https://github.com/yjs/y-websocket)
+- [Building Real-Time Collaboration with OT vs CRDT](https://www.tiny.cloud/blog/real-time-collaboration-ot-vs-crdt/)
+- [Google Docs Architecture: OT vs CRDTs](https://sderay.com/google-docs-architecture-real-time-collaboration/)
+
+### Voice/Whisper Integration
+- [Whisper AI Transcribe Audio JavaScript - AssemblyAI](https://www.assemblyai.com/blog/whisper-ai-transcibe-audio-javascript)
+- [Offline Speech Recognition with Whisper: Browser + Node.js](https://www.assemblyai.com/blog/offline-speech-recognition-whisper-browser-node-js)
+- [WhisperLive - Collabora GitHub](https://github.com/collabora/WhisperLive)
+
+### Collaborative Whiteboard Patterns
+- [Nextcloud Whiteboard GitHub](https://github.com/nextcloud/whiteboard)
+- [Building Real-Time Collaborative Whiteboard - Medium](https://medium.com/@adredars/building-a-real-time-collaborative-whiteboard-backend-with-nestjs-and-socket-io-2229f7bf73bd)

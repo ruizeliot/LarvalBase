@@ -1,574 +1,333 @@
-# Visual Brainstorming Techniques Stack
+# Technology Stack: Multi-User Collaboration Milestone
 
-**Project:** AI Visual Brainstorming Assistant
-**Researched:** 2026-01-26
-**Dimension:** Visual Techniques Inventory
+**Project:** AI Visual Brainstorming Assistant - Multi-User Extension
+**Researched:** 2026-01-27
+**Milestone:** Adding multi-user collaboration, voice input, and document handling
 
 ---
 
 ## Executive Summary
 
-This document catalogs visual brainstorming techniques an AI facilitator should employ when externalizing user thinking onto an Excalidraw canvas. Each technique has specific **trigger conditions** (when to use it) and **complexity guidance** (how elaborate to make it).
+This stack research focuses on **additions** to the existing Live Canvas MCP system. The existing stack (React 18, Vite, Excalidraw, WebSocket via `ws`, Zustand, TypeScript) remains unchanged. This document recommends specific libraries for:
 
-The goal: The AI acts as a "language extension" - proactively converting verbal ideas into visual diagrams without requiring the user to ask.
+1. **Voice transcription** - OpenAI Whisper API (not self-hosted)
+2. **Multi-user sync** - Socket.IO rooms (extend existing WebSocket)
+3. **Document handling** - react-dropzone + local filesystem storage
 
----
-
-## Technique Categories
-
-Visual brainstorming techniques fall into five functional categories:
-
-| Category | Purpose | Example Techniques |
-|----------|---------|-------------------|
-| **Divergent** | Generate many ideas | Mind maps, lotus blossom, starbursting |
-| **Convergent** | Narrow/prioritize ideas | 2x2 matrices, voting dots, affinity diagrams |
-| **Relational** | Show connections | Concept maps, Venn diagrams, fishbone |
-| **Sequential** | Show order/flow | User flows, timelines, storyboards |
-| **Structural** | Show hierarchy/composition | Tree diagrams, wireframes, canvases |
+**Key decision:** Use Socket.IO rooms instead of Yjs/CRDT for multi-user sync because the existing single-user WebSocket sync already handles canvas state. We need session/room management, not conflict resolution.
 
 ---
 
-## Technique Inventory
+## Existing Stack (DO NOT CHANGE)
 
-### 1. Mind Map
-
-**What it is:** Radial diagram with central topic and branching subtopics. Fast, intuitive, non-linear.
-
-**When to use (Triggers):**
-- User mentions a broad topic for the first time ("Let's brainstorm about X")
-- User lists multiple related ideas without structure
-- Early exploration phase - idea quantity matters more than organization
-- User seems overwhelmed by complexity ("there's so much to think about")
-
-**Complexity guidance:**
-- **Simple (3-5 branches):** Initial exploration, single-session brainstorm
-- **Medium (6-12 branches, 2 levels deep):** Comprehensive topic exploration
-- **Elaborate (3+ levels):** Only if user explicitly wants depth; can overwhelm
-
-**Excalidraw implementation:**
-- Central rectangle/ellipse with topic
-- Lines radiating outward
-- Child nodes as smaller rectangles
-- Color-code branches by theme
-
-**Source:** [Mindmaps.com - How to Brainstorm with Mind Maps](https://www.mindmaps.com/how-to-brainstorm-with-mind-maps/), [Creately - Visual Brainstorming Techniques](https://creately.com/guides/visual-brainstorming-techniques/)
+| Component | Current | Version | Status |
+|-----------|---------|---------|--------|
+| Frontend Framework | React | ^18.2.0 | Keep |
+| Build Tool | Vite | ^5.0.0 | Keep |
+| Canvas | Excalidraw | ^0.17.0 | Keep |
+| State Management | Zustand | ^4.5.0 | Keep |
+| WebSocket (Server) | ws | ^8.16.0 | Extend |
+| MCP Server | @modelcontextprotocol/sdk | ^1.0.0 | Keep |
+| Language | TypeScript | ^5.3.0 | Keep |
 
 ---
 
-### 2. Concept Map
+## New Stack Additions
 
-**What it is:** Network of concepts connected by labeled relationships. More structured than mind maps; shows HOW ideas relate.
+### 1. Voice Transcription: OpenAI Whisper API
 
-**When to use (Triggers):**
-- User asks "how does X relate to Y?"
-- Need to show cause-effect or dependency relationships
-- Complex domain with multiple interconnections
-- User needs to understand existing systems before ideating
+**Recommendation:** Use OpenAI Whisper API, not self-hosted Whisper.
 
-**Complexity guidance:**
-- **Simple (5-8 nodes):** Single relationship exploration
-- **Medium (10-20 nodes):** System understanding
-- **Elaborate (20+ nodes):** Only for detailed analysis; becomes hard to read
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| OpenAI Whisper API | whisper-1 | Speech-to-text transcription |
+| MediaRecorder API | Browser native | Audio capture (push-to-talk) |
 
-**Excalidraw implementation:**
-- Rectangles for concepts
-- Labeled arrows showing relationships (verbs on arrows)
-- Allow cross-links unlike mind maps
-- Group related concepts spatially
+**Why Whisper API over self-hosted:**
 
-**Source:** [Creately - Concept Map vs Mind Map](https://creately.com/guides/concept-map-vs-mind-map/), [XMind - Concept Map vs Mind Map](https://xmind.com/blog/concept-map-vs-mind-map)
+| Factor | API | Self-Hosted |
+|--------|-----|-------------|
+| Cost | $0.006/min (~$0.36/hr) | $276+/month GPU infrastructure |
+| Setup | API key only | GPU provisioning, model deployment |
+| Latency | 4-7 seconds per request | 380-520ms (but needs infrastructure) |
+| EN/FR detection | Built-in, near-100% accurate | Same model, but you manage it |
+| Maintenance | Zero | Model updates, scaling, monitoring |
 
----
+**For a brainstorming app with occasional voice input, API is clearly better.** Self-hosting only makes sense at 3,000+ hours/month of transcription.
 
-### 3. 2x2 Prioritization Matrix
+**Language auto-detection:** Whisper achieves 2.7% Word Error Rate on English and maintains 3-8% WER on French. Auto-detection uses the first 30 seconds of audio and is near-100% accurate for English/French.
 
-**What it is:** Four-quadrant grid with two axes (typically Effort vs. Value, Urgency vs. Importance).
+**Browser audio format:** MediaRecorder produces WebM/Opus format (`audio/webm;codecs=opus`), which is directly accepted by Whisper API - no conversion needed.
 
-**When to use (Triggers):**
-- User has multiple ideas and needs to prioritize
-- User asks "which should we do first?"
-- Decision paralysis - too many options
-- Resource constraints mentioned ("we can't do everything")
-- Comparing tradeoffs
+**Confidence:** HIGH
+- Source: [OpenAI Speech-to-Text Docs](https://platform.openai.com/docs/guides/speech-to-text)
+- Source: [Whisper API Pricing Analysis](https://brasstranscripts.com/blog/openai-whisper-api-pricing-2025-self-hosted-vs-managed)
+- Source: [Whisper Language Support](https://github.com/openai/whisper)
 
-**Complexity guidance:**
-- **Always simple:** 4 quadrants, clearly labeled axes
-- Never elaborate - the power is in simplicity
-- Limit to 8-12 items plotted; more becomes unreadable
+### 2. Multi-User Sync: Socket.IO Rooms
 
-**Quadrant naming (Effort vs. Value):**
-| Quadrant | Label | Action |
-|----------|-------|--------|
-| High Value / Low Effort | Quick Wins | Do first |
-| High Value / High Effort | Big Bets | Do next |
-| Low Value / Low Effort | Maybes | Do if time |
-| Low Value / High Effort | Time Sinks | Don't do |
+**Recommendation:** Socket.IO for session/room management. NOT Yjs.
 
-**Excalidraw implementation:**
-- Large rectangle divided into 4
-- Axis labels on edges
-- Small rectangles/ellipses for each item
-- Position items by plotting coordinates
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| socket.io | ^4.8.3 | Server-side WebSocket with rooms |
+| socket.io-client | ^4.8.1 | Client-side WebSocket |
 
-**Source:** [ProductPlan - 2x2 Prioritization Matrix](https://www.productplan.com/glossary/2x2-prioritization-matrix/), [Miro - 2x2 Prioritization Matrix](https://miro.com/templates/2x2-prioritization-matrix/), [NN/g - Prioritization Matrices](https://www.nngroup.com/articles/prioritization-matrices/)
+**Why Socket.IO rooms over Yjs/CRDT:**
 
----
+| Factor | Socket.IO Rooms | Yjs CRDT |
+|--------|-----------------|----------|
+| What it solves | Session management, user presence | Conflict-free merging |
+| Existing WebSocket | Integrates easily | Requires rewrite |
+| Complexity | Low - just add rooms | High - new mental model |
+| Overkill? | No - matches our need | Yes - we already have sync |
 
-### 4. Affinity Diagram (Clustering)
+**The key insight:** The existing Live Canvas MCP already broadcasts canvas updates via WebSocket. Multi-user means:
+1. **Session rooms** - Multiple users join the same "room"
+2. **User presence** - Who's online, cursor positions
+3. **Message routing** - Broadcast to room, not to all
 
-**What it is:** Grouping related ideas into themed clusters. Reveals patterns in unstructured data.
+Socket.IO provides exactly these features with minimal code changes. Yjs would replace the existing sync mechanism entirely - unnecessary work.
 
-**When to use (Triggers):**
-- User has generated 10+ unrelated ideas
-- Ideas feel scattered/chaotic
-- Looking for patterns in brainstorm output
-- Post-brainstorm synthesis phase
-- User says "how do these all fit together?"
+**Socket.IO room features we'll use:**
+- `socket.join(roomId)` - User joins a session
+- `io.to(roomId).emit(event, data)` - Broadcast to room only
+- Built-in reconnection and error handling
+- Cross-tab communication support
 
-**Complexity guidance:**
-- **Simple (3-5 clusters):** Quick synthesis
-- **Medium (6-10 clusters):** Comprehensive analysis
-- **Elaborate (10+ clusters):** Only for very large datasets (40+ items)
+**Confidence:** HIGH
+- Source: [Socket.IO Rooms Documentation](https://socket.io/docs/v3/rooms/)
+- Source: [Socket.IO npm](https://www.npmjs.com/package/socket.io)
 
-**Excalidraw implementation:**
-- Group sticky-note-style rectangles
-- Draw loose boundaries around clusters
-- Add cluster labels above groups
-- Use color to distinguish clusters
+### 3. Document/Image Gallery: react-dropzone + Local Storage
 
-**Source:** [IxDF - Affinity Diagrams](https://www.interaction-design.org/literature/article/affinity-diagrams-learn-how-to-cluster-and-bundle-ideas-and-facts), [ASQ - What is an Affinity Diagram](https://asq.org/quality-resources/affinity), [Figma - What is an Affinity Diagram](https://www.figma.com/resource-library/what-is-an-affinity-diagram/)
+**Recommendation:** react-dropzone for upload UI, local filesystem for storage.
 
----
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| react-dropzone | ^14.3.8 | Drag-drop file upload UI |
+| (built-in) fs | Node.js native | Server-side file storage |
 
-### 5. Starbursting (6 W's)
+**Why react-dropzone:**
+- Simple hook-based API (`useDropzone`)
+- TypeScript support
+- Works with existing Vite/React setup
+- 4,400+ projects use it
+- No file upload backend required - just delivers File objects
 
-**What it is:** Star with 6 points representing Who, What, When, Where, Why, How.
+**Why local filesystem over cloud storage:**
+- This is a local-first brainstorming tool
+- Files are session-scoped, not permanent
+- No need for CDN/cloud complexity
+- Existing MCP server already writes to filesystem (brainstorm-notes.md)
 
-**When to use (Triggers):**
-- User has settled on ONE idea to explore deeply
-- Need comprehensive analysis of a single concept
-- Validating/stress-testing an idea
-- User asks "what questions should we answer about this?"
+**Storage pattern:**
+```
+.planning/
+├── sessions/
+│   └── {sessionId}/
+│       ├── documents/
+│       │   ├── image1.png
+│       │   └── doc1.pdf
+│       └── session-state.json
+```
 
-**Complexity guidance:**
-- **Always medium:** 6 points with 3-5 questions each
-- Never simple (defeats purpose) or elaborate (loses focus)
+**Supported file types:**
+- Images: PNG, JPG, GIF, WebP (for canvas/visual reference)
+- Documents: PDF, TXT, MD (for context upload)
+- Size limit: 10MB per file (reasonable for brainstorming materials)
 
-**Excalidraw implementation:**
-- Central shape with the idea
-- 6 radiating lines to question categories
-- Questions branch from each category
-- Color-code by question type
-
-**Source:** [SessionLab - Brainstorming Techniques](https://www.sessionlab.com/blog/brainstorming-techniques/), [Box - Visual Brainstorming Techniques](https://blog.box.com/best-visual-brainstorming-techniques)
-
----
-
-### 6. Lotus Blossom
-
-**What it is:** 3x3 grid with central idea, surrounded by 8 related themes, each of which spawns 8 more ideas.
-
-**When to use (Triggers):**
-- Need systematic idea expansion
-- User wants to explore multiple facets of one concept
-- Looking for unexpected connections
-- Deep-dive on a focused topic
-
-**Complexity guidance:**
-- **Simple (center + 8):** Quick expansion
-- **Full (center + 8 + 64):** Complete lotus blossom; time-intensive
-- Only go full when user commits to deep exploration
-
-**Excalidraw implementation:**
-- 3x3 grid in center
-- 8 surrounding 3x3 grids
-- Color-code levels
-- Keep spacing consistent
-
-**Source:** [SessionLab - Brainstorming Techniques](https://www.sessionlab.com/blog/brainstorming-techniques/)
+**Confidence:** HIGH
+- Source: [react-dropzone Documentation](https://react-dropzone.js.org/)
+- Source: [react-dropzone npm](https://www.npmjs.com/package/react-dropzone)
 
 ---
 
-### 7. User Flow Diagram
+## Installation Commands
 
-**What it is:** Sequential diagram showing steps a user takes to accomplish a task.
+```bash
+# Server-side (MCP server)
+npm install socket.io@^4.8.3
 
-**When to use (Triggers):**
-- User describes a process or journey
-- Discussing how someone will use something
-- Planning interactions/screens
-- User asks "how will this work?"
+# Client-side (viewer)
+npm install socket.io-client@^4.8.1 react-dropzone@^14.3.8
+```
 
-**Complexity guidance:**
-- **Simple (3-5 steps):** Core happy path only
-- **Medium (6-10 steps):** Happy path + key decision points
-- **Elaborate (10+ steps with branches):** Full flow with error handling
-
-**Excalidraw implementation:**
-- Rounded rectangles for steps
-- Diamonds for decisions
-- Arrows showing flow direction
-- Swimlanes if multiple actors
-
-**Source:** [CareerFoundry - User Flows vs Wireframes](https://careerfoundry.com/en/blog/ux-design/user-flows-vs-wireframes/), [Figma - What is a User Flow](https://www.figma.com/resource-library/user-flow/), [NN/g - Wireflows](https://www.nngroup.com/articles/wireflows/)
+**No additional dependencies for:**
+- Whisper API - Use native `fetch()` with OpenAI endpoint
+- MediaRecorder - Browser native API
+- File storage - Node.js native `fs`
 
 ---
 
-### 8. Timeline / Roadmap
+## Integration Architecture
 
-**What it is:** Linear representation of events or milestones over time.
+### Voice Input Flow
 
-**When to use (Triggers):**
-- User mentions sequence of events
-- Planning phased rollout
-- Historical analysis
-- User asks "when should we do each thing?"
+```
+[Browser: Push-to-Talk Button]
+         │
+         ▼
+[MediaRecorder: Start/Stop]
+         │
+         ▼
+[WebM/Opus Audio Blob]
+         │
+         ▼
+[Socket.IO: Send to Server]
+         │
+         ▼
+[MCP Server: Relay to OpenAI]
+         │
+         ▼
+[Whisper API: Transcribe]
+         │
+         ▼
+[Response: Text + Detected Language]
+         │
+         ▼
+[Socket.IO: Broadcast to Room]
+         │
+         ▼
+[All Clients: Display Transcription]
+```
 
-**Complexity guidance:**
-- **Simple (3-5 items):** Quick overview
-- **Medium (6-12 items):** Detailed plan
-- **Elaborate (multiple tracks):** Only if multiple parallel workstreams
+### Multi-User Session Flow
 
-**Excalidraw implementation:**
-- Horizontal line as axis
-- Vertical markers for milestones
-- Labels above/below line
-- Can use swimlanes for parallel tracks
+```
+[Host: Start Session]
+         │
+         ▼
+[Server: Generate sessionId]
+         │
+         ▼
+[Host: Share URL with sessionId]
+         │
+[Guest 1: Connect]    [Guest 2: Connect]
+         │                    │
+         ▼                    ▼
+[Socket.IO: Join Room]  [Socket.IO: Join Room]
+         │                    │
+         └────────┬───────────┘
+                  ▼
+[Room: All connected, presence synced]
+                  │
+                  ▼
+[Canvas/Voice/Docs: Broadcast to room]
+```
 
-**Source:** [Miro - Timeline Templates](https://miro.com/templates/timeline/), [Draw.io - Timeline Diagrams](https://www.drawio.com/blog/timeline-diagrams)
+### Document Gallery Flow
 
----
-
-### 9. SWOT Analysis
-
-**What it is:** 2x2 grid showing Strengths, Weaknesses, Opportunities, Threats.
-
-**When to use (Triggers):**
-- Evaluating a strategy, product, or decision
-- User mentions competitive analysis
-- Assessing internal vs external factors
-- User asks "what are the pros and cons?"
-
-**Complexity guidance:**
-- **Always medium:** 4 quadrants with 3-5 items each
-- More items per quadrant becomes cluttered
-
-**Excalidraw implementation:**
-- Large rectangle divided into 4
-- Label quadrants S/W/O/T
-- Color-code: S=green, W=red, O=blue, T=orange
-- Bullet points or sticky notes in each
-
-**Source:** [Asana - SWOT Analysis](https://asana.com/resources/swot-analysis), [Miro - SWOT Analysis Templates](https://miro.com/strategic-planning/swot-analysis-examples/)
-
----
-
-### 10. Fishbone (Ishikawa) Diagram
-
-**What it is:** Cause-and-effect diagram shaped like a fish skeleton. Categories branch off main spine.
-
-**When to use (Triggers):**
-- User identifies a problem to solve
-- Root cause analysis needed
-- User asks "why is this happening?"
-- Debugging/troubleshooting scenarios
-
-**Complexity guidance:**
-- **Simple (4-6 bones):** Quick analysis
-- **Medium (6 bones with sub-branches):** Standard analysis
-- **Elaborate (deep sub-branches):** Complex problems only
-
-**Standard categories (6 M's):**
-- Methods, Machines, Materials, Measurements, Mother Nature (Environment), Manpower (People)
-
-**Excalidraw implementation:**
-- Horizontal arrow pointing right (spine)
-- Diagonal lines angling back (major causes)
-- Sub-branches for specific causes
-- Problem statement at fish head
-
-**Source:** [ASQ - What is a Fishbone Diagram](https://asq.org/quality-resources/fishbone), [Kaizen - Ishikawa Diagram](https://kaizen.com/insights/ishikawa-diagram-root-cause-analysis/)
-
----
-
-### 11. Venn Diagram
-
-**What it is:** Overlapping circles showing shared and unique characteristics.
-
-**When to use (Triggers):**
-- Comparing 2-3 things
-- Finding common ground
-- User asks "what do these have in common?"
-- Identifying sweet spots/intersections
-
-**Complexity guidance:**
-- **Simple (2 circles):** Basic comparison
-- **Medium (3 circles):** Three-way comparison
-- **Never more than 3:** Becomes visually confusing
-
-**Excalidraw implementation:**
-- Large overlapping ellipses
-- Labels in unique areas
-- Shared items in overlap
-- Color-code circles
-
-**Source:** [Lucidchart - Venn Diagram Guide](https://www.lucidchart.com/pages/tutorial/venn-diagram), [Miro - What is a Venn Diagram](https://miro.com/graphs/what-is-a-venn-diagram/)
+```
+[react-dropzone: File Selected]
+         │
+         ▼
+[Client: Preview + Upload via Socket.IO]
+         │
+         ▼
+[Server: Save to .planning/sessions/{id}/documents/]
+         │
+         ▼
+[Server: Broadcast file metadata to room]
+         │
+         ▼
+[All Clients: Update gallery UI]
+         │
+[User: Drag from Gallery]
+         │
+         ▼
+[AI Message: Include file reference]
+```
 
 ---
 
-### 12. Pros and Cons List
+## What NOT to Add
 
-**What it is:** Two-column comparison of advantages and disadvantages.
-
-**When to use (Triggers):**
-- Binary decision (do X or not?)
-- User weighing options
-- User asks "should we do this?"
-- Simple tradeoff analysis
-
-**Complexity guidance:**
-- **Always simple:** Two columns, 3-7 items each
-- Add weights only if user requests
-
-**Excalidraw implementation:**
-- Rectangle divided vertically
-- "Pros" header (green) and "Cons" header (red)
-- Bullet points in each column
-
-**Source:** [Smartsheet - Pros and Cons Templates](https://www.smartsheet.com/content/pros-vs-cons-template), [Mural - Pros and Cons Template](https://www.mural.co/templates/pros-cons-list)
+| Technology | Why NOT |
+|------------|---------|
+| **Yjs / CRDT** | Overkill - existing WebSocket sync works, we just need rooms |
+| **Whisper self-hosted** | Cost/complexity not justified for occasional voice input |
+| **Cloud storage (S3, etc.)** | Local-first tool doesn't need cloud persistence |
+| **WebRTC peer-to-peer** | Server-mediated sync is simpler and more reliable |
+| **Uppy** | react-dropzone is simpler for our needs |
+| **RecordRTC** | Native MediaRecorder API is sufficient |
+| **opus-media-recorder** | Only needed if targeting old browsers; modern browsers support WebM/Opus |
 
 ---
 
-### 13. Wireframe / Layout Sketch
+## Configuration Requirements
 
-**What it is:** Low-fidelity sketch of a user interface structure.
+### Environment Variables
 
-**When to use (Triggers):**
-- User describes a screen/page/interface
-- Discussing where elements should go
-- User asks "what would this look like?"
-- UI/UX brainstorming
+```env
+# Required for voice transcription
+OPENAI_API_KEY=sk-...
 
-**Complexity guidance:**
-- **Simple (boxes and labels):** Initial concept
-- **Medium (with placeholder text/icons):** Clearer structure
-- **Never high-fidelity:** That's design, not brainstorming
+# Optional: Session configuration
+SESSION_MAX_USERS=10
+SESSION_TIMEOUT_MS=3600000
+MAX_UPLOAD_SIZE_MB=10
+```
 
-**Excalidraw implementation:**
-- Rectangles for content areas
-- Lines for text placeholders
-- X-boxes for images
-- Hand-drawn aesthetic is a feature, not a bug
+### Whisper API Request Format
 
-**Source:** [Balsamiq - Wireflows](https://balsamiq.com/blog/wireflows/), [NN/g - Wireflows](https://www.nngroup.com/articles/wireflows/)
+```typescript
+const transcribe = async (audioBlob: Blob): Promise<TranscriptionResult> => {
+  const formData = new FormData();
+  formData.append('file', audioBlob, 'audio.webm');
+  formData.append('model', 'whisper-1');
+  // Don't specify language - let Whisper auto-detect
 
----
+  const response = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+    },
+    body: formData,
+  });
 
-### 14. Storyboard
-
-**What it is:** Sequential panels showing a narrative/scenario over time.
-
-**When to use (Triggers):**
-- User describes a scenario or user journey
-- Explaining how something will be experienced
-- Presentation planning
-- User asks "walk me through how this works"
-
-**Complexity guidance:**
-- **Simple (3-4 panels):** Quick scenario
-- **Medium (6-8 panels):** Complete journey
-- **Elaborate (10+ panels):** Full experience mapping
-
-**Excalidraw implementation:**
-- Rectangular frames in sequence
-- Stick figures for people
-- Speech/thought bubbles
-- Captions below frames
-
-**Source:** [CareerFoundry - User Flows vs Wireframes](https://careerfoundry.com/en/blog/ux-design/user-flows-vs-wireframes/)
+  return response.json();
+};
+```
 
 ---
 
-### 15. Tree / Hierarchy Diagram
+## Version Verification
 
-**What it is:** Top-down branching structure showing parent-child relationships.
-
-**When to use (Triggers):**
-- User describes categories/subcategories
-- Organizational structure
-- Feature breakdown
-- User asks "what's under this?"
-
-**Complexity guidance:**
-- **Simple (2 levels):** High-level breakdown
-- **Medium (3 levels):** Detailed hierarchy
-- **Elaborate (4+ levels):** Only if essential; loses readability
-
-**Excalidraw implementation:**
-- Rectangles for nodes
-- Lines connecting parent to children
-- Top-to-bottom or left-to-right layout
-- Consistent spacing
-
-**Source:** [Miro - Tree Diagram](https://miro.com/diagramming/what-is-a-tree-diagram/), [Draw.io - Org Charts](https://www.drawio.com/blog/org-charts)
+| Package | Claimed Version | Verification Date | Source |
+|---------|-----------------|-------------------|--------|
+| socket.io | 4.8.3 | 2026-01-27 | [npm](https://www.npmjs.com/package/socket.io) - "last published 23 days ago" |
+| socket.io-client | 4.8.1 | 2026-01-27 | [npm](https://www.npmjs.com/package/socket.io-client) |
+| react-dropzone | 14.3.8 | 2026-01-27 | [npm](https://www.npmjs.com/package/react-dropzone) |
+| yjs (not using) | 13.6.28 | 2026-01-27 | [npm](https://www.npmjs.com/package/yjs) - "last published 11 days ago" |
 
 ---
 
-### 16. Six Thinking Hats
+## Migration Strategy
 
-**What it is:** Structured framework with 6 colored perspectives for examining an idea.
+### Existing WebSocket Code
 
-**When to use (Triggers):**
-- Group decision-making
-- Ensuring all perspectives considered
-- User stuck in one mode of thinking
-- Comprehensive idea evaluation
+**Current (`ws` library):**
+```typescript
+// Server broadcasts to all connected clients
+wss.clients.forEach(client => {
+  client.send(JSON.stringify(update));
+});
+```
 
-**Complexity guidance:**
-- **Always medium:** 6 sections, each with 2-4 points
-- Structure is the value
+**New (Socket.IO rooms):**
+```typescript
+// Server broadcasts to specific room only
+io.to(sessionId).emit('canvas-update', update);
+```
 
-**Hat meanings:**
-| Hat | Focus |
-|-----|-------|
-| White | Facts, data, information |
-| Red | Feelings, intuition, emotions |
-| Yellow | Benefits, optimism, value |
-| Black | Risks, caution, problems |
-| Green | Creativity, alternatives, new ideas |
-| Blue | Process, control, next steps |
+**The change is minimal:** Replace broadcast-to-all with broadcast-to-room.
 
-**Excalidraw implementation:**
-- 6 rectangles or sections
-- Color-coded by hat
-- Space for notes in each
-- Can arrange as circle or grid
+### Backward Compatibility
 
-**Source:** [Creately - Six Thinking Hats](https://creately.com/guides/what-are-the-six-thinking-hats/), [Miro - Six Thinking Hats](https://miro.com/templates/six-thinking-hats/), [De Bono Group - Six Thinking Hats](https://www.debonogroup.com/services/core-programs/six-thinking-hats/)
-
----
-
-### 17. Canvas Templates (Business Model, Lean, Value Proposition)
-
-**What it is:** Structured multi-section templates for business analysis.
-
-**When to use (Triggers):**
-- Business/product ideation
-- User mentions business model, customers, value
-- Startup/entrepreneurship context
-- User asks "how will this make money?"
-
-**Complexity guidance:**
-- **Always follow template:** 9 sections for BMC, 9 for Lean Canvas
-- Fill progressively; don't need all sections at once
-
-**Lean Canvas sections:**
-1. Problem
-2. Solution
-3. Key Metrics
-4. Unique Value Proposition
-5. Unfair Advantage
-6. Channels
-7. Customer Segments
-8. Cost Structure
-9. Revenue Streams
-
-**Excalidraw implementation:**
-- Pre-divided rectangle
-- Section labels
-- Sticky-note style content
-- Color-code by section type
-
-**Source:** [Miro - Lean Canvas](https://miro.com/templates/lean-canvas/), [Miro - Business Model Canvas](https://miro.com/templates/business-model-canvas/)
-
----
-
-### 18. Comparison Table
-
-**What it is:** Grid comparing multiple options across multiple criteria.
-
-**When to use (Triggers):**
-- User comparing 3+ options
-- Multiple evaluation criteria
-- User asks "how do these compare?"
-- Feature comparison
-
-**Complexity guidance:**
-- **Simple (3 options, 4-5 criteria):** Quick comparison
-- **Medium (5 options, 8-10 criteria):** Detailed analysis
-- **Elaborate (checkmarks, scores):** Only if decision is complex
-
-**Excalidraw implementation:**
-- Table grid
-- Headers for options
-- Row labels for criteria
-- Checkmarks, X's, or text in cells
-
-**Source:** [Smartsheet - Pros and Cons Templates](https://www.smartsheet.com/content/pros-vs-cons-template), [Frill - Feature Prioritization Matrix](https://frill.co/blog/posts/feature-prioritization-matrix)
-
----
-
-## Proactive Trigger Matrix
-
-When should the AI draw WITHOUT being asked? Reference this matrix:
-
-| User Says/Does | AI Should Draw |
-|----------------|----------------|
-| Lists 3+ related ideas | Mind map |
-| Mentions "options" or "choices" | 2x2 matrix or comparison table |
-| Asks "how does X work?" | User flow |
-| Describes a problem | Fishbone diagram |
-| Mentions timeline/phases | Timeline |
-| Compares two things | Venn diagram or pros/cons |
-| Describes a page/screen | Wireframe sketch |
-| Lists unstructured brainstorm output | Affinity diagram |
-| Settles on one idea to explore | Starbursting |
-| Mentions business/revenue | Lean canvas |
-| Asks "what questions should we ask?" | Starbursting |
-| Describes a user scenario | Storyboard |
-| Mentions categories | Tree diagram |
-| Seems stuck on one perspective | Six thinking hats |
-
----
-
-## Complexity Decision Framework
-
-**Default to simple.** Elaborate only when:
-
-1. **User explicitly requests more detail**
-2. **Topic genuinely requires depth** (complex system, many interdependencies)
-3. **User will iterate on the diagram** (not one-time reference)
-
-**Warning signs to simplify:**
-- Diagram takes >30 seconds to visually parse
-- User asks "what am I looking at?"
-- More than 50% of canvas is diagram
-- Labels overlap or become unreadable
-
----
-
-## Anti-Patterns to Avoid
-
-| Anti-Pattern | Why It's Bad | Instead |
-|--------------|--------------|---------|
-| Drawing elaborate diagrams unprompted | Overwhelming; user didn't ask | Start simple, offer to expand |
-| Using wrong technique for situation | Confuses rather than clarifies | Match technique to trigger |
-| Multiple diagrams simultaneously | Cognitive overload | One diagram at a time |
-| Over-decorating | Distracts from content | Hand-drawn aesthetic is fine |
-| Forcing technique when user has own method | Breaks user's mental model | Adapt to user's framing |
-
----
-
-## Cognitive Load Considerations
-
-Visual diagrams reduce cognitive load by externalizing information from working memory. However:
-
-- **Working memory limit:** ~4 unfamiliar items at once
-- **Chunking helps:** Group related items visually
-- **Labels matter:** Clear labels reduce parsing effort
-- **Progressive disclosure:** Show summary first, detail on request
-
-**Research support:** "By cognitively offloading the internal information as a rich picture, an individual can distribute the processing of that information to hopefully free up some cognitive resources." - [DTIC Research Note](https://apps.dtic.mil/sti/pdfs/AD1124593.pdf)
+- Single-user mode continues to work (room of 1)
+- Existing canvas sync protocol unchanged
+- New features (voice, docs) are additive
 
 ---
 
@@ -576,33 +335,45 @@ Visual diagrams reduce cognitive load by externalizing information from working 
 
 | Area | Confidence | Reason |
 |------|------------|--------|
-| Technique inventory | HIGH | Multiple authoritative sources (IxDF, NN/g, ASQ) |
-| Trigger conditions | MEDIUM | Derived from established use cases, not empirical testing |
-| Complexity guidance | MEDIUM | Based on UX principles, needs user testing |
-| Excalidraw implementation | HIGH | Direct mapping to available shapes |
+| Whisper API choice | HIGH | Clear cost/complexity analysis, official docs |
+| Socket.IO rooms | HIGH | Mature library, matches existing architecture |
+| react-dropzone | HIGH | Industry standard, simple API |
+| Local file storage | MEDIUM | Simple for MVP, may need revisiting for larger sessions |
+| Version numbers | HIGH | Verified via npm search results |
+
+---
+
+## Open Questions for Roadmap
+
+1. **Session persistence:** Should sessions survive server restart? (Currently: no)
+2. **Voice chunk size:** Should we stream audio chunks or wait for complete utterance?
+3. **Document preview:** How to handle PDF preview in gallery? (PDFjs?)
+4. **Cursor sharing:** Do we show other users' cursors on canvas? (Excalidraw supports this)
 
 ---
 
 ## Sources
 
-### Brainstorming Techniques
-- [SessionLab - 43 Brainstorming Techniques](https://www.sessionlab.com/blog/brainstorming-techniques/)
-- [Asana - 29 Brainstorming Techniques](https://asana.com/resources/brainstorming-techniques)
-- [Creately - Visual Brainstorming Techniques](https://creately.com/guides/visual-brainstorming-techniques/)
-- [Excalidraw - Visual Brainstorming](https://plus.excalidraw.com/use-cases/visual-brainstorming)
+### Voice Transcription
+- [OpenAI Speech-to-Text API Documentation](https://platform.openai.com/docs/guides/speech-to-text)
+- [Whisper API Pricing vs Self-Hosted Costs](https://brasstranscripts.com/blog/openai-whisper-api-pricing-2025-self-hosted-vs-managed)
+- [OpenAI Whisper GitHub](https://github.com/openai/whisper)
+- [AssemblyAI: Whisper Browser + Node.js](https://www.assemblyai.com/blog/offline-speech-recognition-whisper-browser-node-js)
+- [Best STT Models 2026](https://northflank.com/blog/best-open-source-speech-to-text-stt-model-in-2026-benchmarks)
 
-### Design Thinking & Visual Thinking
-- [IxDF - Essential Ideation Techniques](https://www.interaction-design.org/literature/article/introduction-to-the-essential-ideation-techniques-which-are-the-heart-of-design-thinking)
-- [Lucidspark - Visual Thinking vs Design Thinking](https://lucid.co/blog/visual-thinking-vs-design-thinking)
+### Multi-User WebSocket
+- [Socket.IO Official Documentation](https://socket.io/)
+- [Socket.IO Rooms](https://socket.io/docs/v3/rooms/)
+- [Socket.IO npm Package](https://www.npmjs.com/package/socket.io)
+- [Yjs Documentation](https://docs.yjs.dev/) (considered but not recommended)
+- [y-websocket](https://github.com/yjs/y-websocket) (considered but not recommended)
 
-### Specific Techniques
-- [ProductPlan - 2x2 Prioritization Matrix](https://www.productplan.com/glossary/2x2-prioritization-matrix/)
-- [ASQ - Fishbone Diagram](https://asq.org/quality-resources/fishbone)
-- [ASQ - Affinity Diagram](https://asq.org/quality-resources/affinity)
-- [NN/g - Prioritization Matrices](https://www.nngroup.com/articles/prioritization-matrices/)
-- [NN/g - Wireflows](https://www.nngroup.com/articles/wireflows/)
-- [De Bono Group - Six Thinking Hats](https://www.debonogroup.com/services/core-programs/six-thinking-hats/)
+### File Upload
+- [react-dropzone Documentation](https://react-dropzone.js.org/)
+- [react-dropzone GitHub](https://github.com/react-dropzone/react-dropzone)
+- [react-dropzone npm](https://www.npmjs.com/package/react-dropzone)
 
-### Cognitive Load Research
-- [DTIC Research - Visible Thinking](https://apps.dtic.mil/sti/pdfs/AD1124593.pdf)
-- [PMC - Cognitive Mapping for Learning](https://pmc.ncbi.nlm.nih.gov/articles/PMC4994325/)
+### Browser Audio
+- [MediaRecorder API - MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaStream_Recording_API)
+- [Chrome MediaRecorder Blog](https://developer.chrome.com/blog/mediarecorder)
+- [Whisper WebM/Opus Compatibility](https://github.com/openai/whisper/discussions/2292)

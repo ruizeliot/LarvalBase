@@ -516,3 +516,400 @@ Issues that cause friction but are recoverable.
 ### Real-Time Collaboration
 - [Real-Time Canvas Collaboration Best Practices](https://reintech.io/blog/real-time-collaboration-canvas-api)
 - [Building Real-Time Collaborative Whiteboards](https://medium.com/@aydankirk92/building-a-real-time-multi-user-collaborative-whiteboard-using-fabric-js-part-i-23405823ee03)
+
+---
+
+---
+
+# Milestone 2 Pitfalls: Multi-User Collaboration Features
+
+**Context:** Adding multi-user collaboration, voice input, and document handling to existing single-user brainstorming app
+**Researched:** 2026-01-27
+**Confidence:** HIGH (verified with multiple authoritative sources)
+
+---
+
+## Critical Pitfalls (Multi-User)
+
+Mistakes that cause rewrites or major issues when adding multi-user collaboration, voice input, and document handling.
+
+---
+
+### Pitfall M1: Race Condition Window During Client Connection
+
+**What goes wrong:** New clients miss events that occur between fetching initial state and establishing WebSocket connection. The timing window is small but real - if another user adds/modifies elements during this gap, the new client sees stale data and diverges from other clients.
+
+**Why it happens:** Single-user apps fetch state once. Multi-user requires continuous sync. The "fetch state then connect WebSocket" pattern creates a blind spot.
+
+**Consequences:**
+- Clients see different canvas states
+- Changes appear to "disappear" for some users
+- Conflict resolution fails because clients have divergent baselines
+
+**Prevention:**
+1. **Double-fetch strategy:** After WebSocket connects, fetch state again to catch anything missed
+2. **Event buffering:** Buffer WebSocket events until initial state load completes, then replay
+3. **Server-side replay:** Request backlog of events since last known state on connect
+
+**Detection (warning signs):**
+- QA reports "I don't see what they see" intermittently
+- Issues only appear when users join during active editing
+- Problems disappear on page refresh
+
+**Which phase should address:** Phase 3 (Bootstrap) - Build connection protocol correctly from start
+
+**Sources:**
+- [Handling Race Conditions in Real-Time Apps](https://dev.to/mattlewandowski93/handling-race-conditions-in-real-time-apps-49c8)
+- [Excalidraw P2P Collaboration Blog](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)
+
+---
+
+### Pitfall M2: Last-Write-Wins Destroys Concurrent Edits
+
+**What goes wrong:** When two users edit different aspects of the same element concurrently (e.g., one changes color while another moves position), one edit gets silently discarded. Users don't know their work was lost.
+
+**Why it happens:** Single-user apps can use simple state replacement. Extending this to multi-user with "most recent timestamp wins" causes data loss for concurrent changes to the same object.
+
+**Consequences:**
+- User changes "disappear" without warning
+- Trust in the tool erodes ("it loses my work")
+- Requires constant manual verification
+
+**Prevention:**
+1. **Field-level merging:** Track changes at property level, not object level
+2. **Version nonce pattern (Excalidraw approach):** Add `versionNonce` field with random integer; when versions match but data differs, use nonce to deterministically pick winner (all clients converge to same state)
+3. **Accept occasional jank:** For rare same-element-same-moment edits, prioritize convergence over perfect preservation
+
+**Detection (warning signs):**
+- Users report "my change disappeared"
+- Issues correlate with simultaneous editing sessions
+- Problems are rare but high-impact when they occur
+
+**Which phase should address:** Phase 3 (Bootstrap) - Design merge strategy before implementation
+
+**Sources:**
+- [Excalidraw P2P Collaboration Blog](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)
+- [Last Write Wins Problems](https://dev.to/danyson/last-write-wins-a-conflict-resolution-strategy-2al6)
+- [Real-time Collaboration OT vs CRDT](https://www.tiny.cloud/blog/real-time-collaboration-ot-vs-crdt/)
+
+---
+
+### Pitfall M3: Multiplayer Undo/Redo Corrupts State
+
+**What goes wrong:** User A draws circle, User B draws square, User A hits undo - should A's circle disappear? What if B already moved A's circle? Undo in multiplayer is fundamentally different from single-user undo.
+
+**Why it happens:** Single-user undo is a simple stack. Multi-user undo must handle: whose actions to undo, interleaved operations, and cascading dependencies.
+
+**Consequences:**
+- Undo removes other users' work
+- Undo creates impossible states
+- Users afraid to use undo
+
+**Prevention:**
+1. **Clear undo stack on peer updates (Excalidraw approach):** When receiving changes from other users, clear local undo stack. Suboptimal UX but prevents corruption.
+2. **Document the limitation:** Users understand "undo only works for your most recent solo changes"
+3. **Future: Selective undo:** Only undo operations on objects you created/modified (complex to implement)
+
+**Detection (warning signs):**
+- Undo causes other users to lose work
+- State becomes "impossible" after undo
+- Complaints increase with more simultaneous users
+
+**Which phase should address:** Phase 3 (Bootstrap) - Decide on undo strategy upfront; document limitation
+
+**Sources:**
+- [Excalidraw P2P Collaboration Blog](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)
+
+---
+
+### Pitfall M4: iPhone Safari MediaRecorder Audio Format Incompatibility
+
+**What goes wrong:** Voice recording works perfectly on desktop and Android, but audio files from iPhone Safari fail to transcribe with Whisper. The recording appears to succeed but produces unusable audio.
+
+**Why it happens:** iPhone Safari uses different audio codecs and MIME types than other browsers. Chrome produces `audio/webm;codecs=opus`, Firefox produces `audio/ogg;codecs=opus`, but Safari has different defaults that Whisper may not handle well.
+
+**Consequences:**
+- "Voice doesn't work on my phone" complaints
+- Silent failures (recording seems to work, transcription fails)
+- Support burden from iOS users
+
+**Prevention:**
+1. **Smart format detection with fallbacks:** Try formats in order: `audio/webm;codecs=opus`, `audio/webm`, `audio/mp4`, `audio/wav`
+2. **Test on actual iOS devices** (simulators may behave differently)
+3. **Server-side format conversion:** Accept any format, convert to Whisper-friendly format server-side
+
+**Detection (warning signs):**
+- Transcription works on desktop, fails on mobile
+- iOS-specific bug reports
+- Audio files play but don't transcribe
+
+**Which phase should address:** Phase 4 (Implementation) - Test cross-browser during voice feature development
+
+**Sources:**
+- [iPhone Safari MediaRecorder Audio Recording](https://www.buildwithmatija.com/blog/iphone-safari-mediarecorder-audio-recording-transcription)
+- [MediaRecorder API with Whisper Mobile Issues](https://community.openai.com/t/mediarecorder-api-w-whisper-not-working-on-mobile-browsers/866019)
+
+---
+
+### Pitfall M5: File Upload Security Vulnerabilities
+
+**What goes wrong:** Document gallery accepts uploads without proper validation, allowing malicious file uploads. Attackers can upload executable files disguised as documents, or access uploaded files through predictable URLs.
+
+**Why it happens:** Single-user apps can be cavalier about uploads (user only hurts themselves). Multi-user means one user's upload is visible to all - and potentially executable.
+
+**Consequences:**
+- Malware distribution through your app
+- Cross-site scripting via uploaded HTML/SVG
+- Path traversal attacks accessing server files
+- Server compromise via uploaded PHP/executable files
+
+**Prevention:**
+1. **Allowlist file types:** Only accept specific extensions (pdf, png, jpg, docx) - not blacklist
+2. **Validate file content:** Don't trust MIME type headers; inspect actual file bytes
+3. **Store outside web root:** Uploaded files should not be directly URL-accessible
+4. **Rename files:** Use generated UUIDs, not user-provided filenames
+5. **Serve with Content-Disposition: attachment** to prevent browser execution
+
+**Detection (warning signs):**
+- Files with double extensions (.jpg.php) in uploads
+- Unusual file types appearing in gallery
+- Server CPU/memory spikes from uploads
+
+**Which phase should address:** Phase 3 (Bootstrap) - Design secure upload pipeline before implementation
+
+**Sources:**
+- [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
+- [File Upload Vulnerabilities](https://www.acunetix.com/websitesecurity/upload-forms-threat/)
+- [5 Common File Upload Mistakes](https://www.menlosecurity.com/blog/the-5-file-upload-vulnerability-mistakes-youre-making-right-now)
+
+---
+
+## Moderate Pitfalls (Multi-User)
+
+Mistakes that cause delays or technical debt.
+
+---
+
+### Pitfall M6: WebSocket Reconnection Loses Session Context
+
+**What goes wrong:** When WebSocket disconnects and reconnects (network blip, server restart), the client gets a new connection ID. Server can't associate the new connection with the previous session, losing cursor position, room membership, and editing context.
+
+**Prevention:**
+1. **Session tokens:** Include auth/session token in reconnection that maps back to user identity
+2. **Sticky sessions:** Route same client to same server instance
+3. **State recovery protocol:** On reconnect, fetch current state + replay any missed events
+4. **Exponential backoff:** Prevent reconnection storms (1s, 2s, 4s delays with jitter, max 30s)
+
+**Detection:** Users report "I got kicked out" or "had to rejoin the room" frequently
+
+**Which phase should address:** Phase 3 (Bootstrap) - Design reconnection protocol with state recovery
+
+**Sources:**
+- [WebSocket Architecture Best Practices](https://ably.com/topic/websocket-architecture-best-practices)
+- [WebSocket Reconnection Strategies](https://dev.to/hexshift/robust-websocket-reconnection-strategies-in-javascript-with-exponential-backoff-40n1)
+
+---
+
+### Pitfall M7: Broadcast to All Clients Creates Echo Loops
+
+**What goes wrong:** Client sends update to server, server broadcasts to ALL clients including sender, sender applies its own update twice, state diverges.
+
+**Prevention:**
+1. **Exclude sender from broadcast:** Server sends to all clients EXCEPT the one who sent the message
+2. **Message deduplication:** Clients track message IDs and ignore duplicates
+3. **Optimistic updates:** Client applies change locally first; ignores server echo of own message
+
+**Detection:** Elements appear, disappear, then reappear; state "jumps" or "flickers"
+
+**Which phase should address:** Phase 3 (Bootstrap) - Design broadcast protocol correctly
+
+**Sources:**
+- [Java EE WebSockets Multiple Clients](https://www.byteslounge.com/tutorials/java-ee-html5-websockets-with-multiple-clients-example)
+- [Python WebSocket Broadcasting](https://websockets.readthedocs.io/en/stable/topics/broadcast.html)
+
+---
+
+### Pitfall M8: Room/Session Management Memory Leaks
+
+**What goes wrong:** Users join rooms but connections aren't properly cleaned up on disconnect. Room state accumulates, server memory grows, eventually crashes.
+
+**Prevention:**
+1. **Automatic disconnect cleanup:** Remove client from all rooms on WebSocket close
+2. **Heartbeat timeouts:** Drop clients that don't respond to pings within 2x ping interval
+3. **Room lifecycle:** Delete empty rooms after last user leaves (or after timeout)
+4. **Monitor connection counts:** Alert on abnormal growth
+
+**Detection:** Server memory grows over time; connections appear "stuck" in admin view
+
+**Which phase should address:** Phase 3 (Bootstrap) - Design room lifecycle with cleanup
+
+**Sources:**
+- [Socket.IO Rooms Documentation](https://socket.io/docs/v3/rooms/)
+- [WebSocket Rooms and Persistence](https://medium.com/@clozzi12/websocket-rooms-and-message-persistence-87c94debcab6)
+
+---
+
+### Pitfall M9: Whisper 30-Second Chunking Breaks Mid-Sentence
+
+**What goes wrong:** Whisper processes audio in 30-second chunks. If user speaks continuously for 45 seconds, the chunk boundary can split mid-word or mid-sentence, producing garbled transcription at boundaries.
+
+**Prevention:**
+1. **Voice Activity Detection (VAD):** Use VAD to detect speech pauses and chunk on silence, not fixed time
+2. **Overlap processing:** Process chunks with overlap (e.g., 5 second overlap) and deduplicate
+3. **Push-to-talk encourages natural pauses:** UI design that prompts shorter utterances
+
+**Detection:** Transcriptions have missing/garbled words at ~30 second intervals
+
+**Which phase should address:** Phase 4 (Implementation) - Implement VAD-based chunking
+
+**Sources:**
+- [OpenAI Whisper Introduction](https://openai.com/index/whisper/)
+- [Whisper Speech to Text Guide](https://www.videosdk.live/developer-hub/stt/whisper-speech-to-text)
+
+---
+
+### Pitfall M10: LAN Discovery Blocked by Firewalls
+
+**What goes wrong:** Host starts server, shares IP address, but other devices on same network can't connect. Works on some networks, fails on others.
+
+**Why it happens:** Network isolation, guest networks, corporate firewalls, or host firewall blocking inbound connections on the app's port.
+
+**Prevention:**
+1. **Document network requirements:** Clear instructions that devices must be on same LAN segment
+2. **Port guidance:** Tell users which port to allow through firewall
+3. **mDNS/Bonjour fallback:** For friendly device discovery (if supported by network)
+4. **Connection diagnostics:** UI that shows "Server running on port X, reachable at IP Y"
+
+**Detection:** Works on home network, fails at office; works for some users but not others on same network
+
+**Which phase should address:** Phase 4 (Implementation) - Add connection troubleshooting UI
+
+**Sources:**
+- [Local Network Web App Deployment](https://dotscreated.com/deploy-web-app-offline-on-local-network/)
+- [Android Local Network Permission](https://developer.android.com/privacy-and-security/local-network-permission)
+
+---
+
+## Minor Pitfalls (Multi-User)
+
+Mistakes that cause annoyance but are fixable.
+
+---
+
+### Pitfall M11: MediaRecorder Large Chunk Spikes
+
+**What goes wrong:** With timeslice set to 200ms, most chunks are ~75KB, but occasionally chunks spike to 50MB+, causing upload timeouts or memory issues.
+
+**Prevention:**
+1. **Handle large chunks gracefully:** Don't assume consistent chunk sizes
+2. **Stream chunks as they arrive:** Don't buffer entire recording in memory
+3. **Set reasonable timeslice:** Smaller timeslice = more consistent chunk sizes
+
+**Detection:** Occasional upload failures; memory spikes during recording
+
+**Which phase should address:** Phase 4 (Implementation) - Handle edge cases in voice recording
+
+**Sources:**
+- [Dealing with Huge MediaRecorder Chunks](https://blog.addpipe.com/dealing-with-huge-mediarecorder-slices/)
+
+---
+
+### Pitfall M12: Cursor Presence Floods WebSocket
+
+**What goes wrong:** Sending cursor position on every mouse move creates thousands of messages per second, overwhelming server and making collaboration sluggish.
+
+**Prevention:**
+1. **Throttle cursor updates:** Send at most every 50-100ms
+2. **Delta compression:** Only send if cursor moved significantly
+3. **Separate presence channel:** Lower-priority channel for cursors vs. content changes
+
+**Detection:** Network tab shows constant WebSocket traffic; collaboration becomes slow with multiple users
+
+**Which phase should address:** Phase 4 (Implementation) - Throttle presence updates
+
+---
+
+### Pitfall M13: React Component Unmount Kills Recording
+
+**What goes wrong:** User starts voice recording, navigates away (component unmounts), recording is lost. React's lifecycle destroys the MediaRecorder and stream.
+
+**Prevention:**
+1. **Global singleton for recording:** Keep MediaRecorder outside React component lifecycle
+2. **Recording state in context/store:** Persist recording state across navigation
+3. **Warn before navigation:** "Recording in progress, are you sure?"
+
+**Detection:** Recordings lost when user navigates during recording
+
+**Which phase should address:** Phase 4 (Implementation) - Design voice recording as global service
+
+**Sources:**
+- [Engineering Voice Recorder in React](https://medium.com/call-center-studio/engineering-a-seamless-voice-recorder-in-react-overcoming-browser-protocol-limitations-811bb2ad7453)
+
+---
+
+## Phase-Specific Warnings (Multi-User Milestone)
+
+| Phase | Topic | Likely Pitfall | Mitigation |
+|-------|-------|----------------|------------|
+| 3 - Bootstrap | Connection protocol | Race condition window (M1) | Implement double-fetch or event buffering |
+| 3 - Bootstrap | Merge strategy | Last-write-wins data loss (M2) | Use version nonce pattern |
+| 3 - Bootstrap | Undo architecture | Multiplayer undo corruption (M3) | Clear undo stack on peer updates |
+| 3 - Bootstrap | Upload pipeline | Security vulnerabilities (M5) | Allowlist types, validate content, store outside web root |
+| 3 - Bootstrap | Reconnection | Lost session context (M6) | Design recovery protocol with session tokens |
+| 3 - Bootstrap | Broadcast | Echo loops (M7) | Exclude sender from broadcasts |
+| 3 - Bootstrap | Room lifecycle | Memory leaks (M8) | Auto-cleanup on disconnect + heartbeat |
+| 4 - Implement | Voice recording | iOS Safari incompatibility (M4) | Test on real iOS devices, format fallbacks |
+| 4 - Implement | Whisper chunking | Mid-sentence breaks (M9) | Use VAD-based chunking |
+| 4 - Implement | LAN hosting | Firewall blocking (M10) | Connection diagnostics UI |
+| 4 - Implement | MediaRecorder | Large chunk spikes (M11) | Stream chunks, handle variable sizes |
+| 4 - Implement | Cursor presence | WebSocket flooding (M12) | Throttle updates |
+| 4 - Implement | Voice UI | Recording lost on unmount (M13) | Global singleton pattern |
+
+---
+
+## Integration Pitfalls with Existing System
+
+These pitfalls are specific to adding multi-user features to your existing single-user brainstorming app.
+
+### Existing WebSocket Assumes Single Client
+
+**Current state:** WebSocket sync exists but assumes one client. Broadcasting to multiple clients will require:
+- Client registry/room management
+- Sender exclusion from broadcasts
+- Connection lifecycle management
+
+**Risk:** Existing single-client code may have implicit assumptions that break silently with multiple clients.
+
+**Mitigation:** Audit existing WebSocket handlers for multi-client compatibility before adding features.
+
+### Existing Canvas State Assumes Local Authority
+
+**Current state:** Excalidraw canvas with AI-driven updates assumes local state is authoritative.
+
+**Risk:** When multiple clients exist, "who is authoritative?" becomes ambiguous. AI updates from one client may conflict with user actions on another.
+
+**Mitigation:** Decide on authority model - server-authoritative with client prediction, or peer-to-peer with conflict resolution.
+
+### Existing Session Has No User Identity
+
+**Current state:** Single-user app may not have user identification.
+
+**Risk:** Multi-user features need to know WHO made each change (for presence, for "undo my changes", for permissions).
+
+**Mitigation:** Add lightweight user identity (even just random color + generated name) before building multi-user features.
+
+---
+
+## Sources (Multi-User Milestone)
+
+- [Excalidraw P2P Collaboration Blog](https://blog.excalidraw.com/building-excalidraw-p2p-collaboration-feature/)
+- [Handling Race Conditions in Real-Time Apps](https://dev.to/mattlewandowski93/handling-race-conditions-in-real-time-apps-49c8)
+- [WebSocket Architecture Best Practices](https://ably.com/topic/websocket-architecture-best-practices)
+- [OWASP File Upload Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
+- [Real-time Collaboration OT vs CRDT](https://www.tiny.cloud/blog/real-time-collaboration-ot-vs-crdt/)
+- [Building Collaborative Interfaces](https://dev.to/puritanic/building-collaborative-interfaces-operational-transforms-vs-crdts-2obo)
+- [iPhone Safari MediaRecorder Guide](https://www.buildwithmatija.com/blog/iphone-safari-mediarecorder-audio-recording-transcription)
+- [Engineering Voice Recorder in React](https://medium.com/call-center-studio/engineering-a-seamless-voice-recorder-in-react-overcoming-browser-protocol-limitations-811bb2ad7453)
+- [Whisper Speech to Text Guide](https://www.videosdk.live/developer-hub/stt/whisper-speech-to-text)
+- [Socket.IO Rooms Documentation](https://socket.io/docs/v3/rooms/)
+- [WebSocket Reconnection Strategies](https://dev.to/hexshift/robust-websocket-reconnection-strategies-in-javascript-with-exponential-backoff-40n1)
