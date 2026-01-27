@@ -90,10 +90,12 @@ Plans:
   1. Canvas edits by any user appear on all other users' screens within 500ms
   2. Messages sent by any user appear to all users in the session
   3. Concurrent edits resolve without data loss (no silent overwrites)
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 05-01: TBD
+- [ ] 05-01-PLAN.md - Server-side sync infrastructure (types + merge + handlers)
+- [ ] 05-02-PLAN.md - Client-side canvas sync (hook + wiring)
+- [ ] 05-03-PLAN.md - Message sync + end-to-end verification
 
 ### Phase 6: User Presence
 **Goal**: Users can see who is in the session and where they are working
@@ -152,7 +154,7 @@ Note: Phases 7 (Voice) and 8 (Documents) could technically run in parallel after
 | 2. Adaptive Session Flow | v1.0 | 5/5 | Complete | 2026-01-27 |
 | 3. Human-First Collaboration | v1.0 | 2/2 | Complete | 2026-01-27 |
 | 4. Room Infrastructure | v2.0 | 3/3 | Complete | 2026-01-27 |
-| 5. Multi-Client Sync | v2.0 | 0/? | Not started | - |
+| 5. Multi-Client Sync | v2.0 | 0/3 | Planned | - |
 | 6. User Presence | v2.0 | 0/? | Not started | - |
 | 7. Voice Input | v2.0 | 0/? | Not started | - |
 | 8. Document Gallery | v2.0 | 0/? | Not started | - |
