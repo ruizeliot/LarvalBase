@@ -152,9 +152,23 @@ function saveWhiteboardImage(base64Data: string): string {
   return filePath;
 }
 
+/**
+ * HTTP server instance - exported for Socket.IO attachment
+ */
+let httpServer: ReturnType<typeof createServer> | null = null;
+
+/**
+ * Get the HTTP server instance (for Socket.IO)
+ * @returns The HTTP server or null if not started
+ */
+export function getHttpServer(): ReturnType<typeof createServer> | null {
+  return httpServer;
+}
+
 export async function startHttpServer(port: number, autoOpen: boolean): Promise<void> {
   const app = express();
   const server = createServer(app);
+  httpServer = server;  // Store reference for Socket.IO
 
   // Parse JSON bodies (larger limit for base64 images)
   app.use(express.json({ limit: '50mb' }));

@@ -9,8 +9,9 @@ import { registerDiagramTools, handleDiagramTool } from "./tools/diagram.js";
 import { registerCanvasTools, handleCanvasTool } from "./tools/canvas.js";
 import { registerVisualizationTools, handleVisualizationTool } from "./tools/visualizations.js";
 import { registerSessionTools, handleSessionTool } from "./tools/session.js";
-import { startHttpServer } from "./server/http.js";
+import { startHttpServer, getHttpServer, canvasState } from "./server/http.js";
 import { broadcast, getConnectedClients } from "./server/websocket.js";
+import { initSocketIO } from "./server/socketio.js";
 
 const PORT = parseInt(process.env.CANVAS_PORT || "3456");
 const PROJECT_DIR = process.env.CANVAS_PROJECT_DIR || process.cwd();
@@ -148,6 +149,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   // Start HTTP + WebSocket server for viewer
   await startHttpServer(PORT, AUTO_OPEN);
+
+  // Initialize Socket.IO for multi-user rooms
+  const httpServer = getHttpServer();
+  if (httpServer) {
+    initSocketIO(httpServer, () => canvasState, PORT);
+    console.error(`[Socket.IO] Room server initialized`);
+  } else {
+    console.error(`[Socket.IO] Warning: HTTP server not available, rooms disabled`);
+  }
 
   // Start MCP server on stdio
   const transport = new StdioServerTransport();
