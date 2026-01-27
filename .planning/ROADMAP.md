@@ -45,12 +45,14 @@ Plans:
   3. AI changes approach when user gives short responses (probes deeper) or verbose responses (simplifies)
   4. AI switches to different visual technique when current approach produces <2 new ideas over 3 turns
   5. AI incorporates user edits to canvas/notes into subsequent responses
-**Plans**: 3 plans in 2 waves
+**Plans**: 5 plans in 2 waves (3 infrastructure + 2 gap closure)
 
 Plans:
-- [ ] 02-01-PLAN.md — Double Diamond state machine + session store + viewer indicator (Wave 1)
-- [ ] 02-02-PLAN.md — Engagement detection + stagnation detection + technique switching (Wave 2)
-- [ ] 02-03-PLAN.md — Notes file watching + canvas edit detection + edit notifications (Wave 2)
+- [x] 02-01-PLAN.md — Double Diamond state machine + session store + viewer indicator (Wave 1)
+- [x] 02-02-PLAN.md — Engagement detection + stagnation detection + technique switching (Wave 2)
+- [x] 02-03-PLAN.md — Notes file watching + canvas edit detection + edit notifications (Wave 2)
+- [ ] 02-04-PLAN.md — [GAP CLOSURE] CLAUDE.md behavioral integration for Phase 2 tools (Wave 1)
+- [ ] 02-05-PLAN.md — [GAP CLOSURE] Wire user edit detection pipeline end-to-end (Wave 1)
 
 ### Phase 3: Human-First Collaboration
 **Goal**: AI facilitates without dominating - user creativity stays central through structured guardrails
@@ -74,6 +76,6 @@ Phases execute in numeric order: 1 -> 2 -> 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Visual Techniques Foundation | 3/3 | ✓ Complete | 2026-01-26 |
-| 2. Adaptive Session Flow | 0/3 | Not started | - |
+| 1. Visual Techniques Foundation | 3/3 | Complete | 2026-01-26 |
+| 2. Adaptive Session Flow | 3/5 | Gap closure pending | - |
 | 3. Human-First Collaboration | 0/2 | Not started | - |
