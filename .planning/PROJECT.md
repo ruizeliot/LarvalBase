@@ -2,66 +2,88 @@
 
 ## What This Is
 
-A visual brainstorming assistant that implements research-backed brainstorming techniques through an Excalidraw canvas interface. The AI acts as a "language extension" — a facilitator that externalizes user thinking into diagrams, wireframes, and visual artifacts they can react to and edit. The deliverable is a rich `brainstorm-notes.md` document.
+A collaborative visual brainstorming assistant that implements research-backed brainstorming techniques through an Excalidraw canvas interface. Multiple users connect to a shared session, contributing via voice (EN/FR auto-detected) or text, uploading documents to a shared gallery, and editing the canvas together. The AI acts as a "language extension" — a facilitator that externalizes user thinking into diagrams, wireframes, and visual artifacts they can react to and edit.
 
 ## Core Value
 
 The AI proactively uses visual techniques to extract rich insights from users during brainstorming sessions — drawing first, adapting constantly, making the invisible visible.
 
+## Current Milestone: v2.0 Collaborative Multi-User
+
+**Goal:** Transform the single-user local tool into a multi-user collaborative session with voice input and document sharing.
+
+**Target features:**
+- Voice input via Whisper with auto-detect EN/FR
+- Document gallery for shared images/docs
+- Drag-drop documents into AI messages
+- Multi-user hosting (starter becomes host, others connect via browser)
+- Real-time sync of canvas, messages, and gallery across all users
+
 ## Requirements
 
 ### Validated
 
-- Live Canvas MCP server with notes, diagrams, and canvas tools — existing
-- Real-time WebSocket sync between MCP and viewer — existing
-- Mermaid/ASCII/PlantUML diagram rendering — existing
-- Excalidraw integration in React viewer — existing
-- Notes persistence to filesystem — existing
+<!-- v1.0: Brainstorm Visual System Foundation -->
+- Live Canvas MCP server with notes, diagrams, and canvas tools — v1.0
+- Real-time WebSocket sync between MCP and viewer — v1.0
+- Mermaid/ASCII/PlantUML diagram rendering — v1.0
+- Excalidraw integration in React viewer — v1.0
+- Notes persistence to filesystem — v1.0
+- AI draws mind maps, matrices, affinity diagrams, flows proactively — v1.0
+- Double Diamond session phases (diverge/converge cycles) — v1.0
+- Engagement detection and adaptive technique switching — v1.0
+- Human-first collaboration guardrails — v1.0
+- User edit detection and incorporation — v1.0
 
 ### Active
 
-- [ ] AI aggressively uses canvas without prompting (draws first, asks with diagrams)
-- [ ] AI applies varied visual brainstorming techniques (mind maps, storyboards, wireframes, matrices, flows)
-- [ ] AI switches techniques based on user responses (adaptive facilitation)
-- [ ] AI reads user engagement and adjusts approach (verbose → simplify, terse → probe deeper)
-- [ ] Canvas updates are fast and responsive (no noticeable lag)
-- [ ] AI consistently updates brainstorm-notes.md as conversation progresses
-- [ ] AI can interpret user edits to canvas/notes and incorporate them
-- [ ] Rich brainstorm-notes.md document as measurable success outcome
+- [ ] Voice input via Whisper with push-to-talk
+- [ ] Auto-detect EN/FR language per utterance
+- [ ] Document gallery for uploading images/docs
+- [ ] Drag-drop from gallery to include document in AI message
+- [ ] Multi-user hosting (host runs claude-brainstorm, others connect via browser)
+- [ ] Real-time sync of canvas edits across all users
+- [ ] Real-time sync of messages and gallery across all users
+- [ ] AI sees unified conversation stream (unaware of multiple humans)
 
 ### Out of Scope
 
-- Voice input (Whisper integration) — deferred, separate project
-- New canvas tool development — existing MCP tools are sufficient
+- Voice chat between users (voice is transcription only, not live audio)
+- Cloud deployment (local network hosting only)
+- User authentication/accounts (anonymous session joining)
 - Changes to pipeline phases 2-5 — this focuses only on brainstorming (phase 1)
 
 ## Context
 
-The live-canvas-mcp infrastructure is production-ready with comprehensive tools:
-- `append_notes`, `update_section`, `get_notes` for notes
-- `render_mermaid`, `render_ascii`, `render_plantuml` for diagrams
-- `create_shape`, `update_shape`, `connect_shapes`, `delete_shape` for canvas
+v1.0 shipped a complete single-user brainstorming system:
+- Live Canvas MCP with drawing tools (mindmap, matrix, affinity, flow)
+- Double Diamond session management with engagement detection
+- Human-first collaboration guardrails
+- Real-time canvas/notes sync via WebSocket
 
-The gap is **agent behavior**, not tooling. The AI has the tools but doesn't use them proactively. Users report:
-- AI rarely drew anything (needed prompting)
-- Drawings were too simple (basic boxes, not rich diagrams)
-- Canvas updates lagged behind conversation
-
-The solution is to make the brainstorming agent embody research-backed techniques and express them visually through the existing canvas system.
+v2.0 extends this to multi-user collaborative sessions:
+- Multiple users connect to same session via browser
+- Voice input (Whisper) with EN/FR auto-detection
+- Shared document gallery with drag-drop to AI messages
+- All state (canvas, messages, gallery) synced in real-time
 
 ## Constraints
 
-- **Tech stack**: Must use existing live-canvas-mcp tools (no new server development)
-- **Integration**: Must work within existing pipeline Phase 1 workflow
-- **Research-based**: Techniques must come from established brainstorming literature (IDEO, design thinking, etc.)
+- **Hosting**: Local network only (host machine IP, no cloud deployment)
+- **Voice**: Transcription via Whisper (not live audio streaming between users)
+- **Auth**: Anonymous session joining (no user accounts)
+- **Integration**: Must preserve existing v1.0 single-user functionality
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Focus on agent behavior, not new tools | Canvas infrastructure already works; gap is AI usage patterns | — Pending |
-| Research brainstorming techniques first | User wants established methods, not invented approaches | — Pending |
-| Measure success by brainstorm-notes.md richness | Concrete deliverable that captures session value | — Pending |
+| Focus on agent behavior, not new tools | Canvas infrastructure already works; gap is AI usage patterns | ✓ Good |
+| Research brainstorming techniques first | User wants established methods, not invented approaches | ✓ Good |
+| Measure success by brainstorm-notes.md richness | Concrete deliverable that captures session value | ✓ Good |
+| Local network hosting, not cloud | Simplicity, user controls their data, no auth complexity | — Pending |
+| AI unaware of multiple users | Simpler architecture, unified conversation stream | — Pending |
+| Whisper auto-detect EN/FR | No manual language switching, natural flow | — Pending |
 
 ---
-*Last updated: 2025-01-26 after initialization*
+*Last updated: 2026-01-27 after v2.0 milestone start*
