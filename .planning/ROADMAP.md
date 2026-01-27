@@ -63,11 +63,11 @@ Plans:
   2. AI presents maximum 3 curated suggestions at once (no idea overload)
   3. AI drives conversation through questions that user answers, then visualizes the answers
   4. AI pacing matches user response style (fast responders get more prompts, slow get more space)
-**Plans**: TBD
+**Plans**: 2 plans in 1 wave
 
 Plans:
-- [ ] 03-01: Human-first prompting patterns
-- [ ] 03-02: Question-driven facilitation with adaptive pacing
+- [ ] 03-01-PLAN.md — Human-first prompting + max 3 suggestions (COLLAB-01, COLLAB-02)
+- [ ] 03-02-PLAN.md — Question-driven facilitation + adaptive pacing (COLLAB-03, COLLAB-04)
 
 ## Progress
 
