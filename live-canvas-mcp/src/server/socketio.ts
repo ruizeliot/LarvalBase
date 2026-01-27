@@ -12,13 +12,17 @@
 
 import { Server as SocketIOServer } from "socket.io";
 import { Server as HttpServer } from "http";
+import { nanoid } from "nanoid";
 import {
   ClientToServerEvents,
   ServerToClientEvents,
   InterServerEvents,
   SocketData,
+  SyncableElement,
+  ChatMessage,
 } from "../rooms/types.js";
 import { createRoomManager, RoomManager } from "../rooms/manager.js";
+import { mergeElements } from "../sync/merge.js";
 
 /**
  * Default port for URL generation (can be overridden)
@@ -139,6 +143,76 @@ export function initSocketIO(
     // ==================== LEAVE SESSION ====================
     socket.on("leave_session", () => {
       handleLeave(socket);
+    });
+
+    // ==================== CANVAS UPDATE ====================
+    socket.on("canvas_update", (data) => {
+      // Security check: validate socket is in the claimed room
+      if (socket.data.roomCode !== data.roomCode) {
+        console.error(
+          `[Room] Canvas update rejected: socket ${socket.id} not in room ${data.roomCode}`
+        );
+        return;
+      }
+
+      const room = roomManager.getRoom(data.roomCode);
+      if (!room) {
+        console.error(`[Room] Canvas update rejected: room ${data.roomCode} not found`);
+        return;
+      }
+
+      // Merge incoming elements with current room state
+      const currentState = (room.canvasState as SyncableElement[]) || [];
+      const mergedState = mergeElements(currentState, data.elements);
+
+      // Update room canvas state
+      roomManager.updateCanvasState(data.roomCode, mergedState);
+
+      // Broadcast to OTHER room members (socket.to excludes sender)
+      socket.to(data.roomCode).emit("canvas_update", {
+        elements: data.elements,
+        fromSocketId: socket.id,
+      });
+
+      console.error(
+        `[Room] Canvas update: ${data.roomCode} - ${data.elements.length} elements`
+      );
+    });
+
+    // ==================== MESSAGE SEND ====================
+    socket.on("message_send", (data) => {
+      // Security check: validate socket is in the claimed room
+      if (socket.data.roomCode !== data.roomCode) {
+        console.error(
+          `[Room] Message rejected: socket ${socket.id} not in room ${data.roomCode}`
+        );
+        return;
+      }
+
+      const room = roomManager.getRoom(data.roomCode);
+      if (!room) {
+        console.error(`[Room] Message rejected: room ${data.roomCode} not found`);
+        return;
+      }
+
+      // Create message with server timestamp
+      const message: ChatMessage = {
+        id: nanoid(),
+        content: data.content,
+        authorSocketId: socket.id,
+        timestamp: Date.now(),
+      };
+
+      // Broadcast to ALL room members (io.to includes sender for confirmation)
+      if (io) {
+        io.to(data.roomCode).emit("message_received", message);
+      }
+
+      console.error(
+        `[Room] Message: ${data.roomCode} - ${data.content.substring(0, 50)}${
+          data.content.length > 50 ? "..." : ""
+        }`
+      );
     });
 
     // ==================== DISCONNECT HANDLING ====================
