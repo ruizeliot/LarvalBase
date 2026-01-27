@@ -23,10 +23,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Human-AI Collaboration
 
-- [ ] **COLLAB-01**: AI solicits user ideas BEFORE offering AI suggestions (human-first)
-- [ ] **COLLAB-02**: AI presents maximum 3 curated suggestions at a time
-- [ ] **COLLAB-03**: AI uses question-driven prompts (asks → user answers → AI visualizes)
-- [ ] **COLLAB-04**: AI adapts pacing based on user response style
+- [x] **COLLAB-01**: AI solicits user ideas BEFORE offering AI suggestions (human-first)
+- [x] **COLLAB-02**: AI presents maximum 3 curated suggestions at a time
+- [x] **COLLAB-03**: AI uses question-driven prompts (asks → user answers → AI visualizes)
+- [x] **COLLAB-04**: AI adapts pacing based on user response style
 
 ### Canvas Performance
 
