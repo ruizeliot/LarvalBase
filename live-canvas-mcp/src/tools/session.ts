@@ -12,6 +12,7 @@ import {
   DiamondPhase,
   VisualizationTechnique
 } from '../session/state.js';
+import { getPendingEdits } from '../session/edits.js';
 
 interface ToolDefinition {
   name: string;
@@ -62,6 +63,9 @@ export function handleSessionTool(name: string): ToolResponse {
     const guidance = getPhaseGuidance(sessionState);
     const recommendedTechniques = getRecommendedTechniques(sessionState);
 
+    // Get any pending user edits (canvas/notes modifications)
+    const pendingEdits = getPendingEdits();
+
     // Build response
     const response = {
       phase: sessionState.phase,
@@ -72,6 +76,7 @@ export function handleSessionTool(name: string): ToolResponse {
       recommendedTechniques,
       ideasThisPhase: sessionState.ideas.generated,
       engagement: sessionState.lastEngagement,  // Include engagement signal
+      pendingUserEdits: pendingEdits.length > 0 ? pendingEdits : undefined,  // Only include if edits exist
       recommendedAction: guidance,
       phaseDescription: getPhaseDescription(sessionState.phase, sessionState.diamond)
     };

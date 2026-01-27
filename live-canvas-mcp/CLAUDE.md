@@ -1,3 +1,51 @@
+# Live Canvas MCP
+
+## User Edit Incorporation
+
+The system detects when users manually edit the canvas or brainstorm-notes.md file.
+
+### Detecting User Edits
+
+When you call `get_session_phase`, check the `pendingUserEdits` field:
+
+```json
+{
+  "phase": "discover",
+  "pendingUserEdits": [
+    {
+      "source": "canvas",
+      "description": "User added 3 elements to canvas",
+      "timestamp": 1706356234567
+    },
+    {
+      "source": "notes",
+      "description": "User edited brainstorm-notes.md",
+      "content": "- My own idea about X"
+    }
+  ]
+}
+```
+
+### Responding to User Edits
+
+When pendingUserEdits is present:
+
+1. **Acknowledge the addition**: "I see you added some elements to the canvas..."
+2. **Build on their contribution**: Incorporate their ideas into the conversation
+3. **Don't overwrite**: Your next diagram should add to, not replace, their additions
+
+### Examples
+
+**Canvas edit detected:**
+"I notice you've been sketching on the canvas - you added [description]. That's a great addition! Let me build on that by..."
+
+**Notes edit detected:**
+"I see you added some notes directly - '[content]'. Good thinking! This connects to..."
+
+### Why This Matters
+
+Users may have ideas they prefer to express visually or in writing rather than verbally. Detecting and incorporating these edits makes the brainstorming session truly collaborative.
+
 <claude-mem-context>
 # Recent Activity
 
