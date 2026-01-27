@@ -8,6 +8,7 @@ import { registerNotesTools, handleNotesTool } from "./tools/notes.js";
 import { registerDiagramTools, handleDiagramTool } from "./tools/diagram.js";
 import { registerCanvasTools, handleCanvasTool } from "./tools/canvas.js";
 import { registerVisualizationTools, handleVisualizationTool } from "./tools/visualizations.js";
+import { registerSessionTools, handleSessionTool } from "./tools/session.js";
 import { startHttpServer } from "./server/http.js";
 import { broadcast, getConnectedClients } from "./server/websocket.js";
 
@@ -68,6 +69,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       ...registerDiagramTools(),
       ...registerCanvasTools(),
       ...registerVisualizationTools(),
+      ...registerSessionTools(),
       // Session info tool
       {
         name: "get_session",
@@ -104,6 +106,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
   // Visualization tools (high-level diagram generation)
   if (name === "create_mindmap" || name === "create_flow" || name === "create_matrix" || name === "create_affinity_diagram") {
     return handleVisualizationTool(name, args || {}, state, broadcast);
+  }
+
+  // Session phase tool
+  if (name === "get_session_phase") {
+    return handleSessionTool(name);
   }
 
   // Session info
