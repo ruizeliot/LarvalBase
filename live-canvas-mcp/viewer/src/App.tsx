@@ -5,6 +5,7 @@ import { DiagramPanel, Diagram } from './components/DiagramPanel';
 import { InputArea } from './components/InputArea';
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePreferencesStore } from './stores/preferencesStore';
+import { useSessionStore, DiamondPhase } from './stores/sessionStore';
 
 export default function App() {
   const [notes, setNotes] = useState('');
@@ -20,6 +21,12 @@ export default function App() {
     defaultComplexity, setDefaultComplexity,
     preferredDiagramStyle, setPreferredDiagramStyle,
   } = usePreferencesStore();
+
+  // Session state from zustand store
+  const sessionPhase = useSessionStore((state) => state.phase);
+  const sessionDiamond = useSessionStore((state) => state.diamond);
+  const sessionTurnCount = useSessionStore((state) => state.turnCount);
+  const updateSessionFromServer = useSessionStore((state) => state.updateFromServer);
 
   const { isConnected, send } = useWebSocket({
     onMessage: (msg) => {
@@ -62,6 +69,17 @@ export default function App() {
         const diagramType = msg.diagramType as string;
         whiteboardRef.current?.handleDiagramElements(skeletons, diagramType);
         console.log('[App] Diagram elements received:', diagramType, skeletons.length);
+      }
+
+      // Session state update (from server)
+      if (msg.type === 'session_state_update') {
+        updateSessionFromServer({
+          phase: msg.phase as DiamondPhase,
+          diamond: msg.diamond as 1 | 2,
+          turnCount: msg.turnCount as number,
+          currentTechnique: msg.currentTechnique as 'mindmap' | 'matrix' | 'affinity' | 'flow'
+        });
+        console.log('[App] Session state updated:', msg.phase, 'D' + msg.diamond);
       }
 
       // Diagram update (from AI via MCP tools)
@@ -169,6 +187,26 @@ export default function App() {
     send(payload);
   }, [send, notes]);
 
+  // Session indicator component
+  const SessionIndicator = () => {
+    const phaseLabels: Record<DiamondPhase, string> = {
+      discover: 'Exploring',
+      define: 'Focusing',
+      develop: 'Generating',
+      deliver: 'Finalizing'
+    };
+    const mode = (sessionPhase === 'discover' || sessionPhase === 'develop') ? 'Diverge' : 'Converge';
+
+    return (
+      <div className="session-indicator">
+        <span className="diamond">D{sessionDiamond}</span>
+        <span className="phase">{phaseLabels[sessionPhase]}</span>
+        <span className="mode">{mode}</span>
+        <span className="turn">T{sessionTurnCount}</span>
+      </div>
+    );
+  };
+
   return (
     <div className="app-container">
       <header className="header">
@@ -178,6 +216,7 @@ export default function App() {
           <div className={`status-dot ${isConnected ? 'connected' : ''}`} />
           <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
         </div>
+        <SessionIndicator />
         <button
           className="settings-btn"
           onClick={() => setShowSettings(!showSettings)}
