@@ -6,6 +6,7 @@ import { InputArea } from './components/InputArea';
 import { useWebSocket } from './hooks/useWebSocket';
 import { usePreferencesStore } from './stores/preferencesStore';
 import { useSessionStore, DiamondPhase } from './stores/sessionStore';
+import type { CanvasEdit } from './hooks/useCanvasEdits';
 
 export default function App() {
   const [notes, setNotes] = useState('');
@@ -82,6 +83,12 @@ export default function App() {
         console.log('[App] Session state updated:', msg.phase, 'D' + msg.diamond);
       }
 
+      // External notes edit (from file watcher)
+      if (msg.type === 'notes_external_edit') {
+        setNotes(msg.content as string);
+        console.log('[App] Notes externally edited, added lines:', (msg.addedLines as string[])?.length || 0);
+      }
+
       // Diagram update (from AI via MCP tools)
       if (msg.type === 'diagram_update') {
         const diagram: Diagram = {
@@ -149,6 +156,17 @@ export default function App() {
   const handleNotesChange = useCallback((content: string) => {
     setNotes(content);
     send({ type: 'notes_edit', content });
+  }, [send]);
+
+  // Forward canvas edits to server for AI awareness
+  const handleUserCanvasEdit = useCallback((edit: CanvasEdit) => {
+    send({
+      type: 'user_canvas_edit',
+      editType: edit.type,
+      elementIds: edit.elementIds,
+      description: edit.description
+    });
+    console.log('[App] Forwarded canvas edit to server:', edit.description);
   }, [send]);
 
   const handleSend = useCallback(async (
@@ -275,7 +293,7 @@ export default function App() {
           content={notes}
           onChange={handleNotesChange}
         />
-        <WhiteboardPanel ref={whiteboardRef} serverObjects={serverObjects} />
+        <WhiteboardPanel ref={whiteboardRef} serverObjects={serverObjects} onUserEdit={handleUserCanvasEdit} />
         <DiagramPanel diagrams={diagrams} />
         <InputArea onSend={handleSend} />
       </main>

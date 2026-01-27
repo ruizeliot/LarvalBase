@@ -1,6 +1,7 @@
 import { Tool } from "@modelcontextprotocol/sdk/types.js";
 import { CanvasState } from "../index.js";
 import { readNotesFile, writeNotesFile } from "../persistence/files.js";
+import { markAiWrite } from "../session/edits.js";
 
 export function registerNotesTools(): Tool[] {
   return [
@@ -111,6 +112,9 @@ export async function handleNotesTool(
         // Write file
         await writeNotesFile(filePath, fileContent);
 
+        // Mark as AI write so file watcher ignores this change
+        markAiWrite();
+
         // Update state
         const existingContent = state.notes.get(section) || "";
         state.notes.set(section, existingContent + "\n" + content);
@@ -164,6 +168,9 @@ export async function handleNotesTool(
 
         // Write file
         await writeNotesFile(filePath, fileContent);
+
+        // Mark as AI write so file watcher ignores this change
+        markAiWrite();
 
         // Update state
         state.notes.set(section, content);

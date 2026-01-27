@@ -3,7 +3,7 @@ import { createServer } from "http";
 import { fileURLToPath } from "url";
 import { dirname, join } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
-import { initWebSocket, broadcast, getConnectedClients, setMessageHandler, getDiagrams } from "./websocket.js";
+import { initWebSocket, broadcast, getConnectedClients, setMessageHandler, getDiagrams, initNotesWatcher } from "./websocket.js";
 import { setClaudePid, getClaudePid, injectInteractiveInput, injectMessage } from "./inject.js";
 import { analyzeResponse, detectEngagement, trackResponse, getHistoryAverage } from "../session/engagement.js";
 import { sessionState, updateSessionState, incrementTurn, isStagnating, switchTechnique } from "../session/state.js";
@@ -166,6 +166,9 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
   canvasState.notes = loadNotesFromFile();
   canvasState.objects = loadWhiteboardFromFile();
   console.error(`[STARTUP] Loaded ${canvasState.notes.length} chars notes, ${canvasState.objects.length} whiteboard objects`);
+
+  // Start watching notes file for external edits
+  initNotesWatcher(canvasState.projectDir);
 
   // Handle messages from viewer (user edits)
   setMessageHandler((msg: Record<string, unknown>) => {
