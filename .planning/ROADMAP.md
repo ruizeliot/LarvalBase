@@ -78,9 +78,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md - Server-side room infrastructure (Socket.IO + room manager)
-- [ ] 04-02-PLAN.md - Client-side Socket.IO integration + session UI
-- [ ] 04-03-PLAN.md - Host disconnect handling + integration verification
+- [x] 04-01-PLAN.md - Server-side room infrastructure (Socket.IO + room manager)
+- [x] 04-02-PLAN.md - Client-side Socket.IO integration + session UI
+- [x] 04-03-PLAN.md - Host disconnect handling + integration verification
 
 ### Phase 5: Multi-Client Sync
 **Goal**: All canvas and message edits sync in real-time across connected users
@@ -151,7 +151,7 @@ Note: Phases 7 (Voice) and 8 (Documents) could technically run in parallel after
 | 1. Visual Techniques | v1.0 | 3/3 | Complete | 2026-01-26 |
 | 2. Adaptive Session Flow | v1.0 | 5/5 | Complete | 2026-01-27 |
 | 3. Human-First Collaboration | v1.0 | 2/2 | Complete | 2026-01-27 |
-| 4. Room Infrastructure | v2.0 | 0/3 | Planned | - |
+| 4. Room Infrastructure | v2.0 | 3/3 | Complete | 2026-01-27 |
 | 5. Multi-Client Sync | v2.0 | 0/? | Not started | - |
 | 6. User Presence | v2.0 | 0/? | Not started | - |
 | 7. Voice Input | v2.0 | 0/? | Not started | - |

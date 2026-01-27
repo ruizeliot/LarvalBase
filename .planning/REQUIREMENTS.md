@@ -13,14 +13,14 @@ Requirements for milestone v2.0: Collaborative Multi-User.
 
 ### Multi-User Sessions
 
-- [ ] **SESS-01**: Host starts session and sees shareable URL with session code
-- [ ] **SESS-02**: Guest joins session via URL and sees same canvas state
+- [x] **SESS-01**: Host starts session and sees shareable URL with session code
+- [x] **SESS-02**: Guest joins session via URL and sees same canvas state
 - [ ] **SESS-03**: Host sees list of connected participants (name/identifier)
 - [ ] **SESS-04**: Guest sees list of connected participants
 - [ ] **SESS-05**: User sees other users' cursor positions on canvas in real-time
 - [ ] **SESS-06**: Canvas edits by any user sync to all users within 500ms
 - [ ] **SESS-07**: Messages sent by any user appear to all users
-- [ ] **SESS-08**: Session ends when host disconnects (guests notified)
+- [x] **SESS-08**: Session ends when host disconnects (guests notified)
 
 ### Voice Input
 
@@ -82,14 +82,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SESS-01 | Phase 4 | Pending |
-| SESS-02 | Phase 4 | Pending |
+| SESS-01 | Phase 4 | Complete |
+| SESS-02 | Phase 4 | Complete |
 | SESS-03 | Phase 6 | Pending |
 | SESS-04 | Phase 6 | Pending |
 | SESS-05 | Phase 6 | Pending |
 | SESS-06 | Phase 5 | Pending |
 | SESS-07 | Phase 5 | Pending |
-| SESS-08 | Phase 4 | Pending |
+| SESS-08 | Phase 4 | Complete |
 | VOICE-01 | Phase 7 | Pending |
 | VOICE-02 | Phase 7 | Pending |
 | VOICE-03 | Phase 7 | Pending |
