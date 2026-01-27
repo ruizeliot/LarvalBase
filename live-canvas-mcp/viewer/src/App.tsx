@@ -6,9 +6,11 @@ import { InputArea } from './components/InputArea';
 import { SessionControls } from './components/SessionControls';
 import { useWebSocket } from './hooks/useWebSocket';
 import { useSocketIO } from './hooks/useSocketIO';
+import { useCanvasSync } from './hooks/useCanvasSync';
 import { usePreferencesStore } from './stores/preferencesStore';
 import { useSessionStore, DiamondPhase } from './stores/sessionStore';
 import type { CanvasEdit } from './hooks/useCanvasEdits';
+import type { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types';
 
 export default function App() {
   const [notes, setNotes] = useState('');
@@ -32,20 +34,14 @@ export default function App() {
   const updateSessionFromServer = useSessionStore((state) => state.updateFromServer);
 
   // Socket.IO for multi-user sessions
-  const {
-    isConnected: socketIOConnected,
-    roomCode,
-    isHost,
-    sessionUrl,
-    createSession,
-    joinSession,
-    leaveSession,
-  } = useSocketIO({
-    onCanvasState: (_state) => {
+  const socketIO = useSocketIO({
+    onCanvasState: (state) => {
       // When joining a session, receive the host's canvas state
       console.log('[App] Received canvas state from session');
-      // The canvas state from rooms is the full canvasState object
-      // For now, just log - full sync will be in Plan 03
+      // Update whiteboard with the received state
+      if (Array.isArray(state)) {
+        whiteboardRef.current?.updateFromRemote(state as ExcalidrawElement[]);
+      }
     },
     onSessionEnded: (_reason, message) => {
       // Session ended by host
@@ -56,6 +52,28 @@ export default function App() {
     },
     onUserLeft: (socketId) => {
       console.log('[App] User left session:', socketId);
+    },
+  });
+
+  // Destructure for convenience
+  const {
+    isConnected: socketIOConnected,
+    roomCode,
+    isHost,
+    sessionUrl,
+    createSession,
+    joinSession,
+    leaveSession,
+    getSocket,
+  } = socketIO;
+
+  // Canvas sync for multi-user collaboration
+  const { broadcastChanges } = useCanvasSync({
+    socket: getSocket(),
+    roomCode,
+    onRemoteUpdate: (elements) => {
+      // Update whiteboard with merged remote state
+      whiteboardRef.current?.updateFromRemote(elements);
     },
   });
 
@@ -332,7 +350,12 @@ export default function App() {
           content={notes}
           onChange={handleNotesChange}
         />
-        <WhiteboardPanel ref={whiteboardRef} serverObjects={serverObjects} onUserEdit={handleUserCanvasEdit} />
+        <WhiteboardPanel
+          ref={whiteboardRef}
+          serverObjects={serverObjects}
+          onUserEdit={handleUserCanvasEdit}
+          onCanvasChange={roomCode ? broadcastChanges : undefined}
+        />
         <DiagramPanel diagrams={diagrams} />
         <InputArea onSend={handleSend} />
       </main>

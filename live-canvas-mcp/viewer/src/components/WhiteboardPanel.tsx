@@ -260,11 +260,15 @@ export interface WhiteboardPanelRef {
   setServerObjects: (objects: ServerCanvasObject[]) => void;
   handleDiagramElements: (skeletons: DiagramSkeleton[], diagramType: string) => void;
   clear: () => void;
+  /** Update canvas from remote sync (other users' changes) */
+  updateFromRemote: (elements: ExcalidrawElement[]) => void;
 }
 
 export interface WhiteboardPanelProps {
   serverObjects?: ServerCanvasObject[];
   onUserEdit?: (edit: CanvasEdit) => void;
+  /** Callback when canvas elements change (for multi-user sync) */
+  onCanvasChange?: (elements: ExcalidrawElement[]) => void;
 }
 
 export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelProps>((props, ref) => {
@@ -429,6 +433,15 @@ export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelPro
       serverObjectIdsRef.current.clear();
       diagramElementIdsRef.current = {};
     },
+
+    updateFromRemote: (elements: ExcalidrawElement[]) => {
+      if (!excalidrawApiRef.current) return;
+      // Update scene with remote elements (merged by useCanvasSync)
+      excalidrawApiRef.current.updateScene({
+        elements: elements as never,
+      });
+      console.log('[Whiteboard] Updated from remote:', elements.length, 'elements');
+    },
   }), []);
 
   const handleExcalidrawAPI = useCallback((api: ExcalidrawImperativeAPI) => {
@@ -445,8 +458,10 @@ export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelPro
   ) => {
     // Detect user edits - use element count as a simple version proxy
     detectEdits(elements, elements.length);
+    // Notify parent of canvas changes for multi-user sync
+    props.onCanvasChange?.([...elements] as ExcalidrawElement[]);
     console.log('[Whiteboard] Elements changed:', elements.length);
-  }, [detectEdits]);
+  }, [detectEdits, props.onCanvasChange]);
 
   return (
     <div className="panel">
