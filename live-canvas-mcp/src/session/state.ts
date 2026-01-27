@@ -12,6 +12,8 @@
 export type DiamondPhase = 'discover' | 'define' | 'develop' | 'deliver';
 export type VisualizationTechnique = 'mindmap' | 'matrix' | 'affinity' | 'flow';
 
+export type EngagementSignal = 'terse' | 'normal' | 'verbose' | 'confused' | 'excited';
+
 export interface SessionState {
   phase: DiamondPhase;
   diamond: 1 | 2;  // First diamond (problem) or second (solution)
@@ -22,6 +24,7 @@ export interface SessionState {
     recentTurns: number[];  // Ideas per last N turns (for stagnation detection)
   };
   currentTechnique: VisualizationTechnique;
+  lastEngagement: EngagementSignal;  // Last detected engagement signal
 }
 
 // Phase transition rules: discover -> define -> develop -> deliver -> discover (cycle)
@@ -61,7 +64,8 @@ export function createSessionState(): SessionState {
       generated: 0,
       recentTurns: []
     },
-    currentTechnique: 'mindmap'
+    currentTechnique: 'mindmap',
+    lastEngagement: 'normal'
   };
 }
 
@@ -196,4 +200,55 @@ export function resetSessionState(): void {
  */
 export function updateSessionState(newState: SessionState): void {
   sessionState = newState;
+}
+
+/**
+ * Check if current technique is stagnating (<2 ideas over 3 turns)
+ * @param state Current session state
+ * @returns true if stagnation detected
+ */
+export function isStagnating(state: SessionState): boolean {
+  const recentTurns = state.ideas.recentTurns.slice(-3);
+  if (recentTurns.length < 3) return false;
+
+  const totalRecent = recentTurns.reduce((a, b) => a + b, 0);
+  return totalRecent < 2;
+}
+
+/**
+ * Recommend next technique based on current phase
+ * Diverge phases: prioritize exploration (mindmap, affinity)
+ * Converge phases: prioritize evaluation (matrix, flow)
+ * @param current Current technique
+ * @param phase Current diamond phase
+ * @returns Next recommended technique
+ */
+export function recommendNextTechnique(
+  current: VisualizationTechnique,
+  phase: DiamondPhase
+): VisualizationTechnique {
+  const divergeOrder: VisualizationTechnique[] = ['mindmap', 'affinity', 'flow', 'matrix'];
+  const convergeOrder: VisualizationTechnique[] = ['matrix', 'flow', 'mindmap', 'affinity'];
+
+  const order = (phase === 'discover' || phase === 'develop')
+    ? divergeOrder : convergeOrder;
+  const currentIndex = order.indexOf(current);
+  return order[(currentIndex + 1) % order.length];
+}
+
+/**
+ * Switch to next technique, reset stagnation tracking
+ * @param state Current session state
+ * @returns Updated session state with new technique
+ */
+export function switchTechnique(state: SessionState): SessionState {
+  const next = recommendNextTechnique(state.currentTechnique, state.phase);
+  return {
+    ...state,
+    currentTechnique: next,
+    ideas: {
+      generated: 0,
+      recentTurns: []  // Reset stagnation tracking
+    }
+  };
 }
