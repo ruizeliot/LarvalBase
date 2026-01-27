@@ -9,6 +9,7 @@ import {
 import { Excalidraw, exportToBlob } from '@excalidraw/excalidraw';
 import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types/types';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types';
+import { useCanvasEdits, CanvasEdit } from '../hooks/useCanvasEdits';
 
 // Server object format (from HTTP API)
 export interface ServerCanvasObject {
@@ -263,6 +264,7 @@ export interface WhiteboardPanelRef {
 
 export interface WhiteboardPanelProps {
   serverObjects?: ServerCanvasObject[];
+  onUserEdit?: (edit: CanvasEdit) => void;
 }
 
 export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelProps>((props, ref) => {
@@ -272,6 +274,15 @@ export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelPro
   const serverObjectIdsRef = useRef<Set<string>>(new Set());
   // Track diagram element IDs by diagram type (for replace behavior)
   const diagramElementIdsRef = useRef<Record<string, Set<string>>>({});
+
+  // Canvas edit detection hook
+  const { registerAiElements, detectEdits } = useCanvasEdits({
+    onUserEdit: (edit) => {
+      console.log('[Whiteboard] User edit detected:', edit);
+      // Forward to parent via prop callback
+      props.onUserEdit?.(edit);
+    }
+  });
 
   // Sync serverObjects prop to Excalidraw
   useEffect(() => {
@@ -403,6 +414,10 @@ export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelPro
 
       // Track new IDs for this diagram type
       diagramElementIdsRef.current[diagramType] = new Set(elements.map(e => e.id));
+
+      // Register these as AI elements for edit attribution
+      registerAiElements(elements.map(e => e.id));
+
       console.log('[Whiteboard] Diagram elements rendered:', diagramType, elements.length);
     },
 
@@ -424,12 +439,13 @@ export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelPro
   }, [isReady]);
 
   const handleChange = useCallback((
-    elements: readonly unknown[],
+    elements: readonly ExcalidrawElement[],
+    appState: { sceneVersion?: number }
   ) => {
-    // Could send element changes to server here for AI awareness
-    // For now, we capture on-demand when user clicks Send
+    // Detect user edits
+    detectEdits(elements, appState.sceneVersion || 0);
     console.log('[Whiteboard] Elements changed:', elements.length);
-  }, []);
+  }, [detectEdits]);
 
   return (
     <div className="panel">
