@@ -29,6 +29,67 @@ interface SessionJoinResult {
 }
 
 /**
+ * Syncable canvas element for multi-user collaboration
+ * Matches server-side SyncableElement from live-canvas-mcp/src/rooms/types.ts
+ */
+export interface SyncableElement {
+  /** Unique element identifier */
+  id: string;
+  /** Version number, incremented on each edit */
+  version: number;
+  /** Random nonce for deterministic same-version tiebreaker */
+  versionNonce: number;
+  /** Whether element has been deleted (soft delete for sync) */
+  isDeleted: boolean;
+
+  // Core element properties
+  type: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+
+  // Visual properties
+  strokeColor?: string;
+  backgroundColor?: string;
+  fillStyle?: string;
+  strokeWidth?: number;
+  roughness?: number;
+  opacity?: number;
+  angle?: number;
+
+  // Type-specific properties
+  points?: Array<[number, number]>;
+  text?: string;
+  fontSize?: number;
+  fontFamily?: number;
+  textAlign?: string;
+  verticalAlign?: string;
+
+  // Arrow-specific properties
+  startBinding?: { elementId: string; focus: number; gap: number } | null;
+  endBinding?: { elementId: string; focus: number; gap: number } | null;
+  startArrowhead?: string | null;
+  endArrowhead?: string | null;
+
+  // Grouping
+  groupIds?: string[];
+
+  // Allow additional Excalidraw properties
+  [key: string]: unknown;
+}
+
+/**
+ * Chat message for text communication within a session
+ */
+export interface ChatMessage {
+  id: string;
+  content: string;
+  authorSocketId: string;
+  timestamp: number;
+}
+
+/**
  * Socket.IO events from server
  */
 interface ServerToClientEvents {
@@ -37,6 +98,10 @@ interface ServerToClientEvents {
   user_left: (data: { socketId: string }) => void;
   session_ended: (data: { reason: string; message: string }) => void;
   canvas_state: (state: unknown) => void;
+  /** Canvas element updates from other users */
+  canvas_update: (data: { elements: SyncableElement[]; fromSocketId: string }) => void;
+  /** Chat message from any user in the room */
+  message_received: (message: ChatMessage) => void;
 }
 
 /**
@@ -46,6 +111,10 @@ interface ClientToServerEvents {
   create_session: (callback: (response: SessionCreateResult) => void) => void;
   join_session: (code: string, callback: (response: SessionJoinResult) => void) => void;
   leave_session: () => void;
+  /** Send canvas element updates for broadcast to room */
+  canvas_update: (data: { roomCode: string; elements: SyncableElement[] }) => void;
+  /** Send a chat message to the room */
+  message_send: (data: { roomCode: string; content: string }) => void;
 }
 
 /**
@@ -92,6 +161,8 @@ interface UseSocketIOReturn {
   leaveSession: () => void;
   /** Send a message (for backward compat) */
   send: (message: object) => void;
+  /** Get raw socket for advanced operations (canvas sync) */
+  getSocket: () => Socket<ServerToClientEvents, ClientToServerEvents> | null;
 }
 
 /**
@@ -268,6 +339,12 @@ export function useSocketIO(options: UseSocketIOOptions = {}): UseSocketIOReturn
     console.log('[Socket.IO] send() called (not yet implemented)', message);
   }, []);
 
+  /**
+   * Get raw socket for advanced operations (e.g., canvas sync)
+   * Returns null if not yet connected
+   */
+  const getSocket = useCallback(() => socketRef.current, []);
+
   return {
     isConnected,
     roomCode,
@@ -277,5 +354,6 @@ export function useSocketIO(options: UseSocketIOOptions = {}): UseSocketIOReturn
     joinSession,
     leaveSession,
     send,
+    getSocket,
   };
 }
