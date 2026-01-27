@@ -3,7 +3,9 @@ import { NotesPanel } from './components/NotesPanel';
 import { WhiteboardPanel, WhiteboardPanelRef, ServerCanvasObject, DiagramSkeleton } from './components/WhiteboardPanel';
 import { DiagramPanel, Diagram } from './components/DiagramPanel';
 import { InputArea } from './components/InputArea';
+import { SessionControls } from './components/SessionControls';
 import { useWebSocket } from './hooks/useWebSocket';
+import { useSocketIO } from './hooks/useSocketIO';
 import { usePreferencesStore } from './stores/preferencesStore';
 import { useSessionStore, DiamondPhase } from './stores/sessionStore';
 import type { CanvasEdit } from './hooks/useCanvasEdits';
@@ -28,6 +30,34 @@ export default function App() {
   const sessionDiamond = useSessionStore((state) => state.diamond);
   const sessionTurnCount = useSessionStore((state) => state.turnCount);
   const updateSessionFromServer = useSessionStore((state) => state.updateFromServer);
+
+  // Socket.IO for multi-user sessions
+  const {
+    isConnected: socketIOConnected,
+    roomCode,
+    isHost,
+    sessionUrl,
+    createSession,
+    joinSession,
+    leaveSession,
+  } = useSocketIO({
+    onCanvasState: (_state) => {
+      // When joining a session, receive the host's canvas state
+      console.log('[App] Received canvas state from session');
+      // The canvas state from rooms is the full canvasState object
+      // For now, just log - full sync will be in Plan 03
+    },
+    onSessionEnded: (_reason, message) => {
+      // Session ended by host
+      alert(`Session ended: ${message}`);
+    },
+    onUserJoined: (socketId, userName) => {
+      console.log('[App] User joined session:', socketId, userName);
+    },
+    onUserLeft: (socketId) => {
+      console.log('[App] User left session:', socketId);
+    },
+  });
 
   const { isConnected, send } = useWebSocket({
     onMessage: (msg) => {
@@ -235,6 +265,15 @@ export default function App() {
           <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
         </div>
         <SessionIndicator />
+        <SessionControls
+          isConnected={socketIOConnected}
+          roomCode={roomCode}
+          isHost={isHost}
+          sessionUrl={sessionUrl}
+          onCreateSession={createSession}
+          onJoinSession={joinSession}
+          onLeaveSession={leaveSession}
+        />
         <button
           className="settings-btn"
           onClick={() => setShowSettings(!showSettings)}

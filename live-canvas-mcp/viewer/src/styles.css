@@ -470,3 +470,193 @@
   outline: none;
   border-color: var(--accent-blue);
 }
+
+/* Session Controls */
+.session-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.session-controls--disconnected {
+  color: var(--text-secondary);
+}
+
+.session-controls--idle {
+  gap: 0.75rem;
+}
+
+.session-controls--active {
+  gap: 0.75rem;
+}
+
+.session-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.session-label {
+  color: var(--text-secondary);
+}
+
+.session-code {
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--accent-blue);
+  background: var(--bg-tertiary);
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.session-code:hover {
+  background: var(--border-color);
+}
+
+.session-role {
+  color: var(--accent-green);
+  font-size: 0.8rem;
+}
+
+.session-share {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.session-url {
+  width: 180px;
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.session-url:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.copy-btn {
+  padding: 0.25rem 0.5rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.copy-btn:hover {
+  background: var(--border-color);
+}
+
+.create-btn {
+  padding: 0.4rem 0.75rem;
+  background: var(--accent-blue);
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.create-btn:hover {
+  background: #2563eb;
+}
+
+.session-divider {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+}
+
+.join-form {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.join-input {
+  width: 80px;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: 'Consolas', 'Monaco', monospace;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.join-input:focus {
+  outline: none;
+  border-color: var(--accent-blue);
+}
+
+.join-input::placeholder {
+  color: var(--text-secondary);
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.join-btn {
+  padding: 0.4rem 0.6rem;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.join-btn:hover {
+  background: var(--border-color);
+}
+
+.join-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.join-error {
+  color: var(--accent-red);
+  font-size: 0.75rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 0.25rem;
+  white-space: nowrap;
+}
+
+.leave-btn {
+  padding: 0.4rem 0.6rem;
+  background: transparent;
+  border: 1px solid var(--accent-red);
+  border-radius: 4px;
+  color: var(--accent-red);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.leave-btn:hover {
+  background: var(--accent-red);
+  color: white;
+}
+
+.session-status {
+  color: var(--text-secondary);
+  font-style: italic;
+}

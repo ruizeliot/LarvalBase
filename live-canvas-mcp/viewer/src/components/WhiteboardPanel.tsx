@@ -7,7 +7,7 @@ import {
   useEffect,
 } from 'react';
 import { Excalidraw, exportToBlob } from '@excalidraw/excalidraw';
-import type { ExcalidrawImperativeAPI } from '@excalidraw/excalidraw/types/types';
+import type { ExcalidrawImperativeAPI, AppState, BinaryFiles } from '@excalidraw/excalidraw/types/types';
 import type { ExcalidrawElement } from '@excalidraw/excalidraw/types/element/types';
 import { useCanvasEdits, CanvasEdit } from '../hooks/useCanvasEdits';
 
@@ -440,10 +440,11 @@ export const WhiteboardPanel = forwardRef<WhiteboardPanelRef, WhiteboardPanelPro
 
   const handleChange = useCallback((
     elements: readonly ExcalidrawElement[],
-    appState: { sceneVersion?: number }
+    _appState: AppState,
+    _files: BinaryFiles
   ) => {
-    // Detect user edits
-    detectEdits(elements, appState.sceneVersion || 0);
+    // Detect user edits - use element count as a simple version proxy
+    detectEdits(elements, elements.length);
     console.log('[Whiteboard] Elements changed:', elements.length);
   }, [detectEdits]);
 
