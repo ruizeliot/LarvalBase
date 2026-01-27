@@ -5,6 +5,21 @@ import { dirname, join } from "path";
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from "fs";
 import { initWebSocket, broadcast, getConnectedClients, setMessageHandler, getDiagrams } from "./websocket.js";
 import { setClaudePid, getClaudePid, injectInteractiveInput, injectMessage } from "./inject.js";
+import { analyzeResponse, detectEngagement, trackResponse, getHistoryAverage } from "../session/engagement.js";
+import { sessionState, updateSessionState, incrementTurn, isStagnating, switchTechnique } from "../session/state.js";
+
+/**
+ * Estimate number of ideas in a message (simple heuristic)
+ * Counts sentences that look like ideas (>10 chars, not just questions)
+ */
+function estimateIdeas(text: string): number {
+  const sentences = text.split(/[.!?]+/).filter(s => {
+    const trimmed = s.trim();
+    // Must be substantial and not just a question
+    return trimmed.length > 10 && !trimmed.match(/^\s*(?:what|why|how|when|where|who|is|are|do|does|can|could|would|should)/i);
+  });
+  return Math.max(1, Math.min(sentences.length, 5));
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -181,8 +196,42 @@ export async function startHttpServer(port: number, autoOpen: boolean): Promise<
         payload.notes = msg.notes;
       }
 
+      // === ENGAGEMENT DETECTION ===
+      const messageText = (msg.message as string) || '';
+      const metrics = analyzeResponse(messageText);
+      const historyAvg = getHistoryAverage();
+      const engagement = detectEngagement(metrics, historyAvg);
+      trackResponse(metrics);
+
+      // Estimate ideas from message (simple heuristic: sentences with substance)
+      const ideasThisTurn = estimateIdeas(messageText);
+
+      // Update session state with turn and ideas
+      let updatedState = incrementTurn(sessionState, ideasThisTurn);
+      updatedState = { ...updatedState, lastEngagement: engagement };
+
+      // Check for stagnation and switch technique if needed
+      if (isStagnating(updatedState)) {
+        const switchedState = switchTechnique(updatedState);
+        updatedState = switchedState;
+        console.error(`[SESSION] Stagnation detected, switched to: ${updatedState.currentTechnique}`);
+      }
+
+      // Apply updates to global session state
+      updateSessionState(updatedState);
+
+      // Broadcast session state to all viewers
+      broadcast({
+        type: "session_state_update",
+        phase: updatedState.phase,
+        diamond: updatedState.diamond,
+        turnCount: updatedState.turnCount,
+        currentTechnique: updatedState.currentTechnique,
+        engagement
+      });
+
       // Log for debugging
-      console.error(`[USER INPUT] ${JSON.stringify(payload)}`);
+      console.error(`[USER INPUT] engagement=${engagement}, ideas=${ideasThisTurn}, turn=${updatedState.turnCount}`);
 
       // Broadcast to all viewers
       broadcast(payload);

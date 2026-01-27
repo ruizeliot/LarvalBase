@@ -71,6 +71,7 @@ export function handleSessionTool(name: string): ToolResponse {
       currentTechnique: sessionState.currentTechnique,
       recommendedTechniques,
       ideasThisPhase: sessionState.ideas.generated,
+      engagement: sessionState.lastEngagement,  // Include engagement signal
       recommendedAction: guidance,
       phaseDescription: getPhaseDescription(sessionState.phase, sessionState.diamond)
     };
