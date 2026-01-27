@@ -16,10 +16,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Session Flow
 
-- [ ] **FLOW-01**: Session follows Double Diamond phases (diverge → converge cycles)
-- [ ] **FLOW-02**: brainstorm-notes.md updates continuously as conversation progresses
-- [ ] **FLOW-03**: AI detects user engagement signals (verbose, terse, confused, excited)
-- [ ] **FLOW-04**: AI switches visual techniques when current approach isn't working
+- [x] **FLOW-01**: Session follows Double Diamond phases (diverge → converge cycles)
+- [x] **FLOW-02**: brainstorm-notes.md updates continuously as conversation progresses
+- [x] **FLOW-03**: AI detects user engagement signals (verbose, terse, confused, excited)
+- [x] **FLOW-04**: AI switches visual techniques when current approach isn't working
 
 ### Human-AI Collaboration
 
@@ -32,7 +32,7 @@ Requirements for initial release. Each maps to roadmap phases.
 
 - [x] **CANVAS-01**: Canvas updates in real-time as conversation progresses (no noticeable lag)
 - [x] **CANVAS-02**: Visuals start simple and add detail progressively
-- [ ] **CANVAS-03**: AI detects and incorporates user edits to canvas/notes
+- [x] **CANVAS-03**: AI detects and incorporates user edits to canvas/notes
 
 ## v2 Requirements
 
@@ -73,17 +73,17 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-02 | Phase 1 | Complete |
 | VIS-03 | Phase 1 | Complete |
 | VIS-04 | Phase 1 | Complete |
-| FLOW-01 | Phase 2 | Pending |
-| FLOW-02 | Phase 2 | Pending |
-| FLOW-03 | Phase 2 | Pending |
-| FLOW-04 | Phase 2 | Pending |
+| FLOW-01 | Phase 2 | Complete |
+| FLOW-02 | Phase 2 | Complete |
+| FLOW-03 | Phase 2 | Complete |
+| FLOW-04 | Phase 2 | Complete |
 | COLLAB-01 | Phase 3 | Pending |
 | COLLAB-02 | Phase 3 | Pending |
 | COLLAB-03 | Phase 3 | Pending |
 | COLLAB-04 | Phase 3 | Pending |
 | CANVAS-01 | Phase 1 | Complete |
 | CANVAS-02 | Phase 1 | Complete |
-| CANVAS-03 | Phase 2 | Pending |
+| CANVAS-03 | Phase 2 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total
@@ -92,4 +92,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2025-01-26*
-*Last updated: 2026-01-26 after Phase 1 completion*
+*Last updated: 2026-01-27 after Phase 2 completion*

@@ -13,7 +13,7 @@ Transform the existing live-canvas-mcp infrastructure into an intelligent visual
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Visual Techniques Foundation** - Core drawing capabilities with responsive canvas
-- [ ] **Phase 2: Adaptive Session Flow** - Double Diamond phases with engagement-based technique switching
+- [x] **Phase 2: Adaptive Session Flow** - Double Diamond phases with engagement-based technique switching
 - [ ] **Phase 3: Human-First Collaboration** - Guardrails ensuring user creativity remains central
 
 ## Phase Details
@@ -51,8 +51,8 @@ Plans:
 - [x] 02-01-PLAN.md — Double Diamond state machine + session store + viewer indicator (Wave 1)
 - [x] 02-02-PLAN.md — Engagement detection + stagnation detection + technique switching (Wave 2)
 - [x] 02-03-PLAN.md — Notes file watching + canvas edit detection + edit notifications (Wave 2)
-- [ ] 02-04-PLAN.md — [GAP CLOSURE] CLAUDE.md behavioral integration for Phase 2 tools (Wave 1)
-- [ ] 02-05-PLAN.md — [GAP CLOSURE] Wire user edit detection pipeline end-to-end (Wave 1)
+- [x] 02-04-PLAN.md — [GAP CLOSURE] CLAUDE.md behavioral integration for Phase 2 tools (Wave 1)
+- [x] 02-05-PLAN.md — [GAP CLOSURE] Wire user edit detection pipeline end-to-end (Wave 1)
 
 ### Phase 3: Human-First Collaboration
 **Goal**: AI facilitates without dominating - user creativity stays central through structured guardrails
@@ -77,5 +77,5 @@ Phases execute in numeric order: 1 -> 2 -> 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Visual Techniques Foundation | 3/3 | Complete | 2026-01-26 |
-| 2. Adaptive Session Flow | 3/5 | Gap closure pending | - |
+| 2. Adaptive Session Flow | 5/5 | Complete | 2026-01-27 |
 | 3. Human-First Collaboration | 0/2 | Not started | - |
