@@ -139,6 +139,8 @@ interface UseSocketIOOptions {
   onUserJoined?: (socketId: string, userName?: string) => void;
   /** Callback when user leaves */
   onUserLeft?: (socketId: string) => void;
+  /** Callback when a chat message is received */
+  onMessageReceived?: (message: ChatMessage) => void;
 }
 
 /**
@@ -163,6 +165,8 @@ interface UseSocketIOReturn {
   send: (message: object) => void;
   /** Get raw socket for advanced operations (canvas sync) */
   getSocket: () => Socket<ServerToClientEvents, ClientToServerEvents> | null;
+  /** Send a chat message to the current session */
+  sendMessage: (content: string) => void;
 }
 
 /**
@@ -247,6 +251,12 @@ export function useSocketIO(options: UseSocketIOOptions = {}): UseSocketIOReturn
     socket.on('canvas_state', (state) => {
       console.log('[Socket.IO] Received canvas state');
       optionsRef.current.onCanvasState?.(state);
+    });
+
+    // Chat message received
+    socket.on('message_received', (message) => {
+      console.log('[Socket.IO] Message received:', message.id);
+      optionsRef.current.onMessageReceived?.(message);
     });
 
     // Cleanup on unmount
@@ -340,6 +350,20 @@ export function useSocketIO(options: UseSocketIOOptions = {}): UseSocketIOReturn
   }, []);
 
   /**
+   * Send a chat message to the current session
+   */
+  const sendMessage = useCallback((content: string) => {
+    const socket = socketRef.current;
+    if (!socket || !socket.connected || !roomCode) {
+      console.warn('[Socket.IO] Cannot send message - not in session');
+      return;
+    }
+
+    socket.emit('message_send', { roomCode, content });
+    console.log('[Socket.IO] Message sent');
+  }, [roomCode]);
+
+  /**
    * Get raw socket for advanced operations (e.g., canvas sync)
    * Returns null if not yet connected
    */
@@ -355,5 +379,6 @@ export function useSocketIO(options: UseSocketIOOptions = {}): UseSocketIOReturn
     leaveSession,
     send,
     getSocket,
+    sendMessage,
   };
 }

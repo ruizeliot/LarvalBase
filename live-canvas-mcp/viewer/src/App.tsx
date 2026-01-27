@@ -5,7 +5,7 @@ import { DiagramPanel, Diagram } from './components/DiagramPanel';
 import { InputArea } from './components/InputArea';
 import { SessionControls } from './components/SessionControls';
 import { useWebSocket } from './hooks/useWebSocket';
-import { useSocketIO } from './hooks/useSocketIO';
+import { useSocketIO, ChatMessage } from './hooks/useSocketIO';
 import { useCanvasSync } from './hooks/useCanvasSync';
 import { usePreferencesStore } from './stores/preferencesStore';
 import { useSessionStore, DiamondPhase } from './stores/sessionStore';
@@ -17,6 +17,7 @@ export default function App() {
   const [serverObjects, setServerObjects] = useState<ServerCanvasObject[]>([]);
   const [diagrams, setDiagrams] = useState<Diagram[]>([]);
   const [showSettings, setShowSettings] = useState(false);
+  const [sessionMessages, setSessionMessages] = useState<ChatMessage[]>([]);
   const whiteboardRef = useRef<WhiteboardPanelRef>(null);
 
   // Preferences from Zustand store
@@ -46,12 +47,22 @@ export default function App() {
     onSessionEnded: (_reason, message) => {
       // Session ended by host
       alert(`Session ended: ${message}`);
+      // Clear session messages
+      setSessionMessages([]);
     },
     onUserJoined: (socketId, userName) => {
       console.log('[App] User joined session:', socketId, userName);
     },
     onUserLeft: (socketId) => {
       console.log('[App] User left session:', socketId);
+    },
+    onMessageReceived: (message) => {
+      console.log('[App] Chat message received:', message.id);
+      setSessionMessages(prev => {
+        // Add message and sort by timestamp for correct order
+        const updated = [...prev, message];
+        return updated.sort((a, b) => a.timestamp - b.timestamp);
+      });
     },
   });
 
