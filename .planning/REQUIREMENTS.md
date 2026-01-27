@@ -1,67 +1,80 @@
 # Requirements: Brainstorm Visual System
 
-**Defined:** 2025-01-26
+**Defined:** 2026-01-27
 **Core Value:** The AI proactively uses visual techniques to extract rich insights from users during brainstorming sessions
 
-## v1 Requirements
+## v1.0 Requirements (COMPLETE)
 
-Requirements for initial release. Each maps to roadmap phases.
+All v1.0 requirements shipped. See PROJECT.md Validated section.
 
-### Visual Techniques
+## v2.0 Requirements
 
-- [x] **VIS-01**: AI draws mind maps to expand and branch user ideas
-- [x] **VIS-02**: AI creates 2x2 matrices for comparison and prioritization
-- [x] **VIS-03**: AI builds affinity diagrams to group related ideas
-- [x] **VIS-04**: AI renders user flow diagrams for journey/process mapping
+Requirements for milestone v2.0: Collaborative Multi-User.
 
-### Session Flow
+### Multi-User Sessions
 
-- [x] **FLOW-01**: Session follows Double Diamond phases (diverge → converge cycles)
-- [x] **FLOW-02**: brainstorm-notes.md updates continuously as conversation progresses
-- [x] **FLOW-03**: AI detects user engagement signals (verbose, terse, confused, excited)
-- [x] **FLOW-04**: AI switches visual techniques when current approach isn't working
+- [ ] **SESS-01**: Host starts session and sees shareable URL with session code
+- [ ] **SESS-02**: Guest joins session via URL and sees same canvas state
+- [ ] **SESS-03**: Host sees list of connected participants (name/identifier)
+- [ ] **SESS-04**: Guest sees list of connected participants
+- [ ] **SESS-05**: User sees other users' cursor positions on canvas in real-time
+- [ ] **SESS-06**: Canvas edits by any user sync to all users within 500ms
+- [ ] **SESS-07**: Messages sent by any user appear to all users
+- [ ] **SESS-08**: Session ends when host disconnects (guests notified)
 
-### Human-AI Collaboration
+### Voice Input
 
-- [x] **COLLAB-01**: AI solicits user ideas BEFORE offering AI suggestions (human-first)
-- [x] **COLLAB-02**: AI presents maximum 3 curated suggestions at a time
-- [x] **COLLAB-03**: AI uses question-driven prompts (asks → user answers → AI visualizes)
-- [x] **COLLAB-04**: AI adapts pacing based on user response style
+- [ ] **VOICE-01**: User can press-and-hold button to record voice
+- [ ] **VOICE-02**: User sees visual recording indicator while button held
+- [ ] **VOICE-03**: User sees audio level feedback during recording
+- [ ] **VOICE-04**: Recorded audio is transcribed via Whisper on release
+- [ ] **VOICE-05**: Transcribed text appears in message input field
+- [ ] **VOICE-06**: Whisper auto-detects EN or FR per utterance
+- [ ] **VOICE-07**: User sees indicator of detected language after transcription
 
-### Canvas Performance
+### Document Gallery
 
-- [x] **CANVAS-01**: Canvas updates in real-time as conversation progresses (no noticeable lag)
-- [x] **CANVAS-02**: Visuals start simple and add detail progressively
-- [x] **CANVAS-03**: AI detects and incorporates user edits to canvas/notes
+- [ ] **DOC-01**: User can upload images to shared gallery via drag-drop or file picker
+- [ ] **DOC-02**: User can upload documents (PDF, etc.) to shared gallery
+- [ ] **DOC-03**: Gallery displays thumbnails of all uploaded files
+- [ ] **DOC-04**: All users see same gallery contents (synced)
+- [ ] **DOC-05**: User can drag file from gallery into message compose area
+- [ ] **DOC-06**: Dragged file is included as context when message sent to AI
+- [ ] **DOC-07**: AI can read and reference content from attached documents
+- [ ] **DOC-08**: User can preview image/document before sending
 
-## v2 Requirements
+## Future Requirements
 
-Deferred to future release. Tracked but not in current roadmap.
-
-### Advanced Techniques
-
-- **VIS-05**: Multi-criteria decision matrices
-- **VIS-06**: SWOT analysis visualization
-- **VIS-07**: Dot voting simulation
-- **VIS-08**: Storyboard sequences
+Deferred to later milestones.
 
 ### Enhanced Collaboration
 
-- **COLLAB-05**: Voice input via Whisper integration
-- **COLLAB-06**: Multi-page canvas navigation
-- **COLLAB-07**: Session history and replay
+- **SESS-09**: Typing indicators when someone is composing a message
+- **SESS-10**: Session persistence across host restart
+- **SESS-11**: User authentication/named accounts
+
+### Advanced Voice
+
+- **VOICE-08**: Voice activity detection (auto-stop recording on silence)
+- **VOICE-09**: Support additional languages beyond EN/FR
+
+### Advanced Documents
+
+- **DOC-09**: Folder organization in gallery
+- **DOC-10**: Document annotation tools
 
 ## Out of Scope
 
-Explicitly excluded. Documented to prevent scope creep.
+Explicitly excluded for v2.0.
 
 | Feature | Reason |
 |---------|--------|
-| Voice input (Whisper) | Separate project, adds complexity |
-| New MCP tool development | Existing canvas tools are sufficient |
-| Changes to pipeline phases 2-5 | This focuses only on brainstorming |
-| AI idea generation | AI visualizes user ideas, doesn't generate them |
-| Template library | Start with dynamic generation, templates later |
+| Voice chat between users | Complexity; voice is transcription only |
+| Cloud deployment | Local network hosting per user request |
+| User authentication | Anonymous session joining for simplicity |
+| Always-listening voice | Privacy concerns; push-to-talk only |
+| Document co-editing | Canvas is shared, docs are reference only |
+| Video streaming | Out of scope for brainstorming tool |
 
 ## Traceability
 
@@ -69,27 +82,35 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VIS-01 | Phase 1 | Complete |
-| VIS-02 | Phase 1 | Complete |
-| VIS-03 | Phase 1 | Complete |
-| VIS-04 | Phase 1 | Complete |
-| FLOW-01 | Phase 2 | Complete |
-| FLOW-02 | Phase 2 | Complete |
-| FLOW-03 | Phase 2 | Complete |
-| FLOW-04 | Phase 2 | Complete |
-| COLLAB-01 | Phase 3 | Pending |
-| COLLAB-02 | Phase 3 | Pending |
-| COLLAB-03 | Phase 3 | Pending |
-| COLLAB-04 | Phase 3 | Pending |
-| CANVAS-01 | Phase 1 | Complete |
-| CANVAS-02 | Phase 1 | Complete |
-| CANVAS-03 | Phase 2 | Complete |
+| SESS-01 | TBD | Pending |
+| SESS-02 | TBD | Pending |
+| SESS-03 | TBD | Pending |
+| SESS-04 | TBD | Pending |
+| SESS-05 | TBD | Pending |
+| SESS-06 | TBD | Pending |
+| SESS-07 | TBD | Pending |
+| SESS-08 | TBD | Pending |
+| VOICE-01 | TBD | Pending |
+| VOICE-02 | TBD | Pending |
+| VOICE-03 | TBD | Pending |
+| VOICE-04 | TBD | Pending |
+| VOICE-05 | TBD | Pending |
+| VOICE-06 | TBD | Pending |
+| VOICE-07 | TBD | Pending |
+| DOC-01 | TBD | Pending |
+| DOC-02 | TBD | Pending |
+| DOC-03 | TBD | Pending |
+| DOC-04 | TBD | Pending |
+| DOC-05 | TBD | Pending |
+| DOC-06 | TBD | Pending |
+| DOC-07 | TBD | Pending |
+| DOC-08 | TBD | Pending |
 
 **Coverage:**
-- v1 requirements: 15 total
-- Mapped to phases: 15
-- Unmapped: 0
+- v2.0 requirements: 23 total
+- Mapped to phases: 0
+- Unmapped: 23
 
 ---
-*Requirements defined: 2025-01-26*
-*Last updated: 2026-01-27 after Phase 2 completion*
+*Requirements defined: 2026-01-27*
+*Last updated: 2026-01-27 after v2.0 scoping*
