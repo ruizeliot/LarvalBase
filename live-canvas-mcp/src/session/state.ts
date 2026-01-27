@@ -149,7 +149,8 @@ export function transitionPhase(state: SessionState): SessionState {
       generated: 0,
       recentTurns: []
     },
-    currentTechnique: nextTechnique
+    currentTechnique: nextTechnique,
+    lastEngagement: state.lastEngagement
   };
 }
 

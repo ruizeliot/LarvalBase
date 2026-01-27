@@ -45,7 +45,7 @@ export function watchNotesFile(
     watchState.lastContent = content;
   }).catch(() => {});
 
-  notesWatcher.on('change', async (path) => {
+  notesWatcher.on('change', async (path: string) => {
     // Skip if this is likely our own write
     if (Date.now() - watchState.lastAiWrite < AI_WRITE_GRACE_PERIOD) {
       console.error('[Edits] Ignoring change within AI write grace period');
