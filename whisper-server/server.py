@@ -124,12 +124,17 @@ async def transcribe(
     try:
         model = get_model()
 
+        # Pre-decode audio using FFmpeg (handles webm better than PyAV direct)
+        # This fixes "End of file" errors with browser-recorded webm files
+        from faster_whisper.audio import decode_audio
+        audio_array = decode_audio(tmp_path, sampling_rate=16000)
+
         # Transcribe
         # If language is None or "auto", let Whisper detect
         transcribe_language = language if language and language != "auto" else None
 
         segments, info = model.transcribe(
-            tmp_path,
+            audio_array,
             language=transcribe_language,
             beam_size=5,
             vad_filter=True,  # Filter out silence
