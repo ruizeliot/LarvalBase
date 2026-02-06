@@ -41,11 +41,22 @@ export function AppShell() {
           >
             {leftPanelOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
           </button>
-          {/* Main content */}
-          <div className="flex-1">
-            {isEditor && <Canvas />}
-            {isScenarios && <ScenarioEditor />}
-            {isSimulate && <SimulationResults />}
+          {/* Main content — Canvas is always rendered for persistence */}
+          <div className="flex-1 relative min-h-0">
+            <div className={`absolute inset-0 ${isEditor ? '' : 'pointer-events-none'}`}>
+              <Canvas />
+            </div>
+            {/* Mode-specific overlays on top of canvas */}
+            {isScenarios && (
+              <div className="absolute inset-0 bg-[var(--color-background)]/80 overflow-y-auto z-[5]">
+                <ScenarioEditor />
+              </div>
+            )}
+            {isSimulate && (
+              <div className="absolute inset-0 bg-[var(--color-background)]/80 overflow-y-auto z-[5]">
+                <SimulationResults />
+              </div>
+            )}
           </div>
           {/* Bottom Panel */}
           <BottomPanel />
