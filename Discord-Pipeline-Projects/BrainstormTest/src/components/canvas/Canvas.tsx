@@ -7,31 +7,49 @@ import {
   BackgroundVariant,
   useReactFlow,
   type NodeTypes,
+  type EdgeTypes,
   type OnNodesChange,
   type Node,
+  type Edge,
   type ReactFlowInstance,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
 import { useModelStore } from '@/store/modelStore'
 import { useUiStore } from '@/store/uiStore'
 import { ComponentNode } from './nodes/ComponentNode'
+import { ConditionNode } from './nodes/ConditionNode'
+import { ContextMenu } from './ContextMenu'
+import { ChainBuilder } from '@/components/chain-builder/ChainBuilder'
+import { CausalEdge } from './edges/CausalEdge'
+import { ImpactEdge } from './edges/ImpactEdge'
 import type { ComponentType } from '@/types/model'
 
 const nodeTypes: NodeTypes = {
   component: ComponentNode,
+  condition: ConditionNode,
+}
+
+const edgeTypes: EdgeTypes = {
+  causal: CausalEdge,
+  impact: ImpactEdge,
 }
 
 function CanvasInner() {
   const reactFlowInstance = useRef<ReactFlowInstance | null>(null)
   const { screenToFlowPosition } = useReactFlow()
   const components = useModelStore((s) => s.components)
+  const chains = useModelStore((s) => s.chains)
   const addComponent = useModelStore((s) => s.addComponent)
   const removeComponent = useModelStore((s) => s.removeComponent)
   const updateComponentPosition = useModelStore((s) => s.updateComponentPosition)
   const selectNode = useUiStore((s) => s.selectNode)
   const selectedNodeId = useUiStore((s) => s.selectedNodeId)
+  const openContextMenu = useUiStore((s) => s.openContextMenu)
+  const closeContextMenu = useUiStore((s) => s.closeContextMenu)
+  const chainViewMode = useUiStore((s) => s.chainViewMode)
+  const activeMode = useUiStore((s) => s.activeMode)
 
-  const selectedNodes = useMemo(() => {
+  const { allNodes, allEdges } = useMemo(() => {
     const nodes: Node[] = Object.values(components).map((comp) => ({
       id: comp.id,
       type: 'component' as const,
@@ -39,8 +57,107 @@ function CanvasInner() {
       data: comp,
       selected: comp.id === selectedNodeId,
     }))
-    return nodes
-  }, [components, selectedNodeId])
+
+    const edges: Edge[] = []
+
+    // Add chain visualization nodes and edges
+    if (chainViewMode === 'detailed') {
+      Object.values(chains).forEach((chain) => {
+        const source = components[chain.sourceId]
+        const target = components[chain.targetId]
+        if (!source || !target) return
+
+        const midX = (source.position.x + target.position.x) / 2
+        const midY = (source.position.y + target.position.y) / 2
+
+        // Condition junction nodes
+        if (chain.stages.potential) {
+          const nodeId = `cond-${chain.id}-existence`
+          nodes.push({
+            id: nodeId,
+            type: 'condition',
+            position: { x: midX - 80, y: source.position.y + 100 },
+            data: { label: 'Existence', formula: chain.stages.potential.expression, chainId: chain.id, stage: 'potential' },
+            draggable: false,
+            selectable: false,
+          })
+          edges.push({
+            id: `edge-${chain.id}-src-exist`,
+            source: chain.sourceId,
+            target: nodeId,
+            type: 'causal',
+            data: { chainId: chain.id },
+          })
+        }
+
+        if (chain.stages.potentiality) {
+          const existNodeId = `cond-${chain.id}-existence`
+          const suscNodeId = `cond-${chain.id}-susceptibility`
+          nodes.push({
+            id: suscNodeId,
+            type: 'condition',
+            position: { x: midX, y: midY },
+            data: { label: 'Susceptibility', formula: chain.stages.potentiality.expression, chainId: chain.id, stage: 'potentiality' },
+            draggable: false,
+            selectable: false,
+          })
+          edges.push({
+            id: `edge-${chain.id}-exist-susc`,
+            source: existNodeId,
+            target: suscNodeId,
+            type: 'causal',
+            data: { chainId: chain.id },
+          })
+        }
+
+        if (chain.stages.actuality) {
+          const suscNodeId = `cond-${chain.id}-susceptibility`
+          const trigNodeId = `cond-${chain.id}-triggering`
+          nodes.push({
+            id: trigNodeId,
+            type: 'condition',
+            position: { x: midX + 80, y: target.position.y - 60 },
+            data: { label: 'Triggering', formula: chain.stages.actuality.triggering.expression, chainId: chain.id, stage: 'actuality' },
+            draggable: false,
+            selectable: false,
+          })
+          edges.push({
+            id: `edge-${chain.id}-susc-trig`,
+            source: suscNodeId,
+            target: trigNodeId,
+            type: 'causal',
+            data: { chainId: chain.id },
+          })
+          // Impact arrow from triggering to target
+          edges.push({
+            id: `edge-${chain.id}-trig-target`,
+            source: trigNodeId,
+            target: chain.targetId,
+            type: 'impact',
+            data: { chainId: chain.id },
+          })
+        }
+      })
+    } else {
+      // Compact view: direct edges source → target with stage indicators
+      Object.values(chains).forEach((chain) => {
+        const source = components[chain.sourceId]
+        const target = components[chain.targetId]
+        if (!source || !target) return
+
+        edges.push({
+          id: `edge-${chain.id}-compact`,
+          source: chain.sourceId,
+          target: chain.targetId,
+          type: 'causal',
+          label: `❶→❷→❸ ${chain.name}`,
+          data: { chainId: chain.id, compact: true },
+        })
+      })
+    }
+
+    return { allNodes: nodes, allEdges: edges }
+  }, [components, chains, selectedNodeId, chainViewMode])
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -66,7 +183,19 @@ function CanvasInner() {
 
   const onPaneClick = useCallback(() => {
     selectNode(null)
-  }, [selectNode])
+    closeContextMenu()
+  }, [selectNode, closeContextMenu])
+
+  const onNodeContextMenu = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      if (activeMode !== 'editor') return
+      // Only show context menu for component nodes (not condition nodes)
+      if (node.type !== 'component') return
+      event.preventDefault()
+      openContextMenu(node.id, { x: event.clientX, y: event.clientY })
+    },
+    [openContextMenu, activeMode]
+  )
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault()
@@ -91,30 +220,36 @@ function CanvasInner() {
   )
 
   return (
-    <ReactFlow
-      nodes={selectedNodes}
-      edges={[]}
-      nodeTypes={nodeTypes}
-      onNodesChange={onNodesChange}
-      onNodeClick={onNodeClick}
-      onPaneClick={onPaneClick}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
-      onInit={(instance) => { reactFlowInstance.current = instance }}
-      fitView={false}
-      proOptions={{ hideAttribution: true }}
-      deleteKeyCode={['Backspace', 'Delete']}
-      className="bg-[var(--color-background)]"
-    >
-      <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--color-border)" />
-      <Controls />
-      <MiniMap
-        nodeStrokeWidth={3}
-        zoomable
-        pannable
-        style={{ width: 150, height: 100 }}
-      />
-    </ReactFlow>
+    <>
+      <ReactFlow
+        nodes={allNodes}
+        edges={allEdges}
+        nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
+        onNodesChange={onNodesChange}
+        onNodeClick={onNodeClick}
+        onNodeContextMenu={onNodeContextMenu}
+        onPaneClick={onPaneClick}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onInit={(instance) => { reactFlowInstance.current = instance }}
+        fitView={false}
+        proOptions={{ hideAttribution: true }}
+        deleteKeyCode={['Backspace', 'Delete']}
+        className="bg-[var(--color-background)]"
+      >
+        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--color-border)" />
+        <Controls />
+        <MiniMap
+          nodeStrokeWidth={3}
+          zoomable
+          pannable
+          style={{ width: 150, height: 100 }}
+        />
+      </ReactFlow>
+      <ContextMenu />
+      <ChainBuilder />
+    </>
   )
 }
 
