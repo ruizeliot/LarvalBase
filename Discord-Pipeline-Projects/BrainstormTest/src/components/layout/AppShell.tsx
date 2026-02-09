@@ -6,6 +6,7 @@ import { Canvas } from '@/components/canvas/Canvas'
 import { ScenarioList } from '@/components/panels/ScenarioList'
 import { ScenarioEditor } from '@/components/panels/ScenarioEditor'
 import { SimulationControls } from '@/components/simulation/SimulationControls'
+import { ChainStatusPanel } from '@/components/simulation/ChainStatusPanel'
 import { SimulationResults } from '@/components/simulation/SimulationResults'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
@@ -27,7 +28,12 @@ export function AppShell() {
           <div data-testid="left-panel" className="w-72 flex-shrink-0 border-r border-[var(--color-border)] bg-[var(--color-surface)] overflow-y-auto">
             {isEditor && <LeftPanel />}
             {isScenarios && <ScenarioList />}
-            {isSimulate && <SimulationControls />}
+            {isSimulate && (
+              <>
+                <SimulationControls />
+                <ChainStatusPanel />
+              </>
+            )}
           </div>
         )}
         {/* Main Area */}
