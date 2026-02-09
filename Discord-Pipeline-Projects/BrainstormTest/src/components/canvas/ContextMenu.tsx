@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import { useModelStore } from '@/store/modelStore'
 import { useUiStore } from '@/store/uiStore'
 
 export function ContextMenu() {
@@ -7,6 +8,8 @@ export function ContextMenu() {
   const closeContextMenu = useUiStore((s) => s.closeContextMenu)
   const openChainBuilder = useUiStore((s) => s.openChainBuilder)
   const chainBuilderOpen = useUiStore((s) => s.chainBuilderOpen)
+  const removeComponent = useModelStore((s) => s.removeComponent)
+  const selectNode = useUiStore((s) => s.selectNode)
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -46,6 +49,8 @@ export function ContextMenu() {
         data-testid="context-menu-delete"
         className="w-full text-left px-3 py-2 text-sm text-[var(--color-accent-red)] hover:bg-[var(--color-surface-hover)] cursor-pointer"
         onClick={() => {
+          removeComponent(contextMenuNodeId)
+          selectNode(null)
           closeContextMenu()
         }}
       >
