@@ -26,6 +26,7 @@ function CanvasInner() {
   const { screenToFlowPosition } = useReactFlow()
   const components = useModelStore((s) => s.components)
   const addComponent = useModelStore((s) => s.addComponent)
+  const removeComponent = useModelStore((s) => s.removeComponent)
   const updateComponentPosition = useModelStore((s) => s.updateComponentPosition)
   const selectNode = useUiStore((s) => s.selectNode)
   const selectedNodeId = useUiStore((s) => s.selectedNodeId)
@@ -47,9 +48,13 @@ function CanvasInner() {
         if (change.type === 'position' && change.position) {
           updateComponentPosition(change.id, change.position)
         }
+        if (change.type === 'remove') {
+          removeComponent(change.id)
+          selectNode(null)
+        }
       }
     },
-    [updateComponentPosition]
+    [updateComponentPosition, removeComponent, selectNode]
   )
 
   const onNodeClick = useCallback(
