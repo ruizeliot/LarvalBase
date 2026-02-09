@@ -38,7 +38,7 @@ export const useUiStore = create<UiState>((set) => ({
   contextMenuPosition: null,
   chainViewMode: 'detailed',
 
-  setActiveMode: (mode) => set({ activeMode: mode }),
+  setActiveMode: (mode) => set({ activeMode: mode, chainBuilderOpen: false, chainBuilderSourceId: null }),
   selectNode: (id) => set({ selectedNodeId: id }),
   toggleLeftPanel: () => set((s) => ({ leftPanelOpen: !s.leftPanelOpen })),
   toggleBottomPanel: () => set((s) => ({ bottomPanelOpen: !s.bottomPanelOpen })),
