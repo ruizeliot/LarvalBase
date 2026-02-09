@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useModelStore } from '@/store/modelStore'
+import { useUiStore } from '@/store/uiStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Plus, Trash2 } from 'lucide-react'
@@ -37,6 +39,7 @@ function getCapError(
 
 export function PropertyEditor({ componentId }: PropertyEditorProps) {
   const component = useModelStore((s) => s.components[componentId])
+  const chains = useModelStore((s) => s.chains)
   const updateComponent = useModelStore((s) => s.updateComponent)
   const addParameter = useModelStore((s) => s.addParameter)
   const updateParameter = useModelStore((s) => s.updateParameter)
@@ -45,10 +48,62 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
   const updateCapacity = useModelStore((s) => s.updateCapacity)
   const removeCapacity = useModelStore((s) => s.removeCapacity)
   const removeComponent = useModelStore((s) => s.removeComponent)
+  const selectNode = useUiStore((s) => s.selectNode)
+
+  const [confirmDialog, setConfirmDialog] = useState<{
+    type: 'type-change' | 'delete'
+    message: string
+    details: string[]
+    onConfirm: () => void
+  } | null>(null)
 
   if (!component) return null
 
   const isInternal = component.type === 'internal'
+
+  const handleTypeToggle = (newType: 'internal' | 'external') => {
+    if (newType === component.type) return
+
+    // If switching to external and capacities exist, show confirmation
+    if (newType === 'external' && component.capacities.length > 0) {
+      setConfirmDialog({
+        type: 'type-change',
+        message: 'Switching to External will remove all capacities.',
+        details: component.capacities.map((c) => c.name),
+        onConfirm: () => {
+          updateComponent(componentId, { type: 'external' })
+          setConfirmDialog(null)
+        },
+      })
+      return
+    }
+
+    updateComponent(componentId, { type: newType })
+  }
+
+  const handleDelete = () => {
+    // Check if component has associated chains
+    const affectedChains = Object.values(chains).filter(
+      (chain) => chain.sourceId === componentId || chain.targetId === componentId
+    )
+
+    if (affectedChains.length > 0) {
+      setConfirmDialog({
+        type: 'delete',
+        message: 'This component is referenced by causal chains. Deleting it will also remove these chains:',
+        details: affectedChains.map((c) => c.name),
+        onConfirm: () => {
+          removeComponent(componentId)
+          selectNode(null)
+          setConfirmDialog(null)
+        },
+      })
+      return
+    }
+
+    removeComponent(componentId)
+    selectNode(null)
+  }
 
   return (
     <div className="p-3 flex flex-col gap-3">
@@ -73,7 +128,7 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
           <Button
             size="sm"
             variant={isInternal ? 'default' : 'secondary'}
-            onClick={() => updateComponent(componentId, { type: 'internal' })}
+            onClick={() => handleTypeToggle('internal')}
             data-testid="type-internal"
           >
             Internal
@@ -81,7 +136,7 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
           <Button
             size="sm"
             variant={!isInternal ? 'default' : 'secondary'}
-            onClick={() => updateComponent(componentId, { type: 'external' })}
+            onClick={() => handleTypeToggle('external')}
             data-testid="type-external"
           >
             External
@@ -206,13 +261,50 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
           variant="destructive"
           size="sm"
           className="w-full"
-          onClick={() => removeComponent(componentId)}
+          onClick={handleDelete}
           data-testid="delete-component"
         >
           <Trash2 size={12} />
           Delete Component
         </Button>
       </div>
+
+      {/* Confirmation Dialog */}
+      {confirmDialog && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+          data-testid="confirm-dialog"
+        >
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-4 max-w-sm shadow-xl">
+            <p className="text-sm text-[var(--color-text)] mb-2">{confirmDialog.message}</p>
+            {confirmDialog.details.length > 0 && (
+              <ul className="text-xs text-[var(--color-text-muted)] mb-3 list-disc list-inside">
+                {confirmDialog.details.map((d) => (
+                  <li key={d}>{d}</li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2 justify-end">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setConfirmDialog(null)}
+                data-testid="confirm-cancel"
+              >
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={confirmDialog.onConfirm}
+                data-testid="confirm-ok"
+              >
+                Confirm
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
