@@ -47,6 +47,7 @@ function CanvasInner() {
   const openContextMenu = useUiStore((s) => s.openContextMenu)
   const closeContextMenu = useUiStore((s) => s.closeContextMenu)
   const chainViewMode = useUiStore((s) => s.chainViewMode)
+  const toggleChainViewMode = useUiStore((s) => s.toggleChainViewMode)
   const activeMode = useUiStore((s) => s.activeMode)
 
   const { allNodes, allEdges } = useMemo(() => {
@@ -247,6 +248,30 @@ function CanvasInner() {
           style={{ width: 150, height: 100 }}
         />
       </ReactFlow>
+      {/* Chain view toggle button */}
+      <button
+        data-testid="chain-view-toggle"
+        onClick={toggleChainViewMode}
+        className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderColor: 'var(--color-border)',
+          color: 'var(--color-text)',
+        }}
+        title={chainViewMode === 'detailed' ? 'Switch to compact view' : 'Switch to detailed view'}
+      >
+        {chainViewMode === 'detailed' ? (
+          <>
+            <span>⊟</span>
+            <span>Compact</span>
+          </>
+        ) : (
+          <>
+            <span>⊞</span>
+            <span>Detailed</span>
+          </>
+        )}
+      </button>
       <ContextMenu />
       <ChainBuilder />
     </>
