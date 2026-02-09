@@ -58,6 +58,7 @@ function SimulateBottomContent() {
   const stepBackward = useSimulationStore((s) => s.stepBackward)
   const setSpeed = useSimulationStore((s) => s.setSpeed)
   const scrubTo = useSimulationStore((s) => s.scrubTo)
+  const frozenEventLog = useSimulationStore((s) => s.frozenEventLog)
 
   const isStopped = playbackState === 'stopped'
   const isPlaying = playbackState === 'playing'
@@ -67,10 +68,12 @@ function SimulateBottomContent() {
   const currentTime = result && result.timesteps[currentStep] ? result.timesteps[currentStep].time : 0
   const maxTime = result && totalSteps > 0 ? result.timesteps[totalSteps - 1].time : 0
 
-  // Events up to current step for the log
-  const visibleEvents = result
-    ? result.timesteps.slice(0, currentStep + 1).flatMap((ts) => ts.events)
-    : []
+  // Events: use frozen log if stopped with persisted events, otherwise compute from current step
+  const visibleEvents = frozenEventLog
+    ? frozenEventLog
+    : result
+      ? result.timesteps.slice(0, currentStep + 1).flatMap((ts) => ts.events)
+      : []
 
   return (
     <div data-testid="bottom-panel-simulate" className="flex flex-col h-full">
@@ -195,7 +198,7 @@ function SimulateBottomContent() {
           <p className="text-[10px] text-[var(--color-text-muted)] py-1">No events yet</p>
         ) : (
           visibleEvents.map((event, i) => (
-            <div key={i} className="text-[10px] py-0.5 flex items-center gap-1">
+            <div key={i} data-testid="event-log-entry" className="text-[10px] py-0.5 flex items-center gap-1">
               <span className="font-mono text-[var(--color-primary)]">t={event.time}</span>
               <span className={event.type === 'forced' ? 'text-[var(--color-accent-orange)]' : 'text-[var(--color-text-muted)]'}>
                 {event.type === 'forced' ? '[forced]' : '[cascade]'}

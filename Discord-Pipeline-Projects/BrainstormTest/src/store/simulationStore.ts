@@ -11,6 +11,7 @@ interface SimulationStoreState extends SimulationState {
   currentStep: number
   speed: number
   _intervalId: ReturnType<typeof setInterval> | null
+  frozenEventLog: SimulationEvent[] | null
 
   setSelectedScenario: (id: string | null) => void
   setTimeStep: (step: number) => void
@@ -44,6 +45,7 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
   currentStep: 0,
   speed: 1,
   _intervalId: null,
+  frozenEventLog: null,
 
   setSelectedScenario: (id) => {
     set((s) => ({ config: { ...s.config, selectedScenarioId: id } }))
@@ -102,7 +104,7 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
   reset: () => {
     const { _intervalId } = get()
     if (_intervalId) clearInterval(_intervalId)
-    set({ result: null, error: null, running: false, playbackState: 'stopped', currentStep: 0, _intervalId: null })
+    set({ result: null, error: null, running: false, playbackState: 'stopped', currentStep: 0, _intervalId: null, frozenEventLog: null })
   },
 
   play: () => {
@@ -113,6 +115,11 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
       state.run()
       const afterRun = get()
       if (afterRun.error || !afterRun.result) return
+    }
+
+    // Clear frozen event log when starting a new playback from stopped state
+    if (state.playbackState === 'stopped') {
+      set({ frozenEventLog: null, currentStep: 0 })
     }
 
     // Clear any existing interval
@@ -142,9 +149,13 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
   },
 
   stop: () => {
-    const { _intervalId } = get()
+    const { _intervalId, result, currentStep } = get()
     if (_intervalId) clearInterval(_intervalId)
-    set({ playbackState: 'stopped', currentStep: 0, _intervalId: null })
+    // Freeze event log so it persists after stop
+    const frozenEventLog = result
+      ? result.timesteps.slice(0, currentStep + 1).flatMap((ts) => ts.events)
+      : null
+    set({ playbackState: 'stopped', currentStep: 0, _intervalId: null, frozenEventLog })
   },
 
   stepForward: () => {
