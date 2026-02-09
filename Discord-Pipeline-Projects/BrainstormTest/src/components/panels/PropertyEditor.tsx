@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useModelStore } from '@/store/modelStore'
 import { useUiStore } from '@/store/uiStore'
 import { Button } from '@/components/ui/button'
@@ -55,6 +55,11 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
 
   const [nameInput, setNameInput] = useState(component?.name ?? '')
   const [nameError, setNameError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setNameInput(component?.name ?? '')
+    setNameError(null)
+  }, [componentId, component?.name])
 
   const [confirmDialog, setConfirmDialog] = useState<{
     type: 'type-change' | 'delete'
