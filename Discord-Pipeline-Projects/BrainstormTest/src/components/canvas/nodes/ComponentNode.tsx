@@ -47,7 +47,7 @@ export const ComponentNode = memo(function ComponentNode({ data, selected }: Nod
   return (
     <div
       className={cn(
-        'rounded-lg border-2 min-w-[180px] shadow-lg',
+        'rounded-lg border-2 min-w-[180px] max-w-[280px] shadow-lg',
         isInternal
           ? 'bg-[var(--color-node-internal)] border-[var(--color-node-internal-border)]'
           : 'bg-[var(--color-node-external)] border-[var(--color-node-external-border)]',
@@ -82,7 +82,7 @@ export const ComponentNode = memo(function ComponentNode({ data, selected }: Nod
             const isHighlighted = highlightKeysRef.current.has(p.id)
             return (
               <div key={p.id} className="flex justify-between items-center text-xs py-0.5">
-                <span className="text-[var(--color-text-muted)]">{p.name}</span>
+                <span className="text-[var(--color-text-muted)] truncate">{p.name}</span>
                 <span
                   data-testid={`node-param-value-${p.name}`}
                   className={cn('text-white font-mono', isHighlighted && 'param-highlight')}
@@ -104,7 +104,7 @@ export const ComponentNode = memo(function ComponentNode({ data, selected }: Nod
           </div>
           {comp.capacities.map((c) => (
             <div key={c.id} className="flex justify-between items-center text-xs py-0.5">
-              <span className="text-[var(--color-text-muted)]">{c.name}</span>
+              <span className="text-[var(--color-text-muted)] truncate">{c.name}</span>
               <span className="text-white font-mono">
                 [{c.min}, {c.max}]
               </span>
