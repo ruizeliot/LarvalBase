@@ -82,6 +82,27 @@ describe('PropertyEditor', () => {
     expect(screen.getByTestId('param-error')).toHaveTextContent(/invalid/i)
   })
 
+  it('shows error when component name is cleared to empty', async () => {
+    const user = userEvent.setup()
+    render(<PropertyEditor componentId={componentId} />)
+    const input = screen.getByTestId('property-name')
+    await user.clear(input)
+    expect(screen.getByTestId('name-error')).toHaveTextContent(/required/i)
+    // Store should retain old name, not accept empty
+    expect(useModelStore.getState().components[componentId].name).toBe('Component 1')
+  })
+
+  it('shows error when component name is only whitespace', async () => {
+    const user = userEvent.setup()
+    render(<PropertyEditor componentId={componentId} />)
+    const input = screen.getByTestId('property-name')
+    await user.clear(input)
+    await user.type(input, '   ')
+    expect(screen.getByTestId('name-error')).toHaveTextContent(/required/i)
+    // Store should retain old name
+    expect(useModelStore.getState().components[componentId].name).toBe('Component 1')
+  })
+
   it('shows capacity section only for internal components', async () => {
     const user = userEvent.setup()
     render(<PropertyEditor componentId={componentId} />)

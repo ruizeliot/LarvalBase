@@ -53,6 +53,9 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
   const removeComponent = useModelStore((s) => s.removeComponent)
   const selectNode = useUiStore((s) => s.selectNode)
 
+  const [nameInput, setNameInput] = useState(component?.name ?? '')
+  const [nameError, setNameError] = useState<string | null>(null)
+
   const [confirmDialog, setConfirmDialog] = useState<{
     type: 'type-change' | 'delete'
     message: string
@@ -118,10 +121,24 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
       <div>
         <label className="text-xs text-[var(--color-text-muted)] mb-1 block">Name</label>
         <Input
-          value={component.name}
-          onChange={(e) => updateComponent(componentId, { name: e.target.value })}
+          value={nameInput}
+          onChange={(e) => {
+            const val = e.target.value
+            setNameInput(val)
+            if (!val.trim()) {
+              setNameError('Name is required')
+            } else {
+              setNameError(null)
+              updateComponent(componentId, { name: val })
+            }
+          }}
           data-testid="property-name"
         />
+        {nameError && (
+          <p className="text-[10px] text-[var(--color-accent-red)] mt-0.5 ml-1" data-testid="name-error">
+            {nameError}
+          </p>
+        )}
       </div>
 
       {/* Type toggle */}
