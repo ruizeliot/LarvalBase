@@ -16,12 +16,14 @@ import {
 import '@xyflow/react/dist/style.css'
 import { useModelStore } from '@/store/modelStore'
 import { useUiStore } from '@/store/uiStore'
+import { useSimulationStore } from '@/store/simulationStore'
 import { ComponentNode } from './nodes/ComponentNode'
 import { ConditionNode } from './nodes/ConditionNode'
 import { ContextMenu } from './ContextMenu'
 import { ChainBuilder } from '@/components/chain-builder/ChainBuilder'
 import { CausalEdge } from './edges/CausalEdge'
 import { ImpactEdge } from './edges/ImpactEdge'
+import { evaluateChainStages } from '@/engine/chainStageEvaluator'
 import type { ComponentType } from '@/types/model'
 
 const nodeTypes: NodeTypes = {
@@ -49,6 +51,20 @@ function CanvasInner() {
   const chainViewMode = useUiStore((s) => s.chainViewMode)
   const toggleChainViewMode = useUiStore((s) => s.toggleChainViewMode)
   const activeMode = useUiStore((s) => s.activeMode)
+
+  // Simulation state for pulses and parameter updates
+  const playbackState = useSimulationStore((s) => s.playbackState)
+  const currentStep = useSimulationStore((s) => s.currentStep)
+  const simResult = useSimulationStore((s) => s.result)
+
+  // Compute chain stages from current simulation snapshot
+  const chainStages = useMemo(() => {
+    if (activeMode !== 'simulate' || !simResult || simResult.timesteps.length === 0) return {}
+    const snapshot = simResult.timesteps[currentStep]?.snapshot ?? {}
+    return evaluateChainStages(components, chains, snapshot)
+  }, [activeMode, simResult, currentStep, components, chains])
+
+  const isSimulating = activeMode === 'simulate' && simResult != null
 
   const { allNodes, allEdges } = useMemo(() => {
     const nodes: Node[] = Object.values(components).map((comp) => ({
@@ -87,7 +103,7 @@ function CanvasInner() {
             source: chain.sourceId,
             target: nodeId,
             type: 'causal',
-            data: { chainId: chain.id },
+            data: { chainId: chain.id, chainStage: chainStages[chain.id], playbackState, isSimulating },
           })
         }
 
@@ -107,7 +123,7 @@ function CanvasInner() {
             source: existNodeId,
             target: suscNodeId,
             type: 'causal',
-            data: { chainId: chain.id },
+            data: { chainId: chain.id, chainStage: chainStages[chain.id], playbackState, isSimulating },
           })
         }
 
@@ -127,7 +143,7 @@ function CanvasInner() {
             source: suscNodeId,
             target: trigNodeId,
             type: 'causal',
-            data: { chainId: chain.id },
+            data: { chainId: chain.id, chainStage: chainStages[chain.id], playbackState, isSimulating },
           })
           // Impact arrow from triggering to target
           edges.push({
@@ -135,7 +151,7 @@ function CanvasInner() {
             source: trigNodeId,
             target: chain.targetId,
             type: 'impact',
-            data: { chainId: chain.id },
+            data: { chainId: chain.id, chainStage: chainStages[chain.id], playbackState, isSimulating },
           })
         }
       })
@@ -152,13 +168,13 @@ function CanvasInner() {
           target: chain.targetId,
           type: 'causal',
           label: `❶→❷→❸ ${chain.name}`,
-          data: { chainId: chain.id, compact: true },
+          data: { chainId: chain.id, compact: true, chainStage: chainStages[chain.id], playbackState, isSimulating },
         })
       })
     }
 
     return { allNodes: nodes, allEdges: edges }
-  }, [components, chains, selectedNodeId, chainViewMode])
+  }, [components, chains, selectedNodeId, chainViewMode, chainStages, playbackState, isSimulating])
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {

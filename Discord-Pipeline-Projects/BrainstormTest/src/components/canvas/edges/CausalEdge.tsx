@@ -1,16 +1,41 @@
 import { BaseEdge, getStraightPath, type EdgeProps } from '@xyflow/react'
+import type { ChainStageStatus } from '@/engine/chainStageEvaluator'
+import type { PlaybackState } from '@/store/simulationStore'
 
-export function CausalEdge({ sourceX, sourceY, targetX, targetY, label, ...props }: EdgeProps) {
+interface CausalEdgeData {
+  chainId?: string
+  compact?: boolean
+  chainStage?: ChainStageStatus
+  playbackState?: PlaybackState
+  isSimulating?: boolean
+}
+
+export function CausalEdge({ sourceX, sourceY, targetX, targetY, label, data, ...props }: EdgeProps) {
   const [edgePath, labelX, labelY] = getStraightPath({
     sourceX, sourceY, targetX, targetY,
   })
+
+  const edgeData = data as CausalEdgeData | undefined
+  const chainStage = edgeData?.chainStage
+  const playbackState = edgeData?.playbackState
+  const isSimulating = edgeData?.isSimulating ?? false
+  const showPulse = isSimulating && chainStage && chainStage !== 'none'
+
+  // Compute pulse position at midpoint of edge
+  const midX = (sourceX + targetX) / 2
+  const midY = (sourceY + targetY) / 2
+
+  const isPaused = playbackState === 'paused'
 
   return (
     <>
       <BaseEdge
         path={edgePath}
         {...props}
-        style={{ stroke: 'var(--color-primary)', strokeWidth: 2 }}
+        style={{
+          stroke: showPulse ? 'var(--color-accent-green)' : 'var(--color-primary)',
+          strokeWidth: showPulse ? 3 : 2,
+        }}
         markerEnd="url(#causal-arrow)"
       />
       {label && (
@@ -24,6 +49,28 @@ export function CausalEdge({ sourceX, sourceY, targetX, targetY, label, ...props
         >
           {String(label)}
         </text>
+      )}
+      {/* Animated pulse diamond */}
+      {showPulse && (
+        <g
+          data-testid="chain-pulse"
+          className="chain-pulse"
+          style={{
+            animationPlayState: isPaused ? 'paused' : 'running',
+          }}
+        >
+          <rect
+            x={midX - 6}
+            y={midY - 6}
+            width={12}
+            height={12}
+            fill="var(--color-accent-green)"
+            stroke="white"
+            strokeWidth={1}
+            transform={`rotate(45 ${midX} ${midY})`}
+            style={{ filter: 'drop-shadow(0 0 4px var(--color-accent-green))' }}
+          />
+        </g>
       )}
       <defs>
         <marker

@@ -1,0 +1,75 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0f;
+  --color-surface: #12121a;
+  --color-surface-hover: #1a1a25;
+  --color-border: #2a2a3a;
+  --color-text: #e2e8f0;
+  --color-text-muted: #94a3b8;
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+  --color-accent-orange: #f59e0b;
+  --color-accent-green: #22c55e;
+  --color-accent-red: #ef4444;
+  --color-node-internal: #1e3a5f;
+  --color-node-internal-border: #3b82f6;
+  --color-node-external: #5f3a1e;
+  --color-node-external-border: #f59e0b;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* React Flow overrides for dark theme */
+.react-flow__background {
+  background-color: var(--color-background) !important;
+}
+
+.react-flow__minimap {
+  background-color: var(--color-surface) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+}
+
+.react-flow__controls {
+  border: 1px solid var(--color-border) !important;
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+.react-flow__controls-button {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border-bottom: 1px solid var(--color-border) !important;
+}
+
+.react-flow__controls-button:hover {
+  background-color: var(--color-surface-hover) !important;
+}
+
+/* Chain pulse animation */
+.chain-pulse {
+  animation: pulse-glow 1s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* Parameter value highlight animation */
+.param-highlight {
+  animation: param-flash 1.5s ease-out;
+}
+
+@keyframes param-flash {
+  0% { color: #22c55e; text-shadow: 0 0 8px #22c55e; }
+  100% { color: inherit; text-shadow: none; }
+}
