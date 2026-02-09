@@ -9,6 +9,8 @@ interface PropertyEditorProps {
   componentId: string
 }
 
+const VALID_IDENTIFIER = /^[A-Za-z_][A-Za-z0-9_]*$/
+
 function getParamError(
   paramName: string,
   paramValue: number,
@@ -16,6 +18,7 @@ function getParamError(
   allParams: { id: string; name: string; value: number }[]
 ): string | null {
   if (!paramName || paramName.trim() === '') return 'Name is required'
+  if (!VALID_IDENTIFIER.test(paramName)) return 'Invalid name: use only letters, digits, and underscores'
   const dups = allParams.filter((p) => p.id !== paramId && p.name === paramName)
   if (dups.length > 0) return 'Duplicate parameter name'
   if (isNaN(paramValue)) return 'Value must be numeric'
