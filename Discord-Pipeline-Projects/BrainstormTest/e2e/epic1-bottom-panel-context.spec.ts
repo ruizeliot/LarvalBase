@@ -25,7 +25,7 @@ test.describe('Epic 1 - US-1.4: Context-Aware Bottom Panel', () => {
 
     await expect(page.getByTestId('bottom-panel')).toBeVisible()
     await expect(page.getByTestId('bottom-panel-simulate')).toBeVisible()
-    await expect(page.getByText('Playback Controls', { exact: true })).toBeVisible()
-    await expect(page.getByText('Event Log', { exact: true })).toBeVisible()
+    await expect(page.getByTestId('sim-play-button')).toBeVisible()
+    await expect(page.getByTestId('sim-event-log')).toBeVisible()
   })
 })
