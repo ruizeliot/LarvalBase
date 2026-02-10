@@ -152,8 +152,16 @@ html, body, #root {
   animation: tutorial-check 0.4s ease-out;
 }
 
-/* Allow pointer events through the overlay on action-required steps */
+/* Allow pointer events through the overlay on action-required steps.
+   driver.js sets `pointer-events: none` on ALL elements via `.driver-active *`,
+   then re-enables only the highlighted element via `.driver-active-element`.
+   For drag steps the canvas must also receive dragover/drop events. */
 .tutorial-action-active .driver-overlay,
 .tutorial-action-active .driver-overlay * {
   pointer-events: none !important;
+}
+
+.tutorial-action-active .react-flow,
+.tutorial-action-active .react-flow * {
+  pointer-events: auto !important;
 }
