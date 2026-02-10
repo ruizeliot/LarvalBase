@@ -168,9 +168,15 @@ function pullStateFromYjs() {
 }
 
 // --- Remote → Zustand observers ---
+// Allow through: remote transactions AND local undo/redo transactions (origin === undoManager)
+function shouldApplyToZustand(event: { transaction: { local: boolean; origin: unknown } }): boolean {
+  if (!event.transaction.local) return true // remote change
+  if (event.transaction.origin === undoManager) return true // undo/redo
+  return false
+}
 
 function handleRemoteComponentsChange(event: Y.YMapEvent<string>) {
-  if (event.transaction.local) return
+  if (!shouldApplyToZustand(event)) return
   isApplyingRemote = true
   try {
     const componentsMap = yDoc!.getMap('components')
@@ -185,7 +191,7 @@ function handleRemoteComponentsChange(event: Y.YMapEvent<string>) {
 }
 
 function handleRemoteChainsChange(event: Y.YMapEvent<string>) {
-  if (event.transaction.local) return
+  if (!shouldApplyToZustand(event)) return
   isApplyingRemote = true
   try {
     const chainsMap = yDoc!.getMap('chains')
@@ -200,7 +206,7 @@ function handleRemoteChainsChange(event: Y.YMapEvent<string>) {
 }
 
 function handleRemoteScenariosChange(event: Y.YMapEvent<string>) {
-  if (event.transaction.local) return
+  if (!shouldApplyToZustand(event)) return
   isApplyingRemote = true
   try {
     const scenariosMap = yDoc!.getMap('scenarios')
@@ -215,7 +221,7 @@ function handleRemoteScenariosChange(event: Y.YMapEvent<string>) {
 }
 
 function handleRemoteMetaChange(event: Y.YMapEvent<unknown>) {
-  if (event.transaction.local) return
+  if (!shouldApplyToZustand(event as Y.YMapEvent<string>)) return
   isApplyingRemote = true
   try {
     const metaMap = yDoc!.getMap('meta')
