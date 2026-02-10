@@ -7,6 +7,7 @@ import { X } from 'lucide-react'
 import { createId } from '@/lib/id'
 import type { ChainType, Consequence, DurationType } from '@/types/model'
 import { FormulaEditor } from './FormulaEditor'
+import { ContextualHint } from '@/components/tutorial/ContextualHint'
 
 export function ChainBuilder() {
   const chainBuilderOpen = useUiStore((s) => s.chainBuilderOpen)
@@ -148,7 +149,14 @@ export function ChainBuilder() {
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg shadow-xl w-[560px] max-h-[85vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
-          <h2 className="text-sm font-semibold text-[var(--color-text)]">New Causal Chain</h2>
+          <span className="flex items-center">
+            <h2 className="text-sm font-semibold text-[var(--color-text)]">New Causal Chain</h2>
+            <ContextualHint
+              id="chain-builder"
+              text="Causal chains model cause-and-effect relationships. Define existence conditions, target susceptibility, and triggering formulas to create cascading effects between components."
+              autoShowKey="chain-builder"
+            />
+          </span>
           <button onClick={closeChainBuilder} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] cursor-pointer">
             <X size={16} />
           </button>
