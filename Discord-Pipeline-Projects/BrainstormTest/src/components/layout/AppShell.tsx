@@ -9,6 +9,8 @@ import { SimulationControls } from '@/components/simulation/SimulationControls'
 import { ChainStatusPanel } from '@/components/simulation/ChainStatusPanel'
 import { SimulationResults } from '@/components/simulation/SimulationResults'
 import { ScenarioLibraryPanel } from '@/components/library/ScenarioLibraryPanel'
+import { WelcomeOverlay } from '@/components/tutorial/WelcomeOverlay'
+import { GuidedTour } from '@/components/tutorial/GuidedTour'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 export function AppShell() {
@@ -72,6 +74,8 @@ export function AppShell() {
           <BottomPanel />
         </div>
       </div>
+      <WelcomeOverlay />
+      <GuidedTour />
     </div>
   )
 }

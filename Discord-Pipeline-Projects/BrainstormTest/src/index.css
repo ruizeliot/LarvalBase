@@ -73,3 +73,81 @@ html, body, #root {
   0% { color: #22c55e; text-shadow: 0 0 8px #22c55e; }
   100% { color: inherit; text-shadow: none; }
 }
+
+/* Driver.js dark theme overrides */
+.driver-popover {
+  background-color: var(--color-surface) !important;
+  color: var(--color-text) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+}
+
+.driver-popover .driver-popover-title {
+  color: var(--color-text) !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.driver-popover .driver-popover-description {
+  color: var(--color-text-muted) !important;
+  font-size: 13px !important;
+}
+
+.driver-popover .driver-popover-progress-text {
+  color: var(--color-text-muted) !important;
+  font-size: 11px !important;
+}
+
+.driver-popover .driver-popover-prev-btn {
+  background-color: transparent !important;
+  color: var(--color-text-muted) !important;
+  border: 1px solid var(--color-border) !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  padding: 4px 12px !important;
+}
+
+.driver-popover .driver-popover-prev-btn:hover {
+  background-color: var(--color-surface-hover) !important;
+  color: var(--color-text) !important;
+}
+
+.driver-popover .driver-popover-next-btn {
+  background-color: var(--color-primary) !important;
+  color: white !important;
+  border: none !important;
+  border-radius: 6px !important;
+  font-size: 12px !important;
+  padding: 4px 12px !important;
+}
+
+.driver-popover .driver-popover-next-btn:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+
+.driver-popover .driver-popover-close-btn {
+  color: var(--color-text-muted) !important;
+}
+
+.driver-popover .driver-popover-close-btn:hover {
+  color: var(--color-text) !important;
+}
+
+.driver-popover .driver-popover-arrow-side-left,
+.driver-popover .driver-popover-arrow-side-right,
+.driver-popover .driver-popover-arrow-side-top,
+.driver-popover .driver-popover-arrow-side-bottom {
+  border-color: var(--color-surface) !important;
+}
+
+/* Tutorial success checkmark animation */
+@keyframes tutorial-check {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.tutorial-check-anim {
+  animation: tutorial-check 0.4s ease-out;
+}
