@@ -12,7 +12,7 @@ import { useUiStore } from '@/store/uiStore'
  *   2 = Rename component or add parameter
  *   3 = Drag second component onto canvas
  *   4 = Open causal chain builder (right-click → New Causal Chain)
- *   5 = Switch to Scenarios tab and create a scenario
+ *   5 = Open Scenario Library and load a pre-built scenario
  *   6 = Click Run Simulation
  */
 export function ActionWatcher() {
@@ -92,7 +92,7 @@ export function ActionWatcher() {
     prevChainBuilderOpen.current = chainBuilderOpen
   }, [tourActive, chainBuilderOpen, currentStep, completeAction, completedActions])
 
-  // Step 5: Create a scenario (scenario count increases)
+  // Step 5: Load a scenario from the Library (scenario count increases)
   useEffect(() => {
     if (!tourActive) return
 

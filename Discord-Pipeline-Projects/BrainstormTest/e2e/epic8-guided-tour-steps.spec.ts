@@ -42,8 +42,8 @@ test.describe('Epic 8 - US-8.2: Guided Tour Steps', () => {
     await expect(popover.locator('.driver-popover-progress-text')).toContainText('5 of 7')
     await page.locator('[data-testid="tutorial-skip-action"]').click()
 
-    // Step 6: Set Up a Scenario (action — skip)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Set Up a Scenario')
+    // Step 6: Explore the Library (action — skip)
+    await expect(popover.locator('.driver-popover-title')).toContainText('Explore the Library')
     await expect(popover.locator('.driver-popover-progress-text')).toContainText('6 of 7')
     await page.locator('[data-testid="tutorial-skip-action"]').click()
 

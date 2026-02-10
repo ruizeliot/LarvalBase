@@ -61,15 +61,15 @@ export const tutorialSteps: TutorialStep[] = [
     actionPrompt: 'Right-click a component and select "New Causal Chain from here"',
     actionTestId: 'tutorial-action-step-4',
   },
-  // Step 5: Switch to Scenarios tab, create a scenario
+  // Step 5: Explore the Scenario Library and load a pre-built scenario
   {
-    element: '[data-testid="tab-scenarios"]',
+    element: '[data-testid="library-button"]',
     popover: {
-      title: 'Set Up a Scenario',
-      description: 'Switch to the <strong>Scenarios</strong> tab and create a scenario with forced events to define "what-if" situations for your model.',
+      title: 'Explore the Library',
+      description: 'Click the <strong>Library</strong> button to browse pre-built scenarios. Load <strong>"Hello Cascade"</strong> to see a working example with components, chains, and a ready-to-run scenario.',
     },
     actionRequired: true,
-    actionPrompt: 'Switch to Scenarios and create a new scenario',
+    actionPrompt: 'Open the Library and load a scenario',
     actionTestId: 'tutorial-action-step-5',
   },
   // Step 6: Switch to Simulate tab, run the simulation
