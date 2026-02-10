@@ -152,29 +152,28 @@ html, body, #root {
   animation: tutorial-check 0.4s ease-out;
 }
 
-/* Allow pointer events through the overlay on action-required steps.
+/* Allow pointer events through on action-required tutorial steps.
    driver.js sets `pointer-events: none` on ALL elements via `.driver-active *`,
    then re-enables only the highlighted element via `.driver-active-element`.
-   For drag steps the canvas must also receive dragover/drop events. */
+   For action steps the user must interact with the full app (tabs, panels,
+   canvas, buttons), so we re-enable everything and only keep the overlay
+   itself non-interactive. */
+.tutorial-action-active * {
+  pointer-events: auto !important;
+}
+
+/* The overlay SVG must NOT intercept clicks during action steps */
 .tutorial-action-active .driver-overlay,
 .tutorial-action-active .driver-overlay * {
   pointer-events: none !important;
 }
 
-.tutorial-action-active .react-flow,
-.tutorial-action-active .react-flow * {
-  pointer-events: auto !important;
+/* Dim the overlay during action steps so the app feels accessible */
+.tutorial-action-active .driver-overlay {
+  opacity: 0.3 !important;
 }
 
-/* Context menu and chain builder must be interactive and visible above the
-   driver.js overlay when the user right-clicks during action steps. */
-.tutorial-action-active [data-testid="context-menu"],
-.tutorial-action-active [data-testid="context-menu"] *,
-.tutorial-action-active [data-testid="chain-builder"],
-.tutorial-action-active [data-testid="chain-builder"] * {
-  pointer-events: auto !important;
-}
-
+/* Context menu and chain builder must appear above the driver.js overlay */
 .tutorial-action-active [data-testid="context-menu"],
 .tutorial-action-active [data-testid="chain-builder"] {
   z-index: 1000000 !important;

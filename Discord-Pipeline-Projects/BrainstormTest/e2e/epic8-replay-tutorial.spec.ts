@@ -53,11 +53,11 @@ test.describe('Epic 8 - US-8.4: Replay Tutorial via Help Button', () => {
     const popover = page.locator('.driver-popover')
     await expect(popover).toBeVisible({ timeout: 2000 })
 
-    // Assert step 1 title
-    await expect(popover.locator('.driver-popover-title')).toContainText('Canvas')
+    // Assert step 1 title (Welcome)
+    await expect(popover.locator('.driver-popover-title')).toContainText('Welcome')
 
     // Assert progress shows step 1
-    await expect(popover.locator('.driver-popover-progress-text')).toContainText('1 of 8')
+    await expect(popover.locator('.driver-popover-progress-text')).toContainText('1 of 7')
   })
 
   test('TC-8.4.4: Help menu closes when clicking outside', async ({ page }) => {

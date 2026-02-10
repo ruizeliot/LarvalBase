@@ -10,72 +10,77 @@ export interface TutorialStep extends DriveStep {
 }
 
 export const tutorialSteps: TutorialStep[] = [
+  // Step 0: Welcome — explain the app (no element = centered popover, no overlay)
   {
-    element: '.react-flow',
     popover: {
-      title: 'Canvas Navigation',
-      description: 'This is your workspace. Pan by dragging the background, zoom with scroll wheel or the controls in the bottom-left.',
+      title: 'Welcome to CascadeSim',
+      description: 'CascadeSim lets you model and simulate cascading effects through causal chain networks. Build components, connect them with cause-and-effect chains, and run simulations to see how changes propagate.',
     },
   },
+  // Step 1: Drag an Internal component from palette to canvas
   {
     element: '[data-testid="component-palette"]',
     popover: {
-      title: 'Component Palette',
-      description: 'Drag components from here onto the canvas to build your model. Try dragging an Internal component now!',
+      title: 'Add Your First Component',
+      description: 'Drag an <strong>Internal</strong> component from this palette onto the canvas to start building your model.',
     },
     actionRequired: true,
     actionPrompt: 'Drag an Internal component onto the canvas',
-    actionTestId: 'tutorial-action-step-2',
+    actionTestId: 'tutorial-action-step-1',
   },
+  // Step 2: Rename the component and add a parameter
   {
     element: '[data-testid="left-panel"]',
     popover: {
-      title: 'Property Editor',
-      description: 'Select a component to edit its name, parameters, and capacities here. Try changing the component name!',
+      title: 'Configure Your Component',
+      description: 'Click the component on the canvas to select it, then use this panel to rename it or add a parameter.',
     },
     actionRequired: true,
-    actionPrompt: 'Change the component\'s name in the property editor',
+    actionPrompt: 'Rename the component or add a parameter',
+    actionTestId: 'tutorial-action-step-2',
+  },
+  // Step 3: Drag a second component
+  {
+    element: '[data-testid="component-palette"]',
+    popover: {
+      title: 'Add a Second Component',
+      description: 'Drag another component onto the canvas. You need at least two components to create a causal chain between them.',
+    },
+    actionRequired: true,
+    actionPrompt: 'Drag a second component onto the canvas',
     actionTestId: 'tutorial-action-step-3',
   },
+  // Step 4: Create a causal chain (right-click → New Chain)
   {
     element: '.react-flow',
     popover: {
-      title: 'Causal Chain Builder',
-      description: 'Right-click any component to create a causal chain. Chains model cause-and-effect relationships between components.',
+      title: 'Create a Causal Chain',
+      description: 'Right-click any component on the canvas and select <strong>"New Causal Chain from here"</strong> to model a cause-and-effect relationship.',
     },
     actionRequired: true,
     actionPrompt: 'Right-click a component and select "New Causal Chain from here"',
     actionTestId: 'tutorial-action-step-4',
   },
+  // Step 5: Switch to Scenarios tab, create a scenario
   {
     element: '[data-testid="tab-scenarios"]',
     popover: {
-      title: 'Scenario Tab',
-      description: 'Switch to the Scenarios tab to define test scenarios with forced events that trigger cascading effects.',
+      title: 'Set Up a Scenario',
+      description: 'Switch to the <strong>Scenarios</strong> tab and create a scenario with forced events to define "what-if" situations for your model.',
     },
+    actionRequired: true,
+    actionPrompt: 'Switch to Scenarios and create a new scenario',
+    actionTestId: 'tutorial-action-step-5',
   },
-  {
-    element: '[data-testid="tab-scenarios"]',
-    popover: {
-      title: 'Forced Events & Timeline',
-      description: 'In the Scenarios view, you can place forced events on a timeline to set up "what-if" situations for your model.',
-    },
-  },
+  // Step 6: Switch to Simulate tab, run the simulation
   {
     element: '[data-testid="tab-simulate"]',
     popover: {
-      title: 'Simulate Tab',
-      description: 'Run your simulation here to watch cascading effects propagate through your model. Click the Run button to start!',
+      title: 'Run Your Simulation',
+      description: 'Switch to the <strong>Simulate</strong> tab and click <strong>Run Simulation</strong> to watch cascading effects propagate through your model.',
     },
     actionRequired: true,
-    actionPrompt: 'Click the "Run Simulation" button to see your model in action',
-    actionTestId: 'tutorial-action-step-7',
-  },
-  {
-    element: '[data-testid="library-button"]',
-    popover: {
-      title: 'Scenario Library',
-      description: 'Browse pre-built example scenarios to learn from. Load any scenario to explore a working model instantly!',
-    },
+    actionPrompt: 'Click the "Run Simulation" button',
+    actionTestId: 'tutorial-action-step-6',
   },
 ]
