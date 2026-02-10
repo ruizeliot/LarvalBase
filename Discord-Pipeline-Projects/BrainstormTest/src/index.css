@@ -151,3 +151,9 @@ html, body, #root {
 .tutorial-check-anim {
   animation: tutorial-check 0.4s ease-out;
 }
+
+/* Allow pointer events through the overlay on action-required steps */
+.tutorial-action-active .driver-overlay,
+.tutorial-action-active .driver-overlay * {
+  pointer-events: none !important;
+}

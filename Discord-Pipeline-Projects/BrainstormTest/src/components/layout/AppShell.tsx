@@ -11,6 +11,7 @@ import { SimulationResults } from '@/components/simulation/SimulationResults'
 import { ScenarioLibraryPanel } from '@/components/library/ScenarioLibraryPanel'
 import { WelcomeOverlay } from '@/components/tutorial/WelcomeOverlay'
 import { GuidedTour } from '@/components/tutorial/GuidedTour'
+import { ActionWatcher } from '@/components/tutorial/ActionWatcher'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 export function AppShell() {
@@ -76,6 +77,7 @@ export function AppShell() {
       </div>
       <WelcomeOverlay />
       <GuidedTour />
+      <ActionWatcher />
     </div>
   )
 }
