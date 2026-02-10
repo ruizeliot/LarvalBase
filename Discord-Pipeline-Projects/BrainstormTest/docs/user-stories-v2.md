@@ -4,7 +4,7 @@
 **Generated:** 2026-02-10
 **Stack:** Web (Desktop browser target)
 **Base:** V1 complete (Epics 1-6, 122 E2E tests passing)
-**New Epics:** 4 | **New Stories:** 19
+**New Epics:** 4 | **New Stories:** 21
 
 ---
 
@@ -13,7 +13,7 @@
 | # | Epic | Stories | Priority | Depends On |
 |---|------|---------|----------|------------|
 | E7 | Scenario Library | 5 | P1 | E1-E6 (V1) |
-| E8 | Tutorial System | 5 | P2 | E7 |
+| E8 | Tutorial System & UI Polish | 7 | P2 | E7 |
 | E9 | Collaboration Core | 4 | P0 | E1-E6 (V1) |
 | E10 | Collaboration UI | 5 | P0 | E9 |
 
@@ -47,6 +47,7 @@ V1 (E1-E6) ─── Complete ───┐
 | `y-websocket` | ^2 | WebSocket provider for Yjs rooms | E9 |
 | `y-indexeddb` | ^9 | Optional offline persistence | E9 |
 | `driver.js` | ^1 | Guided tour / spotlight walkthrough | E8 |
+| `elkjs` | ^0.9 | ELK layered auto-layout algorithm for graph positioning | E8 |
 
 ---
 
@@ -259,6 +260,47 @@ Interactive onboarding walkthrough using Driver.js, contextual help hints, and a
 - [ ] First-time-use: when a user opens the chain builder for the first time, a contextual hint auto-appears (once only, tracked in localStorage)
 
 **E2E Test:** `epic8-contextual-hints.spec.ts` — Open chain builder, verify "?" icon is visible near the header. Click it, verify tooltip appears with explanation text. Dismiss tooltip. Verify first-time hint appears on first chain builder open (clear localStorage), does not appear on second open.
+
+---
+
+### US-8.6: Simulation Results Side Panel
+
+**As a** user,
+**I want to** see simulation results in a docked, resizable right-side panel instead of an overlay,
+**so that** I can view results while still interacting with the canvas.
+
+**Acceptance Criteria:**
+- [ ] Simulation results display in a docked right-side panel (replaces the current overlay)
+- [ ] Default panel width is 350px
+- [ ] Panel is resizable via a draggable divider, range 250px–500px
+- [ ] A collapse/expand toggle button is visible on the panel edge
+- [ ] When collapsed, the canvas reclaims the full width
+- [ ] ReactFlow `fitView()` is called when the panel opens, closes, or is resized
+- [ ] Canvas remains fully interactive (pan, zoom, select nodes) when panel is open
+- [ ] Panel does not overlap canvas content — canvas viewport adjusts to available space
+
+**E2E Test:** `epic8-results-side-panel.spec.ts` — Run simulation, verify results appear in docked right panel (not overlay). Resize panel via divider, verify canvas adjusts. Collapse panel, verify canvas reclaims width. Verify canvas click-through works with panel open.
+
+---
+
+### US-8.7: ELK.js Auto-Layout
+
+**As a** user,
+**I want to** components to be automatically arranged in a readable layout when loading a scenario from the library,
+**so that** I can immediately understand the causal chain flow without manual repositioning.
+
+**Acceptance Criteria:**
+- [ ] `elkjs` dependency is added to the project
+- [ ] When a scenario is loaded from the Scenario Library (E7), ELK layered algorithm auto-positions all component nodes
+- [ ] Default layout direction is left-to-right (LR), following causal chain order
+- [ ] A "Re-Layout" button is visible in the canvas toolbar
+- [ ] Clicking "Re-Layout" opens a dropdown with layout direction options: LR (Left-to-Right), TB (Top-to-Bottom), Compact
+- [ ] Selecting a direction re-applies the ELK layout algorithm with that direction
+- [ ] Components maintain their relative causal chain ordering after layout
+- [ ] Layout respects minimum node spacing to prevent overlap
+- [ ] ReactFlow `fitView()` is called after layout completes
+
+**E2E Test:** `epic8-elk-auto-layout.spec.ts` — Load scenario from library, verify components are positioned in LR order (no overlaps). Click "Re-Layout" > "TB", verify components rearrange vertically. Verify "Compact" mode reduces spacing.
 
 ---
 

@@ -704,6 +704,208 @@ Steps:
 
 ---
 
+### TEST-8.6: results-side-panel.spec
+
+**Story:** US-8.6 — Simulation Results Side Panel
+
+#### TC-8.6.1: Simulation results appear in docked right panel
+
+```
+Setup: buildFloodModel(page), create scenario with forced events, run simulation
+Steps:
+  1. Assert simulation results are visible
+  2. Assert results are inside a right-docked side panel (data-testid="results-side-panel")
+  3. Assert panel is positioned on the right edge of the viewport
+  4. Assert panel does NOT have overlay/backdrop behavior (no dimmed background)
+  5. Assert canvas area is still visible to the left of the panel
+```
+
+#### TC-8.6.2: Panel default width is 350px
+
+```
+Setup: Run simulation to open results panel
+Steps:
+  1. Assert results panel is visible
+  2. Measure panel width via bounding box
+  3. Assert width is approximately 350px (±10px tolerance)
+```
+
+#### TC-8.6.3: Panel is resizable via draggable divider
+
+```
+Setup: Run simulation to open results panel
+Steps:
+  1. Locate the draggable divider element (data-testid="panel-resize-divider")
+  2. Assert divider is visible on the left edge of the panel
+  3. Drag divider 100px to the left (expanding panel)
+  4. Assert panel width increased to approximately 450px
+  5. Drag divider 200px to the right (shrinking panel)
+  6. Assert panel width decreased to approximately 250px
+```
+
+#### TC-8.6.4: Panel respects min/max width constraints
+
+```
+Setup: Run simulation to open results panel
+Steps:
+  1. Drag divider far to the right (attempt to shrink below 250px)
+  2. Assert panel width does not go below 250px
+  3. Drag divider far to the left (attempt to expand beyond 500px)
+  4. Assert panel width does not exceed 500px
+```
+
+#### TC-8.6.5: Collapse and expand toggle
+
+```
+Setup: Run simulation to open results panel
+Steps:
+  1. Assert panel is visible with results content
+  2. Locate collapse/expand toggle button (data-testid="panel-collapse-toggle")
+  3. Click toggle button
+  4. Assert panel collapses (width near 0 or hidden)
+  5. Assert canvas reclaims full viewport width
+  6. Click toggle button again
+  7. Assert panel re-expands to previous width
+  8. Assert results content is still visible
+```
+
+#### TC-8.6.6: Canvas remains interactive with panel open
+
+```
+Setup: Run simulation, results panel open, components on canvas
+Steps:
+  1. Assert results panel is visible
+  2. Pan the canvas (mousedown + drag on canvas area)
+  3. Assert canvas pans successfully (viewport moves)
+  4. Zoom the canvas (scroll wheel on canvas)
+  5. Assert canvas zooms successfully
+  6. Click a component node on the canvas
+  7. Assert component is selected (properties panel shows it)
+```
+
+#### TC-8.6.7: ReactFlow fitView called on panel state change
+
+```
+Setup: Run simulation, components on canvas
+Steps:
+  1. Record component node positions before panel opens
+  2. Open results panel (run simulation or expand)
+  3. Assert fitView was triggered — nodes should be repositioned to fit the reduced canvas viewport
+  4. Collapse the panel
+  5. Assert fitView was triggered again — nodes adjust to full-width canvas
+```
+
+#### TC-8.6.8: Edge — Rapid resize does not corrupt layout
+
+```
+Setup: Run simulation to open results panel
+Steps:
+  1. Rapidly drag divider back and forth 5 times
+  2. Assert panel has a valid width within 250–500px range
+  3. Assert canvas is not clipped or overlapping the panel
+  4. Assert results content is still rendered correctly
+```
+
+---
+
+### TEST-8.7: elk-auto-layout.spec
+
+**Story:** US-8.7 — ELK.js Auto-Layout
+
+#### TC-8.7.1: Loading a scenario from library applies ELK auto-layout
+
+```
+Steps:
+  1. Open library panel
+  2. Load "Supply Chain Disruption" (7 nodes)
+  3. Assert all 7 component nodes are visible on canvas
+  4. Record positions of all nodes
+  5. Assert no two nodes overlap (bounding boxes do not intersect)
+  6. Assert nodes are generally arranged left-to-right (LR direction):
+     - Source/root nodes have smaller X positions than downstream nodes
+```
+
+#### TC-8.7.2: Re-Layout button is visible in canvas toolbar
+
+```
+Steps:
+  1. Load a scenario from library
+  2. Assert "Re-Layout" button is visible in the canvas toolbar (data-testid="relayout-button")
+  3. Click "Re-Layout"
+  4. Assert dropdown menu appears with options: "LR", "TB", "Compact"
+```
+
+#### TC-8.7.3: Re-Layout with TB direction arranges nodes vertically
+
+```
+Setup: Load "Supply Chain Disruption" (initially laid out LR)
+Steps:
+  1. Record node positions (LR layout)
+  2. Click "Re-Layout" > "TB"
+  3. Wait for layout animation to complete
+  4. Record new node positions
+  5. Assert nodes are now arranged top-to-bottom:
+     - Source/root nodes have smaller Y positions than downstream nodes
+  6. Assert no two nodes overlap
+```
+
+#### TC-8.7.4: Re-Layout with Compact mode reduces spacing
+
+```
+Setup: Load "Supply Chain Disruption"
+Steps:
+  1. Click "Re-Layout" > "LR" — record bounding box of all nodes (total area)
+  2. Click "Re-Layout" > "Compact"
+  3. Record new bounding box of all nodes
+  4. Assert compact bounding box area is smaller than LR bounding box area
+  5. Assert no nodes overlap in compact mode
+```
+
+#### TC-8.7.5: Layout follows causal chain order
+
+```
+Setup: Load "Hello Cascade" (2 nodes, 1 chain: A -> B)
+Steps:
+  1. Assert 2 nodes visible
+  2. Record position of source node (A) and target node (B)
+  3. In LR mode: assert A.x < B.x (source is left of target)
+  4. Click "Re-Layout" > "TB"
+  5. Assert A.y < B.y (source is above target)
+```
+
+#### TC-8.7.6: fitView called after layout completes
+
+```
+Setup: Load scenario from library
+Steps:
+  1. Assert all nodes are visible within the canvas viewport (none clipped off-screen)
+  2. Click "Re-Layout" > "TB"
+  3. Assert all nodes are still visible within the canvas viewport after re-layout
+```
+
+#### TC-8.7.7: Edge — Re-layout after manual node repositioning
+
+```
+Steps:
+  1. Load scenario from library (auto-layout applied)
+  2. Manually drag one node to a far corner of the canvas
+  3. Click "Re-Layout" > "LR"
+  4. Assert the manually-moved node is repositioned back into the layout flow
+  5. Assert no overlapping nodes
+```
+
+#### TC-8.7.8: Edge — Re-Layout button not visible when canvas is empty
+
+```
+Steps:
+  1. Navigate to app with empty workspace (no components)
+  2. Assert "Re-Layout" button is either not visible or disabled
+  3. Create a single component manually
+  4. Assert "Re-Layout" button becomes enabled
+```
+
+---
+
 ## E9: Collaboration Core
 
 **Note:** All E9 tests use Playwright multi-browser-context to simulate multiple users. A running y-websocket server is required (e.g. `npx y-websocket`).
@@ -1446,5 +1648,5 @@ Steps:
 ---
 
 *Generated from docs/user-stories-v2.md*
-*19 stories -> 19 test files + 4 integration files -> 83 test cases (including edge cases and error scenarios)*
+*21 stories -> 21 test files + 4 integration files -> 99 test cases (including edge cases and error scenarios)*
 *No mocking — all tests use real UI interactions, real state, real Yjs sync, and real data.*
