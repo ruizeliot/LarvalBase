@@ -6,6 +6,78 @@ import { useScenarioStore } from '@/store/scenarioStore'
 import { prebuiltScenarios, DIFFICULTY_CONFIG, type Difficulty, type PrebuiltScenario } from '@/data/scenarioLibrary'
 import { cn } from '@/lib/utils'
 
+/**
+ * Compute left-to-right hierarchical layout based on causal chain topology.
+ * Uses Kahn's algorithm for topological layering.
+ */
+function computeAutoLayout(
+  components: { id: string }[],
+  chains: { sourceId: string; targetId: string }[]
+): Record<string, { x: number; y: number }> {
+  const LAYER_GAP = 300
+  const NODE_GAP = 180
+
+  const ids = new Set(components.map((c) => c.id))
+  const children: Record<string, Set<string>> = {}
+  const inDegree: Record<string, number> = {}
+
+  for (const id of ids) {
+    children[id] = new Set()
+    inDegree[id] = 0
+  }
+
+  for (const chain of chains) {
+    if (ids.has(chain.sourceId) && ids.has(chain.targetId) && chain.sourceId !== chain.targetId) {
+      if (!children[chain.sourceId].has(chain.targetId)) {
+        children[chain.sourceId].add(chain.targetId)
+        inDegree[chain.targetId]++
+      }
+    }
+  }
+
+  // Kahn's algorithm — assign layers via BFS from roots
+  const layers: string[][] = []
+  let queue = [...ids].filter((id) => inDegree[id] === 0)
+  const assigned = new Set<string>()
+
+  while (queue.length > 0) {
+    layers.push([...queue])
+    for (const id of queue) assigned.add(id)
+
+    const nextQueue: string[] = []
+    for (const id of queue) {
+      for (const child of children[id]) {
+        inDegree[child]--
+        if (inDegree[child] === 0 && !assigned.has(child)) {
+          nextQueue.push(child)
+        }
+      }
+    }
+    queue = nextQueue
+  }
+
+  // Handle cycle nodes (not yet assigned)
+  const remaining = [...ids].filter((id) => !assigned.has(id))
+  if (remaining.length > 0) layers.push(remaining)
+
+  // Compute positions — left-to-right, centered vertically per layer
+  const positions: Record<string, { x: number; y: number }> = {}
+  for (let col = 0; col < layers.length; col++) {
+    const layer = layers[col]
+    const totalHeight = (layer.length - 1) * NODE_GAP
+    const startY = 200 - totalHeight / 2
+
+    for (let row = 0; row < layer.length; row++) {
+      positions[layer[row]] = {
+        x: 100 + col * LAYER_GAP,
+        y: startY + row * NODE_GAP,
+      }
+    }
+  }
+
+  return positions
+}
+
 const FILTER_OPTIONS: { value: Difficulty | 'all'; label: string }[] = [
   { value: 'all', label: 'All' },
   { value: 'beginner', label: 'Beginner' },
@@ -70,6 +142,18 @@ export function ScenarioLibraryPanel() {
         newChains[chain.id] = { ...chain }
       }
       return { chains: newChains }
+    })
+
+    // Auto-layout components based on causal chain topology
+    const positions = computeAutoLayout(scenario.components, scenario.chains)
+    useModelStore.setState((state) => {
+      const updated = { ...state.components }
+      for (const [id, pos] of Object.entries(positions)) {
+        if (updated[id]) {
+          updated[id] = { ...updated[id], position: pos }
+        }
+      }
+      return { components: updated }
     })
 
     // Load scenario with forced events
