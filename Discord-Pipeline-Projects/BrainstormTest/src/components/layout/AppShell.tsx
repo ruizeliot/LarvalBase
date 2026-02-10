@@ -8,12 +8,14 @@ import { ScenarioEditor } from '@/components/panels/ScenarioEditor'
 import { SimulationControls } from '@/components/simulation/SimulationControls'
 import { ChainStatusPanel } from '@/components/simulation/ChainStatusPanel'
 import { SimulationResults } from '@/components/simulation/SimulationResults'
+import { ScenarioLibraryPanel } from '@/components/library/ScenarioLibraryPanel'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 export function AppShell() {
   const activeMode = useUiStore((s) => s.activeMode)
   const leftPanelOpen = useUiStore((s) => s.leftPanelOpen)
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel)
+  const libraryPanelOpen = useUiStore((s) => s.libraryPanelOpen)
 
   const isEditor = activeMode === 'editor'
   const isScenarios = activeMode === 'scenarios'
@@ -63,6 +65,8 @@ export function AppShell() {
                 <SimulationResults />
               </div>
             )}
+            {/* Library panel overlay */}
+            {libraryPanelOpen && <ScenarioLibraryPanel />}
           </div>
           {/* Bottom Panel */}
           <BottomPanel />

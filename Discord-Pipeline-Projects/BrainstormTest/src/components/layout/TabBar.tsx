@@ -1,6 +1,6 @@
 import { useUiStore, type AppMode } from '@/store/uiStore'
 import { cn } from '@/lib/utils'
-import { Boxes, FileText, Play } from 'lucide-react'
+import { Boxes, FileText, Play, BookOpen } from 'lucide-react'
 
 const tabs: { mode: AppMode; label: string; icon: React.ReactNode; disabled: boolean }[] = [
   { mode: 'editor', label: 'Editor', icon: <Boxes size={16} />, disabled: false },
@@ -11,6 +11,7 @@ const tabs: { mode: AppMode; label: string; icon: React.ReactNode; disabled: boo
 export function TabBar() {
   const activeMode = useUiStore((s) => s.activeMode)
   const setActiveMode = useUiStore((s) => s.setActiveMode)
+  const openLibraryPanel = useUiStore((s) => s.openLibraryPanel)
 
   return (
     <div className="flex items-center h-10 bg-[var(--color-surface)] border-b border-[var(--color-border)] px-2 gap-1">
@@ -36,6 +37,15 @@ export function TabBar() {
           {tab.label}
         </button>
       ))}
+      <div className="flex-1" />
+      <button
+        data-testid="library-button"
+        onClick={openLibraryPanel}
+        className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-surface-hover)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+      >
+        <BookOpen size={16} />
+        Library
+      </button>
     </div>
   )
 }

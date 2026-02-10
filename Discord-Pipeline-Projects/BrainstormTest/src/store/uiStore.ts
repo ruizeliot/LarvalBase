@@ -14,6 +14,8 @@ interface UiState {
   contextMenuNodeId: string | null
   contextMenuPosition: { x: number; y: number } | null
   chainViewMode: ChainViewMode
+  libraryPanelOpen: boolean
+  showInfoCards: boolean
 
   setActiveMode: (mode: AppMode) => void
   selectNode: (id: string | null) => void
@@ -25,6 +27,10 @@ interface UiState {
   openContextMenu: (nodeId: string, position: { x: number; y: number }) => void
   closeContextMenu: () => void
   toggleChainViewMode: () => void
+  openLibraryPanel: () => void
+  closeLibraryPanel: () => void
+  toggleInfoCards: () => void
+  setShowInfoCards: (show: boolean) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -37,6 +43,8 @@ export const useUiStore = create<UiState>((set) => ({
   contextMenuNodeId: null,
   contextMenuPosition: null,
   chainViewMode: 'detailed',
+  libraryPanelOpen: false,
+  showInfoCards: true,
 
   setActiveMode: (mode) => set({ activeMode: mode, chainBuilderOpen: false, chainBuilderSourceId: null }),
   selectNode: (id) => set({ selectedNodeId: id }),
@@ -48,4 +56,8 @@ export const useUiStore = create<UiState>((set) => ({
   openContextMenu: (nodeId, position) => set({ contextMenuNodeId: nodeId, contextMenuPosition: position }),
   closeContextMenu: () => set({ contextMenuNodeId: null, contextMenuPosition: null }),
   toggleChainViewMode: () => set((s) => ({ chainViewMode: s.chainViewMode === 'detailed' ? 'compact' : 'detailed' })),
+  openLibraryPanel: () => set({ libraryPanelOpen: true }),
+  closeLibraryPanel: () => set({ libraryPanelOpen: false }),
+  toggleInfoCards: () => set((s) => ({ showInfoCards: !s.showInfoCards })),
+  setShowInfoCards: (show) => set({ showInfoCards: show }),
 }))
