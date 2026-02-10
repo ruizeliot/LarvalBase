@@ -41,8 +41,10 @@ test.describe('Epic 8 - US-8.2: Guided Tour Steps', () => {
     await expect(popover.locator('.driver-popover-title')).toContainText('Causal Chain')
     await expect(popover.locator('.driver-popover-progress-text')).toContainText('4 of 8')
 
+    // Skip this action step too
+    await page.locator('[data-testid="tutorial-skip-action"]').click()
+
     // Step 5: Scenario tab
-    await popover.locator('.driver-popover-next-btn').click()
     await expect(popover.locator('.driver-popover-title')).toContainText('Scenario')
     await expect(popover.locator('.driver-popover-progress-text')).toContainText('5 of 8')
 

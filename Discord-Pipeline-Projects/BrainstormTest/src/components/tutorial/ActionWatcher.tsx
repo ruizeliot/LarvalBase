@@ -2,12 +2,14 @@ import { useEffect, useRef } from 'react'
 import { useTutorialStore } from '@/store/tutorialStore'
 import { useModelStore } from '@/store/modelStore'
 import { useSimulationStore } from '@/store/simulationStore'
+import { useUiStore } from '@/store/uiStore'
 
 /**
  * Watches for user actions during the tutorial and marks steps as complete.
  * Step indices match tutorialConfig.ts:
  *   1 = Component palette (drag component onto canvas)
  *   2 = Property editor (rename component)
+ *   3 = Causal chain builder (open chain builder via right-click context menu)
  *   6 = Simulate tab (click Run button)
  */
 export function ActionWatcher() {
@@ -19,9 +21,11 @@ export function ActionWatcher() {
   const prevComponentCount = useRef(0)
   const prevComponentNames = useRef<Record<string, string>>({})
   const prevRunning = useRef(false)
+  const prevChainBuilderOpen = useRef(false)
 
   const components = useModelStore((s) => s.components)
   const running = useSimulationStore((s) => s.running)
+  const chainBuilderOpen = useUiStore((s) => s.chainBuilderOpen)
 
   // Track component count for step 1 (drag component)
   useEffect(() => {
@@ -54,6 +58,16 @@ export function ActionWatcher() {
 
     prevComponentNames.current = currentNames
   }, [tourActive, components, currentStep, completeAction, completedActions])
+
+  // Track chain builder opening for step 3 (right-click → New Causal Chain)
+  useEffect(() => {
+    if (!tourActive) return
+
+    if (chainBuilderOpen && !prevChainBuilderOpen.current && currentStep === 3 && !completedActions.has(3)) {
+      completeAction(3)
+    }
+    prevChainBuilderOpen.current = chainBuilderOpen
+  }, [tourActive, chainBuilderOpen, currentStep, completeAction, completedActions])
 
   // Track simulation Run click for step 6
   useEffect(() => {

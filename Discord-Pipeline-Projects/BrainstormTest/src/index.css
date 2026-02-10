@@ -165,3 +165,17 @@ html, body, #root {
 .tutorial-action-active .react-flow * {
   pointer-events: auto !important;
 }
+
+/* Context menu and chain builder must be interactive and visible above the
+   driver.js overlay when the user right-clicks during action steps. */
+.tutorial-action-active [data-testid="context-menu"],
+.tutorial-action-active [data-testid="context-menu"] *,
+.tutorial-action-active [data-testid="chain-builder"],
+.tutorial-action-active [data-testid="chain-builder"] * {
+  pointer-events: auto !important;
+}
+
+.tutorial-action-active [data-testid="context-menu"],
+.tutorial-action-active [data-testid="chain-builder"] {
+  z-index: 1000000 !important;
+}

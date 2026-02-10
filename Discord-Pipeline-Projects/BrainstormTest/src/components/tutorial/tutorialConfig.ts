@@ -43,6 +43,9 @@ export const tutorialSteps: TutorialStep[] = [
       title: 'Causal Chain Builder',
       description: 'Right-click any component to create a causal chain. Chains model cause-and-effect relationships between components.',
     },
+    actionRequired: true,
+    actionPrompt: 'Right-click a component and select "New Causal Chain from here"',
+    actionTestId: 'tutorial-action-step-4',
   },
   {
     element: '[data-testid="tab-scenarios"]',
