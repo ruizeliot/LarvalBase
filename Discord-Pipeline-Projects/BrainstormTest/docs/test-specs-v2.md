@@ -4,44 +4,46 @@
 **Generated:** 2026-02-10
 **Framework:** Playwright
 **Rule:** No mocking. All tests use real DOM, real state, real data.
-**Base:** V1 tests (E1-E6) remain unchanged. V2 adds E7-E10.
+**Base:** V1 tests (E1-E6, 122 tests) remain unchanged. V2 adds E7-E10.
 
 ---
 
 ## Conventions
 
-Identical to V1 conventions (see `docs/test-specs.md`):
-
 - **Selectors:** Use `data-testid` attributes (e.g. `[data-testid="library-panel"]`)
 - **Setup helpers:** Reusable functions that perform real UI actions (drag, click, type) to build state. No injected fixtures.
 - **Assertions:** Always assert against visible DOM or computed styles, never internal state.
 - **Cleanup:** Each test starts with a fresh app load (`page.goto('/')`)
-- **Multi-context tests (E9, E10):** Use Playwright's `browser.newContext()` to simulate multiple users in the same test. Each context gets its own page with independent localStorage.
+- **Multi-context tests (E9, E10):** Use Playwright `browser.newContext()` to simulate multiple users in the same room. Each context is a separate browser session.
+- **localStorage management:** Tests that depend on localStorage (E8) must clear it in setup via `page.evaluate(() => localStorage.clear())` before navigation.
 
-### New Setup Functions (V2)
+### V2 Shared Setup Functions
 
 These are NOT mocks. Each performs real UI interactions to build prerequisite state.
 
 | Helper | Actions |
 |--------|---------|
-| `openLibraryPanel(page)` | Clicks the "Library" button in the toolbar, waits for library panel to be visible |
-| `loadScenarioFromLibrary(page, scenarioName)` | Opens library, clicks "Load" on the named scenario card, handles confirmation if workspace is dirty |
+| `openLibraryPanel(page)` | Clicks the "Library" button in the toolbar, waits for library panel to appear |
+| `loadScenarioFromLibrary(page, scenarioTitle)` | Opens library panel, clicks "Load" on the scenario matching the title, confirms if needed |
 | `startTutorial(page)` | Clears `cascadesim-tutorial-complete` from localStorage, reloads page, waits for welcome overlay |
-| `advanceTourStep(page)` | Clicks the "Next" button in the Driver.js popover |
-| `createRoom(page, displayName)` | Clicks "Collaborate" button, enters display name, waits for room modal with shareable URL |
-| `joinRoom(page, roomId, displayName)` | Navigates to `/?room={roomId}`, enters display name, waits for model state to load |
-| `setupTwoUserRoom(browser)` | Creates two browser contexts, creates a room in context A, joins from context B. Returns `{ pageA, pageB, roomId }` |
-| `buildFloodModel(page)` | Same as V1 — builds the full "Flood" reference model via UI interactions |
+| `skipTutorial(page)` | If welcome overlay is visible, clicks "Skip" |
+| `createCollaborationRoom(page, displayName)` | Clicks "Collaborate" button, enters display name, waits for room modal with shareable URL |
+| `joinRoom(page, roomUrl, displayName)` | Navigates to roomUrl, enters display name on prompt, waits for model sync |
+| `openTwoContextsInRoom(browser)` | Creates two browser contexts, user A creates a room, user B joins via the shared URL. Returns `{ contextA, pageA, contextB, pageB, roomUrl }` |
+| `buildFloodModel(page)` | Builds the full V1 "Flood" reference model (see V1 test-specs.md for details) |
 
-### y-websocket Server
+### Reference Data: Pre-Built Scenarios
 
-E9 and E10 tests require a running y-websocket server. The Playwright config should start it in `globalSetup`:
+The 6 pre-built scenarios are static data. Used across E7 tests.
 
-```
-npx y-websocket --port 1234
-```
-
-Tests connect to `ws://localhost:1234`. No external server dependencies.
+| Scenario | Nodes | Difficulty | Color |
+|----------|-------|------------|-------|
+| Hello Cascade | 2 | Beginner | Green |
+| Branching Paths | 4 | Beginner | Green |
+| Supply Chain Disruption | 7 | Intermediate | Blue |
+| Global Manufacturing Network | 12 | Advanced | Orange |
+| Pandemic Stress Test | 17 | Expert | Red |
+| Feedback Loop Chaos | 14 | Expert | Red |
 
 ---
 
@@ -53,64 +55,62 @@ Tests connect to `ws://localhost:1234`. No external server dependencies.
 
 **Story:** US-7.1 — Scenario Library Panel
 
-#### TC-7.1.1: Library button is accessible and opens panel
+#### TC-7.1.1: Library button is accessible and opens the library panel
 
 ```
 Steps:
   1. Navigate to app
-  2. Assert a "Library" button is visible in the toolbar
-  3. Click the "Library" button
-  4. Assert a library panel/modal appears
-  5. Assert the panel contains a grid of scenario cards
-  6. Assert exactly 6 scenario cards are visible
+  2. Assert a "Library" button is visible in the toolbar or Scenarios tab area
+  3. Click "Library" button
+  4. Assert library panel/modal appears
+  5. Assert panel contains a grid of scenario cards
 ```
 
-#### TC-7.1.2: Each card shows title, description, node count, and difficulty badge
+#### TC-7.1.2: Library contains exactly 6 pre-built scenarios
 
 ```
 Steps:
   1. Open library panel
-  2. For each of the 6 cards, assert:
-     a. Card has a visible title text (non-empty)
-     b. Card has a visible description text (non-empty)
-     c. Card has a node count indicator (e.g. "2 nodes", "7 nodes")
-     d. Card has a difficulty badge element
+  2. Assert exactly 6 scenario cards are visible
+  3. Assert each card has a visible title text
+  4. Assert each card has a visible description text
+  5. Assert each card has a node count indicator
+  6. Assert each card has a difficulty badge
 ```
 
-#### TC-7.1.3: Library panel can be closed
+#### TC-7.1.3: Scenario card details match expected data
+
+```
+Steps:
+  1. Open library panel
+  2. Locate card with title "Hello Cascade"
+  3. Assert description is non-empty
+  4. Assert node count shows "2"
+  5. Assert difficulty badge shows "Beginner"
+  6. Locate card with title "Pandemic Stress Test"
+  7. Assert node count shows "17"
+  8. Assert difficulty badge shows "Expert"
+```
+
+#### TC-7.1.4: Library panel can be closed
 
 ```
 Steps:
   1. Open library panel
   2. Assert panel is visible
-  3. Click close button (or click outside the panel)
-  4. Assert library panel is no longer visible
-  5. Assert normal workspace is restored (canvas visible, tabs functional)
+  3. Close the panel (click close button or click outside)
+  4. Assert panel is no longer visible
+  5. Assert normal workspace is restored
 ```
 
-#### TC-7.1.4: Edge — Open library from different tabs
+#### TC-7.1.5: Edge — Open library panel, close, reopen
 
 ```
 Steps:
-  1. Switch to Scenarios tab
-  2. Click "Library" button
-  3. Assert library panel opens
-  4. Close panel
-  5. Switch to Simulate tab
-  6. Click "Library" button
-  7. Assert library panel opens
-```
-
-#### TC-7.1.5: Edge — Open library with existing model on canvas
-
-```
-Setup: buildFloodModel()
-Steps:
-  1. Assert canvas has components
-  2. Click "Library" button
-  3. Assert library panel opens and shows 6 cards
-  4. Close panel
-  5. Assert existing model is still on canvas (not modified by opening library)
+  1. Open library panel
+  2. Close panel
+  3. Reopen library panel
+  4. Assert all 6 cards are still visible (state not corrupted)
 ```
 
 ---
@@ -119,17 +119,18 @@ Steps:
 
 **Story:** US-7.2 — Difficulty Badges & Color Coding
 
-#### TC-7.2.1: Each scenario has correct difficulty text
+#### TC-7.2.1: Each scenario has the correct difficulty text
 
 ```
 Steps:
   1. Open library panel
-  2. Assert card "Hello Cascade" has badge text "Beginner"
-  3. Assert card "Branching Paths" has badge text "Beginner"
-  4. Assert card "Supply Chain Disruption" has badge text "Intermediate"
-  5. Assert card "Global Manufacturing Network" has badge text "Advanced"
-  6. Assert card "Pandemic Stress Test" has badge text "Expert"
-  7. Assert card "Feedback Loop Chaos" has badge text "Expert"
+  2. For each scenario, locate its card and verify the difficulty badge text:
+     - "Hello Cascade" -> "Beginner"
+     - "Branching Paths" -> "Beginner"
+     - "Supply Chain Disruption" -> "Intermediate"
+     - "Global Manufacturing Network" -> "Advanced"
+     - "Pandemic Stress Test" -> "Expert"
+     - "Feedback Loop Chaos" -> "Expert"
 ```
 
 #### TC-7.2.2: Badges are color-coded correctly
@@ -137,36 +138,21 @@ Steps:
 ```
 Steps:
   1. Open library panel
-  2. Assert "Beginner" badges have green color class/style (matching CascadeSim theme)
-  3. Assert "Intermediate" badge has blue color class/style
-  4. Assert "Advanced" badge has orange color class/style
-  5. Assert "Expert" badges have red color class/style
+  2. Locate "Hello Cascade" badge — assert it has green color class/style (e.g. data-difficulty="beginner" or bg-green-*)
+  3. Locate "Supply Chain Disruption" badge — assert blue color class/style
+  4. Locate "Global Manufacturing Network" badge — assert orange color class/style
+  5. Locate "Pandemic Stress Test" badge — assert red color class/style
 ```
 
-#### TC-7.2.3: Correct difficulty distribution
-
-```
-Steps:
-  1. Open library panel
-  2. Count badges by difficulty text:
-     - Assert 2 cards with "Beginner"
-     - Assert 1 card with "Intermediate"
-     - Assert 1 card with "Advanced"
-     - Assert 2 cards with "Expert"
-  3. Assert total = 6
-```
-
-#### TC-7.2.4: Node counts match scenario definitions
+#### TC-7.2.3: Difficulty distribution is correct
 
 ```
 Steps:
   1. Open library panel
-  2. Assert "Hello Cascade" shows 2 nodes
-  3. Assert "Branching Paths" shows 4 nodes
-  4. Assert "Supply Chain Disruption" shows 7 nodes
-  5. Assert "Global Manufacturing Network" shows 12 nodes
-  6. Assert "Pandemic Stress Test" shows 17 nodes
-  7. Assert "Feedback Loop Chaos" shows 14 nodes
+  2. Count badges with text "Beginner" — assert 2
+  3. Count badges with text "Intermediate" — assert 1
+  4. Count badges with text "Advanced" — assert 1
+  5. Count badges with text "Expert" — assert 2
 ```
 
 ---
@@ -180,46 +166,62 @@ Steps:
 ```
 Steps:
   1. Open library panel
-  2. Assert filter chips visible: "All", "Beginner", "Intermediate", "Advanced", "Expert"
-  3. Assert "All" chip has active/highlighted styling
+  2. Assert filter chips are visible: "All", "Beginner", "Intermediate", "Advanced", "Expert"
+  3. Assert "All" chip is highlighted (active state)
   4. Assert 6 scenario cards are visible
 ```
 
-#### TC-7.3.2: Clicking a difficulty chip filters to matching scenarios
+#### TC-7.3.2: Clicking "Beginner" shows only beginner scenarios
 
 ```
 Steps:
   1. Open library panel
-  2. Click "Beginner" chip
-  3. Assert "Beginner" chip has active styling
-  4. Assert "All" chip no longer has active styling
-  5. Assert exactly 2 cards visible ("Hello Cascade", "Branching Paths")
-  6. Click "Expert" chip
-  7. Assert exactly 2 cards visible ("Pandemic Stress Test", "Feedback Loop Chaos")
-  8. Click "Intermediate" chip
-  9. Assert exactly 1 card visible ("Supply Chain Disruption")
-  10. Click "Advanced" chip
-  11. Assert exactly 1 card visible ("Global Manufacturing Network")
+  2. Click "Beginner" filter chip
+  3. Assert "Beginner" chip is highlighted
+  4. Assert "All" chip is no longer highlighted
+  5. Assert exactly 2 cards are visible
+  6. Assert both cards have "Beginner" difficulty badge
 ```
 
-#### TC-7.3.3: Clicking "All" resets the filter
+#### TC-7.3.3: Clicking "Expert" shows only expert scenarios
 
 ```
 Steps:
   1. Open library panel
-  2. Click "Expert" chip — assert 2 cards
-  3. Click "All" chip
-  4. Assert "All" chip has active styling
-  5. Assert 6 cards visible
+  2. Click "Expert" filter chip
+  3. Assert exactly 2 cards are visible
+  4. Assert both cards have "Expert" difficulty badge
 ```
 
-#### TC-7.3.4: Edge — Filter with no matching results does not occur
+#### TC-7.3.4: Clicking "Intermediate" shows only 1 scenario
 
 ```
 Steps:
   1. Open library panel
-  2. Click each filter chip in sequence
-  3. Assert every chip shows at least 1 result (no empty state needed per current distribution)
+  2. Click "Intermediate" filter chip
+  3. Assert exactly 1 card is visible
+  4. Assert card title is "Supply Chain Disruption"
+```
+
+#### TC-7.3.5: Clicking "All" resets the filter
+
+```
+Steps:
+  1. Open library panel
+  2. Click "Beginner" — assert 2 cards
+  3. Click "All"
+  4. Assert "All" chip is highlighted
+  5. Assert 6 cards are visible
+```
+
+#### TC-7.3.6: Edge — Rapid filter switching
+
+```
+Steps:
+  1. Open library panel
+  2. Click "Beginner", then immediately "Expert", then "All" (rapid clicks)
+  3. Assert final state shows 6 cards with "All" highlighted
+  4. Assert no visual glitch or duplicate cards
 ```
 
 ---
@@ -234,78 +236,63 @@ Steps:
 Steps:
   1. Open library panel
   2. Locate "Hello Cascade" card
-  3. Assert card has a "Load" button
+  3. Assert "Load" button is visible on the card
   4. Click "Load"
   5. Assert library panel closes
   6. Assert canvas shows exactly 2 component nodes
   7. Assert at least 1 chain edge is visible on canvas
-  8. Assert app is in Editor mode (editor tab active)
+  8. Assert Editor mode is active (editor tab selected)
 ```
 
-#### TC-7.4.2: Loaded scenario creates components with correct positioning
-
-```
-Steps:
-  1. Load "Hello Cascade" from library
-  2. Assert 2 component nodes are on canvas
-  3. Assert nodes are not stacked on top of each other (distinct x or y positions)
-  4. Assert nodes are within the visible viewport
-```
-
-#### TC-7.4.3: Loaded scenario creates a pre-configured scenario with forced events
+#### TC-7.4.2: Loaded scenario includes components, chains, and a scenario with forced events
 
 ```
 Steps:
   1. Load "Hello Cascade" from library
-  2. Switch to Scenarios tab
-  3. Assert at least 1 scenario appears in the scenario list
-  4. Select the scenario
-  5. Assert timeline shows at least 1 forced event marker
+  2. Assert 2 components are visible on canvas with proper positioning (not overlapping)
+  3. Select one component — assert properties panel shows parameters
+  4. Switch to Scenarios tab
+  5. Assert at least 1 scenario exists in the scenario list
+  6. Select the scenario — assert forced events appear on timeline
 ```
 
-#### TC-7.4.4: Confirmation dialog when workspace has existing components
+#### TC-7.4.3: Confirmation dialog when workspace has existing content
 
 ```
 Setup: createComponent(page, 'internal', 'Existing', [{ name: 'val', value: '5' }])
 Steps:
-  1. Assert canvas has 1 component
+  1. Assert canvas has 1 component ("Existing")
   2. Open library panel
-  3. Click "Load" on "Hello Cascade"
-  4. Assert confirmation dialog appears warning about overwriting
+  3. Click "Load" on "Branching Paths"
+  4. Assert confirmation dialog appears warning about overwriting current model
   5. Click "Cancel"
   6. Assert library panel is still open
-  7. Assert "Existing" component is still on canvas
-  8. Click "Load" again on "Hello Cascade"
+  7. Assert canvas still shows "Existing" component (unchanged)
+  8. Click "Load" again on "Branching Paths"
   9. Click "Confirm" on dialog
-  10. Assert library panel closes
-  11. Assert "Existing" component is gone
-  12. Assert "Hello Cascade" components are loaded
+  10. Assert "Existing" component is gone
+  11. Assert canvas shows 4 components (Branching Paths model)
 ```
 
-#### TC-7.4.5: Load a different scenario over a loaded scenario
+#### TC-7.4.4: Loading a different scenario replaces the previous loaded one
 
 ```
 Steps:
-  1. Load "Hello Cascade" (2 nodes)
-  2. Open library panel
+  1. Load "Hello Cascade" — assert 2 nodes
+  2. Open library panel again
   3. Click "Load" on "Supply Chain Disruption"
-  4. Assert confirmation dialog appears
-  5. Confirm
-  6. Assert canvas now shows 7 component nodes (not 2)
-  7. Assert no leftover nodes from "Hello Cascade"
+  4. Confirm overwrite dialog
+  5. Assert canvas shows 7 components (not 2 + 7)
 ```
 
-#### TC-7.4.6: Edge — Load scenario and verify it is runnable
+#### TC-7.4.5: Edge — Load scenario into workspace, switch tabs, verify state
 
 ```
 Steps:
-  1. Load "Hello Cascade" from library
-  2. Switch to Simulate tab
-  3. Click Play
-  4. Wait 2 seconds
-  5. Assert simulation is running (time > 0)
-  6. Assert no error toasts or console errors
-  7. Click Stop
+  1. Load "Hello Cascade"
+  2. Switch to Scenarios tab — assert read-only graph shows 2 nodes
+  3. Switch to Simulate tab — assert canvas still shows 2 nodes
+  4. Switch back to Editor — assert 2 nodes still present and editable
 ```
 
 ---
@@ -314,78 +301,62 @@ Steps:
 
 **Story:** US-7.5 — Info Card Nodes
 
-#### TC-7.5.1: Info cards appear on canvas after loading a scenario
+#### TC-7.5.1: Info cards appear when loading a scenario
 
 ```
 Steps:
   1. Load "Supply Chain Disruption" from library
-  2. Assert canvas contains at least 1 element with info card styling (distinct background, dashed border, or book/lightbulb icon)
-  3. Assert info card nodes are visually distinct from regular component nodes
+  2. Assert info card nodes appear on canvas
+  3. Assert info card nodes have visually distinct styling (data-testid="info-card" or distinct class)
+  4. Assert info cards have a different background color or dashed border compared to regular components
+  5. Assert each info card contains explanation text (non-empty content)
 ```
 
-#### TC-7.5.2: Info cards contain explanatory text
-
-```
-Steps:
-  1. Load "Supply Chain Disruption" from library
-  2. Locate an info card node on canvas
-  3. Assert it contains non-empty text content
-  4. Assert text is readable (not truncated to nothing)
-```
-
-#### TC-7.5.3: Info cards are non-interactive (no chain connections)
+#### TC-7.5.2: Info cards are non-interactive
 
 ```
 Steps:
-  1. Load "Supply Chain Disruption" from library
-  2. Right-click an info card node
-  3. Assert context menu does NOT contain "New Causal Chain from here"
-  4. Assert info card has no connection handles (input/output ports)
+  1. Load "Supply Chain Disruption"
+  2. Locate an info card node
+  3. Right-click info card — assert "New Causal Chain from here" is NOT available
+  4. Attempt to drag info card to connect a chain — assert no connection is created
+  5. Click info card — assert properties panel does NOT show parameter editing UI
 ```
 
-#### TC-7.5.4: Dismiss an info card via close button
-
-```
-Steps:
-  1. Load "Supply Chain Disruption" from library
-  2. Count visible info cards as N
-  3. Click the close/dismiss button on one info card
-  4. Assert that info card disappears from canvas
-  5. Assert remaining visible info cards = N - 1
-```
-
-#### TC-7.5.5: "Show Info Cards" toggle re-shows dismissed cards
+#### TC-7.5.3: Dismiss and restore info cards
 
 ```
 Steps:
-  1. Load "Supply Chain Disruption" from library
-  2. Count visible info cards as N
-  3. Dismiss all info cards one by one
-  4. Assert 0 info cards visible
-  5. Click "Show Info Cards" toggle
-  6. Assert N info cards are visible again
+  1. Load "Supply Chain Disruption"
+  2. Count visible info card nodes as N
+  3. Assert N > 0
+  4. Click the close/dismiss button on the first info card
+  5. Assert info card disappears from canvas
+  6. Assert remaining info card count is N - 1
+  7. Locate "Show Info Cards" toggle
+  8. Click toggle
+  9. Assert all N info cards are visible again (dismissed card restored)
 ```
 
-#### TC-7.5.6: Library card shows info card count badge
+#### TC-7.5.4: Library cards show info card count badge
 
 ```
 Steps:
   1. Open library panel
   2. Locate "Supply Chain Disruption" card
-  3. Assert card shows an info card count badge (e.g. "3 info cards" or similar)
-  4. Assert badge count is a positive integer
+  3. Assert an info card count badge is visible (e.g. "3 info cards")
+  4. Assert badge shows a number > 0
 ```
 
-#### TC-7.5.7: Edge — Info cards do not affect simulation
+#### TC-7.5.5: Edge — Dismiss all info cards, then restore
 
 ```
 Steps:
-  1. Load "Supply Chain Disruption" from library
-  2. Switch to Simulate tab
-  3. Click Play
-  4. Assert simulation runs normally
-  5. Assert info cards are not listed as components in chain status panel
-  6. Click Stop
+  1. Load a scenario with info cards
+  2. Dismiss every info card one by one
+  3. Assert no info cards visible
+  4. Click "Show Info Cards" toggle
+  5. Assert all info cards reappear
 ```
 
 ---
@@ -402,12 +373,12 @@ Steps:
 
 ```
 Steps:
-  1. Clear localStorage (remove 'cascadesim-tutorial-complete' key)
+  1. Clear localStorage: page.evaluate(() => localStorage.clear())
   2. Navigate to app
-  3. Wait 1.5 seconds (1s delay + buffer)
+  3. Wait up to 2 seconds
   4. Assert welcome overlay is visible
-  5. Assert overlay contains app name "CascadeSim"
-  6. Assert overlay contains a brief description
+  5. Assert overlay contains app name "CascadeSim" (or similar branding)
+  6. Assert overlay contains brief description text
   7. Assert "Start Tutorial" button is visible
   8. Assert "Skip" button is visible
 ```
@@ -416,45 +387,45 @@ Steps:
 
 ```
 Steps:
-  1. Clear localStorage, reload app
+  1. Clear localStorage, navigate to app
   2. Wait for welcome overlay
   3. Click "Skip"
-  4. Assert welcome overlay disappears
-  5. Assert normal app workspace is visible
-  6. Assert localStorage contains 'cascadesim-tutorial-complete' = 'true' (or truthy value)
+  4. Assert overlay is dismissed (not visible)
+  5. Assert normal workspace is visible
+  6. Assert localStorage contains key "cascadesim-tutorial-complete"
 ```
 
-#### TC-8.1.3: Subsequent visits do not trigger walkthrough
+#### TC-8.1.3: Subsequent visits do not trigger the walkthrough
 
 ```
 Steps:
-  1. Clear localStorage, reload app
-  2. Click "Skip" to dismiss overlay
-  3. Reload page
+  1. Clear localStorage, navigate to app
+  2. Click "Skip" on welcome overlay
+  3. Reload page (page.reload())
   4. Wait 2 seconds
   5. Assert welcome overlay does NOT appear
 ```
 
-#### TC-8.1.4: Clearing localStorage re-triggers walkthrough
+#### TC-8.1.4: Clearing localStorage re-triggers the walkthrough
 
 ```
 Steps:
-  1. Set 'cascadesim-tutorial-complete' in localStorage, reload — assert no overlay
-  2. Clear localStorage
+  1. Set localStorage flag, navigate to app — assert no overlay
+  2. Clear localStorage via page.evaluate(() => localStorage.removeItem('cascadesim-tutorial-complete'))
   3. Reload page
-  4. Wait 1.5 seconds
-  5. Assert welcome overlay appears again
+  4. Wait up to 2 seconds
+  5. Assert welcome overlay appears
 ```
 
 #### TC-8.1.5: Edge — Clicking "Start Tutorial" begins guided tour
 
 ```
 Steps:
-  1. Clear localStorage, reload app
+  1. Clear localStorage, navigate to app
   2. Wait for welcome overlay
   3. Click "Start Tutorial"
-  4. Assert welcome overlay disappears
-  5. Assert Driver.js spotlight/popover appears (step 1 of tour)
+  4. Assert welcome overlay is dismissed
+  5. Assert tour step 1 spotlight/popover is visible (Driver.js highlight active)
 ```
 
 ---
@@ -463,84 +434,82 @@ Steps:
 
 **Story:** US-8.2 — Guided Tour Steps
 
-#### TC-8.2.1: Tour has 8 steps targeting correct UI elements
+#### TC-8.2.1: Tour has 8 steps with correct targets
 
 ```
 Steps:
-  1. Start tutorial (clear localStorage, reload, click "Start Tutorial")
-  2. Step 1: Assert spotlight targets canvas area, popover says "1 of 8"
-  3. Click "Next"
-  4. Step 2: Assert spotlight targets component palette
+  1. Start tutorial (clear localStorage, navigate, click "Start Tutorial")
+  2. Assert step 1 popover is visible with title related to "Canvas navigation"
+  3. Assert step counter shows "1 of 8"
+  4. Assert a spotlight/dimmed-backdrop highlights the canvas area
   5. Click "Next"
-  6. Step 3: Assert spotlight targets property editor area
-  7. Click "Next"
-  8. Step 4: Assert spotlight targets a component node or chain builder instruction
-  9. Click "Next"
-  10. Step 5: Assert spotlight targets Scenarios tab
-  11. Click "Next"
-  12. Step 6: Assert spotlight targets timeline/forced events area
-  13. Click "Next"
-  14. Step 7: Assert spotlight targets Simulate tab or play button area
-  15. Click "Next"
-  16. Step 8: Assert spotlight targets Library button
-  17. Assert step counter shows "8 of 8"
+  6. Assert step 2 popover relates to "Component palette"
+  7. Assert step counter shows "2 of 8"
+  8. Continue clicking "Next" through all steps:
+     - Step 3: "Property editor"
+     - Step 4: "Causal chain builder"
+     - Step 5: "Scenario tab"
+     - Step 6: "Forced events / timeline"
+     - Step 7: "Simulate tab"
+     - Step 8: "Scenario library"
+  9. After step 8, assert tour completes (no more popover)
 ```
 
-#### TC-8.2.2: Progress dots show correct state
+#### TC-8.2.2: Progress dots update correctly
 
 ```
 Steps:
   1. Start tutorial
-  2. Assert 8 progress dots visible below popover
-  3. Assert dot 1 is active (filled/highlighted), dots 2-8 are empty
-  4. Click "Next"
-  5. Assert dot 1 is completed (filled), dot 2 is active, dots 3-8 are empty
-  6. Advance to step 5
-  7. Assert dots 1-4 completed, dot 5 active, dots 6-8 empty
+  2. At step 1: assert 1 active dot, 0 filled, 7 empty
+  3. Click "Next" to step 2: assert 1 filled, 1 active, 6 empty
+  4. Click "Next" to step 3: assert 2 filled, 1 active, 5 empty
+  5. Continue verifying through all 8 steps
 ```
 
 #### TC-8.2.3: "Back" button navigates to previous step
 
 ```
 Steps:
-  1. Start tutorial, advance to step 3
-  2. Assert step counter shows "3 of 8"
-  3. Click "Back"
-  4. Assert step counter shows "2 of 8"
-  5. Assert spotlight targets component palette (step 2's element)
+  1. Start tutorial
+  2. Navigate to step 3
+  3. Assert step counter shows "3 of 8"
+  4. Click "Back"
+  5. Assert step counter shows "2 of 8"
+  6. Assert step 2 popover is shown with correct content
 ```
 
-#### TC-8.2.4: Esc key dismisses the tour
+#### TC-8.2.4: Esc key dismisses the tour at any point
 
 ```
 Steps:
-  1. Start tutorial, advance to step 4
-  2. Press "Escape" key
-  3. Assert Driver.js spotlight/popover disappears
-  4. Assert normal app state is restored
-  5. Assert localStorage flag is set (tour considered complete on dismiss)
+  1. Start tutorial
+  2. Navigate to step 4
+  3. Press Escape key
+  4. Assert tour is dismissed (no popover, no spotlight)
+  5. Assert normal app state is restored
+  6. Assert localStorage flag is set (tutorial considered complete)
 ```
 
 #### TC-8.2.5: Arrow keys navigate between steps
 
 ```
 Steps:
-  1. Start tutorial (step 1)
-  2. Press ArrowRight key
-  3. Assert step counter shows "2 of 8"
-  4. Press ArrowRight key
-  5. Assert step counter shows "3 of 8"
-  6. Press ArrowLeft key
-  7. Assert step counter shows "2 of 8"
+  1. Start tutorial, at step 1
+  2. Press ArrowRight
+  3. Assert step 2 is shown
+  4. Press ArrowRight
+  5. Assert step 3 is shown
+  6. Press ArrowLeft
+  7. Assert step 2 is shown again
 ```
 
-#### TC-8.2.6: Edge — "Back" on step 1 does nothing
+#### TC-8.2.6: Edge — "Back" at step 1 does nothing
 
 ```
 Steps:
-  1. Start tutorial (step 1)
+  1. Start tutorial, at step 1
   2. Click "Back" (or press ArrowLeft)
-  3. Assert still on step 1 (counter shows "1 of 8")
+  3. Assert still on step 1 (step counter shows "1 of 8")
   4. Assert no error
 ```
 
@@ -550,62 +519,63 @@ Steps:
 
 **Story:** US-8.3 — Action-Based Step Progression
 
-#### TC-8.3.1: Step 2 requires dragging a component to proceed
+#### TC-8.3.1: Step 2 requires dragging a component
 
 ```
 Steps:
-  1. Start tutorial, advance to step 2 (component palette)
-  2. Assert popover shows action prompt (e.g. "Drag an Internal component onto the canvas")
-  3. Assert "Next" button is disabled
-  4. Drag "Internal" component from palette onto canvas
-  5. Assert brief success animation/indicator appears (checkmark)
-  6. Assert "Next" button is now enabled
-  7. Click "Next"
-  8. Assert step 3 is shown
-```
-
-#### TC-8.3.2: Step 3 requires changing a component's name
-
-```
-Steps:
-  1. Advance to step 3 (property editor)
+  1. Start tutorial, navigate to step 2 (Component palette)
   2. Assert "Next" button is disabled
-  3. Assert action prompt describes changing the component name
-  4. Click on the component's name input and change it to "MyComponent"
-  5. Assert success indicator appears
-  6. Assert "Next" button is enabled
+  3. Assert action prompt is visible (e.g. "Drag an Internal component onto the canvas")
+  4. Drag an "Internal" component from palette to canvas
+  5. Assert success indicator appears (checkmark animation or similar)
+  6. Assert "Next" button becomes enabled
+  7. Click "Next" — assert advances to step 3
 ```
 
-#### TC-8.3.3: Step 7 requires clicking the "Run" button
+#### TC-8.3.2: Step 3 requires renaming a component
 
 ```
 Steps:
-  1. Advance to step 7 (simulate)
+  1. Advance to step 3 (Property editor) — prerequisite: component exists from step 2
   2. Assert "Next" button is disabled
-  3. Assert action prompt describes clicking "Run"
-  4. Click the Play/Run button
+  3. Assert action prompt describes renaming the component
+  4. Change the component's name in the property editor
   5. Assert success indicator appears
-  6. Assert "Next" button is enabled
+  6. Assert "Next" button becomes enabled
+```
+
+#### TC-8.3.3: Step 7 requires clicking "Run"
+
+```
+Steps:
+  1. Advance to step 7 (Simulate tab)
+  2. Assert "Next" button is disabled
+  3. Assert action prompt describes clicking the "Run" button
+  4. Click the "Run" / Play button
+  5. Assert success indicator appears
+  6. Assert "Next" button becomes enabled
 ```
 
 #### TC-8.3.4: "Skip" link bypasses action requirement
 
 ```
 Steps:
-  1. Advance to step 2 (action-required step)
+  1. Advance to step 2 (action required)
   2. Assert "Next" button is disabled
-  3. Assert a "Skip" link is visible
+  3. Assert "Skip" link is visible
   4. Click "Skip"
-  5. Assert step 3 is shown (advanced without performing action)
+  5. Assert advances to step 3 without performing the action
 ```
 
-#### TC-8.3.5: Edge — Non-action steps have "Next" enabled immediately
+#### TC-8.3.5: Edge — Performing action then navigating back and forward
 
 ```
 Steps:
-  1. Start tutorial (step 1 — canvas navigation, no action required)
-  2. Assert "Next" button is enabled (not disabled)
-  3. Click "Next" — step advances
+  1. At step 2, drag component (action completed)
+  2. Click "Next" to step 3
+  3. Click "Back" to step 2
+  4. Assert step 2 shows completed state (action already done)
+  5. Assert "Next" is still enabled (don't need to redo action)
 ```
 
 ---
@@ -614,17 +584,17 @@ Steps:
 
 **Story:** US-8.4 — Replay Tutorial via Help Button
 
-#### TC-8.4.1: Floating help button is always visible
+#### TC-8.4.1: Help button is always visible
 
 ```
 Steps:
-  1. Navigate to app
+  1. Navigate to app (skip tutorial if shown)
   2. Assert "?" button is visible in the bottom-right corner
-  3. Switch to Scenarios tab — assert "?" still visible
-  4. Switch to Simulate tab — assert "?" still visible
+  3. Switch to Scenarios tab — assert "?" button still visible
+  4. Switch to Simulate tab — assert "?" button still visible
 ```
 
-#### TC-8.4.2: Help button opens menu with options
+#### TC-8.4.2: Help menu opens with expected options
 
 ```
 Steps:
@@ -634,16 +604,15 @@ Steps:
   4. Assert menu contains "Keyboard Shortcuts" option
 ```
 
-#### TC-8.4.3: "Replay Tutorial" starts walkthrough from step 1
+#### TC-8.4.3: "Replay Tutorial" starts the walkthrough
 
 ```
 Steps:
-  1. Set 'cascadesim-tutorial-complete' in localStorage (not first visit)
-  2. Reload app — assert no automatic overlay
-  3. Click "?" button
-  4. Click "Replay Tutorial"
-  5. Assert Driver.js spotlight/popover appears
-  6. Assert step counter shows "1 of 8"
+  1. Click "?" button
+  2. Click "Replay Tutorial"
+  3. Assert tour step 1 spotlight/popover appears
+  4. Assert step counter shows "1 of 8"
+  5. Assert it is the same tour as the first-visit walkthrough
 ```
 
 #### TC-8.4.4: Help menu closes when clicking outside
@@ -651,29 +620,29 @@ Steps:
 ```
 Steps:
   1. Click "?" button — assert menu visible
-  2. Click on the canvas area (outside menu)
-  3. Assert help menu is no longer visible
+  2. Click on empty canvas area
+  3. Assert help menu is dismissed
 ```
 
-#### TC-8.4.5: Normal app state restored after dismissing replayed tour
-
-```
-Steps:
-  1. Click "?" → "Replay Tutorial"
-  2. Advance to step 3
-  3. Press Escape to dismiss
-  4. Assert no spotlight/popover visible
-  5. Assert app is functional (can create components, switch tabs)
-```
-
-#### TC-8.4.6: Edge — Help button does not overlap canvas controls
+#### TC-8.4.5: Edge — Help button does not overlap canvas controls
 
 ```
 Steps:
   1. Navigate to app
-  2. Get bounding box of "?" button
-  3. Get bounding boxes of canvas zoom controls (if any)
-  4. Assert no overlap between help button and other controls
+  2. Locate "?" button bounding box
+  3. Locate zoom controls bounding box
+  4. Assert bounding boxes do not overlap
+```
+
+#### TC-8.4.6: Edge — Dismiss tour and verify app state restored
+
+```
+Steps:
+  1. Build a model with components and chains
+  2. Click "?" then "Replay Tutorial"
+  3. Navigate to step 4, then press Esc
+  4. Assert all previously-created components and chains are still on canvas
+  5. Assert app is fully functional (can create new components)
 ```
 
 ---
@@ -682,68 +651,62 @@ Steps:
 
 **Story:** US-8.5 — Contextual Hints on Complex Elements
 
-#### TC-8.5.1: Hint icon visible on chain builder modal header
+#### TC-8.5.1: "?" icon on chain builder modal
 
 ```
 Setup: createComponent(page, 'internal', 'A', [{ name: 'x', value: '1' }])
 Steps:
-  1. Right-click "A" component, click "New Causal Chain from here"
-  2. Assert chain builder modal opens
-  3. Assert a "?" hint icon is visible near the modal header
+  1. Right-click "A" then "New Causal Chain from here"
+  2. Assert chain builder dialog opens
+  3. Assert a "?" hint icon is visible near the dialog header
+  4. Click the "?" icon
+  5. Assert tooltip/popover appears with explanation text (non-empty, 1-2 sentences)
+  6. Assert tooltip matches dark theme styling
 ```
 
-#### TC-8.5.2: Clicking hint icon shows tooltip with explanation
+#### TC-8.5.2: Tooltip dismisses on click outside or Esc
 
 ```
-Setup: Open chain builder (same as TC-8.5.1)
-Steps:
-  1. Click the "?" hint icon near the chain builder header
-  2. Assert a tooltip/popover appears
-  3. Assert tooltip contains explanatory text (non-empty, 1-2 sentences)
-  4. Assert tooltip matches dark theme styling
-```
-
-#### TC-8.5.3: Tooltip dismisses on click outside or Esc
-
-```
-Setup: Open chain builder, click "?" to show tooltip
+Setup: Open chain builder, click "?" icon to show tooltip
 Steps:
   1. Assert tooltip is visible
-  2. Click outside the tooltip (on the modal background)
+  2. Click outside the tooltip
   3. Assert tooltip is dismissed
-  4. Click "?" again to reopen tooltip
+  4. Click "?" icon again — assert tooltip reappears
   5. Press Escape
   6. Assert tooltip is dismissed
 ```
 
-#### TC-8.5.4: First-time contextual hint auto-appears on chain builder open
+#### TC-8.5.3: First-time chain builder hint auto-appears
 
 ```
 Steps:
-  1. Clear localStorage (remove all 'cascadesim-first-use-*' keys)
-  2. Create a component
-  3. Open chain builder for the first time
-  4. Assert a contextual hint auto-appears (without clicking "?")
-  5. Dismiss the hint
-  6. Close chain builder
-  7. Open chain builder again
-  8. Assert the contextual hint does NOT auto-appear (tracked in localStorage)
+  1. Clear localStorage (remove all cascadesim-first-use-* keys)
+  2. Navigate to app
+  3. Create a component
+  4. Open chain builder for the first time
+  5. Assert a contextual hint auto-appears (without clicking "?")
+  6. Dismiss the hint
+  7. Close chain builder
+  8. Open chain builder again
+  9. Assert contextual hint does NOT auto-appear (tracked in localStorage)
 ```
 
-#### TC-8.5.5: Edge — Hint icons on formula editor and simulation speed slider
+#### TC-8.5.4: Edge — Hint icons on other complex elements
 
 ```
 Steps:
-  1. Open chain builder → assert "?" icon near formula editor
-  2. Close chain builder
-  3. Switch to Simulate tab → assert "?" icon near simulation speed slider
+  1. Navigate to app, skip tutorial
+  2. Switch to Simulate tab
+  3. Assert "?" hint icon is visible near the simulation speed slider
+  4. Click it — assert tooltip with explanation appears
 ```
 
 ---
 
 ## E9: Collaboration Core
 
-**Note:** All E9 tests use Playwright multi-browser-context to simulate multiple users.
+**Note:** All E9 tests use Playwright multi-browser-context to simulate multiple users. A running y-websocket server is required (e.g. `npx y-websocket`).
 
 ---
 
@@ -751,65 +714,51 @@ Steps:
 
 **Story:** US-9.1 — Create Collaboration Room
 
-#### TC-9.1.1: "Collaborate" button visible in toolbar
+#### TC-9.1.1: "Collaborate" button creates a room with shareable URL
 
 ```
 Steps:
   1. Navigate to app
-  2. Assert a "Collaborate" button is visible in the app toolbar
+  2. Assert "Collaborate" button is visible in the toolbar
+  3. Click "Collaborate"
+  4. Assert display name prompt appears
+  5. Enter name: "Alice"
+  6. Confirm
+  7. Assert room modal appears
+  8. Assert modal contains a URL with a ?room= parameter
+  9. Assert "Copy Link" button is visible
+  10. Assert the user "Alice" appears as a connected participant
 ```
 
-#### TC-9.1.2: Clicking "Collaborate" prompts for display name and creates a room
-
-```
-Steps:
-  1. Click "Collaborate" button
-  2. Assert a display name input appears (modal or inline)
-  3. Enter name: "Alice"
-  4. Confirm
-  5. Assert room modal appears
-  6. Assert modal shows a shareable URL containing a "room=" parameter
-  7. Assert a "Copy Link" button is visible
-```
-
-#### TC-9.1.3: Created room URL contains a unique room ID
+#### TC-9.1.2: "Copy Link" copies URL to clipboard
 
 ```
 Steps:
-  1. Create a room with name "Alice"
-  2. Extract room URL from modal
-  3. Assert URL contains "?room=" followed by a non-empty ID string
-  4. Create another room (new page context)
-  5. Assert the two room IDs are different
+  1. Create a room as "Alice"
+  2. Click "Copy Link"
+  3. Read clipboard content via page.evaluate(() => navigator.clipboard.readText())
+  4. Assert clipboard contains a URL with ?room= parameter
 ```
 
-#### TC-9.1.4: Creator is automatically the first connected participant
-
-```
-Steps:
-  1. Create a room with name "Alice"
-  2. Assert presence indicator shows 1 connected user
-  3. Assert "Alice" appears in the participant list or presence UI
-```
-
-#### TC-9.1.5: "Copy Link" copies URL to clipboard
+#### TC-9.1.3: Room ID is unique per creation
 
 ```
 Steps:
-  1. Create a room
-  2. Click "Copy Link" button
-  3. Read clipboard contents
-  4. Assert clipboard contains the room URL with room parameter
+  1. Create room in context A — record room URL as URL_A
+  2. Close modal
+  3. Create a new page (context B) and navigate to app
+  4. Click "Collaborate" in context B — record room URL as URL_B
+  5. Assert URL_A !== URL_B (unique room IDs)
 ```
 
-#### TC-9.1.6: Edge — Empty display name rejected
+#### TC-9.1.4: Edge — Empty display name rejected
 
 ```
 Steps:
   1. Click "Collaborate"
   2. Leave display name empty
   3. Attempt to confirm
-  4. Assert validation error (name is required)
+  4. Assert validation error: display name is required
   5. Assert room is NOT created
 ```
 
@@ -819,64 +768,49 @@ Steps:
 
 **Story:** US-9.2 — Join Room via Shared Link
 
-#### TC-9.2.1: Opening URL with room parameter connects to room
+#### TC-9.2.1: Opening URL with room parameter joins the room
 
 ```
-Setup: Create room in context A, extract roomId
 Steps:
-  1. In context B, navigate to `/?room={roomId}`
-  2. Assert display name prompt appears
-  3. Enter name: "Bob"
-  4. Confirm
-  5. Assert model state from the room loads on canvas
-  6. Assert presence shows 2 connected users
+  1. In context A, create a room as "Alice", build a model with 1 component "Server"
+  2. Copy room URL
+  3. In context B, navigate to the room URL
+  4. Assert display name prompt appears
+  5. Enter name: "Bob"
+  6. Confirm
+  7. Assert context B's canvas shows the "Server" component (state synced from room)
 ```
 
 #### TC-9.2.2: Late joiner sees complete current state
 
 ```
-Setup:
-  1. Context A creates room, adds 2 components and a chain
 Steps:
-  1. Context B joins room via URL
-  2. Assert context B's canvas shows 2 components
-  3. Assert context B sees the chain edge on canvas
-  4. Assert component names and parameter values match context A's model
+  1. Context A creates room, adds 3 components with chains and a scenario
+  2. After 2 seconds, context B joins the room
+  3. Assert context B sees all 3 components on canvas
+  4. Assert context B sees chain edges on canvas
+  5. Switch to Scenarios tab in context B — assert scenario exists
 ```
 
-#### TC-9.2.3: Error state when connecting to non-existent room
+#### TC-9.2.3: Error state for non-existent or unreachable room
 
 ```
 Steps:
-  1. Navigate to `/?room=nonexistent-room-id-12345`
+  1. Navigate to /?room=nonexistent-room-12345
   2. Enter display name
-  3. Assert error message appears (e.g. "Room not found" or "Connection failed")
+  3. Assert error message appears (e.g. "Room not found" or "Unable to connect")
   4. Assert "Work Offline" fallback button is visible
   5. Click "Work Offline"
-  6. Assert app loads in normal (non-collaborative) mode
+  6. Assert app loads normally without collaboration features
 ```
 
-#### TC-9.2.4: Error state when server is unreachable
+#### TC-9.2.4: Edge — Join room with existing local model
 
 ```
 Steps:
-  1. Navigate to `/?room=test-room` (with y-websocket server stopped)
-  2. Enter display name
-  3. Assert connection error message appears
-  4. Assert "Work Offline" fallback is available
-```
-
-#### TC-9.2.5: Edge — Join room with model that has scenarios and forced events
-
-```
-Setup:
-  1. Context A creates room, builds model, creates scenario with forced events
-Steps:
-  1. Context B joins room
-  2. Switch to Scenarios tab in context B
-  3. Assert scenario list shows the scenario created in context A
-  4. Select the scenario
-  5. Assert timeline shows forced event markers
+  1. In context B, create a local component "Local"
+  2. Navigate to a room URL where context A has component "Remote"
+  3. Assert local model is replaced by room state (shows "Remote", not "Local")
 ```
 
 ---
@@ -888,110 +822,92 @@ Steps:
 #### TC-9.3.1: Adding a component syncs to other client
 
 ```
-Setup: setupTwoUserRoom(browser) → { pageA, pageB }
 Steps:
-  1. In pageA, drag "Internal" component onto canvas, name it "Server"
-  2. Wait up to 500ms
-  3. In pageB, assert a component node named "Server" appears on canvas
+  1. Open two contexts in the same room (Alice and Bob)
+  2. In context A, create an internal component "Pump" with param flowRate=100
+  3. Wait up to 500ms
+  4. Assert context B's canvas shows a node named "Pump"
+  5. Click "Pump" in context B — assert properties show flowRate: 100
 ```
 
-#### TC-9.3.2: Editing a component name syncs to other client
+#### TC-9.3.2: Renaming a component syncs to other client
 
 ```
-Setup: setupTwoUserRoom → both see 1 component "Server"
 Steps:
-  1. In pageB, select "Server" component, change name to "Gateway"
-  2. Wait up to 500ms
-  3. In pageA, assert the component is now named "Gateway"
+  1. Two contexts in same room. Context A creates "Pump"
+  2. Wait for sync
+  3. In context A, select "Pump", change name to "SuperPump"
+  4. Wait up to 500ms
+  5. Assert context B shows node named "SuperPump" (not "Pump")
 ```
 
 #### TC-9.3.3: Deleting a component syncs to other client
 
 ```
-Setup: setupTwoUserRoom → both see 1 component "Server"
 Steps:
-  1. In pageA, select "Server", press Delete, confirm
-  2. Wait up to 500ms
-  3. In pageB, assert "Server" is no longer on canvas
-  4. Assert pageB's canvas has 0 components
+  1. Two contexts in same room. Context A creates "Pump"
+  2. Wait for sync — verify context B sees "Pump"
+  3. In context A, select "Pump", press Delete, confirm
+  4. Wait up to 500ms
+  5. Assert context B's canvas no longer shows "Pump"
 ```
 
 #### TC-9.3.4: Adding a causal chain syncs to other client
 
 ```
-Setup: setupTwoUserRoom → both see 2 components ("Source", "Target")
 Steps:
-  1. In pageA, create a causal chain from "Source" to "Target"
-  2. Wait up to 500ms
-  3. In pageB, assert chain edge is visible connecting Source → Target
+  1. Two contexts in same room
+  2. In context A, create components "Source" and "Target" with params
+  3. Wait for sync
+  4. In context A, create a causal chain from "Source" to "Target"
+  5. Wait up to 500ms
+  6. Assert context B shows chain edges between "Source" and "Target"
 ```
 
-#### TC-9.3.5: Component parameter edits sync to other client
+#### TC-9.3.5: Scenario changes sync to other client
 
 ```
-Setup: setupTwoUserRoom → both see component "Server" with param "load: 50"
 Steps:
-  1. In pageA, select "Server", change "load" value to 80
-  2. Wait up to 500ms
-  3. In pageB, select "Server"
-  4. Assert properties panel shows "load: 80"
+  1. Two contexts in same room with a model
+  2. In context A, switch to Scenarios tab and create scenario "Test"
+  3. Wait for sync
+  4. In context B, switch to Scenarios tab
+  5. Assert "Test" scenario appears in context B's scenario list
 ```
 
-#### TC-9.3.6: Scenario changes sync to other client
+#### TC-9.3.6: Component position changes (drag) sync to other client
 
 ```
-Setup: setupTwoUserRoom → both see a model with components
 Steps:
-  1. In pageA, switch to Scenarios tab, create scenario "Test"
-  2. Wait up to 500ms
-  3. In pageB, switch to Scenarios tab
-  4. Assert "Test" appears in scenario list
-```
-
-#### TC-9.3.7: Component position changes (drag) sync to other client
-
-```
-Setup: setupTwoUserRoom → both see component "Server"
-Steps:
-  1. In pageA, record position of "Server" node
-  2. In pageA, drag "Server" node 100px to the right
+  1. Two contexts in same room with a component "Node"
+  2. In context A, drag "Node" 200px to the right
   3. Wait up to 500ms
-  4. In pageB, assert "Server" node position has changed (x increased)
+  4. Record position of "Node" in context A as (x_a, y_a)
+  5. Record position of "Node" in context B as (x_b, y_b)
+  6. Assert positions approximately match (within +-10px tolerance)
 ```
 
-#### TC-9.3.8: Concurrent edits to different components merge without conflict
+#### TC-9.3.7: Concurrent edits to different components merge cleanly
 
 ```
-Setup: setupTwoUserRoom → both see "A" and "B" components
 Steps:
-  1. Simultaneously:
-     - In pageA, rename "A" to "Alpha"
-     - In pageB, rename "B" to "Beta"
-  2. Wait up to 1000ms
-  3. In pageA, assert components are "Alpha" and "Beta"
-  4. In pageB, assert components are "Alpha" and "Beta"
+  1. Two contexts in same room. Both see components "A" and "B"
+  2. Context A renames "A" to "Alpha"
+  3. Context B (simultaneously) renames "B" to "Beta"
+  4. Wait up to 1000ms
+  5. Assert both contexts show "Alpha" and "Beta" (no conflict, CRDT merge)
 ```
 
-#### TC-9.3.9: Edge — Concurrent edits to same property (last-writer-wins)
+#### TC-9.3.8: Edge — Concurrent edits to same component property (last-writer-wins)
 
 ```
-Setup: setupTwoUserRoom → both see "Server" with param "load: 50"
 Steps:
-  1. In pageA, change "load" to 80
-  2. Immediately in pageB, change "load" to 90
-  3. Wait 1000ms for sync to settle
-  4. Assert both pageA and pageB show the same value for "load" (either 80 or 90, but consistent)
-```
-
-#### TC-9.3.10: Edge — Deleting a component with chains cascades across clients
-
-```
-Setup: setupTwoUserRoom → model with "A" → "B" chain
-Steps:
-  1. In pageA, delete "A" (confirm cascade removal)
-  2. Wait up to 500ms
-  3. In pageB, assert "A" is gone from canvas
-  4. In pageB, assert the chain from "A" → "B" is also removed
+  1. Two contexts in same room. Both see component "Shared" with param value=10
+  2. Context A changes value to 20
+  3. Context B changes value to 30 (slightly after A)
+  4. Wait up to 1000ms
+  5. Assert both contexts converge to the same value (last-writer-wins)
+  6. Assert values are identical on both contexts (no divergence)
 ```
 
 ---
@@ -1003,59 +919,68 @@ Steps:
 #### TC-9.4.1: Ctrl+Z undoes only the current user's action
 
 ```
-Setup: setupTwoUserRoom(browser) → { pageA, pageB }
 Steps:
-  1. In pageA, add a component "Alpha"
-  2. Wait for sync — assert both pages show "Alpha"
-  3. In pageB, add a component "Beta"
-  4. Wait for sync — assert both pages show "Alpha" and "Beta"
-  5. In pageA, press Ctrl+Z
-  6. Wait for sync
-  7. Assert pageA does NOT show "Alpha" (undone)
-  8. Assert pageA still shows "Beta" (not undone — belongs to user B)
-  9. Assert pageB shows "Beta" and does NOT show "Alpha"
+  1. Two contexts in same room
+  2. In context A, create component "FromA"
+  3. Wait for sync — both contexts see "FromA"
+  4. In context B, create component "FromB"
+  5. Wait for sync — both contexts see "FromA" and "FromB"
+  6. In context A, press Ctrl+Z
+  7. Wait up to 500ms
+  8. Assert context A's canvas does NOT show "FromA" (undone)
+  9. Assert context A's canvas STILL shows "FromB" (not affected)
+  10. Assert context B's canvas shows "FromB" but not "FromA"
 ```
 
 #### TC-9.4.2: Ctrl+Y redoes the current user's last undone action
 
 ```
-Setup: Continuation of TC-9.4.1 (Alpha undone)
 Steps:
-  1. In pageA, press Ctrl+Y (or Ctrl+Shift+Z)
-  2. Wait for sync
-  3. Assert both pages show "Alpha" and "Beta" again
+  1. From TC-9.4.1 final state (context A undid "FromA")
+  2. In context A, press Ctrl+Y (or Ctrl+Shift+Z)
+  3. Wait up to 500ms
+  4. Assert "FromA" reappears on both contexts' canvases
 ```
 
-#### TC-9.4.3: Undo/redo buttons in toolbar with correct disabled state
+#### TC-9.4.3: Undo/redo buttons in toolbar with correct disabled states
 
 ```
 Steps:
-  1. Navigate to app
-  2. Assert undo button is visible but disabled (no actions to undo)
-  3. Assert redo button is visible but disabled
+  1. Navigate to app in a collaboration room
+  2. Assert Undo button is visible and disabled (no actions yet)
+  3. Assert Redo button is visible and disabled
   4. Create a component
-  5. Assert undo button is now enabled
-  6. Assert redo button is still disabled
-  7. Click undo button
-  8. Assert redo button is now enabled
-  9. Assert undo button is disabled (stack empty)
+  5. Assert Undo button becomes enabled
+  6. Assert Redo button remains disabled
+  7. Click Undo — assert Redo button becomes enabled
+  8. Click Redo — assert Redo button becomes disabled again
 ```
 
-#### TC-9.4.4: Edge — Undo survives brief disconnection/reconnection
+#### TC-9.4.4: Edge — Undo at empty stack does nothing
 
 ```
-Setup: setupTwoUserRoom → pageA adds a component
 Steps:
-  1. Simulate brief disconnection in pageA (e.g. navigate away and back, or close/reopen WebSocket)
-  2. After reconnection, press Ctrl+Z in pageA
-  3. Assert the component is removed (undo stack survived)
+  1. Open app in a collaboration room, no actions taken
+  2. Press Ctrl+Z
+  3. Assert no error
+  4. Assert canvas unchanged
+```
+
+#### TC-9.4.5: Edge — Undo survives brief disconnection
+
+```
+Steps:
+  1. Create a room, add 2 components
+  2. Simulate brief disconnect (e.g. go offline and reconnect)
+  3. Press Ctrl+Z
+  4. Assert last component is removed (undo stack survived reconnection)
 ```
 
 ---
 
 ## E10: Collaboration UI
 
-**Note:** All E10 tests use Playwright multi-browser-context to simulate multiple users.
+**Note:** All E10 tests require a collaboration room (E9). Use `openTwoContextsInRoom(browser)` helper.
 
 ---
 
@@ -1066,70 +991,68 @@ Steps:
 #### TC-10.1.1: Remote cursor appears on other user's canvas
 
 ```
-Setup: setupTwoUserRoom(browser) → { pageA, pageB }
 Steps:
-  1. In pageA, move mouse to canvas coordinates (300, 300)
-  2. Wait up to 200ms
-  3. In pageB, assert a remote cursor element is visible on the canvas
-  4. Assert the cursor has a colored arrow style
-  5. Assert the cursor has a name label matching pageA's display name
+  1. Open two contexts in same room (Alice and Bob)
+  2. In context A, move mouse to center of canvas area
+  3. Wait up to 200ms
+  4. Assert context B shows a colored cursor element (data-testid="remote-cursor" or similar)
+  5. Assert cursor has a name label showing "Alice"
 ```
 
 #### TC-10.1.2: Cursor position updates in real time
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }
 Steps:
-  1. In pageA, move mouse to (200, 200)
-  2. Wait for cursor to appear in pageB
-  3. Record cursor position in pageB as P1
-  4. In pageA, move mouse to (400, 400)
-  5. Wait up to 200ms
-  6. Record cursor position in pageB as P2
-  7. Assert P2 is different from P1 (cursor moved)
+  1. Two contexts in same room
+  2. In context A, move mouse to position (200, 200) on canvas
+  3. Wait briefly
+  4. Record remote cursor position in context B as (x1, y1)
+  5. In context A, move mouse to position (400, 400) on canvas
+  6. Wait briefly
+  7. Record remote cursor position in context B as (x2, y2)
+  8. Assert (x2, y2) is different from (x1, y1) — cursor moved
 ```
 
-#### TC-10.1.3: Each user has a unique color
+#### TC-10.1.3: Each user gets a unique color
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }
 Steps:
-  1. In pageA, move mouse on canvas
-  2. In pageB, get color of pageA's remote cursor
-  3. In pageB, move mouse on canvas
-  4. In pageA, get color of pageB's remote cursor
-  5. Assert the two cursor colors are different
+  1. Two contexts in same room
+  2. Record the color of Alice's remote cursor in context B
+  3. Record the color of Bob's remote cursor in context A
+  4. Assert the two colors are different
 ```
 
 #### TC-10.1.4: Local user does not see their own remote cursor
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }
 Steps:
-  1. In pageA, move mouse across canvas
-  2. Assert pageA does NOT have a remote cursor element with its own display name
+  1. Two contexts in same room
+  2. In context A, move mouse on canvas
+  3. Assert context A does NOT show a remote cursor for "Alice"
+  4. Assert context A only shows a remote cursor for "Bob"
 ```
 
-#### TC-10.1.5: Cursor disappears after user disconnects
+#### TC-10.1.5: Cursor disappears after disconnection
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }
 Steps:
-  1. In pageA, move mouse on canvas
-  2. Assert pageB sees pageA's cursor
-  3. Close pageA (disconnect)
-  4. Wait 5 seconds
-  5. Assert pageB no longer shows pageA's cursor
+  1. Two contexts in same room
+  2. Assert context A shows Bob's cursor
+  3. Close context B (disconnect Bob)
+  4. Wait up to 5 seconds
+  5. Assert context A no longer shows Bob's cursor
 ```
 
 #### TC-10.1.6: Edge — Cursors only shown on canvas, not in panels
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }
 Steps:
-  1. In pageA, move mouse to the left panel area (outside canvas)
-  2. Wait 200ms
-  3. In pageB, assert no remote cursor is visible (cursors only on canvas)
+  1. Two contexts in same room
+  2. In context A, move mouse over the left panel (not canvas)
+  3. Assert context B does NOT show a remote cursor for Alice
+  4. In context A, move mouse back to canvas
+  5. Assert context B shows Alice's cursor
 ```
 
 ---
@@ -1141,59 +1064,61 @@ Steps:
 #### TC-10.2.1: Presence bar shows connected users
 
 ```
-Setup: setupTwoUserRoom(browser) → { pageA, pageB }
 Steps:
-  1. In pageA, assert presence bar is visible in top-right corner
-  2. Assert presence bar shows 2 user avatar circles
-  3. Assert participant count badge shows "2"
+  1. Open two contexts in same room (Alice and Bob)
+  2. In context A, assert presence bar is visible in top-right area
+  3. Assert presence bar shows 2 user avatars (colored circles with initial letters)
+  4. Assert participant count badge shows "2"
 ```
 
-#### TC-10.2.2: Own avatar shown first with "You" label on hover
-
-```
-Setup: setupTwoUserRoom → pageA's name is "Alice"
-Steps:
-  1. In pageA, locate the first avatar in the presence bar
-  2. Hover over it
-  3. Assert tooltip shows "Alice" with "You" indicator
-```
-
-#### TC-10.2.3: Hover shows display name and current activity
-
-```
-Setup: setupTwoUserRoom → { pageA (Alice), pageB (Bob) }
-Steps:
-  1. In pageA, hover over the second avatar (Bob's)
-  2. Assert tooltip shows "Bob"
-  3. Assert tooltip shows an activity description (e.g. "Viewing Editor tab")
-```
-
-#### TC-10.2.4: User avatar disappears when they leave
-
-```
-Setup: setupTwoUserRoom → { pageA, pageB }, both showing 2 avatars
-Steps:
-  1. Close pageB
-  2. Wait for presence update (up to 5 seconds)
-  3. In pageA, assert presence bar shows 1 avatar
-  4. Assert participant count badge shows "1"
-```
-
-#### TC-10.2.5: Presence bar only shows when in a room
+#### TC-10.2.2: Own avatar is shown first with "You" label
 
 ```
 Steps:
-  1. Navigate to app (no room parameter)
-  2. Assert presence bar is NOT visible (or not rendered)
+  1. Two contexts in same room (Alice's view)
+  2. Locate first avatar in context A's presence bar
+  3. Hover over it
+  4. Assert tooltip shows "You" or "Alice (You)"
 ```
 
-#### TC-10.2.6: Edge — Avatar initials match display name
+#### TC-10.2.3: Hovering avatar shows display name and activity
 
 ```
-Setup: setupTwoUserRoom → names "Alice" and "Bob"
 Steps:
-  1. In pageA, assert one avatar circle shows "A" (Alice's initial)
-  2. Assert another avatar shows "B" (Bob's initial)
+  1. Two contexts in same room
+  2. In context A, hover over Bob's avatar in the presence bar
+  3. Assert tooltip shows "Bob"
+  4. Assert tooltip includes activity info (e.g. "Viewing Editor" or "Editing Component X")
+```
+
+#### TC-10.2.4: User disappears from presence bar on disconnect
+
+```
+Steps:
+  1. Two contexts in same room — presence bar shows 2 avatars
+  2. Close context B (Bob disconnects)
+  3. Wait up to 5 seconds
+  4. Assert context A's presence bar shows 1 avatar
+  5. Assert participant count badge shows "1"
+```
+
+#### TC-10.2.5: Presence bar not shown when not in a room
+
+```
+Steps:
+  1. Navigate to app without a room parameter
+  2. Assert presence bar is NOT visible
+```
+
+#### TC-10.2.6: Edge — Third user joins
+
+```
+Steps:
+  1. Two contexts in room (Alice and Bob)
+  2. Assert presence bar shows 2 avatars
+  3. Create third context, join same room as "Charlie"
+  4. Assert all three contexts' presence bars show 3 avatars
+  5. Assert participant count shows "3"
 ```
 
 ---
@@ -1202,70 +1127,59 @@ Steps:
 
 **Story:** US-10.3 — Edit Indicators
 
-#### TC-10.3.1: Selecting a component shows colored glow for other users
+#### TC-10.3.1: Selecting a component shows edit indicator for others
 
 ```
-Setup: setupTwoUserRoom → both see component "Server"
+Setup: Two contexts in same room, a component "Server" on canvas
 Steps:
-  1. In pageA, click to select "Server" component
+  1. In context A, click to select "Server" component
   2. Wait up to 500ms
-  3. In pageB, assert "Server" node has a colored border glow (edit indicator)
-  4. Assert glow color matches pageA's assigned user color
+  3. Assert context B shows a colored glow/border around "Server" node
+  4. Assert context B shows a label near "Server": "Alice is editing" (or similar)
 ```
 
-#### TC-10.3.2: Floating label shows "[User] is editing"
+#### TC-10.3.2: Deselecting clears the edit indicator
 
 ```
-Setup: setupTwoUserRoom → { pageA (Alice), pageB }, component "Server" on canvas
 Steps:
-  1. In pageA, select "Server"
-  2. Wait for sync
-  3. In pageB, assert a floating label near "Server" node reads "Alice is editing" (or similar)
+  1. Context A selects "Server" — context B sees indicator
+  2. Context A clicks on empty canvas (deselects)
+  3. Wait up to 500ms
+  4. Assert context B no longer shows glow or label on "Server"
 ```
 
-#### TC-10.3.3: Indicator clears when user deselects
+#### TC-10.3.3: Multiple users editing different components simultaneously
 
 ```
-Setup: setupTwoUserRoom → pageA selected "Server", pageB sees glow
+Setup: Two contexts in same room, components "A" and "B" on canvas
 Steps:
-  1. In pageA, click on empty canvas (deselect)
-  2. Wait up to 500ms
-  3. In pageB, assert "Server" node no longer has edit indicator glow
-  4. Assert no floating "[User] is editing" label
+  1. Context A selects "A"
+  2. Context B selects "B"
+  3. Wait up to 500ms
+  4. Assert context A sees edit indicator on "B" (from Bob)
+  5. Assert context B sees edit indicator on "A" (from Alice)
+  6. Assert indicators have different colors matching each user's assigned color
 ```
 
-#### TC-10.3.4: Multiple users can have indicators on different components
+#### TC-10.3.4: Edit indicator color matches user's assigned color
 
 ```
-Setup: setupTwoUserRoom → both see "A" and "B" components
 Steps:
-  1. In pageA, select "A"
-  2. In pageB, select "B"
-  3. Wait for sync
-  4. In pageA, assert "B" has edit indicator with pageB's color (pageB editing "B")
-  5. In pageB, assert "A" has edit indicator with pageA's color (pageA editing "A")
+  1. Two contexts in same room
+  2. Record Alice's color from the presence bar in context B
+  3. Context A selects a component
+  4. Assert the edit indicator glow color in context B matches Alice's presence bar color
 ```
 
-#### TC-10.3.5: Edit indicator does not block interaction
+#### TC-10.3.5: Edge — Edit indicator does not block interaction
 
 ```
-Setup: setupTwoUserRoom → pageA selected "Server", pageB sees glow
+Setup: Two contexts in same room, component "Shared" on canvas
 Steps:
-  1. In pageB, click on "Server" (even though it has edit indicator from pageA)
-  2. Assert pageB can select "Server" (properties panel opens)
-  3. Assert pageB can edit "Server" parameters
-```
-
-#### TC-10.3.6: Edge — Indicator updates when user switches selection
-
-```
-Setup: setupTwoUserRoom → both see "A" and "B" components
-Steps:
-  1. In pageA, select "A" — pageB sees glow on "A"
-  2. In pageA, select "B" (switches selection)
-  3. Wait for sync
-  4. In pageB, assert "A" no longer has edit indicator
-  5. In pageB, assert "B" now has edit indicator from pageA
+  1. Context A selects "Shared" — context B sees edit indicator
+  2. In context B, click "Shared" (despite the edit indicator)
+  3. Assert context B can select and edit "Shared" (interaction not blocked)
+  4. Assert context B's properties panel shows "Shared" parameters
 ```
 
 ---
@@ -1274,71 +1188,72 @@ Steps:
 
 **Story:** US-10.4 — Share Room Modal
 
-#### TC-10.4.1: "Share" button visible when in a room
+#### TC-10.4.1: "Share" button opens modal with room link and user list
 
 ```
-Setup: Create a collaboration room
 Steps:
-  1. Assert "Share" button is visible in the toolbar
-  2. Click "Share"
-  3. Assert modal appears with room link, "Copy Link" button, and user count
+  1. Create a room as "Alice"
+  2. Assert "Share" button is visible in toolbar
+  3. Click "Share"
+  4. Assert modal appears
+  5. Assert modal contains a room link (URL with ?room= parameter)
+  6. Assert "Copy Link" button is visible
+  7. Assert connected user count is shown (e.g. "1 connected")
+  8. Assert user list shows "Alice"
 ```
 
-#### TC-10.4.2: Modal shows room link and connected user list
+#### TC-10.4.2: "Copy Link" copies URL to clipboard with confirmation
 
 ```
-Setup: setupTwoUserRoom → { pageA (Alice), pageB (Bob) }
 Steps:
-  1. In pageA, click "Share"
-  2. Assert modal shows the room URL
-  3. Assert modal shows connected user count = 2
-  4. Assert user list includes "Alice" and "Bob" with their assigned colors
-```
-
-#### TC-10.4.3: "Copy Link" copies URL and shows confirmation
-
-```
-Setup: Create a room
-Steps:
-  1. Click "Share"
+  1. Create a room, click "Share"
   2. Click "Copy Link"
-  3. Assert "Copied!" confirmation text appears
-  4. Read clipboard contents
-  5. Assert clipboard contains the room URL with room parameter
+  3. Assert "Copied!" confirmation text appears briefly
+  4. Read clipboard — assert it contains the room URL
 ```
 
-#### TC-10.4.4: Modal dismisses on outside click or Esc
+#### TC-10.4.3: User list updates when new user joins
 
 ```
-Setup: Create a room
 Steps:
-  1. Click "Share" — assert modal visible
-  2. Click outside the modal
+  1. Alice creates room, opens Share modal — shows 1 user
+  2. Bob joins the room (context B)
+  3. Wait up to 1 second
+  4. Assert Share modal in context A now shows 2 users
+  5. Assert "Bob" appears in the user list
+```
+
+#### TC-10.4.4: Modal dismisses on click outside or Esc
+
+```
+Steps:
+  1. Create room, click "Share" — modal visible
+  2. Press Escape
   3. Assert modal is dismissed
-  4. Click "Share" again — assert modal visible
-  5. Press Escape
+  4. Click "Share" again — modal visible
+  5. Click outside the modal
   6. Assert modal is dismissed
 ```
 
-#### TC-10.4.5: "Share" button acts as "Collaborate" when not in a room
+#### TC-10.4.5: "Share" acts as "Collaborate" when not in a room
 
 ```
 Steps:
-  1. Navigate to app (no room)
-  2. Assert toolbar shows a "Share" or "Collaborate" button
+  1. Navigate to app without a room (no collaboration active)
+  2. Assert toolbar shows "Share" (or "Collaborate") button
   3. Click it
-  4. Assert display name prompt appears (same flow as US-9.1)
+  4. Assert display name prompt appears (creates a new room, same as US-9.1)
 ```
 
-#### TC-10.4.6: Edge — User count updates dynamically
+#### TC-10.4.6: Edge — Share modal reflects correct connected user count
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }
 Steps:
-  1. In pageA, click "Share" — assert user count shows 2
-  2. Close pageB
-  3. Wait for presence update
-  4. Assert user count in the modal updates to 1 (or close and reopen modal to verify)
+  1. Three users in a room (Alice, Bob, Charlie)
+  2. Alice opens Share modal — assert count shows "3"
+  3. Bob disconnects
+  4. Wait up to 5 seconds
+  5. Assert count in Alice's Share modal updates to "2"
 ```
 
 ---
@@ -1347,189 +1262,189 @@ Steps:
 
 **Story:** US-10.5 — Activity Bar
 
-#### TC-10.5.1: Activity bar visible when in a collaboration room
-
-```
-Setup: Create a collaboration room
-Steps:
-  1. Assert activity bar element is visible at the bottom of the screen
-```
-
-#### TC-10.5.2: Adding a component creates an activity entry on other client
-
-```
-Setup: setupTwoUserRoom → { pageA (Alice), pageB }
-Steps:
-  1. In pageA, create a component named "Server"
-  2. Wait up to 1000ms
-  3. In pageB, assert activity bar shows an entry containing "Alice" and "Server" (e.g. "Alice added Server")
-  4. Assert entry has a user color dot matching Alice's assigned color
-  5. Assert entry has a relative timestamp
-```
-
-#### TC-10.5.3: Multiple action types are tracked
-
-```
-Setup: setupTwoUserRoom → { pageA (Alice), pageB (Bob) }
-Steps:
-  1. In pageA, add a component "Server" → assert activity entry in pageB
-  2. In pageB, rename "Server" to "Gateway" → assert activity entry in pageA containing "Bob" and "edited"
-  3. In pageA, delete "Gateway" → assert activity entry in pageB containing "Alice" and "deleted"
-```
-
-#### TC-10.5.4: New entries appear at the top with animation
-
-```
-Setup: setupTwoUserRoom → { pageA, pageB }
-Steps:
-  1. In pageB, note activity bar is empty or has existing entries
-  2. In pageA, add a component
-  3. Wait for entry to appear in pageB
-  4. Assert the newest entry is at the top of the activity bar
-  5. In pageA, add another component
-  6. Wait for entry — assert the new entry is now at the top (previous moved down)
-```
-
-#### TC-10.5.5: Activity bar shows max 20 entries
-
-```
-Setup: setupTwoUserRoom → { pageA, pageB }
-Steps:
-  1. In pageA, perform 22 trackable actions (e.g. create and delete components repeatedly)
-  2. Wait for all entries to sync
-  3. In pageB, count activity bar entries
-  4. Assert count <= 20 (older entries scrolled off)
-```
-
-#### TC-10.5.6: Collapse/expand toggle
-
-```
-Setup: setupTwoUserRoom → at least 1 activity entry exists
-Steps:
-  1. Assert activity bar is expanded (multiple entries visible)
-  2. Click collapse toggle
-  3. Assert activity bar is collapsed to a single line showing most recent activity
-  4. Click expand toggle
-  5. Assert activity bar is expanded again with all entries visible
-```
-
-#### TC-10.5.7: Edge — Activity bar not visible when not in a room
+#### TC-10.5.1: Activity bar appears in collaboration room
 
 ```
 Steps:
-  1. Navigate to app (no room)
+  1. Create a collaboration room
+  2. Assert activity bar is visible at the bottom of the screen
+  3. Assert activity bar is initially empty or shows a "session started" entry
+```
+
+#### TC-10.5.2: Component add activity logged
+
+```
+Steps:
+  1. Two contexts in same room (Alice and Bob)
+  2. In context A, create component "Pump"
+  3. Wait up to 1 second
+  4. Assert context B's activity bar shows entry: "[Alice] added Pump" (or similar)
+  5. Assert entry includes a user color dot
+  6. Assert entry includes a relative timestamp (e.g. "just now")
+```
+
+#### TC-10.5.3: Component edit activity logged
+
+```
+Steps:
+  1. Two contexts in same room with component "Pump"
+  2. In context B, rename "Pump" to "SuperPump"
+  3. Wait up to 1 second
+  4. Assert context A's activity bar shows "[Bob] edited SuperPump"
+```
+
+#### TC-10.5.4: Component delete activity logged
+
+```
+Steps:
+  1. Two contexts in same room with component "Pump"
+  2. In context A, delete "Pump"
+  3. Wait up to 1 second
+  4. Assert context B's activity bar shows "[Alice] deleted Pump"
+```
+
+#### TC-10.5.5: Chain and scenario activities logged
+
+```
+Steps:
+  1. Two contexts in same room with a model
+  2. In context A, create a causal chain
+  3. Assert context B's activity bar shows "[Alice] added [chain name]"
+  4. In context A, switch to Scenarios and create scenario "Test"
+  5. Assert context B's activity bar shows "[Alice] modified scenario"
+```
+
+#### TC-10.5.6: Activity bar shows max 20 entries
+
+```
+Steps:
+  1. Two contexts in same room
+  2. Perform 25 distinct actions in context A (create/rename/delete components rapidly)
+  3. Assert context B's activity bar shows no more than 20 entries
+  4. Assert most recent entries are at the top
+  5. Assert oldest entries are no longer visible (scrolled off)
+```
+
+#### TC-10.5.7: Activity bar collapse/expand toggle
+
+```
+Steps:
+  1. Create room, perform some actions to populate activity bar
+  2. Assert activity bar is expanded (shows multiple entries)
+  3. Click collapse toggle
+  4. Assert activity bar collapses to a single line showing most recent entry
+  5. Click expand toggle
+  6. Assert activity bar expands back to show all entries
+```
+
+#### TC-10.5.8: Activity bar not shown when not in a room
+
+```
+Steps:
+  1. Navigate to app without a room parameter
   2. Assert activity bar is NOT visible
 ```
 
-#### TC-10.5.8: Edge — Activity entries fade after 30 seconds
+#### TC-10.5.9: Edge — Entries fade after 30 seconds
 
 ```
-Setup: setupTwoUserRoom → create an activity entry
 Steps:
-  1. Assert new entry has full opacity styling
-  2. Wait 30+ seconds
-  3. Assert entry has muted/faded opacity styling
+  1. Two contexts in same room
+  2. Context A creates a component — entry appears in context B
+  3. Assert entry has full opacity initially
+  4. Wait 30+ seconds
+  5. Assert entry has reduced/muted opacity (CSS opacity change)
 ```
 
 ---
 
-## Cross-Epic V2 Integration Tests
+## Cross-Epic Integration Tests (V2)
 
-These tests verify end-to-end workflows spanning V2 epics and connecting to V1 functionality.
-
----
-
-### TEST-INT-V2-1: library-to-simulate.spec
-
-**Story:** Load a library scenario and run simulation (E7 + E5 + E6)
-
-#### TC-INT-V2-1.1: Load library scenario → simulate → verify events
-
-```
-Steps:
-  1. Open library panel (E7)
-  2. Load "Supply Chain Disruption" (7 nodes)
-  3. Assert 7 components on canvas
-  4. Switch to Simulate tab (E1)
-  5. Click Play (E5)
-  6. Wait for chain events to fire
-  7. Assert chain status indicators update (E6)
-  8. Assert event log shows transitions (E6)
-  9. Click Stop — assert values reset
-```
+These tests verify end-to-end workflows spanning V2 epics.
 
 ---
 
-### TEST-INT-V2-2: tutorial-library-step.spec
+### TEST-INT-V2-1: library-to-tutorial.spec
 
-**Story:** Tutorial references scenario library (E8 + E7)
+**Story:** Library scenario loaded, then tutorial replayed
 
-#### TC-INT-V2-2.1: Tutorial step 8 spotlights library button and library is functional
+#### TC-INT-V2-1.1: Load scenario from library, then replay tutorial
 
 ```
 Steps:
-  1. Start tutorial (clear localStorage)
-  2. Advance to step 8 (Library button)
-  3. Assert spotlight targets Library button
-  4. Dismiss tour
-  5. Click the Library button
-  6. Assert library panel opens with 6 scenarios
+  1. Load "Hello Cascade" from library (E7)
+  2. Assert 2 components on canvas
+  3. Click "?" then "Replay Tutorial" (E8)
+  4. Assert tour step 1 appears
+  5. Navigate through tour steps — assert loaded model persists on canvas during tour
+  6. Complete or dismiss tour
+  7. Assert "Hello Cascade" components are still on canvas
 ```
 
 ---
 
-### TEST-INT-V2-3: collab-with-library.spec
+### TEST-INT-V2-2: collab-with-library.spec
 
-**Story:** Load a library scenario in a collaboration room (E9 + E7)
+**Story:** One user loads a library scenario in a collaboration room
 
-#### TC-INT-V2-3.1: Loading a library scenario syncs to other users
+#### TC-INT-V2-2.1: Library load syncs to collaborators
 
 ```
-Setup: setupTwoUserRoom → { pageA, pageB }, empty workspace
 Steps:
-  1. In pageA, open library and load "Branching Paths" (4 nodes)
-  2. Wait for sync
-  3. In pageB, assert 4 component nodes appear on canvas
-  4. In pageB, assert chain edges are visible
+  1. Open two contexts in same room (E9)
+  2. In context A, load "Supply Chain Disruption" from library (E7)
+  3. Wait for sync
+  4. Assert context B shows 7 components on canvas
+  5. Assert context B sees info card nodes
+  6. Assert activity bar shows "[Alice] loaded scenario" or similar (E10)
 ```
 
 ---
 
-### TEST-INT-V2-4: collab-simulate.spec
+### TEST-INT-V2-3: collab-full-workflow.spec
 
-**Story:** Run simulation in collaboration room (E9 + E10 + E5)
+**Story:** Complete collaboration workflow from room creation to simulation
 
-#### TC-INT-V2-4.1: Starting simulation in one client reflects in activity bar
+#### TC-INT-V2-3.1: Create room then Build model then Simulate together
 
 ```
-Setup: setupTwoUserRoom → model loaded, scenario created
 Steps:
-  1. In pageA, switch to Simulate tab, click Play
-  2. Wait up to 1000ms
-  3. In pageB, assert activity bar shows "Alice started simulation" (or similar)
+  1. Context A creates a collaboration room (E9)
+  2. Context B joins the room (E9)
+  3. Context A creates component "Sensor" with param temp=20 (syncs to B via E9)
+  4. Context B creates component "Alarm" with param threshold=50 (syncs to A via E9)
+  5. Assert both contexts show both components
+  6. Assert presence bar shows 2 users (E10)
+  7. Assert activity bar shows both additions (E10)
+  8. Context A creates a causal chain from "Sensor" to "Alarm" (syncs)
+  9. Context A switches to Scenarios, creates scenario with forced event
+  10. Context B switches to Simulate tab and clicks Play
+  11. Assert simulation runs and chain status updates visible
+  12. Context A clicks Stop — assert simulation stops on both
 ```
 
 ---
 
-### TEST-INT-V2-5: info-cards-collab.spec
+### TEST-INT-V2-4: tutorial-in-collab.spec
 
-**Story:** Info cards in collaboration room (E7 + E9 + E10)
+**Story:** Starting tutorial while in a collaboration room
 
-#### TC-INT-V2-5.1: Dismissing info card in one client syncs to other
+#### TC-INT-V2-4.1: Tutorial does not disrupt collaboration
 
 ```
-Setup: setupTwoUserRoom → load "Supply Chain Disruption" in pageA, wait for sync
 Steps:
-  1. In pageA, count info cards as N
-  2. In pageB, assert N info cards visible
-  3. In pageA, dismiss one info card
-  4. Wait for sync
-  5. In pageB, assert N-1 info cards visible
+  1. Two contexts in a room with a model
+  2. Context A clicks "?" then "Replay Tutorial" (E8)
+  3. Assert tour starts in context A
+  4. Assert context B is NOT affected (no tour overlay in context B)
+  5. Context B creates a component during context A's tour
+  6. Assert sync still works — component appears in context A behind the tour overlay
+  7. Context A dismisses tour
+  8. Assert context A sees all synced changes
 ```
 
 ---
 
 *Generated from docs/user-stories-v2.md*
-*19 stories → 19 test files → 84 test cases (including edge cases and error scenarios)*
-*No mocking — all tests use real UI interactions, real Yjs sync, real application state.*
-*Multi-user tests use Playwright browser contexts with real WebSocket connections.*
+*19 stories -> 19 test files + 4 integration files -> 83 test cases (including edge cases and error scenarios)*
+*No mocking — all tests use real UI interactions, real state, real Yjs sync, and real data.*
