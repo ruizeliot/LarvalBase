@@ -12,6 +12,7 @@ import { ScenarioLibraryPanel } from '@/components/library/ScenarioLibraryPanel'
 import { WelcomeOverlay } from '@/components/tutorial/WelcomeOverlay'
 import { GuidedTour } from '@/components/tutorial/GuidedTour'
 import { ActionWatcher } from '@/components/tutorial/ActionWatcher'
+import { HelpButton } from '@/components/tutorial/HelpButton'
 import { PanelLeftClose, PanelLeftOpen } from 'lucide-react'
 
 export function AppShell() {
@@ -78,6 +79,7 @@ export function AppShell() {
       <WelcomeOverlay />
       <GuidedTour />
       <ActionWatcher />
+      <HelpButton />
     </div>
   )
 }
