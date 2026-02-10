@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from 'react'
+import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react'
 import {
   ReactFlow,
   Background,
@@ -19,16 +19,27 @@ import { useUiStore } from '@/store/uiStore'
 import { useSimulationStore } from '@/store/simulationStore'
 import { ComponentNode } from './nodes/ComponentNode'
 import { ConditionNode } from './nodes/ConditionNode'
+import { InfoCardNode } from './nodes/InfoCardNode'
 import { ContextMenu } from './ContextMenu'
 import { ChainBuilder } from '@/components/chain-builder/ChainBuilder'
 import { CausalEdge } from './edges/CausalEdge'
 import { ImpactEdge } from './edges/ImpactEdge'
 import { evaluateChainStages } from '@/engine/chainStageEvaluator'
+import {
+  getActiveInfoCards,
+  subscribeInfoCards,
+  getDismissedInfoCards,
+  subscribeDismissed,
+  dismissInfoCard,
+  restoreAllInfoCards,
+} from '@/components/library/ScenarioLibraryPanel'
+import { Eye, EyeOff } from 'lucide-react'
 import type { ComponentType } from '@/types/model'
 
 const nodeTypes: NodeTypes = {
   component: ComponentNode,
   condition: ConditionNode,
+  infoCard: InfoCardNode,
 }
 
 const edgeTypes: EdgeTypes = {
@@ -51,6 +62,12 @@ function CanvasInner() {
   const chainViewMode = useUiStore((s) => s.chainViewMode)
   const toggleChainViewMode = useUiStore((s) => s.toggleChainViewMode)
   const activeMode = useUiStore((s) => s.activeMode)
+  const showInfoCards = useUiStore((s) => s.showInfoCards)
+  const toggleInfoCards = useUiStore((s) => s.toggleInfoCards)
+
+  // Subscribe to info card changes
+  const infoCards = useSyncExternalStore(subscribeInfoCards, getActiveInfoCards)
+  const dismissedCards = useSyncExternalStore(subscribeDismissed, () => getDismissedInfoCards())
 
   // Simulation state for pulses and parameter updates
   const playbackState = useSimulationStore((s) => s.playbackState)
@@ -65,6 +82,24 @@ function CanvasInner() {
   }, [activeMode, simResult, currentStep, components, chains])
 
   const isSimulating = activeMode === 'simulate' && simResult != null
+
+  const handleDismissInfoCard = useCallback((id: string) => {
+    dismissInfoCard(id)
+  }, [])
+
+  const handleToggleInfoCards = useCallback(() => {
+    if (showInfoCards && dismissedCards.size > 0) {
+      // If some cards are dismissed, restore them all
+      restoreAllInfoCards()
+    } else if (showInfoCards) {
+      // All cards visible, hide them
+      toggleInfoCards()
+    } else {
+      // Cards hidden, show and restore all
+      restoreAllInfoCards()
+      toggleInfoCards()
+    }
+  }, [showInfoCards, dismissedCards, toggleInfoCards])
 
   const { allNodes, allEdges } = useMemo(() => {
     const nodes: Node[] = Object.values(components).map((comp) => ({
@@ -173,8 +208,24 @@ function CanvasInner() {
       })
     }
 
+    // Add info card nodes (if visible and not dismissed)
+    if (showInfoCards && infoCards.length > 0) {
+      for (const card of infoCards) {
+        if (dismissedCards.has(card.id)) continue
+        nodes.push({
+          id: `info-${card.id}`,
+          type: 'infoCard',
+          position: card.position,
+          data: { text: card.text, infoCardId: card.id, onDismiss: handleDismissInfoCard },
+          draggable: false,
+          selectable: false,
+          deletable: false,
+        })
+      }
+    }
+
     return { allNodes: nodes, allEdges: edges }
-  }, [components, chains, selectedNodeId, chainViewMode, chainStages, playbackState, isSimulating])
+  }, [components, chains, selectedNodeId, chainViewMode, chainStages, playbackState, isSimulating, showInfoCards, infoCards, dismissedCards, handleDismissInfoCard])
 
   const onNodesChange: OnNodesChange = useCallback(
     (changes) => {
@@ -183,6 +234,8 @@ function CanvasInner() {
           updateComponentPosition(change.id, change.position)
         }
         if (change.type === 'remove') {
+          // Don't allow removing info card nodes via keyboard
+          if (change.id.startsWith('info-')) continue
           removeComponent(change.id)
           selectNode(null)
         }
@@ -193,6 +246,8 @@ function CanvasInner() {
 
   const onNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
+      // Don't select info card nodes
+      if (node.type === 'infoCard') return
       selectNode(node.id)
     },
     [selectNode]
@@ -206,7 +261,7 @@ function CanvasInner() {
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
       if (activeMode !== 'editor') return
-      // Only show context menu for component nodes (not condition nodes)
+      // Only show context menu for component nodes (not condition or info card nodes)
       if (node.type !== 'component') return
       event.preventDefault()
       openContextMenu(node.id, { x: event.clientX, y: event.clientY })
@@ -235,6 +290,8 @@ function CanvasInner() {
     },
     [screenToFlowPosition, addComponent, selectNode]
   )
+
+  const hasInfoCards = infoCards.length > 0
 
   return (
     <>
@@ -288,6 +345,23 @@ function CanvasInner() {
           </>
         )}
       </button>
+      {/* Info card toggle button (only visible when info cards exist) */}
+      {hasInfoCards && (
+        <button
+          data-testid="toggle-info-cards"
+          onClick={handleToggleInfoCards}
+          className="absolute top-3 right-32 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors"
+          style={{
+            backgroundColor: 'var(--color-surface)',
+            borderColor: 'var(--color-border)',
+            color: 'var(--color-text)',
+          }}
+          title={showInfoCards ? 'Hide info cards' : 'Show info cards'}
+        >
+          {showInfoCards ? <EyeOff size={12} /> : <Eye size={12} />}
+          <span>{showInfoCards ? 'Hide Info' : 'Show Info'}</span>
+        </button>
+      )}
       <ContextMenu />
       <ChainBuilder />
     </>

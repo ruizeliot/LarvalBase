@@ -234,12 +234,12 @@ let _dismissedInfoCards = new Set<string>()
 let _dismissedListeners: (() => void)[] = []
 
 export function dismissInfoCard(id: string) {
-  _dismissedInfoCards.add(id)
+  _dismissedInfoCards = new Set([..._dismissedInfoCards, id])
   _dismissedListeners.forEach((fn) => fn())
 }
 
 export function restoreAllInfoCards() {
-  _dismissedInfoCards.clear()
+  _dismissedInfoCards = new Set()
   _dismissedListeners.forEach((fn) => fn())
 }
 
