@@ -15,6 +15,10 @@ import { WelcomeOverlay } from '@/components/tutorial/WelcomeOverlay'
 import { GuidedTour } from '@/components/tutorial/GuidedTour'
 import { ActionWatcher } from '@/components/tutorial/ActionWatcher'
 import { HelpButton } from '@/components/tutorial/HelpButton'
+import { DisplayNamePrompt } from '@/components/collaboration/DisplayNamePrompt'
+import { RoomModal } from '@/components/collaboration/RoomModal'
+import { ConnectionError } from '@/components/collaboration/ConnectionError'
+import { useCollaborationInit } from '@/hooks/useCollaborationInit'
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
 function ResultsSidePanel() {
@@ -123,6 +127,8 @@ export function AppShell() {
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel)
   const libraryPanelOpen = useUiStore((s) => s.libraryPanelOpen)
 
+  useCollaborationInit()
+
   const isEditor = activeMode === 'editor'
   const isScenarios = activeMode === 'scenarios'
   const isSimulate = activeMode === 'simulate'
@@ -181,6 +187,9 @@ export function AppShell() {
       <GuidedTour />
       <ActionWatcher />
       <HelpButton />
+      <DisplayNamePrompt />
+      <RoomModal />
+      <ConnectionError />
     </div>
   )
 }
