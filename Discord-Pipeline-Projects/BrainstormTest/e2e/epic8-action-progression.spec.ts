@@ -30,20 +30,20 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
   test('TC-8.3.1: Step 2 requires dragging a component', async ({ page }) => {
     await startTutorial(page)
 
-    // Navigate to step 2 (Component palette) — step 0 is step 1
+    // Navigate from Welcome (step 0) to step 1 (Add Your First Component)
     await page.locator('.driver-popover .driver-popover-next-btn').click()
     await page.waitForTimeout(300)
 
     const popover = page.locator('.driver-popover')
 
-    // Assert step 2 is shown
-    await expect(popover.locator('.driver-popover-title')).toContainText('Component Palette')
+    // Assert step 2 is shown (index 1)
+    await expect(popover.locator('.driver-popover-title')).toContainText('Add Your First Component')
 
     // Assert "Next" button click doesn't advance (action required, blocked)
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    // Still on step 2
-    await expect(popover.locator('.driver-popover-title')).toContainText('Component Palette')
+    // Still on same step
+    await expect(popover.locator('.driver-popover-title')).toContainText('Add Your First Component')
 
     // Assert action prompt is visible
     await expect(page.locator('[data-testid="tutorial-action-prompt"]')).toBeVisible()
@@ -64,18 +64,18 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
 
-    // Now on step 3
-    await expect(popover.locator('.driver-popover-title')).toContainText('Property Editor')
+    // Now on step 3 (Configure Your Component)
+    await expect(popover.locator('.driver-popover-title')).toContainText('Configure Your Component')
   })
 
   test('TC-8.3.2: Step 3 requires renaming a component', async ({ page }) => {
     await startTutorial(page)
 
-    // Advance to step 2 first
+    // Advance from Welcome to step 1 (Add Your First Component)
     await page.locator('.driver-popover .driver-popover-next-btn').click()
     await page.waitForTimeout(300)
 
-    // Drag a component for step 2
+    // Drag a component for step 1
     const paletteItem = page.getByTestId('palette-internal')
     const canvas = page.locator('.react-flow')
     const canvasBox = await canvas.boundingBox()
@@ -85,13 +85,13 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     })
     await page.waitForTimeout(500)
 
-    // Advance to step 3
+    // Advance to step 2 (Configure Your Component)
     const popover = page.locator('.driver-popover')
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
 
-    // Assert on step 3
-    await expect(popover.locator('.driver-popover-title')).toContainText('Property Editor')
+    // Assert on step 3 (Configure)
+    await expect(popover.locator('.driver-popover-title')).toContainText('Configure Your Component')
 
     // Assert action prompt describes renaming
     await expect(page.locator('[data-testid="tutorial-action-prompt"]')).toBeVisible()
@@ -99,7 +99,7 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     // "Next" should be blocked
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Property Editor')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Configure Your Component')
 
     // Select the component on canvas to open property editor
     const node = page.locator('.react-flow__node').first()
@@ -119,19 +119,19 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     // Assert "Next" now works
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Causal Chain')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Add a Second Component')
   })
 
-  test('TC-8.3.3: Step 7 requires clicking "Run"', async ({ page }) => {
+  test('TC-8.3.3: Last step requires clicking "Run"', async ({ page }) => {
     await startTutorial(page)
 
-    // Navigate through steps to reach step 7
+    // Navigate through steps to reach step 6 (Run Your Simulation)
     await advanceToStep(page, 6)
 
     const popover = page.locator('.driver-popover')
 
-    // Assert on step 7
-    await expect(popover.locator('.driver-popover-title')).toContainText('Simulate')
+    // Assert on last step
+    await expect(popover.locator('.driver-popover-title')).toContainText('Run Your Simulation')
 
     // Assert action prompt
     await expect(page.locator('[data-testid="tutorial-action-prompt"]')).toBeVisible()
@@ -139,19 +139,18 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     // "Next" should be blocked
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Simulate')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Run Your Simulation')
 
-    // Switch to simulate tab and click Run
+    // Switch to simulate tab and try Run
     await page.getByTestId('tab-simulate').click({ force: true })
     await page.waitForTimeout(300)
-    // The sim run button might need a scenario - just click it, the action detection fires on click
     const runBtn = page.getByTestId('sim-run-button')
     if (await runBtn.isEnabled()) {
       await runBtn.click()
     }
     await page.waitForTimeout(500)
 
-    // Skip action to advance since run may not work without a scenario
+    // Skip action to complete the tour (run may not work without a real scenario)
     const skipLink = page.locator('[data-testid="tutorial-skip-action"]')
     if (await skipLink.isVisible({ timeout: 500 }).catch(() => false)) {
       await skipLink.click()
@@ -160,26 +159,26 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     }
     await page.waitForTimeout(300)
 
-    // Should be on step 8 now
-    await expect(popover.locator('.driver-popover-title')).toContainText('Scenario Library')
+    // Tour should be complete — this was the last step
+    await expect(popover).not.toBeVisible({ timeout: 2000 })
   })
 
   test('TC-8.3.4: "Skip" link bypasses action requirement', async ({ page }) => {
     await startTutorial(page)
 
-    // Navigate to step 2 (action required)
+    // Navigate from Welcome to step 1 (action required)
     await page.locator('.driver-popover .driver-popover-next-btn').click()
     await page.waitForTimeout(300)
 
     const popover = page.locator('.driver-popover')
 
-    // Assert on step 2
-    await expect(popover.locator('.driver-popover-title')).toContainText('Component Palette')
+    // Assert on step 2 (Add Your First Component)
+    await expect(popover.locator('.driver-popover-title')).toContainText('Add Your First Component')
 
     // Assert "Next" is blocked
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Component Palette')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Add Your First Component')
 
     // Assert "Skip" link is visible
     const skipLink = page.locator('[data-testid="tutorial-skip-action"]')
@@ -189,14 +188,14 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     await skipLink.click()
     await page.waitForTimeout(300)
 
-    // Assert advances to step 3 without performing the action
-    await expect(popover.locator('.driver-popover-title')).toContainText('Property Editor')
+    // Assert advances to next step without performing the action
+    await expect(popover.locator('.driver-popover-title')).toContainText('Configure Your Component')
   })
 
   test('TC-8.3.5: Performing action then navigating back and forward', async ({ page }) => {
     await startTutorial(page)
 
-    // Navigate to step 2
+    // Navigate from Welcome to step 1
     await page.locator('.driver-popover .driver-popover-next-btn').click()
     await page.waitForTimeout(300)
 
@@ -215,22 +214,22 @@ test.describe('Epic 8 - US-8.3: Action-Based Step Progression', () => {
     // Assert success indicator
     await expect(page.locator('[data-testid="tutorial-action-complete"]')).toBeVisible({ timeout: 2000 })
 
-    // Click "Next" to step 3
+    // Click "Next" to step 2 (Configure Your Component)
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Property Editor')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Configure Your Component')
 
-    // Click "Back" to step 2
+    // Click "Back" to step 1 (Add Your First Component)
     await popover.locator('.driver-popover-prev-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Component Palette')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Add Your First Component')
 
-    // Assert step 2 shows completed state (action already done)
+    // Assert step 1 shows completed state (action already done)
     await expect(page.locator('[data-testid="tutorial-action-complete"]')).toBeVisible()
 
     // Assert "Next" is still enabled (don't need to redo action)
     await popover.locator('.driver-popover-next-btn').click()
     await page.waitForTimeout(300)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Property Editor')
+    await expect(popover.locator('.driver-popover-title')).toContainText('Configure Your Component')
   })
 })
