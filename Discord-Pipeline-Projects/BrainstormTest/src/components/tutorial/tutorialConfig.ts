@@ -28,7 +28,7 @@ export const tutorialSteps: TutorialStep[] = [
     actionTestId: 'tutorial-action-step-2',
   },
   {
-    element: '[data-testid="property-editor"]',
+    element: '[data-testid="left-panel"]',
     popover: {
       title: 'Property Editor',
       description: 'Select a component to edit its name, parameters, and capacities here. Try changing the component name!',

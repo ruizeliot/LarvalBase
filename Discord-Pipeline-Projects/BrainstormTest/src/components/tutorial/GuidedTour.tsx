@@ -12,10 +12,29 @@ export function GuidedTour() {
   const completeAction = useTutorialStore((s) => s.completeAction)
   const driverRef = useRef<Driver | null>(null)
 
+  const completedActionsRef = useRef(completedActions)
+  completedActionsRef.current = completedActions
+
   const handleDestroy = useCallback(() => {
     localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true')
     endTour()
   }, [endTour])
+
+  // Handle skip-action custom events from the popover HTML
+  useEffect(() => {
+    function handleSkipAction(e: Event) {
+      const detail = (e as CustomEvent).detail
+      if (detail && typeof detail.step === 'number') {
+        completeAction(detail.step)
+        // Advance to next step
+        if (driverRef.current && driverRef.current.isActive()) {
+          driverRef.current.moveNext()
+        }
+      }
+    }
+    document.addEventListener('tutorial-skip-action', handleSkipAction)
+    return () => document.removeEventListener('tutorial-skip-action', handleSkipAction)
+  }, [completeAction])
 
   useEffect(() => {
     if (!tourActive) {
@@ -34,7 +53,7 @@ export function GuidedTour() {
       stagePadding: 8,
       stageRadius: 8,
       popoverClass: 'cascadesim-tour-popover',
-      onHighlightStarted: (_element, step, opts) => {
+      onHighlightStarted: (_element, _step, opts) => {
         const stepIndex = opts.state.activeIndex ?? 0
         setStep(stepIndex)
       },
@@ -54,10 +73,9 @@ export function GuidedTour() {
           element: step.element,
           popover: {
             title: step.popover?.title ?? '',
-            description: buildDescription(step.popover?.description ?? '', step.actionPrompt, isActionStep, index, completedActions),
+            description: buildDescription(step.popover?.description ?? '', step.actionPrompt, isActionStep, index),
             onNextClick: () => {
-              if (isActionStep && !completedActions.has(index)) {
-                // Don't advance — action not completed
+              if (isActionStep && !completedActionsRef.current.has(index)) {
                 return
               }
               if (driverRef.current) {
@@ -66,7 +84,10 @@ export function GuidedTour() {
             },
             onPrevClick: () => {
               if (driverRef.current) {
-                driverRef.current.movePrevious()
+                const currentIdx = driverRef.current.getActiveIndex() ?? 0
+                if (currentIdx > 0) {
+                  driverRef.current.movePrevious()
+                }
               }
             },
           },
@@ -83,10 +104,13 @@ export function GuidedTour() {
       if (e.key === 'ArrowRight') {
         const currentIdx = driverRef.current.getActiveIndex() ?? 0
         const currentTutStep = tutorialSteps[currentIdx]
-        if (currentTutStep?.actionRequired && !completedActions.has(currentIdx)) return
+        if (currentTutStep?.actionRequired && !completedActionsRef.current.has(currentIdx)) return
         driverRef.current.moveNext()
       } else if (e.key === 'ArrowLeft') {
-        driverRef.current.movePrevious()
+        const currentIdx = driverRef.current.getActiveIndex() ?? 0
+        if (currentIdx > 0) {
+          driverRef.current.movePrevious()
+        }
       }
     }
 
@@ -99,20 +123,7 @@ export function GuidedTour() {
         driverRef.current = null
       }
     }
-  }, [tourActive, handleDestroy, setStep, completedActions, completeAction])
-
-  // Re-render popover when actions complete to update button states
-  useEffect(() => {
-    if (!tourActive || !driverRef.current || !driverRef.current.isActive()) return
-
-    const currentIdx = driverRef.current.getActiveIndex() ?? 0
-    const currentTutStep = tutorialSteps[currentIdx]
-
-    if (currentTutStep?.actionRequired && completedActions.has(currentIdx)) {
-      // Refresh the current step to update the popover
-      driverRef.current.refresh()
-    }
-  }, [tourActive, completedActions])
+  }, [tourActive, handleDestroy, setStep])
 
   return null
 }
@@ -121,19 +132,13 @@ function buildDescription(
   baseDesc: string,
   actionPrompt: string | undefined,
   isActionStep: boolean | undefined,
-  index: number,
-  completedActions: Set<number>
+  index: number
 ): string {
   let desc = baseDesc
 
   if (isActionStep && actionPrompt) {
-    const completed = completedActions.has(index)
-    if (completed) {
-      desc += `<div data-testid="tutorial-action-complete" style="margin-top: 8px; padding: 6px 10px; background: rgba(34,197,94,0.15); border-radius: 6px; color: #22c55e; font-size: 12px;">&#10003; Action completed!</div>`
-    } else {
-      desc += `<div data-testid="tutorial-action-prompt" style="margin-top: 8px; padding: 6px 10px; background: rgba(59,130,246,0.15); border-radius: 6px; color: #93c5fd; font-size: 12px;">${actionPrompt}</div>`
-      desc += `<div style="margin-top: 4px; text-align: right;"><a data-testid="tutorial-skip-action" href="#" onclick="document.dispatchEvent(new CustomEvent('tutorial-skip-action', {detail:{step:${index}}})); return false;" style="font-size: 11px; color: #94a3b8; text-decoration: underline;">Skip this step</a></div>`
-    }
+    desc += `<div data-testid="tutorial-action-prompt" style="margin-top: 8px; padding: 6px 10px; background: rgba(59,130,246,0.15); border-radius: 6px; color: #93c5fd; font-size: 12px;">${actionPrompt}</div>`
+    desc += `<div style="margin-top: 4px; text-align: right;"><a data-testid="tutorial-skip-action" href="#" onclick="document.dispatchEvent(new CustomEvent('tutorial-skip-action', {detail:{step:${index}}})); return false;" style="font-size: 11px; color: #94a3b8; text-decoration: underline;">Skip</a></div>`
   }
 
   return desc

@@ -117,7 +117,7 @@ export function PropertyEditor({ componentId }: PropertyEditorProps) {
   }
 
   return (
-    <div className="p-3 flex flex-col gap-3">
+    <div className="p-3 flex flex-col gap-3" data-testid="property-editor">
       <h3 className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
         Properties
       </h3>
