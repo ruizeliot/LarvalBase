@@ -16,6 +16,8 @@ interface UiState {
   chainViewMode: ChainViewMode
   libraryPanelOpen: boolean
   showInfoCards: boolean
+  resultsPanelOpen: boolean
+  resultsPanelWidth: number
 
   setActiveMode: (mode: AppMode) => void
   selectNode: (id: string | null) => void
@@ -31,6 +33,8 @@ interface UiState {
   closeLibraryPanel: () => void
   toggleInfoCards: () => void
   setShowInfoCards: (show: boolean) => void
+  toggleResultsPanel: () => void
+  setResultsPanelWidth: (width: number) => void
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -45,6 +49,8 @@ export const useUiStore = create<UiState>((set) => ({
   chainViewMode: 'detailed',
   libraryPanelOpen: false,
   showInfoCards: true,
+  resultsPanelOpen: true,
+  resultsPanelWidth: 350,
 
   setActiveMode: (mode) => set({ activeMode: mode, chainBuilderOpen: false, chainBuilderSourceId: null }),
   selectNode: (id) => set({ selectedNodeId: id }),
@@ -60,4 +66,6 @@ export const useUiStore = create<UiState>((set) => ({
   closeLibraryPanel: () => set({ libraryPanelOpen: false }),
   toggleInfoCards: () => set((s) => ({ showInfoCards: !s.showInfoCards })),
   setShowInfoCards: (show) => set({ showInfoCards: show }),
+  toggleResultsPanel: () => set((s) => ({ resultsPanelOpen: !s.resultsPanelOpen })),
+  setResultsPanelWidth: (width) => set({ resultsPanelWidth: Math.max(250, Math.min(500, width)) }),
 }))

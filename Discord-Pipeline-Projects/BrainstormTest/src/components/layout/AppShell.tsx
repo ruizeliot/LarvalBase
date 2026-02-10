@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
+import { useReactFlow } from '@xyflow/react'
 import { useUiStore } from '@/store/uiStore'
 import { TabBar } from './TabBar'
 import { LeftPanel } from '@/components/panels/LeftPanel'
@@ -16,12 +17,111 @@ import { ActionWatcher } from '@/components/tutorial/ActionWatcher'
 import { HelpButton } from '@/components/tutorial/HelpButton'
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
+function ResultsSidePanel() {
+  const resultsPanelOpen = useUiStore((s) => s.resultsPanelOpen)
+  const resultsPanelWidth = useUiStore((s) => s.resultsPanelWidth)
+  const toggleResultsPanel = useUiStore((s) => s.toggleResultsPanel)
+  const setResultsPanelWidth = useUiStore((s) => s.setResultsPanelWidth)
+
+  const isDragging = useRef(false)
+  const dragStartX = useRef(0)
+  const dragStartWidth = useRef(0)
+
+  const reactFlow = useReactFlow()
+
+  const fitView = useCallback(() => {
+    setTimeout(() => reactFlow.fitView({ padding: 0.1, duration: 200 }), 50)
+  }, [reactFlow])
+
+  // fitView when panel open/close state changes
+  const prevOpen = useRef(resultsPanelOpen)
+  useEffect(() => {
+    if (prevOpen.current !== resultsPanelOpen) {
+      fitView()
+      prevOpen.current = resultsPanelOpen
+    }
+  }, [resultsPanelOpen, fitView])
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    isDragging.current = true
+    dragStartX.current = e.clientX
+    dragStartWidth.current = resultsPanelWidth
+
+    const handleMouseMove = (ev: MouseEvent) => {
+      if (!isDragging.current) return
+      const delta = dragStartX.current - ev.clientX
+      const newWidth = dragStartWidth.current + delta
+      setResultsPanelWidth(newWidth)
+    }
+
+    const handleMouseUp = () => {
+      isDragging.current = false
+      fitView()
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+  }, [resultsPanelWidth, setResultsPanelWidth, fitView])
+
+  if (!resultsPanelOpen) {
+    return (
+      <div
+        data-testid="results-side-panel"
+        className="flex-shrink-0 w-10 border-l border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col"
+      >
+        <button
+          data-testid="panel-collapse-toggle"
+          onClick={toggleResultsPanel}
+          className="flex-1 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+          title="Show results"
+        >
+          <PanelRightOpen size={16} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div
+      data-testid="results-side-panel"
+      className="flex-shrink-0 flex flex-col border-l border-[var(--color-border)] bg-[var(--color-surface)] relative"
+      style={{ width: resultsPanelWidth }}
+    >
+      {/* Draggable resize divider */}
+      <div
+        data-testid="panel-resize-divider"
+        onMouseDown={handleMouseDown}
+        className="absolute left-0 top-0 bottom-0 w-1.5 cursor-col-resize z-10 hover:bg-[var(--color-primary)]/30 transition-colors"
+        style={{ marginLeft: -3 }}
+      />
+      {/* Header */}
+      <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border)]">
+        <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Results</span>
+        <button
+          data-testid="panel-collapse-toggle"
+          onClick={toggleResultsPanel}
+          className="p-1 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+          title="Hide results"
+        >
+          <PanelRightClose size={14} />
+        </button>
+      </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto">
+        <SimulationResults />
+      </div>
+    </div>
+  )
+}
+
 export function AppShell() {
   const activeMode = useUiStore((s) => s.activeMode)
   const leftPanelOpen = useUiStore((s) => s.leftPanelOpen)
   const toggleLeftPanel = useUiStore((s) => s.toggleLeftPanel)
   const libraryPanelOpen = useUiStore((s) => s.libraryPanelOpen)
-  const [resultsPanelOpen, setResultsPanelOpen] = useState(true)
 
   const isEditor = activeMode === 'editor'
   const isScenarios = activeMode === 'scenarios'
@@ -70,41 +170,8 @@ export function AppShell() {
               {/* Library panel overlay */}
               {libraryPanelOpen && <ScenarioLibraryPanel />}
             </div>
-            {/* Simulation results — collapsible right panel (not overlay) */}
-            {isSimulate && (
-              <div
-                data-testid="results-panel"
-                className={`flex-shrink-0 border-l border-[var(--color-border)] bg-[var(--color-surface)] flex flex-col ${resultsPanelOpen ? 'w-96' : 'w-10'}`}
-              >
-                {resultsPanelOpen ? (
-                  <>
-                    <div className="flex items-center justify-between px-3 py-2 border-b border-[var(--color-border)]">
-                      <span className="text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">Results</span>
-                      <button
-                        data-testid="toggle-results-panel"
-                        onClick={() => setResultsPanelOpen(false)}
-                        className="p-1 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-                        title="Hide results"
-                      >
-                        <PanelRightClose size={14} />
-                      </button>
-                    </div>
-                    <div className="flex-1 overflow-y-auto">
-                      <SimulationResults />
-                    </div>
-                  </>
-                ) : (
-                  <button
-                    data-testid="toggle-results-panel"
-                    onClick={() => setResultsPanelOpen(true)}
-                    className="flex-1 flex items-center justify-center text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-                    title="Show results"
-                  >
-                    <PanelRightOpen size={16} />
-                  </button>
-                )}
-              </div>
-            )}
+            {/* Simulation results — resizable right side panel */}
+            {isSimulate && <ResultsSidePanel />}
           </div>
           {/* Bottom Panel */}
           <BottomPanel />

@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useSyncExternalStore } from 'react'
+import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import {
   ReactFlow,
   Background,
@@ -33,8 +33,9 @@ import {
   dismissInfoCard,
   restoreAllInfoCards,
 } from '@/components/library/ScenarioLibraryPanel'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, LayoutGrid } from 'lucide-react'
 import type { ComponentType } from '@/types/model'
+import { computeElkLayout, type LayoutDirection } from '@/lib/elkLayout'
 
 const nodeTypes: NodeTypes = {
   component: ComponentNode,
@@ -292,6 +293,37 @@ function CanvasInner() {
   )
 
   const hasInfoCards = infoCards.length > 0
+  const hasComponents = Object.keys(components).length > 0
+  const [relayoutOpen, setRelayoutOpen] = useState(false)
+
+  const handleRelayout = useCallback(async (direction: LayoutDirection) => {
+    setRelayoutOpen(false)
+    const comps = Object.values(components)
+    const chs = Object.values(chains)
+    if (comps.length === 0) return
+
+    const positions = await computeElkLayout(
+      { components: comps, chains: chs },
+      direction
+    )
+
+    useModelStore.setState((state) => {
+      const updated = { ...state.components }
+      for (const [id, pos] of Object.entries(positions)) {
+        if (updated[id]) {
+          updated[id] = { ...updated[id], position: pos }
+        }
+      }
+      return { components: updated }
+    })
+
+    // fitView after layout
+    if (reactFlowInstance.current) {
+      setTimeout(() => {
+        reactFlowInstance.current?.fitView({ padding: 0.1, duration: 200 })
+      }, 50)
+    }
+  }, [components, chains])
 
   return (
     <>
@@ -361,6 +393,53 @@ function CanvasInner() {
           {showInfoCards ? <EyeOff size={12} /> : <Eye size={12} />}
           <span>{showInfoCards ? 'Hide Info' : 'Show Info'}</span>
         </button>
+      )}
+      {/* Re-Layout button with dropdown (editor mode only) */}
+      {hasComponents && activeMode === 'editor' && (
+        <div className="absolute top-3 right-56 z-10 relative">
+          <button
+            data-testid="relayout-button"
+            onClick={() => setRelayoutOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors"
+            style={{
+              backgroundColor: 'var(--color-surface)',
+              borderColor: 'var(--color-border)',
+              color: 'var(--color-text)',
+            }}
+            title="Re-Layout nodes"
+          >
+            <LayoutGrid size={12} />
+            <span>Re-Layout</span>
+          </button>
+          {relayoutOpen && (
+            <div className="absolute top-full right-0 mt-1 py-1 rounded-md border shadow-lg min-w-[120px]" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+              <button
+                data-testid="relayout-option-lr"
+                onClick={() => handleRelayout('LR')}
+                className="block w-full px-3 py-1.5 text-xs text-left hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Left → Right
+              </button>
+              <button
+                data-testid="relayout-option-tb"
+                onClick={() => handleRelayout('TB')}
+                className="block w-full px-3 py-1.5 text-xs text-left hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Top → Bottom
+              </button>
+              <button
+                data-testid="relayout-option-compact"
+                onClick={() => handleRelayout('COMPACT')}
+                className="block w-full px-3 py-1.5 text-xs text-left hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
+                style={{ color: 'var(--color-text)' }}
+              >
+                Compact
+              </button>
+            </div>
+          )}
+        </div>
       )}
       <ContextMenu />
       <ChainBuilder />
