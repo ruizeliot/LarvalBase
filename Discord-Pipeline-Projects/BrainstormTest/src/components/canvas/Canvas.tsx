@@ -320,11 +320,18 @@ function CanvasInner() {
   const hasComponents = Object.keys(components).length > 0
   const [relayoutOpen, setRelayoutOpen] = useState(false)
 
-  const handleRelayout = useCallback(async (direction: LayoutDirection) => {
+  const handleRelayout = useCallback(async (direction: LayoutDirection, isDirectionChange = false) => {
     setRelayoutOpen(false)
     const comps = Object.values(components)
     const chs = Object.values(chains)
     if (comps.length === 0) return
+
+    // Dispatch tutorial event immediately (before async ELK + state update)
+    document.dispatchEvent(
+      new CustomEvent('tutorial-layout-action', {
+        detail: { type: isDirectionChange ? 'relayout-direction' : 'auto-layout' },
+      })
+    )
 
     const positions = await computeElkLayout(
       { components: comps, chains: chs },
@@ -422,26 +429,41 @@ function CanvasInner() {
       )}
       {/* Re-Layout button with dropdown (editor mode only) */}
       {hasComponents && activeMode === 'editor' && (
-        <div className="absolute top-3 right-56 z-10 relative">
-          <button
-            data-testid="relayout-button"
-            onClick={() => setRelayoutOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium border transition-colors"
-            style={{
-              backgroundColor: 'var(--color-surface)',
-              borderColor: 'var(--color-border)',
-              color: 'var(--color-text)',
-            }}
-            title="Re-Layout nodes"
-          >
-            <LayoutGrid size={12} />
-            <span>Re-Layout</span>
-          </button>
+        <div data-testid="relayout-container" className="absolute top-3 right-56 z-10 relative">
+          <div className="flex items-center">
+            <button
+              data-testid="relayout-button"
+              onClick={() => handleRelayout('LR')}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-l-md text-xs font-medium border transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text)',
+              }}
+              title="Re-Layout nodes"
+            >
+              <LayoutGrid size={12} />
+              <span>Re-Layout</span>
+            </button>
+            <button
+              data-testid="relayout-dropdown-toggle"
+              onClick={() => setRelayoutOpen((prev) => !prev)}
+              className="px-1.5 py-1.5 rounded-r-md text-xs font-medium border border-l-0 transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'var(--color-surface)',
+                borderColor: 'var(--color-border)',
+                color: 'var(--color-text)',
+              }}
+              title="Layout options"
+            >
+              ▾
+            </button>
+          </div>
           {relayoutOpen && (
-            <div className="absolute top-full right-0 mt-1 py-1 rounded-md border shadow-lg min-w-[120px]" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
+            <div data-testid="layout-dropdown" className="absolute top-full right-0 mt-1 py-1 rounded-md border shadow-lg min-w-[120px]" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)' }}>
               <button
                 data-testid="relayout-option-lr"
-                onClick={() => handleRelayout('LR')}
+                onClick={() => handleRelayout('LR', true)}
                 className="block w-full px-3 py-1.5 text-xs text-left hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                 style={{ color: 'var(--color-text)' }}
               >
@@ -449,7 +471,7 @@ function CanvasInner() {
               </button>
               <button
                 data-testid="relayout-option-tb"
-                onClick={() => handleRelayout('TB')}
+                onClick={() => handleRelayout('TB', true)}
                 className="block w-full px-3 py-1.5 text-xs text-left hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                 style={{ color: 'var(--color-text)' }}
               >
@@ -457,7 +479,7 @@ function CanvasInner() {
               </button>
               <button
                 data-testid="relayout-option-compact"
-                onClick={() => handleRelayout('COMPACT')}
+                onClick={() => handleRelayout('COMPACT', true)}
                 className="block w-full px-3 py-1.5 text-xs text-left hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
                 style={{ color: 'var(--color-text)' }}
               >

@@ -30,7 +30,9 @@ export function GuidedTour() {
     const style = document.createElement('style')
     style.setAttribute('data-tutorial-styles', '')
     style.textContent = `
-      body.tutorial-action-active .driver-overlay {
+      body.tutorial-action-active .driver-overlay,
+      body.tutorial-action-active .driver-overlay svg,
+      body.tutorial-action-active .driver-overlay path {
         pointer-events: none !important;
       }
     `

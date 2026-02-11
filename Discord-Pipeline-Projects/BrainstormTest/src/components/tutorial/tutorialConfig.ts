@@ -129,7 +129,7 @@ export const TUTORIAL_PHASES: TutorialPhase[] = [
         popover: { title: 'Auto-Layout', description: '' },
       },
       {
-        element: '[data-testid="layout-dropdown"]',
+        element: '[data-testid="relayout-container"]',
         title: 'Re-Layout Options',
         description: 'Open the layout dropdown and select a different direction (e.g., <strong>TB</strong>) to see how the graph rearranges.',
         actionRequired: true,
