@@ -20,12 +20,12 @@ export default defineConfig({
   ],
   webServer: [
     {
-      command: 'npm run dev',
+      command: 'npm run dev:vite',
       url: 'http://localhost:5173',
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'node scripts/yjs-server.cjs',
+      command: 'npm run dev:collab',
       port: 1234,
       reuseExistingServer: !process.env.CI,
     },
