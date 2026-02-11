@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useCollaborationStore } from '@/store/collaborationStore'
 import { X, Copy, Check } from 'lucide-react'
 
@@ -10,6 +10,15 @@ export function RoomModal() {
 
   const [copied, setCopied] = useState(false)
 
+  useEffect(() => {
+    if (!showRoomModal) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeRoomModal()
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showRoomModal, closeRoomModal])
+
   if (!showRoomModal) return null
 
   const handleCopy = async () => {
@@ -20,16 +29,11 @@ export function RoomModal() {
     }
   }
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') closeRoomModal()
-  }
-
   return (
     <div
       data-testid="room-modal"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60"
       onClick={(e) => { if (e.target === e.currentTarget) closeRoomModal() }}
-      onKeyDown={handleKeyDown}
     >
       <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-lg p-6 w-96 shadow-xl">
         {/* Header */}
