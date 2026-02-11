@@ -246,14 +246,124 @@ function handleRemoteMetaChange(event: Y.YMapEvent<unknown>) {
   }
 }
 
+// --- Activity Tracking ---
+
+export interface ActivityEntry {
+  id: string
+  userName: string
+  userColor: string
+  action: 'added' | 'edited' | 'deleted' | 'modified'
+  entityType: 'component' | 'chain' | 'scenario'
+  entityName: string
+  timestamp: number
+}
+
+const EDIT_DEBOUNCE_MS = 2000
+const lastEditTimestamps = new Map<string, number>()
+
+function getLocalUserInfo(): { name: string; color: string } | null {
+  if (!wsProvider) return null
+  const state = wsProvider.awareness.getLocalState()
+  return state?.user ? { name: state.user.name, color: state.user.color } : null
+}
+
+function pushActivity(action: ActivityEntry['action'], entityType: ActivityEntry['entityType'], entityName: string) {
+  if (!yDoc) return
+  const user = getLocalUserInfo()
+  if (!user) return
+  const activitiesArray = yDoc.getArray<string>('activities')
+  const entry: ActivityEntry = {
+    id: nanoid(6),
+    userName: user.name,
+    userColor: user.color,
+    action,
+    entityType,
+    entityName,
+    timestamp: Date.now(),
+  }
+  yDoc.transact(() => {
+    activitiesArray.push([JSON.stringify(entry)])
+  }, yDoc.clientID)
+}
+
+function stripPosition(comp: Component): Omit<Component, 'position'> {
+  const { position, ...rest } = comp
+  return rest
+}
+
+export function getActivities(): ActivityEntry[] {
+  if (!yDoc) return []
+  const activitiesArray = yDoc.getArray<string>('activities')
+  const entries: ActivityEntry[] = []
+  for (let i = 0; i < activitiesArray.length; i++) {
+    entries.push(JSON.parse(activitiesArray.get(i)))
+  }
+  entries.sort((a, b) => b.timestamp - a.timestamp)
+  return entries.slice(0, 20)
+}
+
+export function onActivitiesChange(callback: () => void): () => void {
+  if (!yDoc) return () => {}
+  const activitiesArray = yDoc.getArray<string>('activities')
+  activitiesArray.observe(callback)
+  return () => activitiesArray.unobserve(callback)
+}
+
 // --- Zustand → Yjs sync ---
 
 function handleLocalModelChange() {
   if (isApplyingRemote || !yDoc) return
   const { components, chains, componentCounter } = useModelStore.getState()
 
+  // Activity tracking — detect changes before sync
+  const componentsMap = yDoc.getMap('components')
+  for (const [id, comp] of Object.entries(components)) {
+    if (!componentsMap.has(id)) {
+      pushActivity('added', 'component', comp.name)
+    } else {
+      const existing = JSON.parse(componentsMap.get(id) as string) as Component
+      if (JSON.stringify(stripPosition(existing)) !== JSON.stringify(stripPosition(comp))) {
+        const key = `comp-${id}`
+        const lastEdit = lastEditTimestamps.get(key)
+        if (!lastEdit || Date.now() - lastEdit > EDIT_DEBOUNCE_MS) {
+          pushActivity('edited', 'component', comp.name)
+          lastEditTimestamps.set(key, Date.now())
+        }
+      }
+    }
+  }
+  componentsMap.forEach((value, key) => {
+    if (!(key in components)) {
+      const deleted = JSON.parse(value as string) as Component
+      pushActivity('deleted', 'component', deleted.name)
+    }
+  })
+
+  const chainsMap = yDoc.getMap('chains')
+  for (const [id, chain] of Object.entries(chains)) {
+    if (!chainsMap.has(id)) {
+      pushActivity('added', 'chain', chain.name)
+    } else {
+      const existing = JSON.parse(chainsMap.get(id) as string) as CausalChain
+      if (JSON.stringify(existing) !== JSON.stringify(chain)) {
+        const key = `chain-${id}`
+        const lastEdit = lastEditTimestamps.get(key)
+        if (!lastEdit || Date.now() - lastEdit > EDIT_DEBOUNCE_MS) {
+          pushActivity('edited', 'chain', chain.name)
+          lastEditTimestamps.set(key, Date.now())
+        }
+      }
+    }
+  }
+  chainsMap.forEach((value, key) => {
+    if (!(key in chains)) {
+      const deleted = JSON.parse(value as string) as CausalChain
+      pushActivity('deleted', 'chain', deleted.name)
+    }
+  })
+
+  // Sync to Yjs
   yDoc.transact(() => {
-    const componentsMap = yDoc!.getMap('components')
     const compKeysToDelete: string[] = []
     componentsMap.forEach((_, key) => {
       if (!(key in components)) compKeysToDelete.push(key)
@@ -266,7 +376,6 @@ function handleLocalModelChange() {
       }
     }
 
-    const chainsMap = yDoc!.getMap('chains')
     const chainKeysToDelete: string[] = []
     chainsMap.forEach((_, key) => {
       if (!(key in chains)) chainKeysToDelete.push(key)
@@ -288,8 +397,32 @@ function handleLocalScenarioChange() {
   if (isApplyingRemote || !yDoc) return
   const { scenarios, scenarioCounter } = useScenarioStore.getState()
 
+  // Activity tracking for scenarios
+  const scenariosMap = yDoc.getMap('scenarios')
+  for (const [id, scenario] of Object.entries(scenarios)) {
+    if (!scenariosMap.has(id)) {
+      pushActivity('added', 'scenario', scenario.name)
+    } else {
+      const existing = JSON.parse(scenariosMap.get(id) as string) as Scenario
+      if (JSON.stringify(existing) !== JSON.stringify(scenario)) {
+        const key = `scenario-${id}`
+        const lastEdit = lastEditTimestamps.get(key)
+        if (!lastEdit || Date.now() - lastEdit > EDIT_DEBOUNCE_MS) {
+          pushActivity('modified', 'scenario', scenario.name)
+          lastEditTimestamps.set(key, Date.now())
+        }
+      }
+    }
+  }
+  scenariosMap.forEach((value, key) => {
+    if (!(key in scenarios)) {
+      const deleted = JSON.parse(value as string) as Scenario
+      pushActivity('deleted', 'scenario', deleted.name)
+    }
+  })
+
+  // Sync to Yjs
   yDoc.transact(() => {
-    const scenariosMap = yDoc!.getMap('scenarios')
     const keysToDelete: string[] = []
     scenariosMap.forEach((_, key) => {
       if (!(key in scenarios)) keysToDelete.push(key)

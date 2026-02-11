@@ -18,6 +18,7 @@ import { HelpButton } from '@/components/tutorial/HelpButton'
 import { DisplayNamePrompt } from '@/components/collaboration/DisplayNamePrompt'
 import { RoomModal } from '@/components/collaboration/RoomModal'
 import { ConnectionError } from '@/components/collaboration/ConnectionError'
+import { ActivityBar } from '@/components/collaboration/ActivityBar'
 import { useCollaborationInit } from '@/hooks/useCollaborationInit'
 import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react'
 
@@ -179,6 +180,8 @@ export function AppShell() {
             {/* Simulation results — resizable right side panel */}
             {isSimulate && <ResultsSidePanel />}
           </div>
+          {/* Activity Bar — only when in collaboration room */}
+          <ActivityBar />
           {/* Bottom Panel */}
           <BottomPanel />
         </div>
