@@ -36,6 +36,9 @@ import {
 import { Eye, EyeOff, LayoutGrid } from 'lucide-react'
 import type { ComponentType } from '@/types/model'
 import { computeElkLayout, type LayoutDirection } from '@/lib/elkLayout'
+import { LiveCursors } from '@/components/collaboration/LiveCursors'
+import { setCursorPosition } from '@/lib/collaboration'
+import { useCollaborationStore } from '@/store/collaborationStore'
 
 const nodeTypes: NodeTypes = {
   component: ComponentNode,
@@ -292,6 +295,25 @@ function CanvasInner() {
     [screenToFlowPosition, addComponent, selectNode]
   )
 
+  const connected = useCollaborationStore((s) => s.connected)
+
+  const onMouseMove = useCallback(
+    (event: React.MouseEvent) => {
+      if (!connected) return
+      const flowPosition = screenToFlowPosition({
+        x: event.clientX,
+        y: event.clientY,
+      })
+      setCursorPosition(flowPosition)
+    },
+    [connected, screenToFlowPosition]
+  )
+
+  const onMouseLeave = useCallback(() => {
+    if (!connected) return
+    setCursorPosition(null)
+  }, [connected])
+
   const hasInfoCards = infoCards.length > 0
   const hasComponents = Object.keys(components).length > 0
   const [relayoutOpen, setRelayoutOpen] = useState(false)
@@ -326,7 +348,7 @@ function CanvasInner() {
   }, [components, chains])
 
   return (
-    <>
+    <div onMouseMove={onMouseMove} onMouseLeave={onMouseLeave} className="w-full h-full relative">
       <ReactFlow
         nodes={allNodes}
         edges={allEdges}
@@ -353,6 +375,7 @@ function CanvasInner() {
           style={{ width: 150, height: 100 }}
         />
       </ReactFlow>
+      <LiveCursors />
       {/* Chain view toggle button */}
       <button
         data-testid="chain-view-toggle"
@@ -443,7 +466,7 @@ function CanvasInner() {
       )}
       <ContextMenu />
       <ChainBuilder />
-    </>
+    </div>
   )
 }
 

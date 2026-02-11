@@ -333,3 +333,47 @@ export function getParticipants(): Array<{ clientID: number; name: string; color
   })
   return participants
 }
+
+// --- Cursor Awareness ---
+
+export function setCursorPosition(position: { x: number; y: number } | null) {
+  if (!wsProvider) return
+  wsProvider.awareness.setLocalStateField('cursor', position ? { ...position, ts: Date.now() } : null)
+}
+
+export interface RemoteCursor {
+  clientID: number
+  name: string
+  color: string
+  cursor: { x: number; y: number }
+}
+
+const CURSOR_STALE_MS = 3000
+
+export function getRemoteCursors(): RemoteCursor[] {
+  if (!wsProvider || !yDoc) return []
+  const localClientID = yDoc.clientID
+  const now = Date.now()
+  const states = wsProvider.awareness.getStates()
+  const cursors: RemoteCursor[] = []
+  states.forEach((state, clientID) => {
+    if (clientID === localClientID) return
+    if (state.user && state.cursor) {
+      // Filter out stale cursors (user disconnected or moved off canvas)
+      if (state.cursor.ts && now - state.cursor.ts > CURSOR_STALE_MS) return
+      cursors.push({
+        clientID,
+        name: state.user.name,
+        color: state.user.color,
+        cursor: { x: state.cursor.x, y: state.cursor.y },
+      })
+    }
+  })
+  return cursors
+}
+
+export function onAwarenessChange(callback: () => void): () => void {
+  if (!wsProvider) return () => {}
+  wsProvider.awareness.on('change', callback)
+  return () => wsProvider?.awareness.off('change', callback)
+}
