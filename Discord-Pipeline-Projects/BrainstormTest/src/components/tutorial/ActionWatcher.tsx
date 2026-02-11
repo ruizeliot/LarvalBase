@@ -5,19 +5,15 @@ import { useScenarioStore } from '@/store/scenarioStore'
 import { useSimulationStore } from '@/store/simulationStore'
 import { useUiStore } from '@/store/uiStore'
 import { wasLastModelChangeRemote } from '@/lib/collaboration'
+import { getPhase } from './tutorialConfig'
 
 /**
  * Watches for user actions during the tutorial and marks steps as complete.
- * Step indices match tutorialConfig.ts:
- *   1 = Drag first component onto canvas
- *   2 = Rename component or add parameter
- *   3 = Drag second component onto canvas
- *   4 = Open causal chain builder (right-click → New Causal Chain)
- *   5 = Open Scenario Library and load a pre-built scenario
- *   6 = Click Run Simulation
+ * Uses the actionType field from tutorialConfig to determine what to watch.
  */
 export function ActionWatcher() {
   const tourActive = useTutorialStore((s) => s.tourActive)
+  const activePhase = useTutorialStore((s) => s.activePhase)
   const currentStep = useTutorialStore((s) => s.currentStep)
   const completeAction = useTutorialStore((s) => s.completeAction)
   const completedActions = useTutorialStore((s) => s.completedActions)
@@ -28,33 +24,45 @@ export function ActionWatcher() {
   const prevRunning = useRef(false)
   const prevChainBuilderOpen = useRef(false)
   const prevScenarioCount = useRef(0)
+  const prevChainCount = useRef(0)
+  const prevForcedEventCount = useRef(0)
 
   const components = useModelStore((s) => s.components)
+  const chains = useModelStore((s) => s.chains)
   const scenarios = useScenarioStore((s) => s.scenarios)
   const running = useSimulationStore((s) => s.running)
   const chainBuilderOpen = useUiStore((s) => s.chainBuilderOpen)
 
-  // Step 1: Drag first component onto canvas
+  // Get current step's actionType
+  function getCurrentActionType(): string | undefined {
+    if (!activePhase) return undefined
+    const phaseConfig = getPhase(activePhase)
+    if (!phaseConfig) return undefined
+    return phaseConfig.steps[currentStep]?.actionType
+  }
+
+  // Phase 1 Step 0: drag-component — component count increases
+  // Phase 2 Step 0: branching-chain — new chain from existing source
   useEffect(() => {
     if (!tourActive) return
-    // Ignore remote model changes (collab sync) — only local actions should advance tutorial
     if (wasLastModelChangeRemote()) {
       prevComponentCount.current = Object.keys(components).length
       return
     }
 
+    const actionType = getCurrentActionType()
     const componentCount = Object.keys(components).length
-    if (componentCount > prevComponentCount.current && currentStep === 1 && !completedActions.has(1)) {
-      completeAction(1)
-    }
-    // Step 3: Drag second component (count goes from 1 to 2+)
-    if (componentCount > prevComponentCount.current && componentCount >= 2 && currentStep === 3 && !completedActions.has(3)) {
-      completeAction(3)
-    }
-    prevComponentCount.current = componentCount
-  }, [tourActive, components, currentStep, completeAction, completedActions])
 
-  // Step 2: Rename component or add parameter
+    if (actionType === 'drag-component' && componentCount > prevComponentCount.current && !completedActions.has(currentStep)) {
+      completeAction(currentStep)
+    }
+
+    prevComponentCount.current = componentCount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, components, currentStep, activePhase])
+
+  // Phase 1 Step 1: configure-component — rename or add parameter
+  // Phase 2 Step 1: edit-params — add/edit parameters
   useEffect(() => {
     if (!tourActive) return
 
@@ -65,71 +73,159 @@ export function ActionWatcher() {
       currentParamCounts[id] = comp.parameters.length
     }
 
-    // Ignore remote model changes (collab sync)
     if (wasLastModelChangeRemote()) {
       prevComponentNames.current = currentNames
       prevParamCounts.current = currentParamCounts
       return
     }
 
-    if (currentStep === 2 && !completedActions.has(2)) {
+    const actionType = getCurrentActionType()
+
+    if ((actionType === 'configure-component' || actionType === 'edit-params') && !completedActions.has(currentStep)) {
       // Detect name change
+      let detected = false
       for (const [id, name] of Object.entries(currentNames)) {
         if (prevComponentNames.current[id] && prevComponentNames.current[id] !== name) {
-          completeAction(2)
+          detected = true
           break
         }
       }
-      // Detect parameter added
-      if (!completedActions.has(2)) {
+      // Detect parameter added/changed
+      if (!detected) {
         for (const [id, count] of Object.entries(currentParamCounts)) {
           if (prevParamCounts.current[id] !== undefined && count > prevParamCounts.current[id]) {
-            completeAction(2)
+            detected = true
             break
           }
         }
+      }
+      if (detected) {
+        completeAction(currentStep)
       }
     }
 
     prevComponentNames.current = currentNames
     prevParamCounts.current = currentParamCounts
-  }, [tourActive, components, currentStep, completeAction, completedActions])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, components, currentStep, activePhase])
 
-  // Step 4: Open chain builder via right-click context menu
+  // Phase 1 Step 2: create-chain — chain builder opens
   useEffect(() => {
     if (!tourActive) return
 
-    if (chainBuilderOpen && !prevChainBuilderOpen.current && currentStep === 4 && !completedActions.has(4)) {
-      completeAction(4)
+    const actionType = getCurrentActionType()
+
+    if (actionType === 'create-chain' && chainBuilderOpen && !prevChainBuilderOpen.current && !completedActions.has(currentStep)) {
+      completeAction(currentStep)
     }
     prevChainBuilderOpen.current = chainBuilderOpen
-  }, [tourActive, chainBuilderOpen, currentStep, completeAction, completedActions])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, chainBuilderOpen, currentStep, activePhase])
 
-  // Step 5: Load a scenario from the Library (scenario count increases)
+  // Phase 1 Step 3: build-scenario — scenario/forced event added
   useEffect(() => {
     if (!tourActive) return
-    // Ignore remote scenario changes (collab sync)
     if (wasLastModelChangeRemote()) {
       prevScenarioCount.current = Object.keys(scenarios).length
+      // Count all forced events
+      let totalEvents = 0
+      for (const s of Object.values(scenarios)) {
+        totalEvents += s.forcedEvents.length
+      }
+      prevForcedEventCount.current = totalEvents
       return
     }
 
+    const actionType = getCurrentActionType()
     const scenarioCount = Object.keys(scenarios).length
-    if (scenarioCount > prevScenarioCount.current && currentStep === 5 && !completedActions.has(5)) {
-      completeAction(5)
+    let totalEvents = 0
+    for (const s of Object.values(scenarios)) {
+      totalEvents += s.forcedEvents.length
     }
-    prevScenarioCount.current = scenarioCount
-  }, [tourActive, scenarios, currentStep, completeAction, completedActions])
 
-  // Step 6: Click Run Simulation
+    if (actionType === 'build-scenario' && !completedActions.has(currentStep)) {
+      // Detect new scenario or new forced event
+      if (scenarioCount > prevScenarioCount.current || totalEvents > prevForcedEventCount.current) {
+        completeAction(currentStep)
+      }
+    }
+
+    prevScenarioCount.current = scenarioCount
+    prevForcedEventCount.current = totalEvents
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, scenarios, currentStep, activePhase])
+
+  // Phase 1 Step 4: run-simulation — simulation starts running
   useEffect(() => {
     if (!tourActive) return
 
-    if (running && !prevRunning.current && currentStep === 6 && !completedActions.has(6)) {
-      completeAction(6)
+    const actionType = getCurrentActionType()
+
+    if (actionType === 'run-simulation' && running && !prevRunning.current && !completedActions.has(currentStep)) {
+      completeAction(currentStep)
     }
     prevRunning.current = running
-  }, [tourActive, running, currentStep, completeAction, completedActions])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, running, currentStep, activePhase])
+
+  // Phase 2 Step 0: branching-chain — new chain added from same source
+  useEffect(() => {
+    if (!tourActive) return
+    if (wasLastModelChangeRemote()) {
+      prevChainCount.current = Object.keys(chains).length
+      return
+    }
+
+    const actionType = getCurrentActionType()
+    const chainCount = Object.keys(chains).length
+
+    if (actionType === 'branching-chain' && chainCount > prevChainCount.current && !completedActions.has(currentStep)) {
+      completeAction(currentStep)
+    }
+
+    prevChainCount.current = chainCount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, chains, currentStep, activePhase])
+
+  // Phase 2 Step 2: auto-layout and Step 3: relayout-direction
+  // These are detected via custom events dispatched by the layout buttons
+  useEffect(() => {
+    if (!tourActive) return
+
+    function handleLayoutComplete(e: Event) {
+      const detail = (e as CustomEvent).detail
+      const actionType = getCurrentActionType()
+
+      if (detail?.type === 'auto-layout' && actionType === 'auto-layout' && !completedActions.has(currentStep)) {
+        completeAction(currentStep)
+      }
+      if (detail?.type === 'relayout-direction' && actionType === 'relayout-direction' && !completedActions.has(currentStep)) {
+        completeAction(currentStep)
+      }
+    }
+
+    document.addEventListener('tutorial-layout-action', handleLayoutComplete)
+    return () => document.removeEventListener('tutorial-layout-action', handleLayoutComplete)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, currentStep, activePhase, completedActions])
+
+  // Phase 3 & 4: Custom events from UI interactions
+  useEffect(() => {
+    if (!tourActive) return
+
+    function handleTutorialAction(e: Event) {
+      const detail = (e as CustomEvent).detail
+      const actionType = getCurrentActionType()
+
+      if (detail?.actionType === actionType && !completedActions.has(currentStep)) {
+        completeAction(currentStep)
+      }
+    }
+
+    document.addEventListener('tutorial-action', handleTutorialAction)
+    return () => document.removeEventListener('tutorial-action', handleTutorialAction)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, currentStep, activePhase, completedActions])
 
   return null
 }

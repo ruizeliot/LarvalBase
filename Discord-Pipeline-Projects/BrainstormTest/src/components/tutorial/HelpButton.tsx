@@ -1,15 +1,27 @@
-import { useState } from 'react'
-import { HelpCircle, Play, Keyboard } from 'lucide-react'
-import { useTutorialStore } from '@/store/tutorialStore'
+import { useState, useEffect, useCallback } from 'react'
+import { HelpCircle } from 'lucide-react'
+import { TutorialMenu } from './TutorialMenu'
 
-export function HelpButton() {
-  const [menuOpen, setMenuOpen] = useState(false)
-  const startTour = useTutorialStore((s) => s.startTour)
+interface HelpButtonProps {
+  highlightPhase?: number
+  autoOpen?: boolean
+}
 
-  const handleReplayTutorial = () => {
-    setMenuOpen(false)
-    startTour()
-  }
+export function HelpButton({ highlightPhase, autoOpen }: HelpButtonProps) {
+  const [menuOpen, setMenuOpen] = useState(autoOpen ?? false)
+
+  const closeMenu = useCallback(() => setMenuOpen(false), [])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        closeMenu()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [menuOpen, closeMenu])
 
   return (
     <>
@@ -18,32 +30,15 @@ export function HelpButton() {
         <div
           data-testid="help-menu-backdrop"
           className="fixed inset-0 z-40"
-          onClick={() => setMenuOpen(false)}
+          onClick={closeMenu}
         />
       )}
       <div className="fixed bottom-4 right-4 z-50">
         {menuOpen && (
-          <div
-            data-testid="help-menu"
-            className="absolute bottom-12 right-0 w-52 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] shadow-lg overflow-hidden"
-          >
-            <button
-              data-testid="help-replay-tutorial"
-              onClick={handleReplayTutorial}
-              className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors cursor-pointer"
-            >
-              <Play size={14} className="text-[var(--color-primary)]" />
-              Replay Tutorial
-            </button>
-            <button
-              data-testid="help-keyboard-shortcuts"
-              onClick={() => setMenuOpen(false)}
-              className="flex items-center gap-2 w-full px-3 py-2.5 text-sm text-[var(--color-text)] hover:bg-[var(--color-surface-hover)] transition-colors border-t border-[var(--color-border)] cursor-pointer"
-            >
-              <Keyboard size={14} className="text-[var(--color-text-muted)]" />
-              Keyboard Shortcuts
-            </button>
-          </div>
+          <TutorialMenu
+            onClose={closeMenu}
+            highlightPhase={highlightPhase}
+          />
         )}
         <button
           data-testid="help-button"

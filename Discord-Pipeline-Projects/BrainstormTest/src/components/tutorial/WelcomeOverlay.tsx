@@ -1,19 +1,39 @@
 import { useState, useEffect } from 'react'
-import { TUTORIAL_STORAGE_KEY } from './tutorialConfig'
 import { useTutorialStore } from '@/store/tutorialStore'
 import { useCollaborationStore } from '@/store/collaborationStore'
+import { TUTORIAL_PROGRESS_KEY, OLD_TUTORIAL_KEY } from './tutorialConfig'
 
-export function WelcomeOverlay() {
+interface WelcomeOverlayProps {
+  onStartTutorial?: () => void
+}
+
+export function WelcomeOverlay({ onStartTutorial }: WelcomeOverlayProps) {
   const [visible, setVisible] = useState(false)
-  const startTour = useTutorialStore((s) => s.startTour)
+  const markWelcomeSeen = useTutorialStore((s) => s.markWelcomeSeen)
+  const migrateFromV2 = useTutorialStore((s) => s.migrateFromV2)
+  const startPhase = useTutorialStore((s) => s.startPhase)
   const pendingRoomId = useCollaborationStore((s) => s.pendingRoomId)
 
   useEffect(() => {
-    const alreadyComplete = localStorage.getItem(TUTORIAL_STORAGE_KEY)
-    if (alreadyComplete) return
+    // Handle V2 migration first
+    const oldKey = localStorage.getItem(OLD_TUTORIAL_KEY)
+    if (oldKey) {
+      migrateFromV2()
+      return // V2 users skip welcome overlay
+    }
+
+    // Check if welcome was already seen
+    const progressRaw = localStorage.getItem(TUTORIAL_PROGRESS_KEY)
+    if (progressRaw) {
+      try {
+        const progress = JSON.parse(progressRaw)
+        if (progress.welcomeSeen) return
+      } catch {
+        // Continue to show welcome
+      }
+    }
 
     // If user is joining a room via ?room= URL, skip the welcome overlay
-    // so the DisplayNamePrompt is accessible
     const params = new URLSearchParams(window.location.search)
     if (params.get('room')) return
 
@@ -22,19 +42,24 @@ export function WelcomeOverlay() {
     }, 1000)
 
     return () => clearTimeout(timer)
-  }, [])
+  }, [migrateFromV2])
 
-  // Hide if a room join is pending (DisplayNamePrompt needs to be accessible)
+  // Hide if a room join is pending
   if (!visible || pendingRoomId) return null
 
   function handleSkip() {
-    localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true')
+    markWelcomeSeen()
     setVisible(false)
   }
 
   function handleStart() {
+    markWelcomeSeen()
     setVisible(false)
-    startTour()
+    if (onStartTutorial) {
+      onStartTutorial()
+    } else {
+      startPhase(1)
+    }
   }
 
   return (

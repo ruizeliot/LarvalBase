@@ -2,22 +2,26 @@ import { useEffect, useRef, useCallback } from 'react'
 import { driver, type Driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { useTutorialStore } from '@/store/tutorialStore'
-import { tutorialSteps, TUTORIAL_STORAGE_KEY } from './tutorialConfig'
+import { getPhase } from './tutorialConfig'
 
 export function GuidedTour() {
   const tourActive = useTutorialStore((s) => s.tourActive)
+  const activePhase = useTutorialStore((s) => s.activePhase)
   const endTour = useTutorialStore((s) => s.endTour)
   const setStep = useTutorialStore((s) => s.setStep)
   const currentStep = useTutorialStore((s) => s.currentStep)
   const completedActions = useTutorialStore((s) => s.completedActions)
   const completeAction = useTutorialStore((s) => s.completeAction)
+  const completeCurrentPhase = useTutorialStore((s) => s.completeCurrentPhase)
   const driverRef = useRef<Driver | null>(null)
 
   const completedActionsRef = useRef(completedActions)
   completedActionsRef.current = completedActions
 
+  const activePhaseRef = useRef(activePhase)
+  activePhaseRef.current = activePhase
+
   const handleDestroy = useCallback(() => {
-    localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true')
     endTour()
   }, [endTour])
 
@@ -37,13 +41,19 @@ export function GuidedTour() {
   }, [completeAction])
 
   useEffect(() => {
-    if (!tourActive) {
+    if (!tourActive || !activePhase) {
       if (driverRef.current) {
         driverRef.current.destroy()
         driverRef.current = null
       }
       return
     }
+
+    const phaseConfig = getPhase(activePhase)
+    if (!phaseConfig) return
+
+    const steps = phaseConfig.steps
+    const totalSteps = steps.length
 
     const driverInstance = driver({
       showProgress: true,
@@ -56,8 +66,7 @@ export function GuidedTour() {
       onHighlightStarted: (_element, _step, opts) => {
         const stepIndex = opts.state.activeIndex ?? 0
         setStep(stepIndex)
-        // Toggle pointer-events on overlay for action steps
-        const isAction = tutorialSteps[stepIndex]?.actionRequired
+        const isAction = steps[stepIndex]?.actionRequired
         if (isAction) {
           document.body.classList.add('tutorial-action-active')
         } else {
@@ -75,19 +84,41 @@ export function GuidedTour() {
       onDestroyed: () => {
         handleDestroy()
       },
-      steps: tutorialSteps.map((step, index) => {
+      steps: steps.map((step, index) => {
         const isActionStep = step.actionRequired
         return {
           element: step.element,
           popover: {
-            title: step.popover?.title ?? '',
-            description: buildDescription(step.popover?.description ?? '', step.actionPrompt, isActionStep, index, completedActionsRef.current),
+            title: step.title,
+            description: buildDescription(
+              step.description,
+              step.actionPrompt,
+              isActionStep,
+              index,
+              totalSteps,
+              completedActionsRef.current,
+              activePhase
+            ),
             onNextClick: () => {
               if (isActionStep && !completedActionsRef.current.has(index)) {
                 return
               }
               if (driverRef.current) {
-                driverRef.current.moveNext()
+                const currentIdx = driverRef.current.getActiveIndex() ?? 0
+                if (currentIdx >= totalSteps - 1) {
+                  // Last step completed — finish phase
+                  driverRef.current.destroy()
+                  driverRef.current = null
+                  completeCurrentPhase()
+                  // Dispatch completion event for CompletionOverlay
+                  document.dispatchEvent(
+                    new CustomEvent('tutorial-phase-complete', {
+                      detail: { phase: activePhaseRef.current },
+                    })
+                  )
+                } else {
+                  driverRef.current.moveNext()
+                }
               }
             },
             onPrevClick: () => {
@@ -104,21 +135,42 @@ export function GuidedTour() {
     })
 
     driverRef.current = driverInstance
-    driverInstance.drive()
+
+    // Start from the requested step (for resume)
+    if (currentStep > 0 && currentStep < totalSteps) {
+      driverInstance.drive(currentStep)
+    } else {
+      driverInstance.drive()
+    }
 
     // Arrow key navigation
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!driverRef.current || !driverRef.current.isActive()) return
       if (e.key === 'ArrowRight') {
         const currentIdx = driverRef.current.getActiveIndex() ?? 0
-        const currentTutStep = tutorialSteps[currentIdx]
+        const currentTutStep = steps[currentIdx]
         if (currentTutStep?.actionRequired && !completedActionsRef.current.has(currentIdx)) return
-        driverRef.current.moveNext()
+        if (currentIdx >= totalSteps - 1) {
+          driverRef.current.destroy()
+          driverRef.current = null
+          completeCurrentPhase()
+          document.dispatchEvent(
+            new CustomEvent('tutorial-phase-complete', {
+              detail: { phase: activePhaseRef.current },
+            })
+          )
+        } else {
+          driverRef.current.moveNext()
+        }
       } else if (e.key === 'ArrowLeft') {
         const currentIdx = driverRef.current.getActiveIndex() ?? 0
         if (currentIdx > 0) {
           driverRef.current.movePrevious()
         }
+      } else if (e.key === 'Escape') {
+        driverRef.current.destroy()
+        driverRef.current = null
+        handleDestroy()
       }
     }
 
@@ -132,16 +184,18 @@ export function GuidedTour() {
         driverRef.current = null
       }
     }
-  }, [tourActive, handleDestroy, setStep])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tourActive, activePhase])
 
-  // Update popover DOM when actions complete or when navigating to a completed step
+  // Update popover DOM when actions complete
   useEffect(() => {
     if (!tourActive || !driverRef.current || !driverRef.current.isActive()) return
 
-    const currentTutStep = tutorialSteps[currentStep]
+    const phaseConfig = activePhase ? getPhase(activePhase) : null
+    const steps = phaseConfig?.steps ?? []
+    const currentTutStep = steps[currentStep]
 
     if (currentTutStep?.actionRequired && completedActions.has(currentStep)) {
-      // Replace the action prompt with the completion indicator in the DOM
       const promptEl = document.querySelector('[data-testid="tutorial-action-prompt"]')
       const skipEl = promptEl?.parentElement?.querySelector('[data-testid="tutorial-skip-action"]')?.parentElement
       if (promptEl) {
@@ -150,7 +204,6 @@ export function GuidedTour() {
       if (skipEl) {
         skipEl.remove()
       }
-      // If no prompt element found but action is completed, inject completion indicator
       if (!promptEl) {
         const descEl = document.querySelector('.driver-popover-description')
         if (descEl && !descEl.querySelector('[data-testid="tutorial-action-complete"]')) {
@@ -162,7 +215,7 @@ export function GuidedTour() {
         }
       }
     }
-  }, [tourActive, completedActions, currentStep])
+  }, [tourActive, completedActions, currentStep, activePhase])
 
   return null
 }
@@ -172,16 +225,34 @@ function buildDescription(
   actionPrompt: string | undefined,
   isActionStep: boolean | undefined,
   index: number,
-  completedActions: Set<number>
+  totalSteps: number,
+  completedActions: Set<number>,
+  _phaseId: number
 ): string {
-  let desc = baseDesc
+  let desc = ''
+
+  // Step counter
+  desc += `<div style="margin-bottom: 8px; display: flex; align-items: center; gap: 6px;">`
+  desc += `<span data-testid="step-counter" style="font-size: 11px; color: #94a3b8;">Step ${index + 1} of ${totalSteps}</span>`
+  // Progress dots
+  desc += `<span data-testid="progress-dots" style="display: flex; gap: 3px;">`
+  for (let i = 0; i < totalSteps; i++) {
+    const filled = i < index || completedActions.has(i)
+    const active = i === index
+    desc += `<span style="width: 6px; height: 6px; border-radius: 50%; background: ${
+      filled ? '#3b82f6' : active ? '#60a5fa' : '#2a2a3a'
+    };"></span>`
+  }
+  desc += `</span></div>`
+
+  desc += baseDesc
 
   if (isActionStep && actionPrompt) {
     if (completedActions.has(index)) {
       desc += `<div data-testid="tutorial-action-complete" style="margin-top: 8px; padding: 6px 10px; background: rgba(34,197,94,0.15); border-radius: 6px; color: #22c55e; font-size: 12px;">&#10003; Action completed!</div>`
     } else {
       desc += `<div data-testid="tutorial-action-prompt" style="margin-top: 8px; padding: 6px 10px; background: rgba(59,130,246,0.15); border-radius: 6px; color: #93c5fd; font-size: 12px;">${actionPrompt}</div>`
-      desc += `<div style="margin-top: 4px; text-align: right;"><a data-testid="tutorial-skip-action" href="#" onclick="document.dispatchEvent(new CustomEvent('tutorial-skip-action', {detail:{step:${index}}})); return false;" style="font-size: 11px; color: #94a3b8; text-decoration: underline;">Skip</a></div>`
+      desc += `<div style="margin-top: 4px; text-align: right;"><a data-testid="tutorial-skip-action" href="#" onclick="document.dispatchEvent(new CustomEvent('tutorial-skip-action', {detail:{step:${index}}})); return false;" style="font-size: 11px; color: #94a3b8; text-decoration: underline;">Skip Step</a></div>`
     }
   }
 
