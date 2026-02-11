@@ -4,6 +4,7 @@ import { X, BookOpen, Boxes } from 'lucide-react'
 import { useUiStore } from '@/store/uiStore'
 import { useModelStore } from '@/store/modelStore'
 import { useScenarioStore } from '@/store/scenarioStore'
+import { useSimulationStore } from '@/store/simulationStore'
 import { prebuiltScenarios, DIFFICULTY_CONFIG, type Difficulty, type PrebuiltScenario } from '@/data/scenarioLibrary'
 import { cn } from '@/lib/utils'
 import { computeElkLayout } from '@/lib/elkLayout'
@@ -42,6 +43,12 @@ export function ScenarioLibraryPanel() {
   }
 
   async function doLoad(scenario: PrebuiltScenario) {
+    // Reset simulation state so stale results don't persist across scenario loads
+    useSimulationStore.getState().reset()
+
+    // Restore dismissed info cards for the new scenario
+    restoreAllInfoCards()
+
     // Clear existing model
     const modelState = useModelStore.getState()
     for (const id of Object.keys(modelState.components)) {

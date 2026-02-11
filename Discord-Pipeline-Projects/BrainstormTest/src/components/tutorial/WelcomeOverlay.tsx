@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react'
 import { TUTORIAL_STORAGE_KEY } from './tutorialConfig'
 import { useTutorialStore } from '@/store/tutorialStore'
+import { useCollaborationStore } from '@/store/collaborationStore'
 
 export function WelcomeOverlay() {
   const [visible, setVisible] = useState(false)
   const startTour = useTutorialStore((s) => s.startTour)
+  const pendingRoomId = useCollaborationStore((s) => s.pendingRoomId)
 
   useEffect(() => {
     const alreadyComplete = localStorage.getItem(TUTORIAL_STORAGE_KEY)
     if (alreadyComplete) return
+
+    // If user is joining a room via ?room= URL, skip the welcome overlay
+    // so the DisplayNamePrompt is accessible
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('room')) return
 
     const timer = setTimeout(() => {
       setVisible(true)
@@ -17,7 +24,8 @@ export function WelcomeOverlay() {
     return () => clearTimeout(timer)
   }, [])
 
-  if (!visible) return null
+  // Hide if a room join is pending (DisplayNamePrompt needs to be accessible)
+  if (!visible || pendingRoomId) return null
 
   function handleSkip() {
     localStorage.setItem(TUTORIAL_STORAGE_KEY, 'true')

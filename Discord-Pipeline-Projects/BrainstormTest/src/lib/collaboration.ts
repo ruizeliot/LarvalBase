@@ -11,6 +11,7 @@ let yDoc: Y.Doc | null = null
 let wsProvider: WebsocketProvider | null = null
 let undoManager: Y.UndoManager | null = null
 let isApplyingRemote = false
+let lastModelChangeWasRemote = false
 let storeUnsubscribers: (() => void)[] = []
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null
 
@@ -23,6 +24,7 @@ const USER_COLORS = [
 
 // --- Getters ---
 export function getIsApplyingRemote() { return isApplyingRemote }
+export function wasLastModelChangeRemote() { return lastModelChangeWasRemote }
 export function getYDoc() { return yDoc }
 export function getProvider() { return wsProvider }
 export function getUndoManager() { return undoManager }
@@ -121,7 +123,7 @@ function initYjsDoc(roomId: string, displayName: string) {
 function pushCurrentStateToYjs() {
   if (!yDoc) return
   const { components, chains, componentCounter } = useModelStore.getState()
-  const { scenarios, scenarioCounter } = useScenarioStore.getState()
+  const { scenarios, scenarioCounter, activeScenarioId } = useScenarioStore.getState()
 
   yDoc.transact(() => {
     const componentsMap = yDoc!.getMap('components')
@@ -142,6 +144,7 @@ function pushCurrentStateToYjs() {
     const metaMap = yDoc!.getMap('meta')
     metaMap.set('componentCounter', componentCounter)
     metaMap.set('scenarioCounter', scenarioCounter)
+    metaMap.set('activeScenarioId', activeScenarioId)
   }, yDoc.clientID)
 }
 
@@ -171,9 +174,10 @@ function pullStateFromYjs() {
 
     const componentCounter = (metaMap.get('componentCounter') as number) || 0
     const scenarioCounter = (metaMap.get('scenarioCounter') as number) || 0
+    const activeScenarioId = (metaMap.get('activeScenarioId') as string | null) || null
 
     useModelStore.setState({ components, chains, componentCounter })
-    useScenarioStore.setState({ scenarios, scenarioCounter })
+    useScenarioStore.setState({ scenarios, scenarioCounter, activeScenarioId })
   } finally {
     isApplyingRemote = false
   }
@@ -190,6 +194,7 @@ function shouldApplyToZustand(event: { transaction: { local: boolean; origin: un
 function handleRemoteComponentsChange(event: Y.YMapEvent<string>) {
   if (!shouldApplyToZustand(event)) return
   isApplyingRemote = true
+  lastModelChangeWasRemote = true
   try {
     const componentsMap = yDoc!.getMap('components')
     const components: Record<string, Component> = {}
@@ -205,6 +210,7 @@ function handleRemoteComponentsChange(event: Y.YMapEvent<string>) {
 function handleRemoteChainsChange(event: Y.YMapEvent<string>) {
   if (!shouldApplyToZustand(event)) return
   isApplyingRemote = true
+  lastModelChangeWasRemote = true
   try {
     const chainsMap = yDoc!.getMap('chains')
     const chains: Record<string, CausalChain> = {}
@@ -220,6 +226,7 @@ function handleRemoteChainsChange(event: Y.YMapEvent<string>) {
 function handleRemoteScenariosChange(event: Y.YMapEvent<string>) {
   if (!shouldApplyToZustand(event)) return
   isApplyingRemote = true
+  lastModelChangeWasRemote = true
   try {
     const scenariosMap = yDoc!.getMap('scenarios')
     const scenarios: Record<string, Scenario> = {}
@@ -239,8 +246,9 @@ function handleRemoteMetaChange(event: Y.YMapEvent<unknown>) {
     const metaMap = yDoc!.getMap('meta')
     const componentCounter = (metaMap.get('componentCounter') as number) || 0
     const scenarioCounter = (metaMap.get('scenarioCounter') as number) || 0
+    const activeScenarioId = (metaMap.get('activeScenarioId') as string | null) || null
     useModelStore.setState({ componentCounter })
-    useScenarioStore.setState({ scenarioCounter })
+    useScenarioStore.setState({ scenarioCounter, activeScenarioId })
   } finally {
     isApplyingRemote = false
   }
@@ -313,6 +321,7 @@ export function onActivitiesChange(callback: () => void): () => void {
 
 function handleLocalModelChange() {
   if (isApplyingRemote || !yDoc) return
+  lastModelChangeWasRemote = false
   const { components, chains, componentCounter } = useModelStore.getState()
 
   // Activity tracking — detect changes before sync
@@ -395,7 +404,8 @@ function handleLocalModelChange() {
 
 function handleLocalScenarioChange() {
   if (isApplyingRemote || !yDoc) return
-  const { scenarios, scenarioCounter } = useScenarioStore.getState()
+  lastModelChangeWasRemote = false
+  const { scenarios, scenarioCounter, activeScenarioId } = useScenarioStore.getState()
 
   // Activity tracking for scenarios
   const scenariosMap = yDoc.getMap('scenarios')
@@ -437,6 +447,7 @@ function handleLocalScenarioChange() {
 
     const metaMap = yDoc!.getMap('meta')
     metaMap.set('scenarioCounter', scenarioCounter)
+    metaMap.set('activeScenarioId', activeScenarioId)
   }, yDoc.clientID)
 }
 
