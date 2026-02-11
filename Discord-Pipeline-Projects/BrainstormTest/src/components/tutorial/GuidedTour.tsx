@@ -25,6 +25,19 @@ export function GuidedTour() {
     endTour()
   }, [endTour])
 
+  // Inject CSS to allow interaction during action steps
+  useEffect(() => {
+    const style = document.createElement('style')
+    style.setAttribute('data-tutorial-styles', '')
+    style.textContent = `
+      body.tutorial-action-active .driver-overlay {
+        pointer-events: none !important;
+      }
+    `
+    document.head.appendChild(style)
+    return () => style.remove()
+  }, [])
+
   // Handle skip-action custom events from the popover HTML
   useEffect(() => {
     function handleSkipAction(e: Event) {
@@ -32,13 +45,28 @@ export function GuidedTour() {
       if (detail && typeof detail.step === 'number') {
         completeAction(detail.step)
         if (driverRef.current && driverRef.current.isActive()) {
-          driverRef.current.moveNext()
+          const phaseConfig = activePhaseRef.current ? getPhase(activePhaseRef.current) : null
+          const total = phaseConfig?.steps.length ?? 0
+          const currentIdx = driverRef.current.getActiveIndex() ?? 0
+          if (currentIdx >= total - 1) {
+            // Last step skipped — complete the phase
+            driverRef.current.destroy()
+            driverRef.current = null
+            completeCurrentPhase()
+            document.dispatchEvent(
+              new CustomEvent('tutorial-phase-complete', {
+                detail: { phase: activePhaseRef.current },
+              })
+            )
+          } else {
+            driverRef.current.moveNext()
+          }
         }
       }
     }
     document.addEventListener('tutorial-skip-action', handleSkipAction)
     return () => document.removeEventListener('tutorial-skip-action', handleSkipAction)
-  }, [completeAction])
+  }, [completeAction, completeCurrentPhase])
 
   useEffect(() => {
     if (!tourActive || !activePhase) {

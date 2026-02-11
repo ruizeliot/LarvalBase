@@ -123,10 +123,27 @@ export async function startTutorialPhase(page: Page, phaseNumber: number) {
 
 /**
  * Skip the current tutorial step via the "Skip Step" link.
+ * Only works when an action is pending (link is visible).
  */
 export async function skipTutorialStep(page: Page) {
   await page.locator('[data-testid="tutorial-skip-action"]').click()
   await page.waitForTimeout(300)
+}
+
+/**
+ * Advance past the current tutorial step by any means:
+ * - If action is pending → click "Skip Step"
+ * - If action is already complete or no action required → click "Next"
+ * Use this instead of skipTutorialStep when model state may auto-complete actions.
+ */
+export async function advanceTutorialStep(page: Page) {
+  const actionPending = await page.locator('[data-testid="tutorial-action-prompt"]').isVisible().catch(() => false)
+  if (actionPending) {
+    await page.locator('[data-testid="tutorial-skip-action"]').click()
+  } else {
+    await page.locator('.driver-popover-next-btn').click()
+  }
+  await page.waitForTimeout(400)
 }
 
 /**
