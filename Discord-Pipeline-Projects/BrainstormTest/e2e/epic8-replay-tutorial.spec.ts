@@ -1,10 +1,16 @@
 import { test, expect } from '@playwright/test'
 
-/** Navigate to app with tutorial already dismissed */
+/** Navigate to app with tutorial welcome already dismissed */
 async function skipTutorial(page: import('@playwright/test').Page) {
   await page.goto('/')
   await page.evaluate(() => {
-    localStorage.setItem('cascadesim-tutorial-complete', 'true')
+    localStorage.setItem('cascadesim-tutorial-progress', JSON.stringify({
+      phase1: { status: 'available', stepsCompleted: [] },
+      phase2: { status: 'locked', stepsCompleted: [] },
+      phase3: { status: 'locked', stepsCompleted: [] },
+      phase4: { status: 'locked', stepsCompleted: [] },
+      welcomeSeen: true,
+    }))
   })
   await page.goto('/')
   await page.waitForSelector('.react-flow')
@@ -27,48 +33,51 @@ test.describe('Epic 8 - US-8.4: Replay Tutorial via Help Button', () => {
     await expect(helpBtn).toBeVisible()
   })
 
-  test('TC-8.4.2: Help menu opens with expected options', async ({ page }) => {
+  test('TC-8.4.2: Help button opens tutorial menu with phase cards', async ({ page }) => {
     await skipTutorial(page)
 
     // Click "?" button
     await page.getByTestId('help-button').click()
 
-    // Assert help menu appears
-    const menu = page.getByTestId('help-menu')
+    // Assert tutorial menu appears (E11 progressive tutorial)
+    const menu = page.getByTestId('tutorial-menu')
     await expect(menu).toBeVisible()
 
-    // Assert options
-    await expect(page.getByTestId('help-replay-tutorial')).toBeVisible()
-    await expect(page.getByTestId('help-keyboard-shortcuts')).toBeVisible()
+    // Assert 4 phase cards are visible
+    await expect(page.locator('[data-testid="tutorial-phase-1"]')).toBeVisible()
+    await expect(page.locator('[data-testid="tutorial-phase-2"]')).toBeVisible()
+    await expect(page.locator('[data-testid="tutorial-phase-3"]')).toBeVisible()
+    await expect(page.locator('[data-testid="tutorial-phase-4"]')).toBeVisible()
   })
 
-  test('TC-8.4.3: "Replay Tutorial" starts the walkthrough', async ({ page }) => {
+  test('TC-8.4.3: Starting Phase 1 from menu begins the walkthrough', async ({ page }) => {
     await skipTutorial(page)
 
-    // Click "?" then "Replay Tutorial"
+    // Click "?" then start Phase 1
     await page.getByTestId('help-button').click()
-    await page.getByTestId('help-replay-tutorial').click()
+    await expect(page.getByTestId('tutorial-menu')).toBeVisible()
+    await page.locator('[data-testid="tutorial-phase-1"]').click()
 
     // Assert tour starts
     const popover = page.locator('.driver-popover')
-    await expect(popover).toBeVisible({ timeout: 2000 })
+    await expect(popover).toBeVisible({ timeout: 3000 })
 
-    // Assert step 1 title (Welcome)
-    await expect(popover.locator('.driver-popover-title')).toContainText('Welcome')
+    // Assert step 1 title
+    await expect(popover.locator('.driver-popover-title')).toContainText('Drag a Component')
 
-    // Assert progress shows step 1
-    await expect(popover.locator('.driver-popover-progress-text')).toContainText('1 of 7')
+    // Assert step counter shows step 1
+    await expect(popover.locator('[data-testid="step-counter"]')).toContainText('Step 1 of 5')
   })
 
-  test('TC-8.4.4: Help menu closes when clicking outside', async ({ page }) => {
+  test('TC-8.4.4: Tutorial menu closes when clicking outside', async ({ page }) => {
     await skipTutorial(page)
 
     // Open menu
     await page.getByTestId('help-button').click()
-    const menu = page.getByTestId('help-menu')
+    const menu = page.getByTestId('tutorial-menu')
     await expect(menu).toBeVisible()
 
-    // Click on canvas area (use force to bypass React Flow event handling)
+    // Click on canvas area
     await page.mouse.click(400, 300)
 
     // Assert menu dismissed
@@ -113,14 +122,11 @@ test.describe('Epic 8 - US-8.4: Replay Tutorial via Help Button', () => {
     const nodesBefore = await page.locator('.react-flow__node').count()
     expect(nodesBefore).toBeGreaterThan(0)
 
-    // Click "?" then "Replay Tutorial"
+    // Start Phase 1 from tutorial menu
     await page.getByTestId('help-button').click()
-    await page.getByTestId('help-replay-tutorial').click()
-    await expect(page.locator('.driver-popover')).toBeVisible({ timeout: 2000 })
-
-    // Navigate forward a few steps
-    await page.locator('.driver-popover .driver-popover-next-btn').click()
-    await page.waitForTimeout(300)
+    await expect(page.getByTestId('tutorial-menu')).toBeVisible()
+    await page.locator('[data-testid="tutorial-phase-1"]').click()
+    await expect(page.locator('.driver-popover')).toBeVisible({ timeout: 3000 })
 
     // Press Esc to dismiss
     await page.keyboard.press('Escape')

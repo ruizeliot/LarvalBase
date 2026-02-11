@@ -4,7 +4,7 @@
     {
       "origin": "http://localhost:5173",
       "localStorage": [
-        { "name": "cascadesim-tutorial-complete", "value": "true" }
+        { "name": "cascadesim-tutorial-progress", "value": "{\"phase1\":{\"status\":\"available\",\"stepsCompleted\":[]},\"phase2\":{\"status\":\"locked\",\"stepsCompleted\":[]},\"phase3\":{\"status\":\"locked\",\"stepsCompleted\":[]},\"phase4\":{\"status\":\"locked\",\"stepsCompleted\":[]},\"welcomeSeen\":true}" }
       ]
     }
   ]

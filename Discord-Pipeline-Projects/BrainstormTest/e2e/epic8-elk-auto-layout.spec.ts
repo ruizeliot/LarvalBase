@@ -90,8 +90,8 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     const relayoutBtn = page.getByTestId('relayout-button')
     await expect(relayoutBtn).toBeVisible()
 
-    // Click "Re-Layout"
-    await relayoutBtn.click()
+    // Click dropdown toggle to open layout options
+    await page.getByTestId('relayout-dropdown-toggle').click()
 
     // Assert dropdown menu appears with options: "LR", "TB", "Compact"
     await expect(page.getByTestId('relayout-option-lr')).toBeVisible()
@@ -109,7 +109,7 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     const lrYSpread = Math.max(...lrBoxes.map((b) => b.y)) - Math.min(...lrBoxes.map((b) => b.y))
 
     // Click "Re-Layout" > "TB"
-    await page.getByTestId('relayout-button').click()
+    await page.getByTestId('relayout-dropdown-toggle').click()
     await page.getByTestId('relayout-option-tb').click()
 
     // Wait for layout animation to complete
@@ -135,7 +135,7 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     await expect(page.locator('.react-flow__node-component')).toHaveCount(7)
 
     // Apply LR layout first
-    await page.getByTestId('relayout-button').click()
+    await page.getByTestId('relayout-dropdown-toggle').click()
     await page.getByTestId('relayout-option-lr').click()
     await page.waitForTimeout(500)
 
@@ -155,7 +155,7 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     const lrAvgDist = lrTotalDist / pairCount
 
     // Apply Compact layout
-    await page.getByTestId('relayout-button').click()
+    await page.getByTestId('relayout-dropdown-toggle').click()
     await page.getByTestId('relayout-option-compact').click()
     await page.waitForTimeout(500)
 
@@ -201,7 +201,7 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     expect(sortedByX[0].x).toBeLessThan(sortedByX[1].x)
 
     // Click "Re-Layout" > "TB"
-    await page.getByTestId('relayout-button').click()
+    await page.getByTestId('relayout-dropdown-toggle').click()
     await page.getByTestId('relayout-option-tb').click()
     await page.waitForTimeout(500)
 
@@ -235,7 +235,7 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     }
 
     // Click "Re-Layout" > "TB"
-    await page.getByTestId('relayout-button').click()
+    await page.getByTestId('relayout-dropdown-toggle').click()
     await page.getByTestId('relayout-option-tb').click()
     await page.waitForTimeout(500)
 
@@ -268,7 +268,7 @@ test.describe('Epic 8 - US-8.7: ELK.js Auto-Layout', () => {
     await page.mouse.up()
 
     // Click "Re-Layout" > "LR"
-    await page.getByTestId('relayout-button').click()
+    await page.getByTestId('relayout-dropdown-toggle').click()
     await page.getByTestId('relayout-option-lr').click()
     await page.waitForTimeout(500)
 

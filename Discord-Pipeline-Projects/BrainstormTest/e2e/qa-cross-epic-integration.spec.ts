@@ -119,18 +119,14 @@ test.describe('QA Cross-Epic Integration', () => {
     test('TC-QA-2.1: Remote model changes do NOT advance local tutorial step', async ({ browser }) => {
       const { contextA, pageA, contextB, pageB } = await openTwoContextsInRoom(browser)
 
-      // Alice starts the tutorial via help button → replay tutorial
+      // Alice starts Phase 1 from the tutorial menu
       await pageA.getByTestId('help-button').click()
-      await expect(pageA.getByTestId('help-menu')).toBeVisible()
-      await pageA.getByTestId('help-replay-tutorial').click()
+      await expect(pageA.getByTestId('tutorial-menu')).toBeVisible()
+      await pageA.locator('[data-testid="tutorial-phase-1"]').click()
 
-      // Wait for driver.js to initialize and show popover (step 0 = Welcome)
+      // Wait for driver.js to initialize and show popover (step 1 = Drag a Component)
       const driverPopover = pageA.locator('.driver-popover')
       await expect(driverPopover).toBeVisible({ timeout: 3000 })
-
-      // Click Next to advance from step 0 (Welcome) to step 1 (Drag component)
-      await pageA.locator('.driver-popover-next-btn').click()
-      await pageA.waitForTimeout(500)
 
       // Verify we're on step 1 — the action prompt should be visible
       const actionPrompt = pageA.locator('[data-testid="tutorial-action-prompt"]')
@@ -188,8 +184,8 @@ test.describe('QA Cross-Epic Integration', () => {
       const nodeABefore = await pageB.locator('.react-flow__node').filter({ hasText: 'NodeA' }).boundingBox()
       const nodeBBefore = await pageB.locator('.react-flow__node').filter({ hasText: 'NodeB' }).boundingBox()
 
-      // Alice clicks Re-Layout → Left-to-Right
-      await pageA.getByTestId('relayout-button').click()
+      // Alice clicks Re-Layout dropdown → Left-to-Right
+      await pageA.getByTestId('relayout-dropdown-toggle').click()
       await pageA.getByTestId('relayout-option-lr').click()
 
       // Wait for ELK + sync
