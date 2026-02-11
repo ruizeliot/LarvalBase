@@ -16,7 +16,7 @@ let lastModelChangeWasRemote = false
 let storeUnsubscribers: (() => void)[] = []
 let heartbeatInterval: ReturnType<typeof setInterval> | null = null
 
-const WS_URL = (import.meta as Record<string, Record<string, string>>).env?.VITE_YJS_WS_URL || 'ws://localhost:1234'
+const WS_URL = import.meta.env?.VITE_WS_URL || 'ws://localhost:1234'
 
 const USER_COLORS = [
   '#3b82f6', '#22c55e', '#f59e0b', '#ef4444',
