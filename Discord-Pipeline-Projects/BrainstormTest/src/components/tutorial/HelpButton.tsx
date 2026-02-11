@@ -7,10 +7,27 @@ interface HelpButtonProps {
   autoOpen?: boolean
 }
 
-export function HelpButton({ highlightPhase, autoOpen }: HelpButtonProps) {
+export function HelpButton({ highlightPhase: initialHighlight, autoOpen }: HelpButtonProps) {
   const [menuOpen, setMenuOpen] = useState(autoOpen ?? false)
+  const [highlightPhase, setHighlightPhase] = useState(initialHighlight)
 
-  const closeMenu = useCallback(() => setMenuOpen(false), [])
+  const closeMenu = useCallback(() => {
+    setMenuOpen(false)
+    setHighlightPhase(undefined)
+  }, [])
+
+  // Listen for programmatic open (e.g., from WelcomeOverlay "Start Tutorial")
+  useEffect(() => {
+    function handleOpenMenu(e: Event) {
+      const detail = (e as CustomEvent).detail
+      setMenuOpen(true)
+      if (detail?.highlightPhase) {
+        setHighlightPhase(detail.highlightPhase)
+      }
+    }
+    document.addEventListener('open-tutorial-menu', handleOpenMenu)
+    return () => document.removeEventListener('open-tutorial-menu', handleOpenMenu)
+  }, [])
 
   useEffect(() => {
     if (!menuOpen) return

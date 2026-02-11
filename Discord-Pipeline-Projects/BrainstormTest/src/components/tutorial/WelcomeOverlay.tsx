@@ -58,7 +58,10 @@ export function WelcomeOverlay({ onStartTutorial }: WelcomeOverlayProps) {
     if (onStartTutorial) {
       onStartTutorial()
     } else {
-      startPhase(1)
+      // Open tutorial menu with Phase 1 highlighted
+      document.dispatchEvent(
+        new CustomEvent('open-tutorial-menu', { detail: { highlightPhase: 1 } })
+      )
     }
   }
 

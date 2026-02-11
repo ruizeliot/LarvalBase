@@ -169,8 +169,9 @@ test.describe('E11 US-11.1: Tutorial Phase System & Progress UI', () => {
     await page.locator('[data-testid="start-tutorial-button"]').click()
     await expect(page.locator('[data-testid="welcome-overlay"]')).not.toBeVisible()
 
-    // Driver.js popover should appear (Phase 1 starts)
-    await expect(page.locator('.driver-popover')).toBeVisible({ timeout: 3000 })
+    // Tutorial menu should open with Phase 1 visible
+    await expect(page.locator('[data-testid="tutorial-menu"]')).toBeVisible({ timeout: 3000 })
+    await expect(page.locator('[data-testid="tutorial-phase-1"]')).toBeVisible()
   })
 
   // TC-11.1.9: Close and reopen tutorial menu preserves state
