@@ -5,6 +5,7 @@ import type { Component, CausalChain } from '@/types/model'
 import type { Scenario } from '@/types/scenario'
 import { useModelStore } from '@/store/modelStore'
 import { useScenarioStore } from '@/store/scenarioStore'
+import { useSimulationStore } from '@/store/simulationStore'
 
 // --- State ---
 let yDoc: Y.Doc | null = null
@@ -183,6 +184,14 @@ function pullStateFromYjs() {
   }
 }
 
+// --- Simulation invalidation on remote model changes ---
+function invalidateSimulationIfNeeded() {
+  const simState = useSimulationStore.getState()
+  if (simState.result) {
+    simState.reset()
+  }
+}
+
 // --- Remote → Zustand observers ---
 // Allow through: remote transactions AND local undo/redo transactions (origin === undoManager)
 function shouldApplyToZustand(event: { transaction: { local: boolean; origin: unknown } }): boolean {
@@ -202,6 +211,8 @@ function handleRemoteComponentsChange(event: Y.YMapEvent<string>) {
       components[key] = JSON.parse(value as string)
     })
     useModelStore.setState({ components })
+    // Invalidate simulation results when remote user changes model
+    invalidateSimulationIfNeeded()
   } finally {
     isApplyingRemote = false
   }
@@ -218,6 +229,8 @@ function handleRemoteChainsChange(event: Y.YMapEvent<string>) {
       chains[key] = JSON.parse(value as string)
     })
     useModelStore.setState({ chains })
+    // Invalidate simulation results when remote user changes model
+    invalidateSimulationIfNeeded()
   } finally {
     isApplyingRemote = false
   }

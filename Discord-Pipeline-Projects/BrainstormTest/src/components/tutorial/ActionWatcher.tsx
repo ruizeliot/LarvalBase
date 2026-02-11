@@ -4,6 +4,7 @@ import { useModelStore } from '@/store/modelStore'
 import { useScenarioStore } from '@/store/scenarioStore'
 import { useSimulationStore } from '@/store/simulationStore'
 import { useUiStore } from '@/store/uiStore'
+import { wasLastModelChangeRemote } from '@/lib/collaboration'
 
 /**
  * Watches for user actions during the tutorial and marks steps as complete.
@@ -36,6 +37,11 @@ export function ActionWatcher() {
   // Step 1: Drag first component onto canvas
   useEffect(() => {
     if (!tourActive) return
+    // Ignore remote model changes (collab sync) — only local actions should advance tutorial
+    if (wasLastModelChangeRemote()) {
+      prevComponentCount.current = Object.keys(components).length
+      return
+    }
 
     const componentCount = Object.keys(components).length
     if (componentCount > prevComponentCount.current && currentStep === 1 && !completedActions.has(1)) {
@@ -57,6 +63,13 @@ export function ActionWatcher() {
     for (const [id, comp] of Object.entries(components)) {
       currentNames[id] = comp.name
       currentParamCounts[id] = comp.parameters.length
+    }
+
+    // Ignore remote model changes (collab sync)
+    if (wasLastModelChangeRemote()) {
+      prevComponentNames.current = currentNames
+      prevParamCounts.current = currentParamCounts
+      return
     }
 
     if (currentStep === 2 && !completedActions.has(2)) {
@@ -95,6 +108,11 @@ export function ActionWatcher() {
   // Step 5: Load a scenario from the Library (scenario count increases)
   useEffect(() => {
     if (!tourActive) return
+    // Ignore remote scenario changes (collab sync)
+    if (wasLastModelChangeRemote()) {
+      prevScenarioCount.current = Object.keys(scenarios).length
+      return
+    }
 
     const scenarioCount = Object.keys(scenarios).length
     if (scenarioCount > prevScenarioCount.current && currentStep === 5 && !completedActions.has(5)) {
