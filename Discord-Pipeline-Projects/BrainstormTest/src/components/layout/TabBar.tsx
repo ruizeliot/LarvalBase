@@ -2,6 +2,7 @@ import { useUiStore, type AppMode } from '@/store/uiStore'
 import { useCollaborationStore } from '@/store/collaborationStore'
 import { cn } from '@/lib/utils'
 import { Boxes, FileText, Play, BookOpen, Users, Undo2, Redo2 } from 'lucide-react'
+import { PresenceBar } from '@/components/collaboration/PresenceBar'
 
 const tabs: { mode: AppMode; label: string; icon: React.ReactNode; disabled: boolean }[] = [
   { mode: 'editor', label: 'Editor', icon: <Boxes size={16} />, disabled: false },
@@ -95,6 +96,8 @@ export function TabBar() {
           </button>
         </div>
       )}
+
+      <PresenceBar />
 
       <button
         data-testid="library-button"

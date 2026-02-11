@@ -12,6 +12,7 @@ let wsProvider: WebsocketProvider | null = null
 let undoManager: Y.UndoManager | null = null
 let isApplyingRemote = false
 let storeUnsubscribers: (() => void)[] = []
+let heartbeatInterval: ReturnType<typeof setInterval> | null = null
 
 const WS_URL = (import.meta as Record<string, Record<string, string>>).env?.VITE_YJS_WS_URL || 'ws://localhost:1234'
 
@@ -76,11 +77,22 @@ function initYjsDoc(roomId: string, displayName: string) {
   wsProvider = new WebsocketProvider(WS_URL, `cascadesim-${roomId}`, yDoc)
 
   const colorIndex = yDoc.clientID % USER_COLORS.length
-  wsProvider.awareness.setLocalStateField('user', {
+  const userState = {
     name: displayName,
     color: USER_COLORS[colorIndex],
     clientID: yDoc.clientID,
-  })
+    ts: Date.now(),
+  }
+  wsProvider.awareness.setLocalStateField('user', userState)
+
+  // Heartbeat: refresh awareness timestamp so others can detect disconnects
+  if (heartbeatInterval) clearInterval(heartbeatInterval)
+  heartbeatInterval = setInterval(() => {
+    wsProvider?.awareness.setLocalStateField('user', {
+      ...userState,
+      ts: Date.now(),
+    })
+  }, 1000)
 
   // Yjs shared maps
   const componentsMap = yDoc.getMap('components')
@@ -307,6 +319,10 @@ export function canRedo(): boolean { return (undoManager?.redoStack.length ?? 0)
 export function disconnect() {
   storeUnsubscribers.forEach(unsub => unsub())
   storeUnsubscribers = []
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval)
+    heartbeatInterval = null
+  }
   undoManager?.destroy()
   undoManager = null
   wsProvider?.disconnect()
@@ -318,12 +334,18 @@ export function disconnect() {
 
 // --- Awareness Helpers ---
 
+const USER_STALE_MS = 4000
+
 export function getParticipants(): Array<{ clientID: number; name: string; color: string }> {
-  if (!wsProvider) return []
+  if (!wsProvider || !yDoc) return []
+  const localClientID = yDoc.clientID
+  const now = Date.now()
   const states = wsProvider.awareness.getStates()
   const participants: Array<{ clientID: number; name: string; color: string }> = []
   states.forEach((state, clientID) => {
     if (state.user) {
+      // Skip stale remote users (heartbeat not received recently)
+      if (clientID !== localClientID && state.user.ts && now - state.user.ts > USER_STALE_MS) return
       participants.push({
         clientID,
         name: state.user.name,
