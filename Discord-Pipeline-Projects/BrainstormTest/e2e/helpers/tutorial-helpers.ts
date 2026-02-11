@@ -160,16 +160,16 @@ export async function dismissTutorial(page: Page) {
  */
 export async function skipWelcomeOverlay(page: Page) {
   await page.evaluate(() => {
-    const raw = localStorage.getItem('cascadesim-tutorial-progress')
-    const progress = raw ? JSON.parse(raw) : {
+    // Remove old V2 tutorial key that triggers migration (marks Phase 1 complete)
+    localStorage.removeItem('cascadesim-tutorial-complete')
+    // Set clean progress with welcomeSeen: true
+    localStorage.setItem('cascadesim-tutorial-progress', JSON.stringify({
       phase1: { status: 'available', stepsCompleted: [] },
       phase2: { status: 'locked', stepsCompleted: [] },
       phase3: { status: 'locked', stepsCompleted: [] },
       phase4: { status: 'locked', stepsCompleted: [] },
-      welcomeSeen: false,
-    }
-    progress.welcomeSeen = true
-    localStorage.setItem('cascadesim-tutorial-progress', JSON.stringify(progress))
+      welcomeSeen: true,
+    }))
   })
   await page.reload()
   await page.waitForTimeout(500)

@@ -138,8 +138,9 @@ export const useTutorialStore = create<TutorialState>((set, get) => ({
 
     if (phaseProgress.status === 'locked') return
 
+    // stepsCompleted stores 1-based numbers; max 1-based == next 0-based index
     const nextStep = phaseProgress.stepsCompleted.length > 0
-      ? Math.max(...phaseProgress.stepsCompleted) + 1
+      ? Math.max(...phaseProgress.stepsCompleted)
       : 0
 
     const phaseConfig = getPhase(phase)
