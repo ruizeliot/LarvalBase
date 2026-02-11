@@ -193,23 +193,39 @@ function SimulateBottomContent() {
       </div>
 
       {/* Row 3: Event log */}
-      <div data-testid="sim-event-log" className="flex-1 overflow-y-auto px-4 py-1">
-        {visibleEvents.length === 0 ? (
-          <p className="text-[10px] text-[var(--color-text-muted)] py-1">No events yet</p>
-        ) : (
-          visibleEvents.map((event, i) => (
-            <div key={i} data-testid="event-log-entry" className="text-[10px] py-0.5 flex items-center gap-1">
-              <span className="font-mono text-[var(--color-primary)]">t={event.time}</span>
-              <span className={event.type === 'forced' ? 'text-[var(--color-accent-orange)]' : 'text-[var(--color-text-muted)]'}>
-                {event.type === 'forced' ? '[forced]' : '[cascade]'}
-              </span>
-              <span className="text-[var(--color-text)]">
-                {event.componentName}.{event.parameterName}
-              </span>
-              <span className="text-[var(--color-text-muted)]">{event.oldValue} → {event.newValue}</span>
-            </div>
-          ))
-        )}
+      <div data-testid="event-log" className="flex-1 overflow-hidden flex flex-col">
+        <div data-testid="sim-event-log" className="flex-1 overflow-y-auto px-4 py-1">
+          {visibleEvents.length === 0 ? (
+            <p className="text-[10px] text-[var(--color-text-muted)] py-1">No events yet</p>
+          ) : (
+            visibleEvents.map((event, i) => (
+              <div
+                key={i}
+                data-testid="event-log-entry"
+                className="text-[10px] py-0.5 flex items-center gap-1 cursor-pointer hover:bg-[var(--color-surface-hover)] rounded px-1 -mx-1"
+                onClick={() => {
+                  if (!result) return
+                  const index = result.timesteps.findIndex((ts) => ts.time === event.time)
+                  if (index >= 0) {
+                    scrubTo(index)
+                  }
+                  document.dispatchEvent(
+                    new CustomEvent('tutorial-action', { detail: { actionType: 'event-log-click' } })
+                  )
+                }}
+              >
+                <span className="font-mono text-[var(--color-primary)]">t={event.time}</span>
+                <span className={event.type === 'forced' ? 'text-[var(--color-accent-orange)]' : 'text-[var(--color-text-muted)]'}>
+                  {event.type === 'forced' ? '[forced]' : '[cascade]'}
+                </span>
+                <span className="text-[var(--color-text)]">
+                  {event.componentName}.{event.parameterName}
+                </span>
+                <span className="text-[var(--color-text-muted)]">{event.oldValue} → {event.newValue}</span>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   )

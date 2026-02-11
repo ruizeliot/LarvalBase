@@ -3,6 +3,7 @@ import { driver, type Driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { useTutorialStore } from '@/store/tutorialStore'
 import { getPhase } from './tutorialConfig'
+import { preloadPhase3Model } from './tutorialPreload'
 
 export function GuidedTour() {
   const tourActive = useTutorialStore((s) => s.tourActive)
@@ -14,6 +15,7 @@ export function GuidedTour() {
   const completeAction = useTutorialStore((s) => s.completeAction)
   const completeCurrentPhase = useTutorialStore((s) => s.completeCurrentPhase)
   const driverRef = useRef<Driver | null>(null)
+  const keydownRef = useRef<((e: KeyboardEvent) => void) | null>(null)
 
   const completedActionsRef = useRef(completedActions)
   completedActionsRef.current = completedActions
@@ -82,10 +84,11 @@ export function GuidedTour() {
     const phaseConfig = getPhase(activePhase)
     if (!phaseConfig) return
 
-    const steps = phaseConfig.steps
-    const totalSteps = steps.length
+    function createDriverInstance() {
+      const steps = phaseConfig!.steps
+      const totalSteps = steps.length
 
-    const driverInstance = driver({
+      const driverInst = driver({
       showProgress: true,
       animate: true,
       allowClose: true,
@@ -164,50 +167,69 @@ export function GuidedTour() {
       }),
     })
 
-    driverRef.current = driverInstance
+      driverRef.current = driverInst
 
-    // Start from the requested step (for resume)
-    if (currentStep > 0 && currentStep < totalSteps) {
-      driverInstance.drive(currentStep)
-    } else {
-      driverInstance.drive()
-    }
+      // Start from the requested step (for resume)
+      if (currentStep > 0 && currentStep < totalSteps) {
+        driverInst.drive(currentStep)
+      } else {
+        driverInst.drive()
+      }
 
-    // Arrow key navigation
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!driverRef.current || !driverRef.current.isActive()) return
-      if (e.key === 'ArrowRight') {
-        const currentIdx = driverRef.current.getActiveIndex() ?? 0
-        const currentTutStep = steps[currentIdx]
-        if (currentTutStep?.actionRequired && !completedActionsRef.current.has(currentIdx)) return
-        if (currentIdx >= totalSteps - 1) {
+      // Arrow key navigation
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (!driverRef.current || !driverRef.current.isActive()) return
+        if (e.key === 'ArrowRight') {
+          const currentIdx = driverRef.current.getActiveIndex() ?? 0
+          const currentTutStep = steps[currentIdx]
+          if (currentTutStep?.actionRequired && !completedActionsRef.current.has(currentIdx)) return
+          if (currentIdx >= totalSteps - 1) {
+            driverRef.current.destroy()
+            driverRef.current = null
+            completeCurrentPhase()
+            document.dispatchEvent(
+              new CustomEvent('tutorial-phase-complete', {
+                detail: { phase: activePhaseRef.current },
+              })
+            )
+          } else {
+            driverRef.current.moveNext()
+          }
+        } else if (e.key === 'ArrowLeft') {
+          const currentIdx = driverRef.current.getActiveIndex() ?? 0
+          if (currentIdx > 0) {
+            driverRef.current.movePrevious()
+          }
+        } else if (e.key === 'Escape') {
           driverRef.current.destroy()
           driverRef.current = null
-          completeCurrentPhase()
-          document.dispatchEvent(
-            new CustomEvent('tutorial-phase-complete', {
-              detail: { phase: activePhaseRef.current },
-            })
-          )
-        } else {
-          driverRef.current.moveNext()
+          handleDestroy()
         }
-      } else if (e.key === 'ArrowLeft') {
-        const currentIdx = driverRef.current.getActiveIndex() ?? 0
-        if (currentIdx > 0) {
-          driverRef.current.movePrevious()
+      }
+
+      document.addEventListener('keydown', handleKeyDown)
+      keydownRef.current = handleKeyDown
+    }
+
+    // Phase 3 needs pre-loaded model — delay driver creation for DOM update
+    if (activePhase === 3) {
+      preloadPhase3Model()
+      const timer = setTimeout(createDriverInstance, 300)
+      return () => {
+        clearTimeout(timer)
+        if (keydownRef.current) document.removeEventListener('keydown', keydownRef.current)
+        document.body.classList.remove('tutorial-action-active')
+        if (driverRef.current) {
+          driverRef.current.destroy()
+          driverRef.current = null
         }
-      } else if (e.key === 'Escape') {
-        driverRef.current.destroy()
-        driverRef.current = null
-        handleDestroy()
       }
     }
 
-    document.addEventListener('keydown', handleKeyDown)
+    createDriverInstance()
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown)
+      if (keydownRef.current) document.removeEventListener('keydown', keydownRef.current)
       document.body.classList.remove('tutorial-action-active')
       if (driverRef.current) {
         driverRef.current.destroy()
