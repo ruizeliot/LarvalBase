@@ -1,0 +1,8 @@
+{
+  "disabledMcpjsonServers": [
+    "n8n-mcp",
+    "hzos-dev-mcp",
+    "hostinger-api",
+    "google-forms-mcp"
+  ]
+}
