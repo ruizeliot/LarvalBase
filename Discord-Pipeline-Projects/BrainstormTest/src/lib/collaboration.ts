@@ -399,3 +399,39 @@ export function onAwarenessChange(callback: () => void): () => void {
   wsProvider.awareness.on('change', callback)
   return () => wsProvider?.awareness.off('change', callback)
 }
+
+// --- Edit Indicator Awareness ---
+
+export function setSelectedNode(nodeId: string | null) {
+  if (!wsProvider) return
+  wsProvider.awareness.setLocalStateField('selectedNode', nodeId)
+}
+
+export interface RemoteSelection {
+  clientID: number
+  name: string
+  color: string
+  nodeId: string
+}
+
+export function getRemoteSelections(): RemoteSelection[] {
+  if (!wsProvider || !yDoc) return []
+  const localClientID = yDoc.clientID
+  const now = Date.now()
+  const states = wsProvider.awareness.getStates()
+  const selections: RemoteSelection[] = []
+  states.forEach((state, clientID) => {
+    if (clientID === localClientID) return
+    if (state.user && state.selectedNode) {
+      // Filter out stale users
+      if (state.user.ts && now - state.user.ts > USER_STALE_MS) return
+      selections.push({
+        clientID,
+        name: state.user.name,
+        color: state.user.color,
+        nodeId: state.selectedNode,
+      })
+    }
+  })
+  return selections
+}

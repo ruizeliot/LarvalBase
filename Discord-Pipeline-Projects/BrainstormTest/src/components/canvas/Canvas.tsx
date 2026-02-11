@@ -37,7 +37,8 @@ import { Eye, EyeOff, LayoutGrid } from 'lucide-react'
 import type { ComponentType } from '@/types/model'
 import { computeElkLayout, type LayoutDirection } from '@/lib/elkLayout'
 import { LiveCursors } from '@/components/collaboration/LiveCursors'
-import { setCursorPosition } from '@/lib/collaboration'
+import { EditIndicators } from '@/components/collaboration/EditIndicators'
+import { setCursorPosition, setSelectedNode } from '@/lib/collaboration'
 import { useCollaborationStore } from '@/store/collaborationStore'
 
 const nodeTypes: NodeTypes = {
@@ -68,6 +69,7 @@ function CanvasInner() {
   const activeMode = useUiStore((s) => s.activeMode)
   const showInfoCards = useUiStore((s) => s.showInfoCards)
   const toggleInfoCards = useUiStore((s) => s.toggleInfoCards)
+  const connected = useCollaborationStore((s) => s.connected)
 
   // Subscribe to info card changes
   const infoCards = useSyncExternalStore(subscribeInfoCards, getActiveInfoCards)
@@ -253,14 +255,16 @@ function CanvasInner() {
       // Don't select info card nodes
       if (node.type === 'infoCard') return
       selectNode(node.id)
+      if (connected) setSelectedNode(node.id)
     },
-    [selectNode]
+    [selectNode, connected]
   )
 
   const onPaneClick = useCallback(() => {
     selectNode(null)
     closeContextMenu()
-  }, [selectNode, closeContextMenu])
+    if (connected) setSelectedNode(null)
+  }, [selectNode, closeContextMenu, connected])
 
   const onNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: Node) => {
@@ -294,8 +298,6 @@ function CanvasInner() {
     },
     [screenToFlowPosition, addComponent, selectNode]
   )
-
-  const connected = useCollaborationStore((s) => s.connected)
 
   const onMouseMove = useCallback(
     (event: React.MouseEvent) => {
@@ -376,6 +378,7 @@ function CanvasInner() {
         />
       </ReactFlow>
       <LiveCursors />
+      <EditIndicators />
       {/* Chain view toggle button */}
       <button
         data-testid="chain-view-toggle"
