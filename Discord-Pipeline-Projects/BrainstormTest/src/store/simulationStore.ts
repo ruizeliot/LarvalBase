@@ -229,3 +229,34 @@ export const useSimulationStore = create<SimulationStoreState>((set, get) => ({
       .flatMap((ts) => ts.events)
   },
 }))
+
+// Invalidate simulation results when model structure changes
+// (excludes position-only changes like node dragging)
+function getModelFingerprint(state: { components: Record<string, any>; chains: Record<string, any> }): string {
+  const comps = Object.values(state.components)
+    .map((c: any) => {
+      const params = (c.parameters || []).map((p: any) => `${p.name}=${p.value}`).sort().join(',')
+      const caps = (c.capacities || []).map((cap: any) => `${cap.name}:${cap.min}-${cap.max}`).sort().join(',')
+      return `${c.id}|${c.name}|${c.type}|${params}|${caps}`
+    })
+    .sort()
+    .join(';;')
+  const chs = Object.values(state.chains)
+    .map((ch: any) => `${ch.id}|${ch.sourceId}|${ch.targetId}|${ch.type}`)
+    .sort()
+    .join(';;')
+  return `${comps}|||${chs}`
+}
+
+let _prevModelFingerprint = getModelFingerprint(useModelStore.getState())
+
+useModelStore.subscribe((state) => {
+  const fingerprint = getModelFingerprint(state)
+  if (fingerprint !== _prevModelFingerprint) {
+    _prevModelFingerprint = fingerprint
+    const simState = useSimulationStore.getState()
+    if (simState.result) {
+      simState.reset()
+    }
+  }
+})

@@ -130,6 +130,15 @@ export function AppShell() {
 
   useCollaborationInit()
 
+  const reactFlow = useReactFlow()
+  const prevLeftOpen = useRef(leftPanelOpen)
+  useEffect(() => {
+    if (prevLeftOpen.current !== leftPanelOpen) {
+      setTimeout(() => reactFlow.fitView({ padding: 0.1, duration: 200 }), 50)
+      prevLeftOpen.current = leftPanelOpen
+    }
+  }, [leftPanelOpen, reactFlow])
+
   const isEditor = activeMode === 'editor'
   const isScenarios = activeMode === 'scenarios'
   const isSimulate = activeMode === 'simulate'
