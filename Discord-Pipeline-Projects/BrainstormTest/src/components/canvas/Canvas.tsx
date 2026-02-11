@@ -256,6 +256,10 @@ function CanvasInner() {
       if (node.type === 'infoCard') return
       selectNode(node.id)
       if (connected) setSelectedNode(node.id)
+      // Dispatch tutorial action for Phase 4 step 5 (co-editing)
+      document.dispatchEvent(
+        new CustomEvent('tutorial-action', { detail: { actionType: 'co-editing' } })
+      )
     },
     [selectNode, connected]
   )
@@ -307,6 +311,10 @@ function CanvasInner() {
         y: event.clientY,
       })
       setCursorPosition(flowPosition)
+      // Dispatch tutorial action for Phase 4 step 3 (live cursors)
+      document.dispatchEvent(
+        new CustomEvent('tutorial-action', { detail: { actionType: 'live-cursors' } })
+      )
     },
     [connected, screenToFlowPosition]
   )

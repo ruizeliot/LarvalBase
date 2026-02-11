@@ -3,7 +3,7 @@ import { driver, type Driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 import { useTutorialStore } from '@/store/tutorialStore'
 import { getPhase } from './tutorialConfig'
-import { preloadPhase3Model } from './tutorialPreload'
+import { preloadPhase3Model, preloadPhase4Model } from './tutorialPreload'
 
 export function GuidedTour() {
   const tourActive = useTutorialStore((s) => s.tourActive)
@@ -214,6 +214,21 @@ export function GuidedTour() {
     // Phase 3 needs pre-loaded model — delay driver creation for DOM update
     if (activePhase === 3) {
       preloadPhase3Model()
+      const timer = setTimeout(createDriverInstance, 300)
+      return () => {
+        clearTimeout(timer)
+        if (keydownRef.current) document.removeEventListener('keydown', keydownRef.current)
+        document.body.classList.remove('tutorial-action-active')
+        if (driverRef.current) {
+          driverRef.current.destroy()
+          driverRef.current = null
+        }
+      }
+    }
+
+    // Phase 4 needs pre-loaded model for co-editing step
+    if (activePhase === 4) {
+      preloadPhase4Model()
       const timer = setTimeout(createDriverInstance, 300)
       return () => {
         clearTimeout(timer)

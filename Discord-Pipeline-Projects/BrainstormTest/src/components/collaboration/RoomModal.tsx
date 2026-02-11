@@ -26,6 +26,10 @@ export function RoomModal() {
       await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+      // Dispatch tutorial action for Phase 4 step 2
+      document.dispatchEvent(
+        new CustomEvent('tutorial-action', { detail: { actionType: 'copy-link' } })
+      )
     }
   }
 

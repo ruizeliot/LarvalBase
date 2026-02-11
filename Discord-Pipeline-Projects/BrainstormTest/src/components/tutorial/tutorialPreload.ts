@@ -149,3 +149,38 @@ export function preloadPhase3Model() {
   useSimulationStore.getState().setSelectedScenario(IDS.scenario)
   useUiStore.getState().setActiveMode('simulate')
 }
+
+/**
+ * Pre-load a simple model for Phase 4 tutorial (Collaboration).
+ * Ensures at least 2 components exist on the canvas so user can select one
+ * during step 5 (co-editing). Stays in editor mode.
+ */
+export function preloadPhase4Model() {
+  const { components } = useModelStore.getState()
+  if (Object.keys(components).length >= 2) return
+
+  useModelStore.setState({
+    components: {
+      'tut4-server': {
+        id: 'tut4-server',
+        name: 'Server',
+        type: 'internal',
+        parameters: [{ id: 'tut4-p-load', name: 'load', value: 75 }],
+        capacities: [],
+        position: { x: 200, y: 200 },
+      },
+      'tut4-database': {
+        id: 'tut4-database',
+        name: 'Database',
+        type: 'internal',
+        parameters: [{ id: 'tut4-p-connections', name: 'connections', value: 50 }],
+        capacities: [],
+        position: { x: 500, y: 200 },
+      },
+    },
+    chains: {},
+    componentCounter: 2,
+  })
+
+  useUiStore.getState().setActiveMode('editor')
+}

@@ -16,6 +16,7 @@ import { GuidedTour } from '@/components/tutorial/GuidedTour'
 import { ActionWatcher } from '@/components/tutorial/ActionWatcher'
 import { HelpButton } from '@/components/tutorial/HelpButton'
 import { CompletionOverlay } from '@/components/tutorial/CompletionOverlay'
+import { TutorialCollabOverlay } from '@/components/tutorial/TutorialCollabOverlay'
 import { DisplayNamePrompt } from '@/components/collaboration/DisplayNamePrompt'
 import { RoomModal } from '@/components/collaboration/RoomModal'
 import { ConnectionError } from '@/components/collaboration/ConnectionError'
@@ -201,6 +202,7 @@ export function AppShell() {
       <ActionWatcher />
       <HelpButton />
       <CompletionOverlay />
+      <TutorialCollabOverlay />
       <DisplayNamePrompt />
       <RoomModal />
       <ConnectionError />

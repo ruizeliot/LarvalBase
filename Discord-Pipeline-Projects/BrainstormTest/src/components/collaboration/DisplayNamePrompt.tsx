@@ -24,6 +24,10 @@ export function DisplayNamePrompt() {
       confirmNameAndJoin(trimmed)
     } else {
       confirmNameAndCreate(trimmed)
+      // Dispatch tutorial action for Phase 4 step 1
+      document.dispatchEvent(
+        new CustomEvent('tutorial-action', { detail: { actionType: 'create-room' } })
+      )
     }
     setName('')
   }
