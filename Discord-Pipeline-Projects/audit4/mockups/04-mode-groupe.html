@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoyagePlan — Mode Groupe</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#2563eb;--bg:#f8fafc;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--success:#10b981;--danger:#ef4444;--radius:16px;--shadow:0 1px 3px rgba(0,0,0,.08)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden}
+.top-bar{display:flex;align-items:center;padding:12px 20px;gap:12px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.back{font-size:22px;cursor:pointer;color:var(--primary);background:none;border:none}
+.top-bar h1{font-size:17px;font-weight:600;flex:1}
+.invite-btn{background:var(--primary);color:#fff;border:none;padding:8px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.invite-btn:hover{opacity:.9;transform:translateY(-1px)}
+
+.tabs{display:flex;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:49px;z-index:15}
+.tab{flex:1;padding:12px;text-align:center;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;border:none;border-bottom:2px solid transparent;transition:all .2s;background:none;font-family:inherit}
+.tab.active{color:var(--primary);border-bottom-color:var(--primary)}
+
+.view{display:none;animation:fadeIn .3s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+
+/* MEMBERS */
+.members-grid{padding:20px;display:flex;flex-direction:column;gap:10px}
+.member{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);transition:all .2s;cursor:pointer}
+.member:hover{transform:translateX(4px)}
+.member-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff;flex-shrink:0}
+.member-info{flex:1}
+.member-info h3{font-size:14px;font-weight:600;display:flex;align-items:center;gap:6px}
+.member-info .role{font-size:10px;padding:1px 6px;border-radius:8px;background:#dbeafe;color:#1e40af;font-weight:600}
+.member-info .status{font-size:12px;color:var(--muted)}
+.online-dot{width:8px;height:8px;border-radius:50%;background:var(--success);flex-shrink:0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* SPLIT */
+.split-summary{margin:16px 20px;padding:20px;background:linear-gradient(135deg,#7c3aed,#a78bfa);border-radius:var(--radius);color:#fff}
+.split-summary .label{font-size:12px;text-transform:uppercase;letter-spacing:1px;opacity:.8;margin-bottom:8px}
+.split-summary h2{font-size:22px;font-weight:700;margin-bottom:4px}
+.split-summary .sub{font-size:13px;opacity:.85}
+
+.debts{padding:0 20px 20px}
+.debt{display:flex;align-items:center;gap:12px;padding:14px;background:var(--card);border-radius:12px;box-shadow:var(--shadow);margin-bottom:10px}
+.debt-avatars{display:flex;align-items:center;gap:4px;font-size:13px;font-weight:600;flex-shrink:0}
+.debt-ava{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff}
+.debt-arrow{color:var(--muted);font-size:16px;margin:0 4px}
+.debt-info{flex:1;min-width:0}
+.debt-info .debt-desc{font-size:13px;font-weight:500}
+.debt-info .debt-sub{font-size:11px;color:var(--muted)}
+.debt-amount{font-size:16px;font-weight:700;color:var(--danger);white-space:nowrap}
+.debt-amount.positive{color:var(--success)}
+.settle-btn{background:#d1fae5;color:#065f46;border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.settle-btn:hover{background:#a7f3d0}
+
+/* ACTIVITY */
+.activity-feed{padding:16px 20px 100px}
+.act-item{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.act-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:6px;flex-shrink:0}
+.act-content{flex:1}
+.act-content p{font-size:13px;line-height:1.4}
+.act-content p strong{font-weight:600}
+.act-content .act-time{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* INVITE MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:flex-end;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:430px;padding:24px;animation:slideUp .3s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.modal .modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px}
+.link-box{display:flex;gap:8px;margin-bottom:16px}
+.link-box input{flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;font-size:13px;background:var(--bg);font-family:inherit}
+.link-box button{padding:12px 18px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-weight:600;cursor:pointer;font-size:13px;transition:all .2s;font-family:inherit}
+.link-box button:hover{opacity:.9}
+.share-options{display:flex;gap:12px;justify-content:center;margin-bottom:16px}
+.share-opt{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;transition:transform .2s}
+.share-opt:hover{transform:scale(1.1)}
+.share-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px}
+.share-opt span{font-size:11px;color:var(--muted)}
+.modal-close{width:100%;padding:12px;background:var(--bg);border:none;border-radius:10px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit}
+
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:20}
+nav button.nb{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:4px 12px;font-family:inherit}
+nav button.nb.active{color:var(--primary)}
+nav .nav-icon{font-size:22px;line-height:1}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <button class="back">‹</button>
+  <h1>Groupe — Lisbonne 🇵🇹</h1>
+  <button class="invite-btn" onclick="document.querySelector('.modal-overlay').classList.add('show')">+ Inviter</button>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchView('members',this)">👥 Membres</button>
+  <button class="tab" onclick="switchView('split',this)">💸 Partage</button>
+  <button class="tab" onclick="switchView('activity',this)">📢 Activité</button>
+</div>
+
+<!-- MEMBERS -->
+<div class="view active" id="view-members">
+  <div class="members-grid">
+    <div class="member">
+      <div class="member-avatar" style="background:linear-gradient(135deg,#2563eb,#7c3aed)">AH</div>
+      <div class="member-info"><h3>Anthony <span class="role">Admin</span></h3><div class="status">En ligne · Modifie l'itinéraire</div></div>
+      <div class="online-dot"></div>
+    </div>
+    <div class="member">
+      <div class="member-avatar" style="background:linear-gradient(135deg,#ec4899,#f43f5e)">ML</div>
+      <div class="member-info"><h3>Marie Leclerc</h3><div class="status">En ligne · Vue budget</div></div>
+      <div class="online-dot"></div>
+    </div>
+    <div class="member">
+      <div class="member-avatar" style="background:linear-gradient(135deg,#f59e0b,#ef4444)">LD</div>
+      <div class="member-info"><h3>Lucas Dupont</h3><div class="status">Actif il y a 15 min</div></div>
+      <div class="online-dot" style="background:var(--warning)"></div>
+    </div>
+    <div class="member">
+      <div class="member-avatar" style="background:linear-gradient(135deg,#10b981,#059669)">SM</div>
+      <div class="member-info"><h3>Sophie Martin</h3><div class="status">Hors ligne · Vu hier</div></div>
+      <div class="online-dot" style="background:var(--border);animation:none"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SPLIT -->
+<div class="view" id="view-split">
+  <div class="split-summary">
+    <div class="label">Total dépenses groupe</div>
+    <h2>€347</h2>
+    <div class="sub">€86,75 par personne en moyenne</div>
+  </div>
+  <div class="section-title" style="padding:0 20px;font-size:14px;font-weight:600;color:var(--muted);margin-bottom:12px">Qui doit quoi ?</div>
+  <div class="debts">
+    <div class="debt">
+      <div class="debt-avatars">
+        <div class="debt-ava" style="background:#f59e0b">LD</div>
+        <span class="debt-arrow">→</span>
+        <div class="debt-ava" style="background:#2563eb">AH</div>
+      </div>
+      <div class="debt-info"><div class="debt-desc">Lucas doit à Anthony</div><div class="debt-sub">Resto + transport</div></div>
+      <div class="debt-amount">€23,50</div>
+    </div>
+    <div class="debt">
+      <div class="debt-avatars">
+        <div class="debt-ava" style="background:#10b981">SM</div>
+        <span class="debt-arrow">→</span>
+        <div class="debt-ava" style="background:#ec4899">ML</div>
+      </div>
+      <div class="debt-info"><div class="debt-desc">Sophie doit à Marie</div><div class="debt-sub">Hébergement</div></div>
+      <div class="debt-amount">€18,00</div>
+    </div>
+    <div class="debt">
+      <div class="debt-avatars">
+        <div class="debt-ava" style="background:#2563eb">AH</div>
+        <span class="debt-arrow">→</span>
+        <div class="debt-ava" style="background:#f59e0b">LD</div>
+      </div>
+      <div class="debt-info"><div class="debt-desc">Anthony doit à Lucas</div><div class="debt-sub">Billets Belém</div></div>
+      <div class="debt-amount">€8,00</div>
+    </div>
+  </div>
+  <div style="padding:0 20px"><button class="settle-btn" style="width:100%;padding:14px;font-size:14px;border-radius:12px">✅ Tout régler — Simplifier les dettes</button></div>
+</div>
+
+<!-- ACTIVITY -->
+<div class="view" id="view-activity">
+  <div class="activity-feed">
+    <div class="act-item"><div class="act-dot"></div><div class="act-content"><p><strong>Anthony</strong> a ajouté <strong>LX Factory</strong> à l'itinéraire J1</p><div class="act-time">Il y a 5 min</div></div></div>
+    <div class="act-item"><div class="act-dot" style="background:var(--success)"></div><div class="act-content"><p><strong>Marie</strong> a ajouté une dépense : <strong>Uber → Belém (€12)</strong></p><div class="act-time">Il y a 20 min</div></div></div>
+    <div class="act-item"><div class="act-dot" style="background:#f59e0b"></div><div class="act-content"><p><strong>Lucas</strong> a voté pour <strong>Soirée Fado</strong> 🎵</p><div class="act-time">Il y a 45 min</div></div></div>
+    <div class="act-item"><div class="act-dot" style="background:#7c3aed"></div><div class="act-content"><p><strong>Sophie</strong> a rejoint le voyage via le lien d'invitation</p><div class="act-time">Il y a 2h</div></div></div>
+    <div class="act-item"><div class="act-dot"></div><div class="act-content"><p><strong>Anthony</strong> a créé le voyage <strong>Lisbonne 🇵🇹</strong></p><div class="act-time">Hier, 14:30</div></div></div>
+  </div>
+</div>
+
+<!-- INVITE MODAL -->
+<div class="modal-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="modal">
+    <h2>Inviter au voyage</h2>
+    <div class="modal-sub">Partagez ce lien — les invités pourront voir et modifier l'itinéraire et le budget.</div>
+    <div class="link-box">
+      <input value="https://voyageplan.app/join/lsb-2026-xK9f" readonly>
+      <button onclick="this.textContent='Copié ✓';setTimeout(()=>this.textContent='Copier',1500)">Copier</button>
+    </div>
+    <div class="share-options">
+      <div class="share-opt"><div class="share-icon" style="background:#25D366;color:#fff">💬</div><span>WhatsApp</span></div>
+      <div class="share-opt"><div class="share-icon" style="background:#0088cc;color:#fff">✈️</div><span>Telegram</span></div>
+      <div class="share-opt"><div class="share-icon" style="background:#1DA1F2;color:#fff">🐦</div><span>Twitter</span></div>
+      <div class="share-opt"><div class="share-icon" style="background:var(--bg)">📧</div><span>Email</span></div>
+    </div>
+    <button class="modal-close" onclick="this.closest('.modal-overlay').classList.remove('show')">Fermer</button>
+  </div>
+</div>
+
+<nav>
+  <button class="nb"><span class="nav-icon">🏠</span>Accueil</button>
+  <button class="nb"><span class="nav-icon">🗺️</span>Carte</button>
+  <button class="nb"><span class="nav-icon">💰</span>Budget</button>
+  <button class="nb active"><span class="nav-icon">👥</span>Groupe</button>
+  <button class="nb"><span class="nav-icon">⚙️</span>Plus</button>
+</nav>
+
+<script>
+function switchView(name,el){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  el.classList.add('active');
+}
+</script>
+</body>
+</html>

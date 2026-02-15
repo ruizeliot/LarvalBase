@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoyagePlan — Suggestions IA</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--primary:#2563eb;--bg:#f8fafc;--card:#fff;--text:#1e293b;--muted:#64748b;--border:#e2e8f0;--success:#10b981;--accent:#7c3aed;--radius:16px;--shadow:0 1px 3px rgba(0,0,0,.08)}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;max-width:430px;margin:0 auto;overflow-x:hidden}
+.top-bar{display:flex;align-items:center;padding:12px 20px;gap:12px;background:var(--card);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:20}
+.back{font-size:22px;cursor:pointer;color:var(--primary);background:none;border:none}
+.top-bar h1{font-size:17px;font-weight:600;flex:1}
+
+.ai-hero{margin:16px 20px;padding:20px;background:linear-gradient(135deg,#7c3aed,#a78bfa,#2563eb);border-radius:var(--radius);color:#fff;text-align:center;position:relative;overflow:hidden}
+.ai-hero::before{content:'';position:absolute;top:-30px;left:-30px;width:100px;height:100px;background:rgba(255,255,255,.08);border-radius:50%}
+.ai-hero::after{content:'';position:absolute;bottom:-20px;right:-20px;width:80px;height:80px;background:rgba(255,255,255,.06);border-radius:50%}
+.ai-hero .ai-icon{font-size:36px;margin-bottom:8px}
+.ai-hero h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.ai-hero p{font-size:13px;opacity:.85}
+.ai-toggle{display:flex;gap:8px;margin-top:14px;justify-content:center}
+.ai-toggle button{padding:8px 16px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.15);color:#fff;transition:all .2s;font-family:inherit}
+.ai-toggle button.active{background:#fff;color:var(--accent);border-color:#fff}
+
+.section-title{padding:0 20px;font-size:14px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 12px;display:flex;justify-content:space-between;align-items:center}
+
+/* SUGGESTION CARDS */
+.suggestions{padding:0 20px;display:flex;flex-direction:column;gap:12px}
+.sug-card{background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;transition:all .2s;cursor:pointer}
+.sug-card:hover{transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.1)}
+.sug-header{padding:16px 16px 0;display:flex;gap:12px;align-items:flex-start}
+.sug-emoji{font-size:32px;flex-shrink:0}
+.sug-info{flex:1}
+.sug-info h3{font-size:15px;font-weight:600;margin-bottom:2px}
+.sug-info .sug-reason{font-size:12px;color:var(--accent);font-weight:500;margin-bottom:4px;display:flex;align-items:center;gap:4px}
+.sug-info .sug-desc{font-size:12px;color:var(--muted);line-height:1.4}
+.sug-meta{display:flex;gap:12px;padding:10px 16px;font-size:11px;color:var(--muted)}
+.sug-meta span{display:flex;align-items:center;gap:4px}
+.sug-actions{display:flex;border-top:1px solid var(--border)}
+.sug-actions button{flex:1;padding:12px;border:none;background:none;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.sug-actions button:first-child{color:var(--success);border-right:1px solid var(--border)}
+.sug-actions button:first-child:hover{background:#d1fae5}
+.sug-actions button:last-child{color:var(--muted)}
+.sug-actions button:last-child:hover{background:var(--bg)}
+
+.confidence{display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 8px;border-radius:10px;font-weight:600}
+.conf-high{background:#d1fae5;color:#065f46}
+.conf-med{background:#fef3c7;color:#92400e}
+
+/* OPTIMIZE SECTION */
+.optimize-card{margin:0 20px 20px;padding:18px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);border-left:4px solid var(--accent)}
+.optimize-card h3{font-size:14px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+.optimize-card p{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.optimize-card .opt-stats{display:flex;gap:16px;margin-bottom:14px}
+.opt-stat{text-align:center}
+.opt-stat .val{font-size:18px;font-weight:700;color:var(--accent)}
+.opt-stat .lbl{font-size:10px;color:var(--muted)}
+.optimize-card button{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;font-family:inherit}
+.optimize-card button:hover{opacity:.9;transform:translateY(-1px)}
+
+/* CHAT */
+.ai-chat{margin:0 20px 100px;background:var(--card);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+.chat-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.chat-header .ai-badge{background:linear-gradient(135deg,var(--accent),var(--primary));color:#fff;padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600}
+.chat-header span{font-size:13px;font-weight:600}
+.chat-msgs{padding:16px;display:flex;flex-direction:column;gap:10px;max-height:200px;overflow-y:auto}
+.chat-msg{max-width:85%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.4}
+.msg-ai{background:var(--bg);align-self:flex-start;border-bottom-left-radius:4px}
+.msg-user{background:var(--primary);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-input{display:flex;gap:8px;padding:12px;border-top:1px solid var(--border)}
+.chat-input input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:20px;font-size:13px;font-family:inherit}
+.chat-input button{width:36px;height:36px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:16px;transition:all .2s}
+.chat-input button:hover{transform:scale(1.1)}
+
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:var(--card);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:8px 0 calc(8px + env(safe-area-inset-bottom));z-index:20}
+nav button.nb{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:none;font-size:10px;color:var(--muted);cursor:pointer;padding:4px 12px;font-family:inherit}
+nav button.nb.active{color:var(--primary)}
+nav .nav-icon{font-size:22px;line-height:1}
+</style>
+</head>
+<body>
+<div class="top-bar">
+  <button class="back">‹</button>
+  <h1>Suggestions IA 🤖</h1>
+</div>
+
+<div class="ai-hero">
+  <div class="ai-icon">🧠</div>
+  <h2>Assistant intelligent</h2>
+  <p>Suggestions basées sur ton itinéraire, budget et préférences</p>
+  <div class="ai-toggle">
+    <button class="active">Activités</button>
+    <button>Itinéraire</button>
+    <button>Budget</button>
+  </div>
+</div>
+
+<div class="section-title">Recommandé pour toi <span class="confidence conf-high">IA activée</span></div>
+<div class="suggestions">
+  <div class="sug-card">
+    <div class="sug-header">
+      <div class="sug-emoji">🎵</div>
+      <div class="sug-info">
+        <h3>Soirée Fado à Mouraria</h3>
+        <div class="sug-reason">🤖 Basé sur ton intérêt culture</div>
+        <div class="sug-desc">Authentique maison de fado — ambiance intimiste, 3 artistes. Réserver à l'avance recommandé.</div>
+      </div>
+    </div>
+    <div class="sug-meta">
+      <span>💰 €25/pers</span><span>⏱️ 2h</span><span>📍 1.2km</span><span class="confidence conf-high">92% match</span>
+    </div>
+    <div class="sug-actions"><button>✅ Ajouter J3</button><button>Passer</button></div>
+  </div>
+  <div class="sug-card">
+    <div class="sug-header">
+      <div class="sug-emoji">🏄</div>
+      <div class="sug-info">
+        <h3>Surf à Costa da Caparica</h3>
+        <div class="sug-reason">🤖 Jour 4 libre détecté</div>
+        <div class="sug-desc">Plage à 30 min — cours de surf pour débutants, location incluse. Idéal pour le groupe.</div>
+      </div>
+    </div>
+    <div class="sug-meta">
+      <span>💰 €35/pers</span><span>⏱️ Demi-journée</span><span>📍 18km</span><span class="confidence conf-med">78% match</span>
+    </div>
+    <div class="sug-actions"><button>✅ Ajouter J4</button><button>Passer</button></div>
+  </div>
+  <div class="sug-card">
+    <div class="sug-header">
+      <div class="sug-emoji">🍰</div>
+      <div class="sug-info">
+        <h3>Pastéis de Belém — L'original</h3>
+        <div class="sug-reason">🤖 Proche de ton itinéraire J1</div>
+        <div class="sug-desc">La pâtisserie historique depuis 1837. File d'attente rapide le matin. À ne pas manquer.</div>
+      </div>
+    </div>
+    <div class="sug-meta">
+      <span>💰 €5/pers</span><span>⏱️ 30min</span><span>📍 200m</span><span class="confidence conf-high">96% match</span>
+    </div>
+    <div class="sug-actions"><button>✅ Ajouter J1</button><button>Passer</button></div>
+  </div>
+</div>
+
+<div class="section-title">Optimisation itinéraire</div>
+<div class="optimize-card">
+  <h3>🗺️ Route J1 optimisable</h3>
+  <p>En réorganisant 2 arrêts, tu peux économiser du temps et des transports. L'IA suggère : Château → Alfama → Time Out → Belém (au lieu de faire un détour).</p>
+  <div class="opt-stats">
+    <div class="opt-stat"><div class="val">-45min</div><div class="lbl">Trajet</div></div>
+    <div class="opt-stat"><div class="val">-€8</div><div class="lbl">Transport</div></div>
+    <div class="opt-stat"><div class="val">+1</div><div class="lbl">Activité possible</div></div>
+  </div>
+  <button>🤖 Appliquer l'optimisation</button>
+</div>
+
+<div class="section-title">Demander à l'IA</div>
+<div class="ai-chat">
+  <div class="chat-header"><span class="ai-badge">🤖 IA</span><span>Assistant voyage</span></div>
+  <div class="chat-msgs">
+    <div class="chat-msg msg-ai">Salut ! Je connais bien Lisbonne. Pose-moi une question sur les activités, restaurants ou transports 🇵🇹</div>
+    <div class="chat-msg msg-user">Un bon resto pas cher près d'Alfama ?</div>
+    <div class="chat-msg msg-ai"><strong>Taberna da Rua das Flores</strong> — cuisine portugaise moderne, plats à €8-14. Réserver via app. À 5 min de la cathédrale Sé. ⭐ 4.6</div>
+  </div>
+  <div class="chat-input">
+    <input placeholder="Ex: Que faire si il pleut ?">
+    <button>→</button>
+  </div>
+</div>
+
+<nav>
+  <button class="nb"><span class="nav-icon">🏠</span>Accueil</button>
+  <button class="nb"><span class="nav-icon">🗺️</span>Carte</button>
+  <button class="nb"><span class="nav-icon">💰</span>Budget</button>
+  <button class="nb"><span class="nav-icon">👥</span>Groupe</button>
+  <button class="nb active"><span class="nav-icon">⚙️</span>Plus</button>
+</nav>
+</body>
+</html>
