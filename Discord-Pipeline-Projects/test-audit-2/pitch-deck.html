@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizPub — Pitch Deck</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0d0d1a;color:#fff}
+
+/* Slide container */
+.deck{position:relative;width:100%;height:100%}
+.slide{position:absolute;top:0;left:0;width:100%;height:100%;opacity:0;pointer-events:none;transition:opacity .5s ease;display:flex;align-items:center;justify-content:center;padding:3rem 4rem}
+.slide.active{opacity:1;pointer-events:all}
+
+/* Navigation */
+.nav-bar{position:fixed;bottom:0;left:0;right:0;z-index:100;background:rgba(13,13,26,.95);border-top:1px solid rgba(255,255,255,.06);padding:12px 2rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(12px)}
+.nav-dots{display:flex;gap:8px}
+.nav-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.15);border:none;cursor:pointer;transition:all .25s;padding:0}
+.nav-dot.active{background:#e94560;transform:scale(1.3)}
+.nav-dot:hover{background:rgba(233,69,96,.5)}
+.nav-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;padding:8px 20px;border-radius:10px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s;font-family:'Segoe UI',system-ui,sans-serif}
+.nav-btn:hover{background:rgba(255,255,255,.15)}
+.nav-btn:disabled{opacity:.3;cursor:default}
+.slide-counter{color:#667;font-size:.85rem;font-weight:600;min-width:60px;text-align:center}
+
+/* Title slide */
+.title-slide{flex-direction:column;text-align:center;background:radial-gradient(ellipse at 50% 30%,#1a1a2e 0%,#0d0d1a 70%)}
+.title-logo{font-size:5rem;font-weight:800;letter-spacing:3px;background:linear-gradient(135deg,#e94560,#f5a623,#e94560);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradShift 4s ease infinite;margin-bottom:.5rem}
+@keyframes gradShift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.title-tagline{font-size:1.5rem;color:#8899aa;margin-bottom:2.5rem;font-weight:400}
+.title-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:2rem 3rem;max-width:700px;backdrop-filter:blur(10px)}
+.title-box h3{color:#f5a623;font-size:1rem;text-transform:uppercase;letter-spacing:3px;margin-bottom:1rem;font-weight:700}
+.title-box p{color:#aab;font-size:1rem;line-height:1.7}
+.title-glow{position:absolute;width:400px;height:400px;border-radius:50%;filter:blur(120px);opacity:.12;pointer-events:none}
+.title-glow.a{background:#e94560;top:5%;left:10%}
+.title-glow.b{background:#f5a623;bottom:15%;right:10%}
+
+/* Concept slide */
+.concept-slide{flex-direction:column;background:radial-gradient(ellipse at 50% 50%,#1a1a2e 0%,#0d0d1a 70%)}
+.concept-slide h2{font-size:2.2rem;font-weight:800;margin-bottom:.5rem;letter-spacing:1px}
+.concept-slide .sub{color:#667;font-size:1rem;margin-bottom:2.5rem;font-weight:500}
+.concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:800px;width:100%}
+.concept-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:2rem;text-align:center;transition:all .3s}
+.concept-card:hover{background:rgba(255,255,255,.07);transform:translateY(-4px)}
+.concept-card .emoji{font-size:2.5rem;margin-bottom:.8rem}
+.concept-card h3{font-size:1.1rem;font-weight:700;margin-bottom:.5rem}
+.concept-card p{color:#889;font-size:.9rem;line-height:1.5}
+.concept-card:nth-child(1){border-color:rgba(233,69,96,.2)}
+.concept-card:nth-child(2){border-color:rgba(245,166,35,.2)}
+.concept-card:nth-child(3){border-color:rgba(45,156,219,.2)}
+.concept-card:nth-child(4){border-color:rgba(39,174,96,.2)}
+
+/* References slide */
+.ref-slide{flex-direction:column;background:radial-gradient(ellipse at 50% 50%,#1a1a2e 0%,#0d0d1a 70%)}
+.ref-slide h2{font-size:2.2rem;font-weight:800;margin-bottom:.5rem;letter-spacing:1px}
+.ref-slide .sub{color:#667;font-size:1rem;margin-bottom:2rem;font-weight:500}
+.ref-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:16px;max-width:1000px;width:100%;margin-bottom:1.5rem}
+.ref-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:1.5rem;text-align:center}
+.ref-card .emoji{font-size:2rem;margin-bottom:.5rem}
+.ref-card h3{font-size:1rem;font-weight:700;margin-bottom:.3rem;color:#f5a623}
+.ref-card .what{font-size:.8rem;color:#667;margin-bottom:.6rem;font-style:italic}
+.ref-card p{color:#889;font-size:.85rem;line-height:1.4}
+.differentiator{background:rgba(233,69,96,.08);border:1px solid rgba(233,69,96,.2);border-radius:14px;padding:1.2rem 2rem;max-width:800px;text-align:center}
+.differentiator .label{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:#e94560;font-weight:700;margin-bottom:.4rem}
+.differentiator p{color:#aab;font-size:.95rem}
+
+/* Mockup slides */
+.mockup-slide{gap:3rem;background:radial-gradient(ellipse at 30% 50%,#1a1a2e 0%,#0d0d1a 70%)}
+.mockup-info{flex:0 0 38%;max-width:38%}
+.mockup-info .section-emoji{font-size:3rem;margin-bottom:1rem}
+.mockup-info h2{font-size:2rem;font-weight:800;margin-bottom:.3rem;letter-spacing:.5px}
+.mockup-info .section-num{font-size:.8rem;text-transform:uppercase;letter-spacing:3px;color:#e94560;font-weight:700;margin-bottom:.8rem}
+.mockup-info ul{list-style:none;margin-top:1rem}
+.mockup-info ul li{padding:.6rem 0;color:#aab;font-size:.95rem;line-height:1.4;position:relative;padding-left:1.5rem}
+.mockup-info ul li::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:6px;height:6px;border-radius:50%;background:#e94560}
+.mockup-preview{flex:0 0 58%;max-width:58%;height:80vh}
+.mockup-preview iframe{width:100%;height:100%;border:1px solid rgba(255,255,255,.1);border-radius:16px;background:#1a1a2e}
+
+/* Summary slide */
+.summary-slide{flex-direction:column;background:radial-gradient(ellipse at 50% 50%,#1a1a2e 0%,#0d0d1a 70%);gap:0}
+.summary-slide h2{font-size:2.2rem;font-weight:800;margin-bottom:2rem;letter-spacing:1px}
+.summary-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;max-width:1100px;width:100%}
+.summary-col{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:1.8rem}
+.summary-col h3{font-size:.8rem;text-transform:uppercase;letter-spacing:2px;color:#f5a623;margin-bottom:1.2rem;font-weight:700}
+.flow-step{display:flex;align-items:center;gap:.6rem;padding:.5rem 0;color:#aab;font-size:.85rem}
+.flow-step .num{width:24px;height:24px;border-radius:8px;background:rgba(233,69,96,.15);color:#e94560;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;flex-shrink:0}
+.flow-arrow{color:#334;font-size:.7rem;padding-left:28px}
+.tech-item{display:flex;align-items:center;gap:.8rem;padding:.5rem 0;color:#aab;font-size:.9rem}
+.tech-item .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.next-item{padding:.5rem 0;color:#aab;font-size:.85rem;padding-left:1.2rem;position:relative}
+.next-item::before{content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);width:5px;height:5px;border-radius:50%}
+.next-item:nth-child(1)::before{background:#e94560}
+.next-item:nth-child(2)::before{background:#f5a623}
+.next-item:nth-child(3)::before{background:#2d9cdb}
+.next-item:nth-child(4)::before{background:#27ae60}
+.next-item:nth-child(5)::before{background:#9b59b6}
+
+/* Keyboard hint */
+.kb-hint{position:fixed;top:1rem;right:2rem;z-index:100;color:#334;font-size:.75rem;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="kb-hint">Fleches gauche/droite pour naviguer</div>
+
+<div class="deck">
+
+<!-- SLIDE 1: Title -->
+<div class="slide active" data-slide="0">
+<div class="title-glow a"></div>
+<div class="title-glow b"></div>
+<div class="title-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%">
+<div class="title-logo">QuizPub</div>
+<div class="title-tagline">Le quiz de bar, version numerique</div>
+<div class="title-box">
+<h3>Le concept</h3>
+<p>Une application web temps reel qui transforme n'importe quel smartphone en buzzer de quiz.
+Le quizmaster projette les questions, les joueurs repondent depuis leur telephone.
+Rejoignez avec un code PIN, zero installation.</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 2: Concept -->
+<div class="slide" data-slide="1">
+<div class="concept-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%">
+<h2>Pourquoi QuizPub ?</h2>
+<div class="sub">4 piliers pour une experience de quiz parfaite</div>
+<div class="concept-grid">
+<div class="concept-card">
+<div class="emoji">&#x1f4f1;</div>
+<h3>Simple</h3>
+<p>Rejoindre avec un code PIN a 6 chiffres. Zero telechargement, zero inscription.</p>
+</div>
+<div class="concept-card">
+<div class="emoji">&#x26a1;</div>
+<h3>Flexible</h3>
+<p>Scoring par rapidite ou fixe. QCM, vrai/faux, import OpenTrivia. Timer configurable.</p>
+</div>
+<div class="concept-card">
+<div class="emoji">&#x1f37b;</div>
+<h3>Fun</h3>
+<p>Ambiance pub : emojis, animations, streaks, leaderboard en temps reel, confettis.</p>
+</div>
+<div class="concept-card">
+<div class="emoji">&#x1f504;</div>
+<h3>Temps reel</h3>
+<p>WebSocket natif : zero latence sur les reponses, compteurs live, synchronisation parfaite.</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 3: References -->
+<div class="slide" data-slide="2">
+<div class="ref-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%">
+<h2>References et positionnement</h2>
+<div class="sub">Ce qu'on prend du meilleur, ce qu'on fait differemment</div>
+<div class="ref-grid">
+<div class="ref-card">
+<div class="emoji">&#x1f7e2;</div>
+<h3>Kahoot!</h3>
+<div class="what">Flow de jeu</div>
+<p>PIN pour rejoindre, ecran partage quizmaster, reponses sur mobile</p>
+</div>
+<div class="ref-card">
+<div class="emoji">&#x1f9e0;</div>
+<h3>TriviaNerd</h3>
+<div class="what">Ambiance</div>
+<p>Vibe decontracte, questions fun, experience sociale entre amis</p>
+</div>
+<div class="ref-card">
+<div class="emoji">&#x1f4ca;</div>
+<h3>AhaSlides</h3>
+<div class="what">Interface</div>
+<p>UI moderne et epuree, transitions fluides, responsive mobile-first</p>
+</div>
+<div class="ref-card">
+<div class="emoji">&#x1f4e1;</div>
+<h3>Mentimeter</h3>
+<div class="what">Ecran partage</div>
+<p>Projection live des resultats, feedback visuel instantane</p>
+</div>
+</div>
+<div class="differentiator">
+<div class="label">Notre differenciateur</div>
+<p>Open-source, auto-hebergeable, ambiance bar assumee (pas corporate), import OpenTrivia API integre, zero compte requis</p>
+</div>
+</div>
+</div>
+
+<!-- SLIDE 4: Accueil -->
+<div class="slide mockup-slide" data-slide="3">
+<div class="mockup-info">
+<div class="section-num">Section 1 / 6</div>
+<div class="section-emoji">&#x1f3e0;</div>
+<h2>Accueil</h2>
+<ul>
+<li>Saisie du code PIN a 6 chiffres pour rejoindre une partie en cours</li>
+<li>Auto-focus et navigation clavier entre les cases PIN</li>
+<li>Bouton &laquo; Creer un quiz &raquo; pour le quizmaster avec separateur visuel</li>
+</ul>
+</div>
+<div class="mockup-preview">
+<iframe srcdoc="<!DOCTYPE html><html lang=&quot;fr&quot;><head><meta charset=&quot;UTF-8&quot;><meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;><title>QuizPub</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}.bg{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;background:radial-gradient(ellipse at 20% 50%,#16213e 0%,#1a1a2e 70%)}.particles{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}.particle{position:absolute;border-radius:50%;animation:float 6s infinite ease-in-out;opacity:.15}@keyframes float{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-30px) scale(1.1)}}.container{position:relative;z-index:2;text-align:center;max-width:480px;width:90%;padding:2rem}.logo{font-weight:800;font-size:3.5rem;margin-bottom:.5rem;background:linear-gradient(135deg,#e94560,#f5a623,#e94560);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-size:200% 200%;animation:gradient 3s ease infinite;letter-spacing:2px}@keyframes gradient{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}.subtitle{color:#8899aa;font-size:1rem;margin-bottom:2.5rem;font-weight:400}.pin-section{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:2rem;margin-bottom:1.5rem;backdrop-filter:blur(10px)}.pin-label{font-size:.85rem;color:#8899aa;margin-bottom:.8rem;text-transform:uppercase;letter-spacing:2px;font-weight:600}.pin-input{display:flex;gap:10px;justify-content:center;margin-bottom:1.2rem}.pin-input input{width:52px;height:64px;background:rgba(255,255,255,.08);border:2px solid rgba(255,255,255,.1);border-radius:12px;color:#fff;font-size:1.8rem;text-align:center;font-weight:700;transition:all .2s;font-family:'Segoe UI',system-ui,sans-serif}.pin-input input:focus{outline:none;border-color:#e94560;background:rgba(233,69,96,.1);box-shadow:0 0 20px rgba(233,69,96,.2)}.btn-join{width:100%;padding:16px;border:none;border-radius:14px;font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .25s;background:linear-gradient(135deg,#e94560,#c81d4e);color:#fff;box-shadow:0 4px 20px rgba(233,69,96,.3);font-family:'Segoe UI',system-ui,sans-serif}.divider{display:flex;align-items:center;gap:1rem;margin:1.5rem 0;color:#556;font-size:.8rem;text-transform:uppercase;letter-spacing:2px}.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1)}.btn-create{width:100%;padding:16px;border:2px solid rgba(245,166,35,.3);border-radius:14px;font-size:1rem;font-weight:700;cursor:pointer;transition:all .25s;background:rgba(245,166,35,.08);color:#f5a623;font-family:'Segoe UI',system-ui,sans-serif}.footer{margin-top:2rem;font-size:.75rem;color:#445}.emoji-float{position:fixed;font-size:2rem;animation:emojiRise 8s linear infinite;opacity:0;z-index:1}@keyframes emojiRise{0%{opacity:0;transform:translateY(100vh) rotate(0deg)}10%{opacity:.6}90%{opacity:.6}100%{opacity:0;transform:translateY(-10vh) rotate(360deg)}}</style></head><body><div class=&quot;bg&quot;></div><div class=&quot;particles&quot;><div class=&quot;particle&quot; style=&quot;width:200px;height:200px;background:#e94560;top:10%;left:-5%;animation-delay:0s&quot;></div><div class=&quot;particle&quot; style=&quot;width:150px;height:150px;background:#f5a623;top:60%;right:-3%;animation-delay:2s&quot;></div><div class=&quot;particle&quot; style=&quot;width:100px;height:100px;background:#0f3460;bottom:10%;left:30%;animation-delay:4s&quot;></div></div><div class=&quot;emoji-float&quot; style=&quot;left:10%;animation-delay:0s&quot;>&#x1f37a;</div><div class=&quot;emoji-float&quot; style=&quot;left:30%;animation-delay:2s&quot;>&#x1f9e0;</div><div class=&quot;emoji-float&quot; style=&quot;left:50%;animation-delay:4s&quot;>&#x1f3af;</div><div class=&quot;emoji-float&quot; style=&quot;left:70%;animation-delay:6s&quot;>&#x1f3c6;</div><div class=&quot;emoji-float&quot; style=&quot;left:90%;animation-delay:1s&quot;>&#x1f37b;</div><div class=&quot;container&quot;><div class=&quot;logo&quot;>QuizPub</div><p class=&quot;subtitle&quot;>Le quiz de bar, version numerique &#x1f37b;</p><div class=&quot;pin-section&quot;><div class=&quot;pin-label&quot;>Code PIN de la partie</div><div class=&quot;pin-input&quot;><input type=&quot;text&quot; maxlength=&quot;1&quot; value=&quot;4&quot;><input type=&quot;text&quot; maxlength=&quot;1&quot; value=&quot;2&quot;><input type=&quot;text&quot; maxlength=&quot;1&quot; value=&quot;0&quot;><input type=&quot;text&quot; maxlength=&quot;1&quot; value=&quot;&quot;><input type=&quot;text&quot; maxlength=&quot;1&quot; value=&quot;&quot;><input type=&quot;text&quot; maxlength=&quot;1&quot; value=&quot;&quot;></div><button class=&quot;btn-join&quot;>&#x1f3ae; Rejoindre la partie</button></div><div class=&quot;divider&quot;><span>ou</span></div><button class=&quot;btn-create&quot;>&#x1f39b;&#xfe0f; Creer un quiz</button><div class=&quot;footer&quot;>QuizPub v1.0</div></div></body></html>" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+
+<!-- SLIDE 5: Creation -->
+<div class="slide mockup-slide" data-slide="4">
+<div class="mockup-info">
+<div class="section-num">Section 2 / 6</div>
+<div class="section-emoji">&#x270f;&#xfe0f;</div>
+<h2>Creation de quiz</h2>
+<ul>
+<li>Editeur split-view : liste des questions a gauche, editeur detaille a droite</li>
+<li>Types QCM (4 choix) et Vrai/Faux avec timer et scoring configurables</li>
+<li>Import de questions via l'API OpenTrivia en un clic</li>
+</ul>
+</div>
+<div class="mockup-preview">
+<iframe srcdoc="<!DOCTYPE html><html lang=&quot;fr&quot;><head><meta charset=&quot;UTF-8&quot;><meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;><title>QuizPub — Creation</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh}.header{background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.06);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}.header-left{display:flex;align-items:center;gap:1rem}.logo{font-weight:800;font-size:1.5rem;background:linear-gradient(135deg,#e94560,#f5a623);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.back-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-size:.85rem;transition:all .2s}.layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 60px)}.sidebar{background:rgba(0,0,0,.2);border-right:1px solid rgba(255,255,255,.06);padding:1.5rem;overflow-y:auto}.sidebar h3{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:#667;margin-bottom:1rem}.question-list{display:flex;flex-direction:column;gap:.5rem}.q-item{padding:12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .2s;display:flex;gap:10px;align-items:center}.q-item.active{background:rgba(233,69,96,.1);border-color:rgba(233,69,96,.3)}.q-num{width:28px;height:28px;border-radius:8px;background:rgba(233,69,96,.2);color:#e94560;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}.q-item.active .q-num{background:#e94560;color:#fff}.q-text{font-size:.85rem;color:#aab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.q-type{font-size:.65rem;color:#556;margin-top:2px}.add-q-btn{width:100%;padding:12px;border:2px dashed rgba(255,255,255,.1);border-radius:10px;background:transparent;color:#667;cursor:pointer;font-size:.85rem;transition:all .2s;margin-top:.5rem}.main{padding:2rem;overflow-y:auto}.editor-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:2rem;max-width:700px}.field-group{margin-bottom:1.5rem}.field-label{font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#667;margin-bottom:.5rem;font-weight:600}.field-input{width:100%;padding:14px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#fff;font-size:1rem;transition:all .2s;font-family:'Segoe UI',system-ui,sans-serif}.type-toggle{display:flex;gap:.5rem}.type-btn{padding:10px 20px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aab;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}.type-btn.active{background:rgba(233,69,96,.15);border-color:#e94560;color:#e94560}.choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}.choice-item{position:relative;display:flex;align-items:center;gap:10px}.choice-letter{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;color:#fff;flex-shrink:0}.choice-item:nth-child(1) .choice-letter{background:#e94560}.choice-item:nth-child(2) .choice-letter{background:#2d9cdb}.choice-item:nth-child(3) .choice-letter{background:#f5a623}.choice-item:nth-child(4) .choice-letter{background:#27ae60}.choice-input{flex:1;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#fff;font-size:.9rem;font-family:'Segoe UI',system-ui,sans-serif}.correct-check{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:1rem}.settings-row{display:flex;gap:1rem;flex-wrap:wrap}.setting-card{flex:1;min-width:140px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px}.setting-card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#556;margin-bottom:6px}.setting-card .value{font-size:1rem;font-weight:700;color:#f5a623}.setting-card select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;padding:6px 10px;border-radius:6px;font-size:.85rem;width:100%}.actions{display:flex;gap:1rem;margin-top:2rem;justify-content:flex-end}.btn{padding:12px 28px;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:.9rem;transition:all .2s;font-family:'Segoe UI',system-ui,sans-serif}.btn-primary{background:linear-gradient(135deg,#e94560,#c81d4e);color:#fff;box-shadow:0 4px 15px rgba(233,69,96,.3)}.btn-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aab}.import-section{margin-top:1.5rem;padding:1.5rem;border:2px dashed rgba(245,166,35,.2);border-radius:12px;text-align:center;color:#667}.import-section .icon{font-size:2rem;margin-bottom:.5rem}.import-section p{font-size:.85rem}.import-section a{color:#f5a623;text-decoration:none;font-weight:600}</style></head><body><div class=&quot;header&quot;><div class=&quot;header-left&quot;><button class=&quot;back-btn&quot;>&#x2190; Retour</button><span class=&quot;logo&quot;>QuizPub</span></div><div style=&quot;display:flex;gap:.5rem&quot;><button class=&quot;btn btn-secondary&quot;>&#x1f441;&#xfe0f; Preview</button><button class=&quot;btn btn-primary&quot;>&#x1f680; Lancer</button></div></div><div class=&quot;layout&quot;><div class=&quot;sidebar&quot;><h3>Questions (5)</h3><div class=&quot;question-list&quot;><div class=&quot;q-item active&quot;><div class=&quot;q-num&quot;>1</div><div><div class=&quot;q-text&quot;>Quelle est la capitale de l'Australie ?</div><div class=&quot;q-type&quot;>QCM &#x2022; 20s</div></div></div><div class=&quot;q-item&quot;><div class=&quot;q-num&quot;>2</div><div><div class=&quot;q-text&quot;>Le soleil est une etoile</div><div class=&quot;q-type&quot;>Vrai/Faux &#x2022; 15s</div></div></div><div class=&quot;q-item&quot;><div class=&quot;q-num&quot;>3</div><div><div class=&quot;q-text&quot;>Combien de pays en Afrique ?</div><div class=&quot;q-type&quot;>QCM &#x2022; 20s</div></div></div><div class=&quot;q-item&quot;><div class=&quot;q-num&quot;>4</div><div><div class=&quot;q-text&quot;>Qui a peint la Joconde ?</div><div class=&quot;q-type&quot;>QCM &#x2022; 20s</div></div></div><div class=&quot;q-item&quot;><div class=&quot;q-num&quot;>5</div><div><div class=&quot;q-text&quot;>La Grande Muraille est visible...</div><div class=&quot;q-type&quot;>Vrai/Faux &#x2022; 15s</div></div></div></div><button class=&quot;add-q-btn&quot;>+ Ajouter une question</button><div class=&quot;import-section&quot;><div class=&quot;icon&quot;>&#x1f4e5;</div><p>Importer via <a href=&quot;#&quot;>API OpenTrivia</a></p></div></div><div class=&quot;main&quot;><div class=&quot;editor-card&quot;><div class=&quot;field-group&quot;><div class=&quot;field-label&quot;>Question</div><input class=&quot;field-input&quot; value=&quot;Quelle est la capitale de l'Australie ?&quot;></div><div class=&quot;field-group&quot;><div class=&quot;field-label&quot;>Type de question</div><div class=&quot;type-toggle&quot;><div class=&quot;type-btn active&quot;>QCM (4 choix)</div><div class=&quot;type-btn&quot;>Vrai / Faux</div></div></div><div class=&quot;field-group&quot;><div class=&quot;field-label&quot;>Reponses</div><div class=&quot;choices-grid&quot;><div class=&quot;choice-item&quot;><div class=&quot;choice-letter&quot;>A</div><input class=&quot;choice-input&quot; value=&quot;Sydney&quot;><span class=&quot;correct-check&quot;></span></div><div class=&quot;choice-item&quot;><div class=&quot;choice-letter&quot;>B</div><input class=&quot;choice-input&quot; value=&quot;Canberra&quot;><span class=&quot;correct-check&quot;>&#x2705;</span></div><div class=&quot;choice-item&quot;><div class=&quot;choice-letter&quot;>C</div><input class=&quot;choice-input&quot; value=&quot;Melbourne&quot;><span class=&quot;correct-check&quot;></span></div><div class=&quot;choice-item&quot;><div class=&quot;choice-letter&quot;>D</div><input class=&quot;choice-input&quot; value=&quot;Perth&quot;><span class=&quot;correct-check&quot;></span></div></div></div><div class=&quot;field-group&quot;><div class=&quot;field-label&quot;>Parametres</div><div class=&quot;settings-row&quot;><div class=&quot;setting-card&quot;><div class=&quot;label&quot;>Timer</div><select><option>10s</option><option selected>20s</option><option>30s</option><option>60s</option></select></div><div class=&quot;setting-card&quot;><div class=&quot;label&quot;>Scoring</div><select><option selected>Rapidite</option><option>Fixe (1000pts)</option></select></div><div class=&quot;setting-card&quot;><div class=&quot;label&quot;>Points</div><div class=&quot;value&quot;>1000</div></div></div></div><div class=&quot;actions&quot;><button class=&quot;btn btn-secondary&quot;>&#x1f5d1;&#xfe0f; Supprimer</button><button class=&quot;btn btn-primary&quot;>&#x1f4be; Sauvegarder</button></div></div></div></div></body></html>" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+
+<!-- SLIDE 6: Lobby -->
+<div class="slide mockup-slide" data-slide="5">
+<div class="mockup-info">
+<div class="section-num">Section 3 / 6</div>
+<div class="section-emoji">&#x1f3af;</div>
+<h2>Lobby</h2>
+<ul>
+<li>Code PIN affiche en grand pour que les joueurs rejoignent facilement</li>
+<li>Grille de joueurs connectes avec avatars emoji et animations pop-in</li>
+<li>Le quizmaster lance la partie quand tout le monde est pret</li>
+</ul>
+</div>
+<div class="mockup-preview">
+<iframe srcdoc="<!DOCTYPE html><html lang=&quot;fr&quot;><head><meta charset=&quot;UTF-8&quot;><meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;><title>QuizPub — Lobby</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow:hidden}.bg-glow{position:fixed;width:600px;height:600px;border-radius:50%;filter:blur(150px);opacity:.15;pointer-events:none}.bg-glow.a{background:#e94560;top:-200px;left:-100px}.bg-glow.b{background:#2d9cdb;bottom:-200px;right:-100px}.top-bar{width:100%;padding:1.2rem 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.06);backdrop-filter:blur(10px);z-index:10}.logo{font-weight:800;font-size:1.3rem;background:linear-gradient(135deg,#e94560,#f5a623);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.pin-display{display:flex;align-items:center;gap:.8rem}.pin-label{font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:#667}.pin-code{font-weight:800;font-size:2rem;letter-spacing:6px;color:#f5a623;background:rgba(245,166,35,.1);padding:6px 20px;border-radius:10px;border:1px solid rgba(245,166,35,.2)}.content{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2rem;width:100%;max-width:900px;position:relative;z-index:2}.waiting-text{font-size:1.2rem;color:#8899aa;margin-bottom:.5rem}.player-count{font-weight:800;font-size:3rem;color:#fff;margin-bottom:2rem}.player-count span{color:#e94560}.players-grid{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-bottom:3rem;max-width:700px}.player-card{padding:12px 20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:14px;display:flex;align-items:center;gap:10px;animation:popIn .4s cubic-bezier(.175,.885,.32,1.275);backdrop-filter:blur(5px)}@keyframes popIn{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}.player-avatar{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem}.player-name{font-weight:600;font-size:.95rem}.player-card:nth-child(1) .player-avatar{background:rgba(233,69,96,.2)}.player-card:nth-child(2) .player-avatar{background:rgba(45,156,219,.2)}.player-card:nth-child(3) .player-avatar{background:rgba(245,166,35,.2)}.player-card:nth-child(4) .player-avatar{background:rgba(39,174,96,.2)}.player-card:nth-child(5) .player-avatar{background:rgba(155,89,182,.2)}.player-card:nth-child(6) .player-avatar{background:rgba(233,69,96,.2)}.player-card:nth-child(7) .player-avatar{background:rgba(45,156,219,.2)}.player-card:nth-child(8) .player-avatar{background:rgba(245,166,35,.2)}.dots{display:flex;gap:6px;margin-bottom:2rem}.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.2);animation:pulse 1.5s infinite}.dot:nth-child(2){animation-delay:.3s}.dot:nth-child(3){animation-delay:.6s}@keyframes pulse{0%,100%{opacity:.2;transform:scale(1)}50%{opacity:.8;transform:scale(1.3)}}.start-btn{padding:18px 60px;background:linear-gradient(135deg,#27ae60,#1e8c4e);border:none;border-radius:16px;color:#fff;font-size:1.2rem;font-weight:700;cursor:pointer;font-family:'Segoe UI',system-ui,sans-serif;box-shadow:0 4px 25px rgba(39,174,96,.4);transition:all .25s;position:relative;overflow:hidden}.start-btn::after{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:linear-gradient(transparent,rgba(255,255,255,.1),transparent);transform:rotate(45deg);animation:shine 3s infinite}@keyframes shine{0%{transform:translateX(-100%) rotate(45deg)}100%{transform:translateX(100%) rotate(45deg)}}.quiz-info{position:absolute;bottom:2rem;display:flex;gap:2rem;color:#556;font-size:.8rem}.quiz-info div{display:flex;align-items:center;gap:6px}</style></head><body><div class=&quot;bg-glow a&quot;></div><div class=&quot;bg-glow b&quot;></div><div class=&quot;top-bar&quot;><div class=&quot;logo&quot;>QuizPub</div><div class=&quot;pin-display&quot;><span class=&quot;pin-label&quot;>Game PIN</span><div class=&quot;pin-code&quot;>420 691</div></div></div><div class=&quot;content&quot;><div class=&quot;waiting-text&quot;>En attente de joueurs...</div><div class=&quot;player-count&quot;><span>8</span> joueurs connectes</div><div class=&quot;players-grid&quot;><div class=&quot;player-card&quot; style=&quot;animation-delay:0s&quot;><div class=&quot;player-avatar&quot;>&#x1f37a;</div><div class=&quot;player-name&quot;>DJ Biere</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.1s&quot;><div class=&quot;player-avatar&quot;>&#x1f9e0;</div><div class=&quot;player-name&quot;>BrainMaster</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.2s&quot;><div class=&quot;player-avatar&quot;>&#x1f3af;</div><div class=&quot;player-name&quot;>QuizKiller</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.3s&quot;><div class=&quot;player-avatar&quot;>&#x1f98a;</div><div class=&quot;player-name&quot;>FoxyTrivia</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.4s&quot;><div class=&quot;player-avatar&quot;>&#x1f525;</div><div class=&quot;player-name&quot;>HotAnswer</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.5s&quot;><div class=&quot;player-avatar&quot;>&#x1f355;</div><div class=&quot;player-name&quot;>PizzaBrain</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.6s&quot;><div class=&quot;player-avatar&quot;>&#x26a1;</div><div class=&quot;player-name&quot;>SpeedyQuiz</div></div><div class=&quot;player-card&quot; style=&quot;animation-delay:.7s&quot;><div class=&quot;player-avatar&quot;>&#x1f3b8;</div><div class=&quot;player-name&quot;>RockTrivia</div></div></div><div class=&quot;dots&quot;><div class=&quot;dot&quot;></div><div class=&quot;dot&quot;></div><div class=&quot;dot&quot;></div></div><button class=&quot;start-btn&quot;>&#x1f680; Lancer la partie !</button><div class=&quot;quiz-info&quot;><div>&#x1f4dd; 10 questions</div><div>&#x23f1;&#xfe0f; 20s par question</div><div>&#x26a1; Scoring rapidite</div></div></div></body></html>" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+
+<!-- SLIDE 7: Player screen -->
+<div class="slide mockup-slide" data-slide="6">
+<div class="mockup-info">
+<div class="section-num">Section 4 / 6</div>
+<div class="section-emoji">&#x1f4f1;</div>
+<h2>Ecran joueur</h2>
+<ul>
+<li>Timer visuel avec cercle anime et barre de progression coloree</li>
+<li>4 boutons de reponse colores (A/B/C/D) avec feedback de selection instantane</li>
+<li>Compteur de streak (bonnes reponses consecutives) et score en temps reel</li>
+</ul>
+</div>
+<div class="mockup-preview">
+<iframe srcdoc="<!DOCTYPE html><html lang=&quot;fr&quot;><head><meta charset=&quot;UTF-8&quot;><meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;><title>QuizPub — Joueur</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;display:flex;flex-direction:column}.top-bar{padding:12px 20px;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.4);border-bottom:1px solid rgba(255,255,255,.06)}.q-counter{font-size:.85rem;color:#8899aa;font-weight:600}.q-counter span{color:#e94560}.score-display{font-weight:800;color:#f5a623;font-size:1.1rem}.timer-bar{width:100%;height:6px;background:rgba(255,255,255,.06)}.timer-fill{height:100%;width:65%;background:linear-gradient(90deg,#27ae60,#f5a623);border-radius:0 3px 3px 0;transition:width .1s linear}.main{flex:1;display:flex;flex-direction:column;align-items:center;padding:2rem 1.5rem;max-width:600px;margin:0 auto;width:100%}.timer-circle{width:80px;height:80px;border-radius:50%;border:4px solid rgba(245,166,35,.3);display:flex;align-items:center;justify-content:center;margin-bottom:1.5rem;position:relative}.timer-circle::before{content:'';position:absolute;width:100%;height:100%;border-radius:50%;border:4px solid transparent;border-top-color:#f5a623;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}.timer-num{font-weight:800;font-size:2rem;color:#f5a623}.question-card{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:2rem;text-align:center;margin-bottom:2rem;width:100%;backdrop-filter:blur(5px)}.question-text{font-size:1.4rem;font-weight:700;line-height:1.4}.answers{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%}.answer-btn{padding:20px 16px;border:none;border-radius:16px;color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;transition:all .15s;font-family:'Segoe UI',system-ui,sans-serif;position:relative;overflow:hidden;text-align:center;min-height:80px;display:flex;align-items:center;justify-content:center;gap:8px}.answer-btn.a{background:linear-gradient(135deg,#e94560,#c81d4e);box-shadow:0 4px 15px rgba(233,69,96,.3)}.answer-btn.b{background:linear-gradient(135deg,#2d9cdb,#2185b8);box-shadow:0 4px 15px rgba(45,156,219,.3)}.answer-btn.c{background:linear-gradient(135deg,#f5a623,#d4911c);box-shadow:0 4px 15px rgba(245,166,35,.3)}.answer-btn.d{background:linear-gradient(135deg,#27ae60,#1e8c4e);box-shadow:0 4px 15px rgba(39,174,96,.3)}.answer-btn .letter{font-weight:800;font-size:1.3rem;opacity:.7}.answer-btn.selected::after{content:'&#x2713;';position:absolute;top:8px;right:12px;font-size:1.2rem}.streak{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(245,166,35,.15);border:1px solid rgba(245,166,35,.3);padding:8px 20px;border-radius:20px;font-size:.85rem;color:#f5a623;font-weight:600;display:flex;align-items:center;gap:6px}</style></head><body><div class=&quot;top-bar&quot;><div class=&quot;q-counter&quot;>Question <span>3</span>/10</div><div class=&quot;score-display&quot;>&#x2b50; 2,450 pts</div></div><div class=&quot;timer-bar&quot;><div class=&quot;timer-fill&quot;></div></div><div class=&quot;main&quot;><div class=&quot;timer-circle&quot;><span class=&quot;timer-num&quot;>13</span></div><div class=&quot;question-card&quot;><div class=&quot;question-text&quot;>Quelle est la capitale de l'Australie ? &#x1f1e6;&#x1f1fa;</div></div><div class=&quot;answers&quot;><button class=&quot;answer-btn a&quot;><span class=&quot;letter&quot;>A</span> Sydney</button><button class=&quot;answer-btn b selected&quot;><span class=&quot;letter&quot;>B</span> Canberra</button><button class=&quot;answer-btn c&quot;><span class=&quot;letter&quot;>C</span> Melbourne</button><button class=&quot;answer-btn d&quot;><span class=&quot;letter&quot;>D</span> Perth</button></div></div><div class=&quot;streak&quot;>&#x1f525; 3 bonnes reponses d'affilee !</div></body></html>" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+
+<!-- SLIDE 8: Quizmaster screen -->
+<div class="slide mockup-slide" data-slide="7">
+<div class="mockup-info">
+<div class="section-num">Section 5 / 6</div>
+<div class="section-emoji">&#x1f399;&#xfe0f;</div>
+<h2>Ecran quizmaster</h2>
+<ul>
+<li>Vue projecteur grand ecran avec timer geant et question en gros caracteres</li>
+<li>Compteurs de reponses en temps reel sur chaque option (votes live)</li>
+<li>Panneau de controle : stats joueurs, taux de bonne reponse, boutons Passer/Reveler</li>
+</ul>
+</div>
+<div class="mockup-preview">
+<iframe srcdoc="<!DOCTYPE html><html lang=&quot;fr&quot;><head><meta charset=&quot;UTF-8&quot;><meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;><title>QuizPub — Quizmaster</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#0d0d1a;color:#fff;min-height:100vh;display:flex;flex-direction:column;overflow:hidden}.host-bar{padding:14px 2rem;display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.5);border-bottom:1px solid rgba(255,255,255,.06)}.host-left{display:flex;align-items:center;gap:1.5rem}.logo{font-weight:800;font-size:1.3rem;background:linear-gradient(135deg,#e94560,#f5a623);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.host-badge{background:rgba(233,69,96,.15);border:1px solid rgba(233,69,96,.3);color:#e94560;padding:4px 12px;border-radius:8px;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:1px}.q-progress{color:#667;font-size:.9rem}.q-progress span{color:#fff;font-weight:700}.timer-strip{width:100%;height:8px;background:rgba(255,255,255,.04)}.timer-inner{height:100%;width:65%;background:linear-gradient(90deg,#27ae60,#f5a623,#e94560);border-radius:0 4px 4px 0}.main-display{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem;position:relative}.big-timer{font-weight:800;font-size:6rem;color:#f5a623;text-shadow:0 0 60px rgba(245,166,35,.3);margin-bottom:1rem}.question-display{font-size:2.2rem;font-weight:700;text-align:center;max-width:800px;line-height:1.3;margin-bottom:3rem}.answers-display{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:900px;width:100%}.answer-block{padding:24px;border-radius:16px;display:flex;align-items:center;gap:14px;position:relative}.answer-block.a{background:linear-gradient(135deg,#e94560,#c81d4e)}.answer-block.b{background:linear-gradient(135deg,#2d9cdb,#2185b8)}.answer-block.c{background:linear-gradient(135deg,#f5a623,#d4911c)}.answer-block.d{background:linear-gradient(135deg,#27ae60,#1e8c4e)}.answer-letter{font-weight:800;font-size:1.5rem;opacity:.6}.answer-text{font-size:1.3rem;font-weight:700}.answer-count{position:absolute;right:16px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.3);padding:6px 14px;border-radius:10px;font-weight:700;font-size:.9rem}.controls{padding:1.5rem 2rem;background:rgba(0,0,0,.4);border-top:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}.player-stats{display:flex;gap:2rem}.stat{text-align:center}.stat-val{font-weight:800;font-size:1.5rem;color:#f5a623}.stat-label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#556;margin-top:2px}.control-btns{display:flex;gap:1rem}.ctrl-btn{padding:14px 32px;border:none;border-radius:14px;font-weight:700;cursor:pointer;font-size:1rem;transition:all .2s;font-family:'Segoe UI',system-ui,sans-serif}.ctrl-next{background:linear-gradient(135deg,#e94560,#c81d4e);color:#fff;box-shadow:0 4px 20px rgba(233,69,96,.3)}.ctrl-skip{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#aab}.live-badge{position:fixed;top:80px;right:2rem;background:rgba(233,69,96,.15);border:1px solid rgba(233,69,96,.3);padding:6px 14px;border-radius:10px;font-size:.8rem;color:#e94560;font-weight:600;display:flex;align-items:center;gap:6px}.live-dot{width:8px;height:8px;border-radius:50%;background:#e94560;animation:blink 1s infinite}@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}</style></head><body><div class=&quot;host-bar&quot;><div class=&quot;host-left&quot;><span class=&quot;logo&quot;>QuizPub</span><span class=&quot;host-badge&quot;>&#x1f399;&#xfe0f; Quizmaster</span></div><div class=&quot;q-progress&quot;>Question <span>3</span> / 10</div></div><div class=&quot;timer-strip&quot;><div class=&quot;timer-inner&quot;></div></div><div class=&quot;main-display&quot;><div class=&quot;big-timer&quot;>13</div><div class=&quot;question-display&quot;>Quelle est la capitale de l'Australie ? &#x1f1e6;&#x1f1fa;</div><div class=&quot;answers-display&quot;><div class=&quot;answer-block a&quot;><span class=&quot;answer-letter&quot;>A</span><span class=&quot;answer-text&quot;>Sydney</span><div class=&quot;answer-count&quot;>3 &#x1f464;</div></div><div class=&quot;answer-block b&quot;><span class=&quot;answer-letter&quot;>B</span><span class=&quot;answer-text&quot;>Canberra</span><div class=&quot;answer-count&quot;>4 &#x1f464;</div></div><div class=&quot;answer-block c&quot;><span class=&quot;answer-letter&quot;>C</span><span class=&quot;answer-text&quot;>Melbourne</span><div class=&quot;answer-count&quot;>1 &#x1f464;</div></div><div class=&quot;answer-block d&quot;><span class=&quot;answer-letter&quot;>D</span><span class=&quot;answer-text&quot;>Perth</span><div class=&quot;answer-count&quot;>0 &#x1f464;</div></div></div></div><div class=&quot;live-badge&quot;><div class=&quot;live-dot&quot;></div> LIVE — 8 joueurs</div><div class=&quot;controls&quot;><div class=&quot;player-stats&quot;><div class=&quot;stat&quot;><div class=&quot;stat-val&quot;>8</div><div class=&quot;stat-label&quot;>Joueurs</div></div><div class=&quot;stat&quot;><div class=&quot;stat-val&quot;>8/8</div><div class=&quot;stat-label&quot;>Reponses</div></div><div class=&quot;stat&quot;><div class=&quot;stat-val&quot;>50%</div><div class=&quot;stat-label&quot;>Bonne rep.</div></div></div><div class=&quot;control-btns&quot;><button class=&quot;ctrl-btn ctrl-skip&quot;>&#x23ed;&#xfe0f; Passer</button><button class=&quot;ctrl-btn ctrl-next&quot;>Reveler la reponse &#x2192;</button></div></div></body></html>" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+
+<!-- SLIDE 9: Leaderboard -->
+<div class="slide mockup-slide" data-slide="8">
+<div class="mockup-info">
+<div class="section-num">Section 6 / 6</div>
+<div class="section-emoji">&#x1f3c6;</div>
+<h2>Resultats / Leaderboard</h2>
+<ul>
+<li>Podium anime top 3 avec couronnes, barres de hauteur variable et confettis</li>
+<li>Classement complet avec score, nombre de bonnes reponses, et mise en avant du joueur local</li>
+<li>Boutons Rejouer et Retour Accueil pour enchainer les parties</li>
+</ul>
+</div>
+<div class="mockup-preview">
+<iframe srcdoc="<!DOCTYPE html><html lang=&quot;fr&quot;><head><meta charset=&quot;UTF-8&quot;><meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;><title>QuizPub — Resultats</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}.confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}.confetti span{position:absolute;width:10px;height:10px;border-radius:2px;top:-20px;animation:fall 3s linear infinite}@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}.header{width:100%;padding:1.5rem 2rem;text-align:center;position:relative;z-index:2}.logo{font-weight:800;font-size:1.3rem;background:linear-gradient(135deg,#e94560,#f5a623);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.title{font-weight:800;font-size:2.5rem;margin-top:1rem;background:linear-gradient(135deg,#f5a623,#e94560);-webkit-background-clip:text;-webkit-text-fill-color:transparent}.subtitle{color:#667;margin-top:.3rem;font-size:.9rem}.podium-section{display:flex;align-items:flex-end;justify-content:center;gap:16px;margin:2rem 0 1rem;position:relative;z-index:2}.podium-spot{display:flex;flex-direction:column;align-items:center;text-align:center}.podium-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:.5rem;position:relative}.podium-spot:nth-child(2) .podium-avatar{width:80px;height:80px;font-size:2.5rem;border:3px solid #f5a623;box-shadow:0 0 30px rgba(245,166,35,.3)}.crown{position:absolute;top:-20px;font-size:1.5rem;animation:bounce 2s infinite}@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}.podium-name{font-weight:700;font-size:.95rem;margin-bottom:4px}.podium-score{font-weight:800;color:#f5a623;font-size:1.1rem}.podium-bar{width:100px;border-radius:12px 12px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:12px;font-weight:800;font-size:2rem;margin-top:.5rem}.podium-spot:nth-child(1) .podium-bar{height:100px;background:linear-gradient(180deg,rgba(192,192,192,.2),rgba(192,192,192,.05));color:rgba(192,192,192,.5)}.podium-spot:nth-child(2) .podium-bar{height:140px;background:linear-gradient(180deg,rgba(245,166,35,.2),rgba(245,166,35,.05));color:rgba(245,166,35,.5)}.podium-spot:nth-child(3) .podium-bar{height:80px;background:linear-gradient(180deg,rgba(205,127,50,.2),rgba(205,127,50,.05));color:rgba(205,127,50,.5)}.leaderboard{width:90%;max-width:600px;position:relative;z-index:2;margin-bottom:2rem}.lb-header{display:flex;justify-content:space-between;padding:10px 20px;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:#556}.lb-row{display:flex;align-items:center;padding:14px 20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;margin-bottom:6px}.lb-rank{width:30px;font-weight:700;color:#667;font-size:.9rem}.lb-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-right:12px}.lb-name{flex:1;font-weight:600;font-size:.95rem}.lb-correct{color:#27ae60;font-size:.85rem;margin-right:2rem;font-weight:600}.lb-score{font-weight:800;color:#f5a623;font-size:1.1rem}.lb-row.me{background:rgba(233,69,96,.08);border-color:rgba(233,69,96,.2)}.actions{display:flex;gap:1rem;margin:1rem 0 2rem;position:relative;z-index:2}.btn{padding:14px 32px;border:none;border-radius:14px;font-weight:700;cursor:pointer;font-size:.95rem;transition:all .2s;font-family:'Segoe UI',system-ui,sans-serif}.btn-primary{background:linear-gradient(135deg,#e94560,#c81d4e);color:#fff;box-shadow:0 4px 20px rgba(233,69,96,.3)}.btn-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aab}</style></head><body><div class=&quot;confetti&quot;><span style=&quot;left:10%;background:#e94560;animation-delay:0s;animation-duration:2.5s&quot;></span><span style=&quot;left:20%;background:#f5a623;animation-delay:.5s;animation-duration:3s&quot;></span><span style=&quot;left:30%;background:#2d9cdb;animation-delay:1s;animation-duration:2.8s&quot;></span><span style=&quot;left:40%;background:#27ae60;animation-delay:.3s;animation-duration:3.2s&quot;></span><span style=&quot;left:50%;background:#e94560;animation-delay:.8s;animation-duration:2.6s&quot;></span><span style=&quot;left:60%;background:#f5a623;animation-delay:1.2s;animation-duration:3.1s&quot;></span><span style=&quot;left:70%;background:#2d9cdb;animation-delay:.2s;animation-duration:2.9s&quot;></span><span style=&quot;left:80%;background:#27ae60;animation-delay:.7s;animation-duration:3.3s&quot;></span><span style=&quot;left:90%;background:#e94560;animation-delay:1.1s;animation-duration:2.7s&quot;></span></div><div class=&quot;header&quot;><div class=&quot;logo&quot;>QuizPub</div><div class=&quot;title&quot;>&#x1f3c6; Resultats finaux</div><div class=&quot;subtitle&quot;>Culture Generale — 10 questions</div></div><div class=&quot;podium-section&quot;><div class=&quot;podium-spot&quot;><div class=&quot;podium-avatar&quot; style=&quot;background:rgba(192,192,192,.15)&quot;>&#x1f9e0;</div><div class=&quot;podium-name&quot;>BrainMaster</div><div class=&quot;podium-score&quot;>8,200</div><div class=&quot;podium-bar&quot;>2</div></div><div class=&quot;podium-spot&quot;><div class=&quot;podium-avatar&quot; style=&quot;background:rgba(245,166,35,.15)&quot;><span class=&quot;crown&quot;>&#x1f451;</span>&#x1f37a;</div><div class=&quot;podium-name&quot;>DJ Biere</div><div class=&quot;podium-score&quot;>9,450</div><div class=&quot;podium-bar&quot;>1</div></div><div class=&quot;podium-spot&quot;><div class=&quot;podium-avatar&quot; style=&quot;background:rgba(205,127,50,.15)&quot;>&#x1f3af;</div><div class=&quot;podium-name&quot;>QuizKiller</div><div class=&quot;podium-score&quot;>7,800</div><div class=&quot;podium-bar&quot;>3</div></div></div><div class=&quot;leaderboard&quot;><div class=&quot;lb-header&quot;><span>Classement complet</span><span>Score</span></div><div class=&quot;lb-row&quot;><div class=&quot;lb-rank&quot;>4</div><div class=&quot;lb-avatar&quot; style=&quot;background:rgba(155,89,182,.15)&quot;>&#x1f98a;</div><div class=&quot;lb-name&quot;>FoxyTrivia</div><div class=&quot;lb-correct&quot;>7/10</div><div class=&quot;lb-score&quot;>6,900</div></div><div class=&quot;lb-row me&quot;><div class=&quot;lb-rank&quot;>5</div><div class=&quot;lb-avatar&quot; style=&quot;background:rgba(233,69,96,.15)&quot;>&#x1f525;</div><div class=&quot;lb-name&quot;>HotAnswer <span style=&quot;font-size:.7rem;color:#e94560&quot;>&#x2190; Toi</span></div><div class=&quot;lb-correct&quot;>6/10</div><div class=&quot;lb-score&quot;>5,600</div></div><div class=&quot;lb-row&quot;><div class=&quot;lb-rank&quot;>6</div><div class=&quot;lb-avatar&quot; style=&quot;background:rgba(245,166,35,.15)&quot;>&#x1f355;</div><div class=&quot;lb-name&quot;>PizzaBrain</div><div class=&quot;lb-correct&quot;>5/10</div><div class=&quot;lb-score&quot;>4,200</div></div><div class=&quot;lb-row&quot;><div class=&quot;lb-rank&quot;>7</div><div class=&quot;lb-avatar&quot; style=&quot;background:rgba(45,156,219,.15)&quot;>&#x26a1;</div><div class=&quot;lb-name&quot;>SpeedyQuiz</div><div class=&quot;lb-correct&quot;>4/10</div><div class=&quot;lb-score&quot;>3,100</div></div><div class=&quot;lb-row&quot;><div class=&quot;lb-rank&quot;>8</div><div class=&quot;lb-avatar&quot; style=&quot;background:rgba(39,174,96,.15)&quot;>&#x1f3b8;</div><div class=&quot;lb-name&quot;>RockTrivia</div><div class=&quot;lb-correct&quot;>3/10</div><div class=&quot;lb-score&quot;>1,800</div></div></div><div class=&quot;actions&quot;><button class=&quot;btn btn-primary&quot;>&#x1f504; Rejouer</button><button class=&quot;btn btn-secondary&quot;>&#x1f3e0; Accueil</button></div></body></html>" sandbox="allow-scripts"></iframe>
+</div>
+</div>
+
+<!-- SLIDE 10: Summary -->
+<div class="slide" data-slide="9">
+<div class="summary-slide" style="display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;height:100%">
+<h2>Synthese et prochaines etapes</h2>
+<div class="summary-cols">
+<div class="summary-col">
+<h3>Parcours utilisateur</h3>
+<div class="flow-step"><div class="num">1</div> Accueil — saisie du PIN</div>
+<div class="flow-arrow">&#8595;</div>
+<div class="flow-step"><div class="num">2</div> Creation de quiz (quizmaster)</div>
+<div class="flow-arrow">&#8595;</div>
+<div class="flow-step"><div class="num">3</div> Lobby — attente des joueurs</div>
+<div class="flow-arrow">&#8595;</div>
+<div class="flow-step"><div class="num">4</div> Jeu — questions en temps reel</div>
+<div class="flow-arrow">&#8595;</div>
+<div class="flow-step"><div class="num">5</div> Quizmaster — vue projecteur</div>
+<div class="flow-arrow">&#8595;</div>
+<div class="flow-step"><div class="num">6</div> Resultats — podium et classement</div>
+</div>
+<div class="summary-col">
+<h3>Stack technique</h3>
+<div class="tech-item"><div class="dot" style="background:#e94560"></div>Frontend : HTML/CSS/JS vanilla</div>
+<div class="tech-item"><div class="dot" style="background:#f5a623"></div>Backend : Node.js + Express</div>
+<div class="tech-item"><div class="dot" style="background:#2d9cdb"></div>Temps reel : WebSocket (ws)</div>
+<div class="tech-item"><div class="dot" style="background:#27ae60"></div>Questions : OpenTrivia DB API</div>
+<div class="tech-item"><div class="dot" style="background:#9b59b6"></div>Deploiement : Docker / self-hosted</div>
+<div class="tech-item"><div class="dot" style="background:#e94560"></div>Zero BDD : state en memoire</div>
+</div>
+<div class="summary-col">
+<h3>Prochaines etapes</h3>
+<div class="next-item">MVP fonctionnel (2 joueurs, 5 questions)</div>
+<div class="next-item">Integration WebSocket bidirectionnelle</div>
+<div class="next-item">Import OpenTrivia avec categories</div>
+<div class="next-item">Tests multi-device en reseau local</div>
+<div class="next-item">Deploiement Docker + documentation</div>
+</div>
+</div>
+</div>
+</div>
+
+</div><!-- end .deck -->
+
+<!-- Navigation bar -->
+<div class="nav-bar">
+<button class="nav-btn" id="prevBtn" disabled>&#8592; Precedent</button>
+<div class="nav-dots" id="navDots"></div>
+<div class="slide-counter" id="slideCounter">1 / 10</div>
+<button class="nav-btn" id="nextBtn">Suivant &#8594;</button>
+</div>
+
+<script>
+(function(){
+  var slides = document.querySelectorAll('.slide');
+  var total = slides.length;
+  var current = 0;
+  var dotsEl = document.getElementById('navDots');
+  var counterEl = document.getElementById('slideCounter');
+  var prevBtn = document.getElementById('prevBtn');
+  var nextBtn = document.getElementById('nextBtn');
+
+  for(var i = 0; i < total; i++){
+    var dot = document.createElement('button');
+    dot.className = 'nav-dot' + (i === 0 ? ' active' : '');
+    dot.setAttribute('data-i', i);
+    dot.addEventListener('click', function(){ goTo(parseInt(this.getAttribute('data-i'))); });
+    dotsEl.appendChild(dot);
+  }
+
+  function goTo(n){
+    if(n < 0 || n >= total) return;
+    slides[current].classList.remove('active');
+    dotsEl.children[current].classList.remove('active');
+    current = n;
+    slides[current].classList.add('active');
+    dotsEl.children[current].classList.add('active');
+    counterEl.textContent = (current+1) + ' / ' + total;
+    prevBtn.disabled = current === 0;
+    nextBtn.disabled = current === total - 1;
+  }
+
+  prevBtn.addEventListener('click', function(){ goTo(current - 1); });
+  nextBtn.addEventListener('click', function(){ goTo(current + 1); });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' || e.key === 'ArrowDown') goTo(current + 1);
+    if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') goTo(current - 1);
+  });
+})();
+</script>
+
+</body>
+</html>

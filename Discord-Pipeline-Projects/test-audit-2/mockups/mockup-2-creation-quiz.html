@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizPub — Création de Quiz</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh}
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@400;600;700&display=swap');
+.header{background:rgba(0,0,0,.3);border-bottom:1px solid rgba(255,255,255,.06);padding:1rem 2rem;display:flex;align-items:center;justify-content:space-between;backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+.header-left{display:flex;align-items:center;gap:1rem}
+.logo{font-family:'Fredoka One',cursive;font-size:1.5rem;background:linear-gradient(135deg,#e94560,#f5a623);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.back-btn{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;padding:8px 16px;border-radius:10px;cursor:pointer;font-size:.85rem;transition:all .2s}
+.back-btn:hover{background:rgba(255,255,255,.15)}
+.layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 60px)}
+.sidebar{background:rgba(0,0,0,.2);border-right:1px solid rgba(255,255,255,.06);padding:1.5rem;overflow-y:auto}
+.sidebar h3{font-size:.75rem;text-transform:uppercase;letter-spacing:2px;color:#667;margin-bottom:1rem}
+.question-list{display:flex;flex-direction:column;gap:.5rem}
+.q-item{padding:12px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);cursor:pointer;transition:all .2s;display:flex;gap:10px;align-items:center}
+.q-item:hover{background:rgba(255,255,255,.08)}
+.q-item.active{background:rgba(233,69,96,.1);border-color:rgba(233,69,96,.3)}
+.q-num{width:28px;height:28px;border-radius:8px;background:rgba(233,69,96,.2);color:#e94560;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8rem;flex-shrink:0}
+.q-item.active .q-num{background:#e94560;color:#fff}
+.q-text{font-size:.85rem;color:#aab;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.q-type{font-size:.65rem;color:#556;margin-top:2px}
+.add-q-btn{width:100%;padding:12px;border:2px dashed rgba(255,255,255,.1);border-radius:10px;background:transparent;color:#667;cursor:pointer;font-size:.85rem;transition:all .2s;margin-top:.5rem}
+.add-q-btn:hover{border-color:rgba(233,69,96,.3);color:#e94560}
+.main{padding:2rem;overflow-y:auto}
+.editor-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:16px;padding:2rem;max-width:700px}
+.field-group{margin-bottom:1.5rem}
+.field-label{font-size:.75rem;text-transform:uppercase;letter-spacing:1.5px;color:#667;margin-bottom:.5rem;font-weight:600}
+.field-input{width:100%;padding:14px 16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:10px;color:#fff;font-size:1rem;transition:all .2s;font-family:'Inter',sans-serif}
+.field-input:focus{outline:none;border-color:#e94560;background:rgba(233,69,96,.05)}
+.type-toggle{display:flex;gap:.5rem}
+.type-btn{padding:10px 20px;border-radius:10px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#aab;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+.type-btn.active{background:rgba(233,69,96,.15);border-color:#e94560;color:#e94560}
+.choices-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.choice-item{position:relative;display:flex;align-items:center;gap:10px}
+.choice-letter{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.9rem;color:#fff;flex-shrink:0}
+.choice-item:nth-child(1) .choice-letter{background:#e94560}
+.choice-item:nth-child(2) .choice-letter{background:#2d9cdb}
+.choice-item:nth-child(3) .choice-letter{background:#f5a623}
+.choice-item:nth-child(4) .choice-letter{background:#27ae60}
+.choice-input{flex:1;padding:10px 12px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:#fff;font-size:.9rem;font-family:'Inter',sans-serif}
+.choice-input:focus{outline:none;border-color:rgba(255,255,255,.2)}
+.correct-check{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-size:1rem}
+.settings-row{display:flex;gap:1rem;flex-wrap:wrap}
+.setting-card{flex:1;min-width:140px;padding:14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px}
+.setting-card .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:#556;margin-bottom:6px}
+.setting-card .value{font-size:1rem;font-weight:700;color:#f5a623}
+.setting-card select{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#fff;padding:6px 10px;border-radius:6px;font-size:.85rem;width:100%}
+.actions{display:flex;gap:1rem;margin-top:2rem;justify-content:flex-end}
+.btn{padding:12px 28px;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-size:.9rem;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-primary{background:linear-gradient(135deg,#e94560,#c81d4e);color:#fff;box-shadow:0 4px 15px rgba(233,69,96,.3)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(233,69,96,.4)}
+.btn-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aab}
+.btn-secondary:hover{background:rgba(255,255,255,.1)}
+.import-section{margin-top:1.5rem;padding:1.5rem;border:2px dashed rgba(245,166,35,.2);border-radius:12px;text-align:center;color:#667}
+.import-section .icon{font-size:2rem;margin-bottom:.5rem}
+.import-section p{font-size:.85rem}
+.import-section a{color:#f5a623;text-decoration:none;font-weight:600}
+</style>
+</head>
+<body>
+<div class="header">
+<div class="header-left">
+<button class="back-btn">← Retour</button>
+<span class="logo">QuizPub</span>
+</div>
+<div style="display:flex;gap:.5rem">
+<button class="btn btn-secondary">👁️ Preview</button>
+<button class="btn btn-primary">🚀 Lancer</button>
+</div>
+</div>
+<div class="layout">
+<div class="sidebar">
+<h3>Questions (5)</h3>
+<div class="question-list">
+<div class="q-item active">
+<div class="q-num">1</div>
+<div><div class="q-text">Quelle est la capitale de l'Australie ?</div><div class="q-type">QCM • 20s</div></div>
+</div>
+<div class="q-item">
+<div class="q-num">2</div>
+<div><div class="q-text">Le soleil est une étoile</div><div class="q-type">Vrai/Faux • 15s</div></div>
+</div>
+<div class="q-item">
+<div class="q-num">3</div>
+<div><div class="q-text">Combien de pays en Afrique ?</div><div class="q-type">QCM • 20s</div></div>
+</div>
+<div class="q-item">
+<div class="q-num">4</div>
+<div><div class="q-text">Qui a peint la Joconde ?</div><div class="q-type">QCM • 20s</div></div>
+</div>
+<div class="q-item">
+<div class="q-num">5</div>
+<div><div class="q-text">La Grande Muraille est visible...</div><div class="q-type">Vrai/Faux • 15s</div></div>
+</div>
+</div>
+<button class="add-q-btn">+ Ajouter une question</button>
+<div class="import-section">
+<div class="icon">📥</div>
+<p>Importer via <a href="#">API OpenTrivia</a></p>
+</div>
+</div>
+<div class="main">
+<div class="editor-card">
+<div class="field-group">
+<div class="field-label">Question</div>
+<input class="field-input" value="Quelle est la capitale de l'Australie ?">
+</div>
+<div class="field-group">
+<div class="field-label">Type de question</div>
+<div class="type-toggle">
+<div class="type-btn active">QCM (4 choix)</div>
+<div class="type-btn">Vrai / Faux</div>
+</div>
+</div>
+<div class="field-group">
+<div class="field-label">Réponses</div>
+<div class="choices-grid">
+<div class="choice-item"><div class="choice-letter">A</div><input class="choice-input" value="Sydney"><span class="correct-check"></span></div>
+<div class="choice-item"><div class="choice-letter">B</div><input class="choice-input" value="Canberra"><span class="correct-check">✅</span></div>
+<div class="choice-item"><div class="choice-letter">C</div><input class="choice-input" value="Melbourne"><span class="correct-check"></span></div>
+<div class="choice-item"><div class="choice-letter">D</div><input class="choice-input" value="Perth"><span class="correct-check"></span></div>
+</div>
+</div>
+<div class="field-group">
+<div class="field-label">Paramètres</div>
+<div class="settings-row">
+<div class="setting-card">
+<div class="label">Timer</div>
+<select><option>10s</option><option selected>20s</option><option>30s</option><option>60s</option></select>
+</div>
+<div class="setting-card">
+<div class="label">Scoring</div>
+<select><option selected>Rapidité</option><option>Fixe (1000pts)</option></select>
+</div>
+<div class="setting-card">
+<div class="label">Points</div>
+<div class="value">1000</div>
+</div>
+</div>
+</div>
+<div class="actions">
+<button class="btn btn-secondary">🗑️ Supprimer</button>
+<button class="btn btn-primary">💾 Sauvegarder</button>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

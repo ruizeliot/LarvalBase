@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizPub — Résultats</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Inter:wght@400;600;700&display=swap');
+body{font-family:'Inter',sans-serif;background:#1a1a2e;color:#fff;min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+.confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+.confetti span{position:absolute;width:10px;height:10px;border-radius:2px;top:-20px;animation:fall 3s linear infinite}
+@keyframes fall{to{transform:translateY(110vh) rotate(720deg)}}
+.header{width:100%;padding:1.5rem 2rem;text-align:center;position:relative;z-index:2}
+.logo{font-family:'Fredoka One',cursive;font-size:1.3rem;background:linear-gradient(135deg,#e94560,#f5a623);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.title{font-family:'Fredoka One',cursive;font-size:2.5rem;margin-top:1rem;background:linear-gradient(135deg,#f5a623,#e94560);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.subtitle{color:#667;margin-top:.3rem;font-size:.9rem}
+.podium-section{display:flex;align-items:flex-end;justify-content:center;gap:16px;margin:2rem 0 1rem;position:relative;z-index:2}
+.podium-spot{display:flex;flex-direction:column;align-items:center;text-align:center}
+.podium-avatar{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2rem;margin-bottom:.5rem;position:relative}
+.podium-spot:nth-child(2) .podium-avatar{width:80px;height:80px;font-size:2.5rem;border:3px solid #f5a623;box-shadow:0 0 30px rgba(245,166,35,.3)}
+.crown{position:absolute;top:-20px;font-size:1.5rem;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.podium-name{font-weight:700;font-size:.95rem;margin-bottom:4px}
+.podium-score{font-family:'Fredoka One',cursive;color:#f5a623;font-size:1.1rem}
+.podium-bar{width:100px;border-radius:12px 12px 0 0;display:flex;align-items:flex-start;justify-content:center;padding-top:12px;font-family:'Fredoka One',cursive;font-size:2rem;margin-top:.5rem}
+.podium-spot:nth-child(1) .podium-bar{height:100px;background:linear-gradient(180deg,rgba(192,192,192,.2),rgba(192,192,192,.05));color:rgba(192,192,192,.5)}
+.podium-spot:nth-child(2) .podium-bar{height:140px;background:linear-gradient(180deg,rgba(245,166,35,.2),rgba(245,166,35,.05));color:rgba(245,166,35,.5)}
+.podium-spot:nth-child(3) .podium-bar{height:80px;background:linear-gradient(180deg,rgba(205,127,50,.2),rgba(205,127,50,.05));color:rgba(205,127,50,.5)}
+.leaderboard{width:90%;max-width:600px;position:relative;z-index:2;margin-bottom:2rem}
+.lb-header{display:flex;justify-content:space-between;padding:10px 20px;font-size:.7rem;text-transform:uppercase;letter-spacing:2px;color:#556}
+.lb-row{display:flex;align-items:center;padding:14px 20px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.05);border-radius:12px;margin-bottom:6px;transition:all .2s}
+.lb-row:hover{background:rgba(255,255,255,.06)}
+.lb-rank{width:30px;font-weight:700;color:#667;font-size:.9rem}
+.lb-avatar{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-right:12px}
+.lb-name{flex:1;font-weight:600;font-size:.95rem}
+.lb-correct{color:#27ae60;font-size:.85rem;margin-right:2rem;font-weight:600}
+.lb-score{font-family:'Fredoka One',cursive;color:#f5a623;font-size:1.1rem}
+.lb-row.me{background:rgba(233,69,96,.08);border-color:rgba(233,69,96,.2)}
+.actions{display:flex;gap:1rem;margin:1rem 0 2rem;position:relative;z-index:2}
+.btn{padding:14px 32px;border:none;border-radius:14px;font-weight:700;cursor:pointer;font-size:.95rem;transition:all .2s;font-family:'Inter',sans-serif}
+.btn-primary{background:linear-gradient(135deg,#e94560,#c81d4e);color:#fff;box-shadow:0 4px 20px rgba(233,69,96,.3)}
+.btn-primary:hover{transform:translateY(-2px)}
+.btn-secondary{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:#aab}
+</style>
+</head>
+<body>
+<div class="confetti">
+<span style="left:10%;background:#e94560;animation-delay:0s;animation-duration:2.5s"></span>
+<span style="left:20%;background:#f5a623;animation-delay:.5s;animation-duration:3s"></span>
+<span style="left:30%;background:#2d9cdb;animation-delay:1s;animation-duration:2.8s"></span>
+<span style="left:40%;background:#27ae60;animation-delay:.3s;animation-duration:3.2s"></span>
+<span style="left:50%;background:#e94560;animation-delay:.8s;animation-duration:2.6s"></span>
+<span style="left:60%;background:#f5a623;animation-delay:1.2s;animation-duration:3.1s"></span>
+<span style="left:70%;background:#2d9cdb;animation-delay:.2s;animation-duration:2.9s"></span>
+<span style="left:80%;background:#27ae60;animation-delay:.7s;animation-duration:3.3s"></span>
+<span style="left:90%;background:#e94560;animation-delay:1.1s;animation-duration:2.7s"></span>
+</div>
+<div class="header">
+<div class="logo">QuizPub</div>
+<div class="title">🏆 Résultats finaux</div>
+<div class="subtitle">Culture Générale — 10 questions</div>
+</div>
+<div class="podium-section">
+<div class="podium-spot">
+<div class="podium-avatar" style="background:rgba(192,192,192,.15)">🧠</div>
+<div class="podium-name">BrainMaster</div>
+<div class="podium-score">8,200</div>
+<div class="podium-bar">2</div>
+</div>
+<div class="podium-spot">
+<div class="podium-avatar" style="background:rgba(245,166,35,.15)">
+<span class="crown">👑</span>🍺
+</div>
+<div class="podium-name">DJ Bière</div>
+<div class="podium-score">9,450</div>
+<div class="podium-bar">1</div>
+</div>
+<div class="podium-spot">
+<div class="podium-avatar" style="background:rgba(205,127,50,.15)">🎯</div>
+<div class="podium-name">QuizKiller</div>
+<div class="podium-score">7,800</div>
+<div class="podium-bar">3</div>
+</div>
+</div>
+<div class="leaderboard">
+<div class="lb-header"><span>Classement complet</span><span>Score</span></div>
+<div class="lb-row"><div class="lb-rank">4</div><div class="lb-avatar" style="background:rgba(155,89,182,.15)">🦊</div><div class="lb-name">FoxyTrivia</div><div class="lb-correct">7/10</div><div class="lb-score">6,900</div></div>
+<div class="lb-row me"><div class="lb-rank">5</div><div class="lb-avatar" style="background:rgba(233,69,96,.15)">🔥</div><div class="lb-name">HotAnswer <span style="font-size:.7rem;color:#e94560">← Toi</span></div><div class="lb-correct">6/10</div><div class="lb-score">5,600</div></div>
+<div class="lb-row"><div class="lb-rank">6</div><div class="lb-avatar" style="background:rgba(245,166,35,.15)">🍕</div><div class="lb-name">PizzaBrain</div><div class="lb-correct">5/10</div><div class="lb-score">4,200</div></div>
+<div class="lb-row"><div class="lb-rank">7</div><div class="lb-avatar" style="background:rgba(45,156,219,.15)">⚡</div><div class="lb-name">SpeedyQuiz</div><div class="lb-correct">4/10</div><div class="lb-score">3,100</div></div>
+<div class="lb-row"><div class="lb-rank">8</div><div class="lb-avatar" style="background:rgba(39,174,96,.15)">🎸</div><div class="lb-name">RockTrivia</div><div class="lb-correct">3/10</div><div class="lb-score">1,800</div></div>
+</div>
+<div class="actions">
+<button class="btn btn-primary">🔄 Rejouer</button>
+<button class="btn btn-secondary">🏠 Accueil</button>
+</div>
+</body>
+</html>
