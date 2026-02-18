@@ -5,8 +5,8 @@ import { COLORS, AVATARS } from '../types';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
-  const [selectedColor, setSelectedColor] = useState(COLORS[0]);
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [selectedColor, setSelectedColor] = useState<string>(COLORS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState<string>(AVATARS[0]);
   const { login } = useUser();
   const navigate = useNavigate();
 
