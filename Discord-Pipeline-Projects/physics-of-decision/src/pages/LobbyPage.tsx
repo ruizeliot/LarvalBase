@@ -38,7 +38,7 @@ export default function LobbyPage() {
   const [editRoom, setEditRoom] = useState<Room | null>(null);
   const [favCollapsed, setFavCollapsed] = useState(false);
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Debounce search
@@ -97,7 +97,10 @@ export default function LobbyPage() {
 
   const handleDelete = useCallback(async (roomId: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette room ?')) return;
-    await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
+    const res = await fetch(`/api/rooms/${roomId}`, { method: 'DELETE' });
+    if (res.ok) {
+      setRooms(prev => prev.filter(r => r.id !== roomId));
+    }
   }, []);
 
   const handleEdit = useCallback((room: Room) => {
@@ -107,13 +110,17 @@ export default function LobbyPage() {
 
   const handleCreate = useCallback(async (data: { name: string; description: string; tags: string[]; isPrivate: boolean }) => {
     if (editRoom) {
-      await fetch(`/api/rooms/${editRoom.id}`, {
+      const res = await fetch(`/api/rooms/${editRoom.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
+      if (res.ok) {
+        const updated = await res.json();
+        setRooms(prev => prev.map(r => r.id === editRoom.id ? updated : r));
+      }
     } else {
-      await fetch('/api/rooms', {
+      const res = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -123,6 +130,10 @@ export default function LobbyPage() {
           creatorAvatar: user!.avatar,
         }),
       });
+      if (res.ok) {
+        const created = await res.json();
+        setRooms(prev => [created, ...prev]);
+      }
     }
     setShowCreate(false);
     setEditRoom(null);
@@ -150,8 +161,9 @@ export default function LobbyPage() {
   const sorted = [...filtered].sort((a, b) => {
     if (sort === 'name') return a.name.localeCompare(b.name);
     if (sort === 'date') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    // activity: users count desc
-    return b.users.length - a.users.length;
+    // activity: most recently updated first, then by presence count as tiebreaker
+    const timeDiff = new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    return timeDiff !== 0 ? timeDiff : b.users.length - a.users.length;
   });
 
   const favRooms = sorted.filter(r => favorites.has(r.id));
@@ -247,7 +259,7 @@ export default function LobbyPage() {
               className="section-title section-title-btn"
               onClick={() => setFavCollapsed(!favCollapsed)}
             >
-              ⭐ Mes Favoris <span className="count">{favRooms.length}</span>
+              ⭐ Mes Rooms <span className="count">{favRooms.length}</span>
               <span className={`collapse-arrow${favCollapsed ? ' collapsed' : ''}`}>▼</span>
             </button>
             {!favCollapsed && (
