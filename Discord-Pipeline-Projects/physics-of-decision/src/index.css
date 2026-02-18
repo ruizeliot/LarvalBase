@@ -891,3 +891,39 @@ body {
     white-space: normal;
   }
 }
+
+@media (max-width: 375px) {
+  .login-container {
+    padding: 24px 16px;
+  }
+
+  .lobby-content {
+    padding: 12px 8px 24px;
+  }
+
+  .controls-bar {
+    gap: 8px;
+  }
+
+  .tag-filter {
+    gap: 6px;
+  }
+
+  .tag-chip {
+    padding: 4px 10px;
+    font-size: 0.72rem;
+  }
+
+  .room-card {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .room-name {
+    font-size: 0.88rem;
+  }
+
+  .room-desc {
+    font-size: 0.78rem;
+  }
+}
