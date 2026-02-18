@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { Room } from '../types';
 import { TAG_CONFIG, DOT_COLORS, type Tag } from '../types';
 
@@ -24,12 +25,13 @@ function formatDate(iso: string): string {
 }
 
 export default function RoomCard({ room, isFavorite, isOwner, onToggleFavorite, onDelete, onEdit }: Props) {
+  const navigate = useNavigate();
   const maxDots = 5;
   const visibleUsers = room.users.slice(0, maxDots);
   const extraCount = Math.max(0, room.users.length - maxDots);
 
   return (
-    <div className="room-card">
+    <div className="room-card" onClick={() => navigate(`/room/${room.id}/definition`)}>
       <button
         className={`fav-btn${isFavorite ? ' active' : ''}`}
         onClick={e => { e.stopPropagation(); onToggleFavorite(); }}

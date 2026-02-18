@@ -200,6 +200,36 @@ io.on('connection', (socket) => {
     });
   });
 
+  // Graph sync events — relay to room members
+  const graphEvents = [
+    'graph:node:add', 'graph:node:remove', 'graph:node:update', 'graph:node:move',
+    'graph:node:move:batch', 'graph:edge:add', 'graph:edge:remove', 'graph:import',
+  ];
+  for (const evt of graphEvents) {
+    socket.on(evt, (payload: any) => {
+      // Relay to all room members except sender
+      for (const [roomId] of rooms) {
+        if (socket.rooms.has(`room:${roomId}`)) {
+          socket.to(`room:${roomId}`).emit(evt, payload);
+        }
+      }
+    });
+  }
+
+  socket.on('graph:request-state', ({ roomId }: { roomId: string }) => {
+    // Ask other room members to send full state
+    socket.to(`room:${roomId}`).emit('graph:request-state', { roomId });
+  });
+
+  // Cursor sync
+  socket.on('cursor:move', (payload: any) => {
+    for (const [roomId] of rooms) {
+      if (socket.rooms.has(`room:${roomId}`)) {
+        socket.to(`room:${roomId}`).emit('cursor:move', { ...payload, socketId: socket.id });
+      }
+    }
+  });
+
   socket.on('disconnect', () => {
     // Clean up user from all rooms
     for (const [roomId, room] of rooms) {
