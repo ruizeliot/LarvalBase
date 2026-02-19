@@ -12,6 +12,10 @@
 import { render, screen } from '@testing-library/react';
 import HomePage from '@/app/page';
 
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn() }),
+}));
+
 describe('US-A1: Attractive Home Screen', () => {
   beforeEach(() => {
     render(<HomePage />);
