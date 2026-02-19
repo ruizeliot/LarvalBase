@@ -1,5 +1,6 @@
 import MusicWave from '@/components/ui/MusicWave';
 import OnlineCounter from '@/components/ui/OnlineCounter';
+import BottomNav from '@/components/navigation/BottomNav';
 
 export default function HomePage() {
   return (
@@ -34,6 +35,7 @@ export default function HomePage() {
         {/* Online counter */}
         <OnlineCounter />
       </div>
+      <BottomNav currentPath="/" />
     </div>
   );
 }
