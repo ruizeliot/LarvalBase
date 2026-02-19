@@ -1,9 +1,10 @@
 import MusicWave from '@/components/ui/MusicWave';
+import OnlineCounter from '@/components/ui/OnlineCounter';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen flex flex-col items-center bg-gradient-to-br from-[#1a0533] via-[#2d1b69] to-[#6c2bd9] text-white overflow-x-hidden">
-      <div className="w-full max-w-[400px] px-6 pt-10 flex flex-col items-center">
+      <div className="w-full max-w-[400px] px-6 pt-10 flex flex-col items-center pb-24">
         {/* Logo area */}
         <div className="mt-16 mb-4 text-center">
           <div data-testid="logo-icon" className="text-7xl animate-pulse">
@@ -29,6 +30,9 @@ export default function HomePage() {
             Rejoindre
           </button>
         </div>
+
+        {/* Online counter */}
+        <OnlineCounter />
       </div>
     </div>
   );
