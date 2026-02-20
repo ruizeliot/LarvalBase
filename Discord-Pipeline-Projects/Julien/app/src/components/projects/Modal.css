@@ -88,3 +88,8 @@
 .modal__text strong {
   color: var(--text-primary);
 }
+
+.modal__btn--danger {
+  background: var(--danger);
+  color: white;
+}

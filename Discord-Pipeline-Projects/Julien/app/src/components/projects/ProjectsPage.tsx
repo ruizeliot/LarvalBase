@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { useFilteredProjects } from '@/hooks/useFilteredProjects';
 import { useProjectStore } from '@/stores/projectStore';
+import type { Project } from '@/types/project';
 import { ProjectCard } from './ProjectCard';
 import { CreateProjectModal } from './CreateProjectModal';
+import { DeleteProjectModal } from './DeleteProjectModal';
 import './ProjectsPage.css';
 
 export function ProjectsPage() {
   const projects = useFilteredProjects();
   const addProject = useProjectStore((s) => s.addProject);
+  const deleteProject = useProjectStore((s) => s.deleteProject);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
 
   return (
     <div className="projects-page">
@@ -37,7 +41,7 @@ export function ProjectsPage() {
                 key={project.id}
                 project={project}
                 onOpen={() => {}}
-                onDelete={() => {}}
+                onDelete={() => setProjectToDelete(project)}
               />
             ))}
           </div>
@@ -48,6 +52,15 @@ export function ProjectsPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onCreate={addProject}
+      />
+
+      <DeleteProjectModal
+        isOpen={projectToDelete !== null}
+        projectName={projectToDelete?.name ?? ''}
+        onClose={() => setProjectToDelete(null)}
+        onConfirm={() => {
+          if (projectToDelete) deleteProject(projectToDelete.id);
+        }}
       />
     </div>
   );
