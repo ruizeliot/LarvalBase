@@ -5,6 +5,7 @@ import type { Project } from '@/types/project';
 import { ProjectCard } from './ProjectCard';
 import { CreateProjectModal } from './CreateProjectModal';
 import { DeleteProjectModal } from './DeleteProjectModal';
+import { SearchBar } from './SearchBar';
 import './ProjectsPage.css';
 
 export function ProjectsPage() {
@@ -27,6 +28,7 @@ export function ProjectsPage() {
       </header>
 
       <main className="projects-page__content">
+        <SearchBar />
         {projects.length === 0 ? (
           <div className="projects-page__empty">
             <p>Aucun projet</p>
