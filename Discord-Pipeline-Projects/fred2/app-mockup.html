@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — App Mockup Compilation</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1729; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* Header */
+.header { background: #1a2332; border-bottom: 1px solid #1e293b; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.header .logo { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.header .subtitle { font-size: 0.85rem; color: #94a3b8; margin-left: 1rem; }
+
+/* Navigation tabs */
+.nav-tabs { display: flex; gap: 0.25rem; background: #1a2332; padding: 0.5rem 1.5rem; border-bottom: 1px solid #1e293b; overflow-x: auto; flex-shrink: 0; }
+.nav-tabs button { background: none; border: none; color: #94a3b8; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+.nav-tabs button:hover { background: rgba(96,165,250,0.1); color: #cbd5e1; }
+.nav-tabs button.active { background: rgba(96,165,250,0.15); color: #60a5fa; font-weight: 600; }
+
+/* Content area */
+.content { flex: 1; display: flex; flex-direction: column; }
+.tab-panel { display: none; flex: 1; flex-direction: column; }
+.tab-panel.active { display: flex; }
+
+/* Iframe container */
+.iframe-container { flex: 1; position: relative; }
+.iframe-container iframe { width: 100%; height: 100%; border: none; min-height: 80vh; }
+
+/* Missing mockup notice */
+.missing-notice { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center; }
+.missing-notice .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+.missing-notice h3 { font-size: 1.2rem; color: #60a5fa; margin-bottom: 0.5rem; }
+.missing-notice p { color: #94a3b8; max-width: 500px; line-height: 1.6; font-size: 0.9rem; }
+.missing-notice .version { display: inline-block; margin-top: 0.75rem; padding: 0.25rem 0.75rem; background: rgba(96,165,250,0.1); border-radius: 6px; font-size: 0.8rem; color: #60a5fa; }
+
+/* Section summary */
+.section-summary { padding: 1.5rem 2rem; background: #141d2e; border-bottom: 1px solid #1e293b; }
+.section-summary h2 { font-size: 1rem; color: #e2e8f0; margin-bottom: 0.5rem; }
+.section-summary ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
+.section-summary li { font-size: 0.8rem; color: #94a3b8; padding: 0.25rem 0.6rem; background: rgba(148,163,184,0.1); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:center;">
+    <span class="logo">ScholarScope</span>
+    <span class="subtitle">Dashboard chercheur academique — Compilation des maquettes</span>
+  </div>
+</div>
+
+<div class="nav-tabs" id="navTabs">
+  <button class="active" data-tab="recherche">&#128269; Recherche</button>
+  <button data-tab="vue-densemble">&#128202; Vue d'ensemble</button>
+  <button data-tab="publications">&#128218; Publications</button>
+  <button data-tab="cartographie">&#128506;&#65039; Cartographie</button>
+  <button data-tab="timeline">&#128200; Timeline</button>
+  <button data-tab="reseau">&#128101; Reseau</button>
+  <button data-tab="export">&#128196; Export PDF</button>
+</div>
+
+<div class="content">
+
+  <!-- 1. Recherche -->
+  <div class="tab-panel active" id="panel-recherche">
+    <div class="section-summary">
+      <h2>&#128269; Recherche — Page d'accueil (V1)</h2>
+      <ul>
+        <li>Barre de recherche centrale</li>
+        <li>Autocompletion + desambiguisation</li>
+        <li>Detection auto format (nom, ORCID, Scopus ID, URL Scholar)</li>
+        <li>Raccourcis d'exemple sous le champ</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128269;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Recherche" du canal fred2.</p>
+      <span class="version">Version validee : V1</span>
+    </div>
+  </div>
+
+  <!-- 2. Vue d'ensemble -->
+  <div class="tab-panel" id="panel-vue-densemble">
+    <div class="section-summary">
+      <h2>&#128202; Vue d'ensemble — Dashboard principal (V2)</h2>
+      <ul>
+        <li>Metriques cles (h-index, citations, publications)</li>
+        <li>Sparkline citations/an avec tooltip</li>
+        <li>Selecteur de periode (De/A)</li>
+        <li>Top thematiques en tags</li>
+        <li>Navigation cross-filtree</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128202;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Vue d'ensemble" du canal fred2.</p>
+      <span class="version">Version validee : V2</span>
+    </div>
+  </div>
+
+  <!-- 3. Publications -->
+  <div class="tab-panel" id="panel-publications">
+    <div class="section-summary">
+      <h2>&#128218; Publications (V1)</h2>
+      <ul>
+        <li>Liste filtrable (annee, thematique, type, journal)</li>
+        <li>Tri par citations ou date</li>
+        <li>Detail expandable par article</li>
+        <li>Badges open access + citations</li>
+        <li>Pagination</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128218;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Publications" du canal fred2.</p>
+      <span class="version">Version validee : V1</span>
+    </div>
+  </div>
+
+  <!-- 4. Cartographie thematique -->
+  <div class="tab-panel" id="panel-cartographie">
+    <div class="section-summary">
+      <h2>&#128506;&#65039; Cartographie thematique (V5)</h2>
+      <ul>
+        <li>Bubble chart des clusters thematiques</li>
+        <li>Drill-down sous-themes</li>
+        <li>Citations par cluster</li>
+        <li>Evolution temporelle (stacked bars)</li>
+        <li>Cross-filtering publications + reseau</li>
+        <li>Bandeau homogene ScholarScope</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128506;&#65039;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee (V5 — bandeau homogene, onglets a droite, sans avatar) est disponible en piece jointe dans le thread Discord "Cartographie thematique" du canal fred2.</p>
+      <span class="version">Version validee : V5</span>
+    </div>
+  </div>
+
+  <!-- 5. Timeline -->
+  <div class="tab-panel" id="panel-timeline">
+    <div class="section-summary">
+      <h2>&#128200; Timeline (V3.5)</h2>
+      <ul>
+        <li>Barres publications/an + courbe citations SVG</li>
+        <li>Selecteur de periode (boutons + double slider)</li>
+        <li>Timeline affiliations institutionnelles</li>
+        <li>Tooltips enrichis (conf/journaux/citations)</li>
+        <li>Jalons de carriere IA (Mistral)</li>
+        <li>Overlay EPFL visiting researcher</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128200;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee (V3.5 — 6 iterations, timeline affiliations, tooltips enrichis, fix EPFL overlay) est disponible en piece jointe dans le thread Discord "Timeline" du canal fred2.</p>
+      <span class="version">Version validee : V3.5</span>
+    </div>
+  </div>
+
+  <!-- 6. Reseau de co-auteurs -->
+  <div class="tab-panel" id="panel-reseau">
+    <div class="section-summary">
+      <h2>&#128101; Reseau de co-auteurs (V3)</h2>
+      <ul>
+        <li>Graphe canvas interactif niveau 1</li>
+        <li>Liens colores par thematique + epaisseur</li>
+        <li>Cross-links co-auteurs independants</li>
+        <li>Tooltips noeuds et liens</li>
+        <li>Filtres de profondeur (sliders)</li>
+        <li>Navigation profil en profil</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128101;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee (V3 — canvas radial, liens thematiques, tooltips, filtres profondeur) est disponible en piece jointe dans le thread Discord "Reseau de co-auteurs" du canal fred2.</p>
+      <span class="version">Version validee : V3</span>
+    </div>
+  </div>
+
+  <!-- 7. Export PDF -->
+  <div class="tab-panel" id="panel-export">
+    <div class="section-summary">
+      <h2>&#128196; Export PDF (V1)</h2>
+      <ul>
+        <li>Selection des sections (toggles)</li>
+        <li>Options de personnalisation</li>
+        <li>Apercu live du rapport</li>
+        <li>Generation + telechargement</li>
+      </ul>
+    </div>
+    <div class="missing-notice">
+      <div class="icon">&#128196;</div>
+      <h3>Maquette non disponible localement</h3>
+      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Export PDF" du canal fred2.</p>
+      <span class="version">Version validee : V1</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// Tab navigation
+document.getElementById('navTabs').addEventListener('click', function(e) {
+  if (e.target.tagName !== 'BUTTON') return;
+  const tab = e.target.dataset.tab;
+
+  // Update buttons
+  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+
+  // Update panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('panel-' + tab).classList.add('active');
+});
+
+// Handle hash navigation
+function navigateToHash() {
+  const hash = window.location.hash.replace('#', '');
+  if (hash) {
+    const btn = document.querySelector('[data-tab="' + hash + '"]');
+    if (btn) btn.click();
+  }
+}
+window.addEventListener('hashchange', navigateToHash);
+navigateToHash();
+</script>
+
+</body>
+</html>
