@@ -1,0 +1,33 @@
+{
+  "$schema": "https://raw.githubusercontent.com/nicegram/nicegram-android/develop/.cargo/tauri.conf.json",
+  "productName": "NeuralForge",
+  "version": "0.1.0",
+  "identifier": "com.neuralforge.app",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:1420",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "title": "NeuralForge",
+    "windows": [
+      {
+        "title": "NeuralForge",
+        "width": 1280,
+        "height": 800,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "plugins": {
+    "fs": {
+      "scope": ["**"]
+    },
+    "store": {}
+  }
+}
