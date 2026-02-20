@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Cartographie Thematique</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1729;color:#e2e8f0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow-x:hidden}
+.page{display:grid;grid-template-columns:1fr 320px;grid-template-rows:1fr auto;gap:16px;padding:20px;min-height:100vh}
+@media(max-width:900px){.page{grid-template-columns:1fr;grid-template-rows:auto auto auto}}
+.panel{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);padding:20px;position:relative}
+.panel-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel-title::before{content:'';width:4px;height:16px;border-radius:2px;background:#60a5fa;flex-shrink:0}
+
+/* Bubble Chart */
+.bubble-area{display:flex;align-items:center;justify-content:center;min-height:440px;overflow:visible}
+.bubble-svg{width:100%;height:100%;min-height:440px}
+.bubble{cursor:pointer;transition:opacity .35s ease}
+.bubble text{pointer-events:none;fill:#fff;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.bubble text.b-label{font-size:13px}
+.bubble text.b-count{font-size:11px;font-weight:400;opacity:.75}
+.bubble circle{transition:r .5s cubic-bezier(.34,1.56,.64,1),fill-opacity .35s,stroke-width .2s}
+.bubble:hover circle{stroke-width:3;fill-opacity:.35}
+.dimmed .bubble{opacity:.15}
+.dimmed .bubble.active{opacity:1}
+
+/* Sub-topic pills overlay */
+.sub-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.sub-ring{display:none;position:relative}
+.sub-ring.visible{display:block;pointer-events:auto}
+.sub-pill{position:absolute;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:5px 14px;font-size:11px;color:#cbd5e1;white-space:nowrap;opacity:0;transform:scale(.7);transition:opacity .35s ease,transform .35s ease;backdrop-filter:blur(4px)}
+.sub-pill.show{opacity:1;transform:scale(1)}
+
+/* Right Panel - Citations bar chart */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;transition:opacity .35s}
+.bar-label{width:120px;font-size:12px;color:#94a3b8;text-align:right;flex-shrink:0;line-height:1.2}
+.bar-track{flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.22,1,.36,1);display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:#fff;min-width:36px}
+.cf-dim{opacity:.12!important}
+.cf-bright{opacity:1!important}
+
+/* Bottom Panel - Stacked bars */
+.bottom-panel{grid-column:1/-1}
+@media(max-width:900px){.bottom-panel{grid-column:1}}
+.stacked-wrapper{display:flex;align-items:flex-end;gap:0;height:180px;padding:0 4px;position:relative}
+.stacked-col{flex:1;display:flex;flex-direction:column-reverse;align-items:center;padding:0 8px}
+.stacked-seg{width:100%;border-radius:2px;transition:height .5s ease,opacity .35s;cursor:pointer}
+.stacked-seg:hover{filter:brightness(1.2)}
+.stacked-seg.cf-dim-seg{opacity:.1!important}
+.period-label{margin-top:8px;font-size:11px;color:#64748b;text-align:center}
+.y-axis{position:absolute;left:0;top:0;height:100%;display:flex;flex-direction:column-reverse;justify-content:space-between;padding:0 4px}
+.y-tick{font-size:10px;color:#475569}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;cursor:pointer;transition:opacity .2s}
+.legend-item:hover{opacity:.8}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Tooltip */
+.tip{position:fixed;background:#1e293b;border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;max-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.5);line-height:1.5}
+.tip.show{opacity:1}
+.tip strong{color:#60a5fa}
+.tip .cit{color:#f59e0b}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Main: Bubble Chart -->
+  <div class="panel bubble-area" id="bubblePanel">
+    <svg class="bubble-svg" id="bubbleSvg" viewBox="0 0 600 440"></svg>
+    <div class="sub-overlay"><div class="sub-ring" id="subRing"></div></div>
+  </div>
+
+  <!-- Right: Citations -->
+  <div class="panel" id="citPanel">
+    <div class="panel-title">Citations par cluster</div>
+    <div id="citBars"></div>
+  </div>
+
+  <!-- Bottom: Evolution -->
+  <div class="panel bottom-panel">
+    <div class="panel-title">Evolution thematique (2002 - 2025)</div>
+    <div class="stacked-wrapper" id="stackedChart"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const T = [
+  {id:'crisis',label:'Gestion de crises',color:'#3b82f6',pubs:42,cit:820,sub:['Evaluation des risques','Reponse d\'urgence','Resilience','Alerte precoce']},
+  {id:'interop',label:'Interoperabilite',color:'#8b5cf6',pubs:31,cit:610,sub:['Standards ouverts','Mediation','Ontologies','Enterprise Integration']},
+  {id:'supply',label:'Supply Chain',color:'#22c55e',pubs:28,cit:540,sub:['Logistique','Planification','Tracabilite']},
+  {id:'twins',label:'Digital Twins',color:'#f97316',pubs:18,cit:320,sub:['Modelisation','Jumeaux physiques','IoT']},
+  {id:'sim',label:'Simulation',color:'#2dd4bf',pubs:14,cit:260,sub:['Agents','Monte Carlo','Scenarios']},
+  {id:'decision',label:'Aide a la decision',color:'#f472b6',pubs:11,cit:180,sub:['Multicritere','Tableaux de bord']}
+];
+const PERIODS = ['2002-2005','2006-2010','2011-2015','2016-2020','2021-2025'];
+const EVO = {
+  crisis:[3,7,10,12,10], interop:[2,5,8,9,7], supply:[1,3,6,9,9],
+  twins:[0,0,2,7,9], sim:[1,2,3,4,4], decision:[0,1,2,4,4]
+};
+
+const tip = document.getElementById('tip');
+let active = null;
+
+// --- TOOLTIP ---
+function showTip(e,html){
+  tip.innerHTML=html; tip.classList.add('show');
+  moveTip(e);
+}
+function moveTip(e){
+  const x=Math.min(e.clientX+14,window.innerWidth-250);
+  tip.style.left=x+'px'; tip.style.top=(e.clientY+14)+'px';
+}
+function hideTip(){tip.classList.remove('show')}
+document.addEventListener('mousemove',e=>{if(tip.classList.contains('show'))moveTip(e)});
+
+// --- BUBBLES ---
+(function drawBubbles(){
+  const svg=document.getElementById('bubbleSvg');
+  const maxP=Math.max(...T.map(t=>t.pubs));
+  const pos=[{x:260,y:190},{x:420,y:130},{x:130,y:270},{x:460,y:300},{x:160,y:110},{x:340,y:360}];
+  T.forEach((t,i)=>{
+    const r=30+(t.pubs/maxP)*60;
+    const{x,y}=pos[i];
+    t._x=x;t._y=y;t._r=r;
+    const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+    g.classList.add('bubble');g.dataset.id=t.id;
+    g.innerHTML=`<circle cx="${x}" cy="${y}" r="${r}" fill="${t.color}" fill-opacity=".22" stroke="${t.color}" stroke-width="2"/>
+      <text x="${x}" y="${y-7}" class="b-label">${t.label}</text>
+      <text x="${x}" y="${y+10}" class="b-count">${t.pubs} pubs</text>`;
+    g.addEventListener('click',()=>toggleActive(t.id));
+    g.addEventListener('mouseenter',e=>showTip(e,`<strong>${t.label}</strong><br>${t.pubs} publications<br><span class="cit">${t.cit} citations</span>`));
+    g.addEventListener('mouseleave',hideTip);
+    svg.appendChild(g);
+  });
+})();
+
+function toggleActive(id){
+  const svg=document.getElementById('bubbleSvg');
+  const ring=document.getElementById('subRing');
+  if(active===id){
+    active=null;
+    svg.classList.remove('dimmed');
+    svg.querySelectorAll('.bubble').forEach(b=>b.classList.remove('active'));
+    ring.classList.remove('visible');ring.innerHTML='';
+    clearCF(); return;
+  }
+  active=id;
+  svg.classList.add('dimmed');
+  svg.querySelectorAll('.bubble').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  // Show sub-topics in a ring
+  const t=T.find(x=>x.id===id);
+  ring.innerHTML='';
+  const panel=document.getElementById('bubblePanel').getBoundingClientRect();
+  const svgEl=document.getElementById('bubbleSvg').getBoundingClientRect();
+  const scaleX=svgEl.width/600, scaleY=svgEl.height/440;
+  const cx=svgEl.left+t._x*scaleX-panel.left, cy=svgEl.top+t._y*scaleY-panel.top;
+  const ringR=t._r*scaleX+45;
+  t.sub.forEach((s,i)=>{
+    const angle=(i/t.sub.length)*Math.PI*2 - Math.PI/2;
+    const px=cx+Math.cos(angle)*ringR, py=cy+Math.sin(angle)*ringR;
+    const pill=document.createElement('div');
+    pill.className='sub-pill';
+    pill.textContent=s;
+    pill.style.left=px+'px';pill.style.top=py+'px';
+    pill.style.transform='translate(-50%,-50%) scale(.7)';
+    ring.appendChild(pill);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{pill.classList.add('show');pill.style.transform='translate(-50%,-50%) scale(1)'}));
+  });
+  ring.classList.add('visible');
+  applyCF(id);
+}
+
+// --- CITATIONS BAR CHART ---
+(function drawCitations(){
+  const c=document.getElementById('citBars');
+  const maxC=Math.max(...T.map(t=>t.cit));
+  T.forEach(t=>{
+    const pct=(t.cit/maxC)*100;
+    const row=document.createElement('div');
+    row.className='bar-row';row.dataset.id=t.id;
+    row.innerHTML=`<div class="bar-label">${t.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0%;background:linear-gradient(90deg,${t.color},${t.color}cc)">${t.cit}</div></div>`;
+    c.appendChild(row);
+    setTimeout(()=>row.querySelector('.bar-fill').style.width=pct+'%',80);
+  });
+})();
+
+// --- STACKED BAR CHART ---
+(function drawStacked(){
+  const c=document.getElementById('stackedChart');
+  const leg=document.getElementById('legend');
+  const totals=PERIODS.map((_,i)=>T.reduce((s,t)=>s+EVO[t.id][i],0));
+  const maxT=Math.max(...totals);
+
+  PERIODS.forEach((p,pi)=>{
+    const col=document.createElement('div');
+    col.className='stacked-col';
+    T.forEach(t=>{
+      const v=EVO[t.id][pi];
+      const h=(v/maxT)*160;
+      const seg=document.createElement('div');
+      seg.className='stacked-seg';seg.dataset.id=t.id;
+      seg.style.height=h+'px';seg.style.background=t.color;seg.style.opacity='.65';
+      seg.addEventListener('mouseenter',e=>showTip(e,`<strong>${t.label}</strong><br>${p} : ${v} publications`));
+      seg.addEventListener('mouseleave',hideTip);
+      seg.addEventListener('click',()=>toggleActive(t.id));
+      col.appendChild(seg);
+    });
+    const lbl=document.createElement('div');
+    lbl.className='period-label';lbl.textContent=p;
+    col.appendChild(lbl);
+    c.appendChild(col);
+  });
+
+  T.forEach(t=>{
+    const item=document.createElement('div');
+    item.className='legend-item';
+    item.innerHTML=`<div class="legend-dot" style="background:${t.color}"></div>${t.label}`;
+    item.addEventListener('click',()=>toggleActive(t.id));
+    leg.appendChild(item);
+  });
+})();
+
+// --- CROSS-FILTER ---
+function applyCF(id){
+  document.querySelectorAll('#citBars .bar-row').forEach(r=>{
+    r.classList.toggle('cf-dim',r.dataset.id!==id);
+    r.classList.toggle('cf-bright',r.dataset.id===id);
+  });
+  document.querySelectorAll('.stacked-seg').forEach(s=>s.classList.toggle('cf-dim-seg',s.dataset.id!==id));
+}
+function clearCF(){
+  document.querySelectorAll('#citBars .bar-row').forEach(r=>{r.classList.remove('cf-dim','cf-bright')});
+  document.querySelectorAll('.stacked-seg').forEach(s=>s.classList.remove('cf-dim-seg'));
+}
+</script>
+</body>
+</html>

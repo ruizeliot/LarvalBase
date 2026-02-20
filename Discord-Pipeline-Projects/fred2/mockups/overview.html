@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Vue d'ensemble</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f1729; color: #e2e8f0; min-height: 100vh; }
+  .topbar { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1.5rem; background: #1a2332; border-bottom: 1px solid #1e293b; }
+  .topbar .logo { font-size: 1.1rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .topbar nav { display: flex; gap: 0.3rem; }
+  .topbar nav a { padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.8rem; color: #94a3b8; text-decoration: none; transition: all 0.2s; }
+  .topbar nav a.active { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .topbar nav a:hover { color: #e2e8f0; }
+  .main { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+  .profile-header { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.5rem; }
+  .avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: 700; flex-shrink: 0; }
+  .profile-info h1 { font-size: 1.5rem; font-weight: 700; }
+  .profile-info .inst { color: #94a3b8; font-size: 0.9rem; margin-top: 0.15rem; }
+  .profile-info .domains { display: flex; gap: 0.4rem; margin-top: 0.5rem; flex-wrap: wrap; }
+  .domain-tag { padding: 0.2rem 0.6rem; background: rgba(96,165,250,0.1); color: #60a5fa; border-radius: 6px; font-size: 0.72rem; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .metric-card { background: #1e293b; border-radius: 14px; padding: 1.2rem; text-align: center; border: 1px solid #334155; transition: border-color 0.2s; }
+  .metric-card:hover { border-color: #60a5fa; }
+  .metric-card .value { font-size: 2rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .metric-card .label { font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem; }
+  .metric-card .trend { font-size: 0.7rem; color: #34d399; margin-top: 0.2rem; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+  .card { background: #1e293b; border-radius: 14px; padding: 1.2rem; border: 1px solid #334155; }
+  .card h3 { font-size: 0.9rem; margin-bottom: 1rem; color: #e2e8f0; }
+  .sparkline { height: 80px; display: flex; align-items: flex-end; gap: 4px; }
+  .sparkline .bar { flex: 1; background: linear-gradient(180deg, #60a5fa, #3b82f6); border-radius: 3px 3px 0 0; transition: height 0.5s; min-width: 8px; position: relative; }
+  .sparkline .bar:hover { opacity: 0.85; cursor: pointer; }
+  .sparkline .bar::after { content: attr(data-label); position: absolute; bottom: -18px; left: 50%; transform: translateX(-50%); font-size: 0.55rem; color: #64748b; white-space: nowrap; }
+  .sparkline .bar .tooltip { position: absolute; top: -32px; left: 50%; transform: translateX(-50%); background: #0f172a; color: #f8fafc; padding: 0.25rem 0.5rem; border-radius: 6px; font-size: 0.72rem; font-weight: 600; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 0.2s; border: 1px solid #60a5fa; z-index: 10; }
+  .sparkline .bar:hover .tooltip { opacity: 1; }
+  .period-selector { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+  .period-selector label { font-size: 0.75rem; color: #94a3b8; }
+  .period-selector select { background: #0f1729; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: 0.25rem 0.4rem; font-size: 0.75rem; cursor: pointer; }
+  .card-header { display: flex; align-items: center; margin-bottom: 1rem; }
+  .theme-list { display: flex; flex-direction: column; gap: 0.6rem; }
+  .theme-row { display: flex; align-items: center; gap: 0.6rem; }
+  .theme-row .name { font-size: 0.8rem; width: 140px; flex-shrink: 0; }
+  .theme-row .bar-bg { flex: 1; height: 8px; background: #334155; border-radius: 4px; overflow: hidden; }
+  .theme-row .bar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+  .theme-row .count { font-size: 0.75rem; color: #94a3b8; width: 30px; text-align: right; }
+  .recent-list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .recent-item { padding: 0.6rem 0; border-bottom: 1px solid #334155; }
+  .recent-item:last-child { border: none; }
+  .recent-item .title { font-size: 0.85rem; font-weight: 600; }
+  .recent-item .pub-meta { font-size: 0.73rem; color: #94a3b8; margin-top: 0.2rem; display: flex; gap: 0.8rem; }
+  .cite-badge { color: #f59e0b; }
+  @media (max-width: 768px) { .metrics { grid-template-columns: repeat(2, 1fr); } .grid-2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span class="logo">ScholarScope</span>
+  <nav>
+    <a href="#" class="active">📊 Vue d'ensemble</a>
+    <a href="#">📚 Publications</a>
+    <a href="#">🗺️ Cartographie</a>
+    <a href="#">📈 Timeline</a>
+    <a href="#">👥 Réseau</a>
+    <a href="#">📄 Export</a>
+  </nav>
+</div>
+
+<div class="main">
+  <div class="profile-header">
+    <div class="avatar">FB</div>
+    <div class="profile-info">
+      <h1>Frederick Bénaben</h1>
+      <div class="inst">IMT Mines Albi · Professeur</div>
+      <div class="domains">
+        <span class="domain-tag">Génie industriel</span>
+        <span class="domain-tag">Interopérabilité</span>
+        <span class="domain-tag">Gestion de crises</span>
+        <span class="domain-tag">Systèmes d'information</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="metric-card"><div class="value">28</div><div class="label">h-index</div><div class="trend">▲ +2 en 2024</div></div>
+    <div class="metric-card"><div class="value">3 247</div><div class="label">Citations totales</div><div class="trend">▲ +412 cette année</div></div>
+    <div class="metric-card"><div class="value">187</div><div class="label">Publications</div><div class="trend">▲ 12 en 2024</div></div>
+    <div class="metric-card"><div class="value">18</div><div class="label">Années actives</div><div class="trend">2006 — 2024</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-header">
+        <h3>📈 Citations / an</h3>
+        <div class="period-selector">
+          <label>De</label>
+          <select id="yearFrom"></select>
+          <label>à</label>
+          <select id="yearTo"></select>
+        </div>
+      </div>
+      <div class="sparkline" id="citationChart"></div>
+      <script>
+        const citationData = [
+          {year:2006,count:8},{year:2007,count:15},{year:2008,count:22},{year:2009,count:31},
+          {year:2010,count:45},{year:2011,count:58},{year:2012,count:72},{year:2013,count:98},
+          {year:2014,count:125},{year:2015,count:156},{year:2016,count:189},{year:2017,count:210},
+          {year:2018,count:245},{year:2019,count:289},{year:2020,count:334},{year:2021,count:378},
+          {year:2022,count:412},{year:2023,count:468},{year:2024,count:512}
+        ];
+        const fromSel=document.getElementById('yearFrom'), toSel=document.getElementById('yearTo'), chart=document.getElementById('citationChart');
+        citationData.forEach(d=>{fromSel.add(new Option(d.year,d.year));toSel.add(new Option(d.year,d.year));});
+        fromSel.value=2006; toSel.value=2024;
+        function renderChart(){
+          const f=+fromSel.value, t=+toSel.value;
+          const filtered=citationData.filter(d=>d.year>=f&&d.year<=t);
+          const max=Math.max(...filtered.map(d=>d.count));
+          chart.innerHTML=filtered.map(d=>`<div class="bar" style="height:${(d.count/max*100).toFixed(0)}%" data-label="'${String(d.year).slice(2)}"><span class="tooltip">${d.year} — ${d.count} citations</span></div>`).join('');
+        }
+        fromSel.onchange=toSel.onchange=renderChart;
+        renderChart();
+      </script>
+    </div>
+    <div class="card">
+      <h3>🏷️ Top thématiques</h3>
+      <div class="theme-list">
+        <div class="theme-row"><span class="name">Interopérabilité</span><div class="bar-bg"><div class="bar-fill" style="width:85%;background:#60a5fa"></div></div><span class="count">48</span></div>
+        <div class="theme-row"><span class="name">Gestion de crises</span><div class="bar-bg"><div class="bar-fill" style="width:65%;background:#a78bfa"></div></div><span class="count">37</span></div>
+        <div class="theme-row"><span class="name">Systèmes collaboratifs</span><div class="bar-bg"><div class="bar-fill" style="width:50%;background:#f472b6"></div></div><span class="count">29</span></div>
+        <div class="theme-row"><span class="name">Modélisation</span><div class="bar-bg"><div class="bar-fill" style="width:40%;background:#34d399"></div></div><span class="count">22</span></div>
+        <div class="theme-row"><span class="name">Supply chain</span><div class="bar-bg"><div class="bar-fill" style="width:28%;background:#f59e0b"></div></div><span class="count">16</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📚 Publications récentes</h3>
+    <div class="recent-list">
+      <div class="recent-item">
+        <div class="title">A collaborative process mining approach for crisis management</div>
+        <div class="pub-meta"><span>2024 · Int. J. of Production Research</span><span class="cite-badge">★ 14 citations</span></div>
+      </div>
+      <div class="recent-item">
+        <div class="title">Towards a digital twin-driven approach for interoperability assessment</div>
+        <div class="pub-meta"><span>2024 · Computers in Industry</span><span class="cite-badge">★ 9 citations</span></div>
+      </div>
+      <div class="recent-item">
+        <div class="title">Model-driven situational collaborative network design</div>
+        <div class="pub-meta"><span>2023 · Enterprise Information Systems</span><span class="cite-badge">★ 23 citations</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope - Recherche</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .search-container {
+    width: 100%;
+    max-width: 680px;
+    text-align: center;
+  }
+  .logo {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+  }
+  .logo span:first-child { color: #60a5fa; }
+  .logo span:last-child { color: #a78bfa; }
+  .subtitle {
+    color: #94a3b8;
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .search-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  .search-input {
+    width: 100%;
+    padding: 1rem 7.5rem 1rem 3rem;
+    font-size: 1.1rem;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 14px;
+    color: #e2e8f0;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .search-input::placeholder { color: #64748b; }
+  .search-input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+  }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+  }
+  .format-badge {
+    display: none;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    animation: badgePop 0.25s ease;
+  }
+  .format-badge.name { background: rgba(96,165,250,0.2); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+  .format-badge.orcid { background: rgba(167,139,250,0.2); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+  .format-badge.scopus { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+  .format-badge.url { background: rgba(52,211,153,0.2); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .format-badge.visible { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+  @keyframes badgePop {
+    from { opacity: 0; transform: translateY(-50%) scale(0.85); }
+    to { opacity: 1; transform: translateY(-50%) scale(1); }
+  }
+
+  /* Autocomplete dropdown */
+  .autocomplete {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+  }
+  .autocomplete.visible { display: block; animation: slideDown 0.2s ease; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .ac-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid #293548;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.active { background: #273548; }
+  .ac-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .ac-info { flex: 1; min-width: 0; }
+  .ac-name { font-weight: 600; font-size: 0.95rem; }
+  .ac-name mark { background: none; color: #60a5fa; font-weight: 700; }
+  .ac-meta { font-size: 0.8rem; color: #64748b; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ac-hindex {
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Shortcuts */
+  .shortcuts-label {
+    color: #64748b;
+    font-size: 0.82rem;
+    margin-bottom: 0.75rem;
+    margin-top: 1.75rem;
+  }
+  .shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .shortcut-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .shortcut-btn:hover {
+    background: #273548;
+    border-color: #60a5fa;
+    color: #e2e8f0;
+    transform: translateY(-1px);
+  }
+  .shortcut-btn:active { transform: translateY(0); }
+
+  /* Tips row */
+  .tips {
+    margin-top: 3rem;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: #475569;
+  }
+  .tip-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 1.5rem 0.75rem; justify-content: flex-start; padding-top: 15vh; }
+    .logo { font-size: 2rem; }
+    .subtitle { font-size: 0.9rem; margin-bottom: 2rem; }
+    .search-input { font-size: 1rem; padding: 0.9rem 6rem 0.9rem 2.6rem; }
+    .format-badge { font-size: 0.68rem; padding: 0.2rem 0.55rem; }
+    .tips { flex-direction: column; align-items: center; gap: 0.75rem; }
+    .shortcut-btn { font-size: 0.75rem; padding: 0.4rem 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="search-container">
+  <div class="logo"><span>Scholar</span><span>Scope</span></div>
+  <p class="subtitle">Explorez les profils academiques en un instant</p>
+
+  <div class="search-wrapper">
+    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Rechercher un chercheur..." autocomplete="off" spellcheck="false">
+    <span class="format-badge" id="formatBadge"></span>
+
+    <div class="autocomplete" id="autocomplete"></div>
+  </div>
+
+  <div class="shortcuts-label">Essayez un exemple :</div>
+  <div class="shortcuts">
+    <button class="shortcut-btn" data-value="Frederick Benaben">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Frederick Benaben
+    </button>
+    <button class="shortcut-btn" data-value="0000-0003-1894-5128">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>
+      0000-0003-1894-5128
+    </button>
+    <button class="shortcut-btn" data-value="Scopus: 56273849100">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Scopus: 56273849100
+    </button>
+    <button class="shortcut-btn" data-value="scholar.google.com/citations?user=abc123XYZ">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      scholar.google.com/...
+    </button>
+  </div>
+
+  <div class="tips">
+    <div class="tip"><span class="tip-dot" style="background:#60a5fa"></span>Nom complet</div>
+    <div class="tip"><span class="tip-dot" style="background:#a78bfa"></span>ORCID</div>
+    <div class="tip"><span class="tip-dot" style="background:#f59e0b"></span>Scopus ID</div>
+    <div class="tip"><span class="tip-dot" style="background:#34d399"></span>Google Scholar URL</div>
+  </div>
+</div>
+
+<script>
+const input = document.getElementById('searchInput');
+const badge = document.getElementById('formatBadge');
+const acContainer = document.getElementById('autocomplete');
+
+const researchers = [
+  { initials: 'FB', name: 'Frederick Benaben', inst: 'IMT Mines Albi', domain: 'Crisis Management, Interoperability', h: 27, bg: '#1e3a5f', fg: '#60a5fa' },
+  { initials: 'MD', name: 'Dr. Marie Dupont', inst: 'Universite Paris-Saclay', domain: 'Machine Learning, NLP', h: 34, bg: '#2d1b4e', fg: '#a78bfa' },
+  { initials: 'FF', name: 'Francois Fournier', inst: 'CNRS - LAAS', domain: 'Robotics, Control Systems', h: 19, bg: '#1a3328', fg: '#34d399' },
+  { initials: 'SL', name: 'Sophie Leroy', inst: 'INRIA Grenoble', domain: 'Computer Vision, Deep Learning', h: 22, bg: '#3b2317', fg: '#fb923c' },
+  { initials: 'AB', name: 'Aurelie Bertrand', inst: 'Ecole des Mines de Paris', domain: 'Supply Chain, Operations Research', h: 16, bg: '#2d1b4e', fg: '#c084fc' },
+];
+
+const formats = [
+  { regex: /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i, label: 'ORCID detecte', cls: 'orcid', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+  { regex: /^scopus:\s*\d+$/i, label: 'Scopus ID detecte', cls: 'scopus', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>' },
+  { regex: /scholar\.google/i, label: 'Google Scholar detecte', cls: 'url', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>' },
+  { regex: /^[a-zA-Z\u00C0-\u024F\s.\-]{3,}$/i, label: 'Nom detecte', cls: 'name', icon: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' },
+];
+
+function highlightMatch(name, query) {
+  const lower = name.toLowerCase();
+  const qLower = query.toLowerCase();
+  const idx = lower.indexOf(qLower);
+  if (idx === -1) return name;
+  return name.slice(0, idx) + '<mark>' + name.slice(idx, idx + query.length) + '</mark>' + name.slice(idx + query.length);
+}
+
+function renderAutocomplete(query) {
+  const lower = query.toLowerCase();
+  const matches = researchers.filter(r => r.name.toLowerCase().includes(lower));
+  if (matches.length === 0) {
+    acContainer.classList.remove('visible');
+    return;
+  }
+  acContainer.innerHTML = matches.map(r => `
+    <div class="ac-item" data-name="${r.name}">
+      <div class="ac-avatar" style="background:${r.bg};color:${r.fg}">${r.initials}</div>
+      <div class="ac-info">
+        <div class="ac-name">${highlightMatch(r.name, query)}</div>
+        <div class="ac-meta">${r.inst} &middot; ${r.domain}</div>
+      </div>
+      <span class="ac-hindex">h:${r.h}</span>
+    </div>
+  `).join('');
+  acContainer.classList.add('visible');
+
+  acContainer.querySelectorAll('.ac-item').forEach(item => {
+    item.addEventListener('click', () => {
+      input.value = item.dataset.name;
+      acContainer.classList.remove('visible');
+      input.dispatchEvent(new Event('input'));
+    });
+    item.addEventListener('mouseenter', () => {
+      acContainer.querySelectorAll('.ac-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+    });
+  });
+}
+
+input.addEventListener('input', () => {
+  const val = input.value.trim();
+  badge.className = 'format-badge';
+  badge.innerHTML = '';
+
+  if (val.length > 2) {
+    for (const f of formats) {
+      if (f.regex.test(val)) {
+        badge.innerHTML = f.icon + ' ' + f.label;
+        badge.className = 'format-badge visible ' + f.cls;
+        break;
+      }
+    }
+  }
+
+  if (val.length >= 2 && /^[a-zA-Z\u00C0-\u024F\s.\-]+$/.test(val)) {
+    renderAutocomplete(val);
+  } else {
+    acContainer.classList.remove('visible');
+  }
+});
+
+input.addEventListener('focus', () => {
+  const val = input.value.trim();
+  if (val.length >= 2 && /^[a-zA-Z\u00C0-\u024F\s.\-]+$/.test(val)) {
+    renderAutocomplete(val);
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrapper')) acContainer.classList.remove('visible');
+});
+
+document.querySelectorAll('.shortcut-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    input.value = btn.dataset.value;
+    input.focus();
+    input.dispatchEvent(new Event('input'));
+  });
+});
+
+// Keyboard navigation
+let activeIdx = -1;
+input.addEventListener('keydown', (e) => {
+  const items = acContainer.querySelectorAll('.ac-item');
+  if (!acContainer.classList.contains('visible') || items.length === 0) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    activeIdx = Math.min(activeIdx + 1, items.length - 1);
+    items.forEach((it, i) => it.classList.toggle('active', i === activeIdx));
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    activeIdx = Math.max(activeIdx - 1, 0);
+    items.forEach((it, i) => it.classList.toggle('active', i === activeIdx));
+  } else if (e.key === 'Enter' && activeIdx >= 0) {
+    e.preventDefault();
+    items[activeIdx].click();
+    activeIdx = -1;
+  }
+});
+</script>
+</body>
+</html>

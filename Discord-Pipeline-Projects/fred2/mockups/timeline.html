@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Timeline</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1729;color:#e2e8f0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow-x:hidden;padding:20px}
+.section{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);padding:20px;margin-bottom:16px}
+.section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:'';width:4px;height:16px;border-radius:2px;background:#60a5fa;flex-shrink:0}
+
+/* Controls bar */
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+.pill-group{display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid rgba(96,165,250,.2)}
+.pill{padding:6px 16px;font-size:12px;font-weight:600;color:#94a3b8;background:transparent;border:none;cursor:pointer;transition:all .2s}
+.pill:hover{color:#e2e8f0;background:rgba(96,165,250,.08)}
+.pill.active{background:#60a5fa;color:#0f1729}
+
+/* Range slider */
+.range-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:10px}
+.range-labels{font-size:11px;color:#64748b;white-space:nowrap}
+.dual-range{position:relative;height:24px;flex:1}
+.dual-range input[type=range]{position:absolute;width:100%;top:0;height:24px;-webkit-appearance:none;appearance:none;background:none;pointer-events:none}
+.dual-range input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e293b;border-radius:2px}
+.dual-range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#60a5fa;border:2px solid #0f1729;margin-top:-6px;pointer-events:auto;cursor:pointer;box-shadow:0 0 6px rgba(96,165,250,.4)}
+.range-track-fill{position:absolute;top:10px;height:4px;background:#60a5fa;border-radius:2px;opacity:.35;pointer-events:none}
+
+/* Theme chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:5px 14px;font-size:12px;border-radius:20px;border:1px solid rgba(96,165,250,.25);color:#94a3b8;cursor:pointer;transition:all .25s;background:transparent;user-select:none}
+.chip.on{background:rgba(96,165,250,.15);color:#e2e8f0;border-color:#60a5fa}
+.chip:hover{border-color:#60a5fa}
+
+/* Main chart */
+.chart-container{position:relative;height:300px;padding:20px 55px 40px 50px}
+@media(max-width:600px){.chart-container{padding:20px 40px 40px 35px;height:260px}}
+.chart-canvas{position:absolute;inset:0}
+.y-left,.y-right{position:absolute;top:20px;bottom:40px;display:flex;flex-direction:column-reverse;justify-content:space-between}
+.y-left{left:0;width:45px;text-align:right;padding-right:6px}
+.y-right{right:0;width:50px;text-align:left;padding-left:6px}
+.y-label{font-size:10px;color:#475569}
+.y-label.cit{color:#f59e0b}
+.x-axis{position:absolute;bottom:0;left:50px;right:55px;display:flex;justify-content:space-between}
+.x-label{font-size:10px;color:#475569;transform:rotate(-45deg);transform-origin:top left;white-space:nowrap}
+.y-title{position:absolute;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.y-title.left{left:0;top:4px}
+.y-title.right{right:0;top:4px;color:#f59e0b}
+
+/* Affiliations */
+.affil-track{display:flex;height:42px;border-radius:6px;overflow:hidden;position:relative;margin-bottom:8px}
+.affil-seg{position:relative;display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;cursor:pointer;transition:filter .2s;overflow:hidden}
+.affil-seg:hover{filter:brightness(1.2)}
+.affil-seg .role{font-size:9px;font-weight:400;opacity:.8;display:block}
+.affil-date{position:absolute;bottom:-18px;font-size:10px;color:#94a3b8;white-space:nowrap;transform:translateX(-50%)}
+/* hatched overlay for visiting */
+.hatch{position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.12) 3px,rgba(255,255,255,.12) 6px);pointer-events:none}
+.affil-dates{position:relative;height:22px;margin-bottom:4px}
+
+/* Milestones */
+.milestones{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:8px}
+.milestone-card{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.milestone-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#60a5fa,#a78bfa)}
+.ms-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#a78bfa;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:3px 10px;margin-bottom:8px;position:relative}
+.ms-badge::after{content:'';position:absolute;inset:-2px;border-radius:14px;background:rgba(167,139,250,.15);animation:glow 2s ease-in-out infinite alternate;pointer-events:none}
+@keyframes glow{from{opacity:0;transform:scale(1)}to{opacity:1;transform:scale(1.08)}}
+.ms-year{font-size:11px;color:#64748b;margin-bottom:4px}
+.ms-title{font-size:14px;font-weight:600;color:#e2e8f0}
+.ms-desc{font-size:12px;color:#94a3b8;margin-top:4px;line-height:1.4}
+
+/* Tooltip */
+.tip{position:fixed;background:#1e293b;border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;max-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);line-height:1.5}
+.tip.show{opacity:1}
+.tip strong{color:#60a5fa}
+.tip .cit-val{color:#f59e0b;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="section">
+  <div class="controls">
+    <div class="pill-group">
+      <button class="pill" data-range="5" onclick="setRange(5)">5 ans</button>
+      <button class="pill" data-range="10" onclick="setRange(10)">10 ans</button>
+      <button class="pill active" data-range="0" onclick="setRange(0)">Tout</button>
+    </div>
+    <div class="range-wrap">
+      <span class="range-labels" id="rMin">2002</span>
+      <div class="dual-range">
+        <div class="range-track-fill" id="trackFill"></div>
+        <input type="range" id="rngMin" min="2002" max="2025" value="2002" oninput="updateRange()">
+        <input type="range" id="rngMax" min="2002" max="2025" value="2025" oninput="updateRange()">
+      </div>
+      <span class="range-labels" id="rMax">2025</span>
+    </div>
+    <div class="chips">
+      <div class="chip on" data-theme="interop" onclick="toggleChip(this)">Interoperabilite</div>
+      <div class="chip on" data-theme="crisis" onclick="toggleChip(this)">Gestion de crises</div>
+      <div class="chip on" data-theme="supply" onclick="toggleChip(this)">Supply chain</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Chart -->
+<div class="section">
+  <div class="section-title">Publications et citations par annee</div>
+  <div class="chart-container" id="chartWrap">
+    <div class="y-title left">Publications</div>
+    <div class="y-title right">Citations</div>
+    <div class="y-left" id="yLeft"></div>
+    <div class="y-right" id="yRight"></div>
+    <canvas class="chart-canvas" id="chartCanvas"></canvas>
+    <div class="x-axis" id="xAxis"></div>
+  </div>
+</div>
+
+<!-- Affiliations -->
+<div class="section">
+  <div class="section-title">Parcours institutionnel</div>
+  <div class="affil-track" id="affilTrack"></div>
+  <div class="affil-dates" id="affilDates"></div>
+</div>
+
+<!-- Milestones -->
+<div class="section">
+  <div class="section-title">Jalons de carriere</div>
+  <div class="milestones" id="milestones"></div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+// --- DATA ---
+const YEARS = [];
+for(let y=2002;y<=2025;y++) YEARS.push(y);
+const PUBS = [1,2,1,3,2,4,3,5,4,6,7,8,6,9,10,8,11,12,9,13,10,11,8,7];
+const CITS = [0,2,5,8,12,18,28,35,42,55,72,90,105,118,130,142,160,175,155,185,170,145,120,95];
+const MAX_PUB = 15, MAX_CIT = 200;
+
+const AFFILS = [
+  {start:2002,end:2006,label:'Univ. Bordeaux',role:'Doctorant',color:'#475569',articles:8,journals:2,cit:45},
+  {start:2006,end:2010,label:'Univ. Bordeaux',role:'MCF',color:'#3b82f6',articles:14,journals:5,cit:120},
+  {start:2010,end:2015,label:'IMT Mines Albi',role:'MCF',color:'#0d9488',articles:22,journals:8,cit:280},
+  {start:2015,end:2024,label:'IMT Mines Albi',role:'Professeur',color:'#7c3aed',articles:45,journals:18,cit:620},
+  {start:2024,end:2026,label:'IMT Mines Albi',role:'Professeur des Universites',color:'#4338ca',articles:12,journals:4,cit:95}
+];
+const VISITING = {start:2021,end:2022,label:'EPFL',role:'Visiting Researcher'};
+
+const MILESTONES = [
+  {year:'2004',title:'Premiere publication internationale',desc:'Article sur la modelisation des crises au ISCRAM Conference.'},
+  {year:'2011',title:'100 citations franchies',desc:'Seuil symbolique atteint, reconnaissance de l\'impact en gestion de crises.'},
+  {year:'2015',title:'HDR soutenue',desc:'Habilitation a Diriger des Recherches a l\'IMT Mines Albi.'},
+  {year:'2024',title:'Nomination Professeur des Universites',desc:'Promotion au grade de Professeur des Universites, section CNU 61.'}
+];
+
+let rangeMin=2002, rangeMax=2025;
+const tip=document.getElementById('tip');
+
+// --- TOOLTIP ---
+function showTip(e,html){tip.innerHTML=html;tip.classList.add('show');moveTip(e)}
+function moveTip(e){tip.style.left=Math.min(e.clientX+14,window.innerWidth-270)+'px';tip.style.top=(e.clientY+14)+'px'}
+function hideTip(){tip.classList.remove('show')}
+document.addEventListener('mousemove',e=>{if(tip.classList.contains('show'))moveTip(e)});
+
+// --- RANGE ---
+function setRange(n){
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  if(n===0){rangeMin=2002;rangeMax=2025;document.querySelector('[data-range="0"]').classList.add('active')}
+  else{rangeMax=2025;rangeMin=2025-n;document.querySelector(`[data-range="${n}"]`).classList.add('active')}
+  document.getElementById('rngMin').value=rangeMin;
+  document.getElementById('rngMax').value=rangeMax;
+  updateRangeUI();drawChart();
+}
+function updateRange(){
+  let lo=+document.getElementById('rngMin').value, hi=+document.getElementById('rngMax').value;
+  if(lo>hi){const t=lo;lo=hi;hi=t}
+  rangeMin=lo;rangeMax=hi;
+  document.querySelectorAll('.pill').forEach(p=>p.classList.remove('active'));
+  updateRangeUI();drawChart();
+}
+function updateRangeUI(){
+  document.getElementById('rMin').textContent=rangeMin;
+  document.getElementById('rMax').textContent=rangeMax;
+  const pct1=((rangeMin-2002)/23)*100, pct2=((rangeMax-2002)/23)*100;
+  const fill=document.getElementById('trackFill');
+  fill.style.left=pct1+'%';fill.style.width=(pct2-pct1)+'%';
+}
+
+// --- CHIPS ---
+function toggleChip(el){el.classList.toggle('on')}
+
+// --- MAIN CHART ---
+function drawChart(){
+  const canvas=document.getElementById('chartCanvas');
+  const wrap=document.getElementById('chartWrap');
+  const rect=wrap.getBoundingClientRect();
+  canvas.width=rect.width;canvas.height=rect.height;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const padL=50,padR=55,padT=24,padB=40;
+  const w=canvas.width-padL-padR, h=canvas.height-padT-padB;
+
+  const filtered=YEARS.filter(y=>y>=rangeMin&&y<=rangeMax);
+  const n=filtered.length;if(!n)return;
+  const barW=Math.min(w/n*.7,28);
+  const gap=(w-barW*n)/(n+1);
+
+  // Grid lines
+  ctx.strokeStyle='rgba(255,255,255,.04)';ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){
+    const y=padT+h-(i/5)*h;
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+w,y);ctx.stroke();
+  }
+
+  // Bars
+  filtered.forEach((yr,i)=>{
+    const idx=yr-2002;
+    const pv=PUBS[idx]||0;
+    const bh=(pv/MAX_PUB)*h;
+    const x=padL+gap+(barW+gap)*i;
+    const y=padT+h-bh;
+    const grad=ctx.createLinearGradient(x,y,x,padT+h);
+    grad.addColorStop(0,'#60a5fa');grad.addColorStop(1,'#2563eb');
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    const r=3;
+    ctx.moveTo(x+r,y);ctx.lineTo(x+barW-r,y);ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+    ctx.lineTo(x+barW,padT+h);ctx.lineTo(x,padT+h);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.fill();
+  });
+
+  // Citations polyline
+  ctx.strokeStyle='#f59e0b';ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.beginPath();
+  const points=[];
+  filtered.forEach((yr,i)=>{
+    const idx=yr-2002;
+    const cv=CITS[idx]||0;
+    const x=padL+gap+(barW+gap)*i+barW/2;
+    const y=padT+h-(cv/MAX_CIT)*h;
+    points.push({x,y});
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // dots
+  points.forEach(p=>{
+    ctx.fillStyle='#f59e0b';ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#0f1729';ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();
+  });
+
+  // Y axes
+  const yLeft=document.getElementById('yLeft');yLeft.innerHTML='';
+  const yRight=document.getElementById('yRight');yRight.innerHTML='';
+  for(let i=0;i<=5;i++){
+    const lbl=document.createElement('span');lbl.className='y-label';lbl.textContent=Math.round(MAX_PUB/5*i);yLeft.appendChild(lbl);
+    const lbl2=document.createElement('span');lbl2.className='y-label cit';lbl2.textContent=Math.round(MAX_CIT/5*i);yRight.appendChild(lbl2);
+  }
+  // X axis
+  const xAxis=document.getElementById('xAxis');xAxis.innerHTML='';
+  filtered.forEach(yr=>{
+    const lbl=document.createElement('span');lbl.className='x-label';lbl.textContent=yr;xAxis.appendChild(lbl);
+  });
+
+  // Hover on canvas
+  canvas.onmousemove=function(e){
+    const cr=canvas.getBoundingClientRect();
+    const mx=e.clientX-cr.left;
+    const idx=Math.floor((mx-padL-gap/2)/(barW+gap));
+    if(idx>=0&&idx<n){
+      const yr=filtered[idx];const di=yr-2002;
+      showTip(e,`<strong>${yr}</strong><br>${PUBS[di]} publications<br><span class="cit-val">${CITS[di]} citations</span>`);
+    }else hideTip();
+  };
+  canvas.onmouseleave=hideTip;
+}
+
+// --- AFFILIATIONS ---
+(function drawAffil(){
+  const track=document.getElementById('affilTrack');
+  const dates=document.getElementById('affilDates');
+  const totalYears=2026-2002;
+  // Segments
+  AFFILS.forEach(a=>{
+    const pct=((a.end-a.start)/totalYears)*100;
+    const seg=document.createElement('div');
+    seg.className='affil-seg';seg.style.width=pct+'%';seg.style.background=a.color;
+    seg.innerHTML=`${a.label}<span class="role">${a.role}</span>`;
+    seg.addEventListener('mouseenter',e=>showTip(e,`<strong>${a.label}</strong><br>${a.role}<br>${a.start} - ${a.end===2026?'present':a.end}<br>Conf. articles: ${a.articles}<br>Journal articles: ${a.journals}<br><span class="cit-val">${a.cit} citations cumulees</span>`));
+    seg.addEventListener('mouseleave',hideTip);
+    // EPFL hatch overlay
+    if(a.start<=VISITING.start&&a.end>VISITING.start){
+      const vStart=((VISITING.start-a.start)/(a.end-a.start))*100;
+      const vW=((VISITING.end-VISITING.start)/(a.end-a.start))*100;
+      const hatch=document.createElement('div');
+      hatch.className='hatch';hatch.style.left=vStart+'%';hatch.style.width=vW+'%';
+      hatch.title='EPFL Visiting Researcher 2021';
+      seg.appendChild(hatch);
+    }
+    track.appendChild(seg);
+  });
+  // Date markers
+  [2002,2006,2010,2015,2021,2024].forEach(d=>{
+    const pct=((d-2002)/totalYears)*100;
+    const lbl=document.createElement('div');
+    lbl.className='affil-date';lbl.style.left=pct+'%';lbl.textContent=d;
+    dates.appendChild(lbl);
+  });
+})();
+
+// --- MILESTONES ---
+(function drawMilestones(){
+  const c=document.getElementById('milestones');
+  MILESTONES.forEach(m=>{
+    const card=document.createElement('div');
+    card.className='milestone-card';
+    card.innerHTML=`<div class="ms-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Genere par IA (Mistral)</div>
+      <div class="ms-year">${m.year}</div>
+      <div class="ms-title">${m.title}</div>
+      <div class="ms-desc">${m.desc}</div>`;
+    c.appendChild(card);
+  });
+})();
+
+// Init
+updateRangeUI();
+drawChart();
+window.addEventListener('resize',drawChart);
+</script>
+</body>
+</html>

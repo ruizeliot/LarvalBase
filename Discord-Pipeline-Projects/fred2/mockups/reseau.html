@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Reseau de co-auteurs</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1729;color:#e2e8f0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;overflow-x:hidden;padding:20px}
+.controls-bar{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);padding:14px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.legend-row{display:flex;flex-wrap:wrap;gap:14px;flex:1}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8}
+.leg-line{width:20px;height:3px;border-radius:2px}
+.slider-group{display:flex;align-items:center;gap:8px}
+.slider-label{font-size:11px;color:#64748b;white-space:nowrap}
+.slider-val{font-size:12px;color:#60a5fa;font-weight:700;min-width:20px;text-align:center}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:#1e293b;border-radius:2px;outline:none;width:100px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#60a5fa;border:2px solid #0f1729;cursor:pointer;box-shadow:0 0 6px rgba(96,165,250,.3)}
+
+.graph-panel{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);position:relative;overflow:hidden}
+canvas#graph{width:100%;display:block;cursor:default}
+
+/* Tooltip */
+.tip{position:fixed;background:#1e293b;border:1px solid rgba(96,165,250,.3);border-radius:10px;padding:14px 16px;font-size:12px;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;max-width:280px;box-shadow:0 12px 40px rgba(0,0,0,.55);line-height:1.6}
+.tip.show{opacity:1}
+.tip strong{color:#60a5fa;font-size:13px}
+.tip .affil{color:#94a3b8;font-style:italic}
+.tip .theme-bar{display:flex;align-items:center;gap:6px;margin-top:2px}
+.tip .theme-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.tip .theme-count{color:#cbd5e1;font-size:11px}
+.tip .total{color:#f59e0b;font-weight:700;margin-top:4px;display:block}
+.tip .action{display:block;margin-top:8px;padding:6px 12px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);border-radius:6px;color:#60a5fa;font-size:11px;text-align:center;cursor:pointer;transition:background .2s}
+.tip .action:hover{background:rgba(96,165,250,.2)}
+
+/* Edge tooltip */
+.tip .edge-info{font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls-bar">
+  <div class="legend-row">
+    <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div>Gestion de crises</div>
+    <div class="leg-item"><div class="leg-line" style="background:#8b5cf6"></div>Interoperabilite</div>
+    <div class="leg-item"><div class="leg-line" style="background:#22c55e"></div>Supply Chain</div>
+    <div class="leg-item"><div class="leg-line" style="background:#f97316"></div>Digital Twins</div>
+  </div>
+  <div class="slider-group">
+    <span class="slider-label">Co-publications min</span>
+    <input type="range" id="minPubs" min="1" max="10" value="1" oninput="updateFilters()">
+    <span class="slider-val" id="minPubsVal">1</span>
+  </div>
+  <div class="slider-group">
+    <span class="slider-label">Co-auteurs max</span>
+    <input type="range" id="maxAuth" min="5" max="20" value="15" oninput="updateFilters()">
+    <span class="slider-val" id="maxAuthVal">15</span>
+  </div>
+</div>
+
+<!-- Graph -->
+<div class="graph-panel">
+  <canvas id="graph"></canvas>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+// --- DATA ---
+const THEMES = {
+  crisis:{color:'#3b82f6',label:'Gestion de crises'},
+  interop:{color:'#8b5cf6',label:'Interoperabilite'},
+  supply:{color:'#22c55e',label:'Supply Chain'},
+  twins:{color:'#f97316',label:'Digital Twins'}
+};
+
+const CENTER = {id:'center',name:'Frederick Benaben',affil:'IMT Mines Albi',r:32};
+
+const COAUTHORS = [
+  {id:'a1',name:'Prof. Aurelie Montarnal',affil:'IMT Mines Albi',themes:{crisis:8,interop:5},total:13},
+  {id:'a2',name:'Dr. Matthieu Lauras',affil:'IMT Mines Albi',themes:{crisis:7,supply:4},total:11},
+  {id:'a3',name:'Dr. Jean-Pierre Martin',affil:'Universite de Toulouse',themes:{interop:6,twins:3},total:9},
+  {id:'a4',name:'Prof. Nicolas Sallaberry',affil:'Universite de Bordeaux',themes:{crisis:5,supply:3},total:8},
+  {id:'a5',name:'Dr. Sebastien Truptil',affil:'IMT Mines Albi',themes:{crisis:6,interop:2},total:8},
+  {id:'a6',name:'Prof. Herve Pingaud',affil:'IMT Mines Albi',themes:{supply:5,interop:2},total:7},
+  {id:'a7',name:'Dr. Wenxin Mu',affil:'EPFL Lausanne',themes:{twins:4,crisis:2},total:6},
+  {id:'a8',name:'Dr. Benoit Montreuil',affil:'Georgia Tech',themes:{supply:4,twins:1},total:5},
+  {id:'a9',name:'Prof. Jacques Lamothe',affil:'IMT Mines Albi',themes:{supply:3,crisis:2},total:5},
+  {id:'a10',name:'Dr. Franck Fontanili',affil:'IMT Mines Albi',themes:{twins:3,interop:1},total:4}
+];
+
+// Cross-links (co-authors who publish together independently)
+const CROSS_LINKS = [
+  {from:'a1',to:'a2'},{from:'a1',to:'a5'},{from:'a2',to:'a9'},
+  {from:'a3',to:'a7'},{from:'a6',to:'a9'}
+];
+
+let filterMinPubs=1, filterMaxAuth=15;
+let hoveredNode=null, hoveredEdge=null, clickedNode=null;
+let cx,cy,canvasW,canvasH;
+let nodePositions=[];
+const tip=document.getElementById('tip');
+
+// --- CANVAS SETUP ---
+const canvas=document.getElementById('graph');
+const ctx=canvas.getContext('2d');
+const dpr=window.devicePixelRatio||1;
+
+function resize(){
+  const panel=canvas.parentElement;
+  const w=panel.clientWidth;
+  const h=Math.max(500,Math.min(w*.7,650));
+  canvas.style.height=h+'px';
+  canvas.width=w*dpr;canvas.height=h*dpr;
+  canvasW=w;canvasH=h;cx=w/2;cy=h/2;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  layoutNodes();draw();
+}
+
+function layoutNodes(){
+  nodePositions=[];
+  const visible=getVisibleAuthors();
+  const n=visible.length;
+  const baseR=Math.min(canvasW,canvasH)*.32;
+  // Center
+  nodePositions.push({...CENTER,x:cx,y:cy,visible:true});
+  // Radial layout
+  visible.forEach((a,i)=>{
+    const angle=(i/n)*Math.PI*2 - Math.PI/2;
+    const r=baseR + (Math.random()-.5)*20;
+    const nodeR=12+(a.total/13)*14;
+    nodePositions.push({...a,x:cx+Math.cos(angle)*r,y:cy+Math.sin(angle)*r,r:nodeR,visible:true});
+  });
+  // Hidden authors
+  COAUTHORS.filter(a=>!visible.includes(a)).forEach(a=>{
+    nodePositions.push({...a,x:0,y:0,r:0,visible:false});
+  });
+}
+
+function getVisibleAuthors(){
+  return COAUTHORS.filter(a=>a.total>=filterMinPubs).slice(0,filterMaxAuth);
+}
+
+function updateFilters(){
+  filterMinPubs=+document.getElementById('minPubs').value;
+  filterMaxAuth=+document.getElementById('maxAuth').value;
+  document.getElementById('minPubsVal').textContent=filterMinPubs;
+  document.getElementById('maxAuthVal').textContent=filterMaxAuth;
+  layoutNodes();draw();
+}
+
+// --- DRAWING ---
+function draw(){
+  ctx.clearRect(0,0,canvasW,canvasH);
+
+  // Background glow at center
+  const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,80);
+  grd.addColorStop(0,'rgba(96,165,250,.06)');grd.addColorStop(1,'transparent');
+  ctx.fillStyle=grd;ctx.fillRect(0,0,canvasW,canvasH);
+
+  const visible=nodePositions.filter(n=>n.visible&&n.id!=='center');
+  const centerN=nodePositions[0];
+
+  // Draw cross-links first (dashed)
+  CROSS_LINKS.forEach(cl=>{
+    const from=nodePositions.find(n=>n.id===cl.from&&n.visible);
+    const to=nodePositions.find(n=>n.id===cl.to&&n.visible);
+    if(!from||!to)return;
+    const dimmed=hoveredNode&&hoveredNode!=='center'&&hoveredNode!==cl.from&&hoveredNode!==cl.to;
+    ctx.save();
+    ctx.strokeStyle=dimmed?'rgba(100,116,139,.08)':'rgba(100,116,139,.2)';
+    ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();
+    ctx.restore();
+  });
+
+  // Draw edges from center to each co-author
+  visible.forEach(a=>{
+    const themes=Object.entries(a.themes);
+    const themeCount=themes.length;
+    const dimmed=hoveredNode&&hoveredNode!=='center'&&hoveredNode!==a.id;
+
+    themes.forEach(([ tk, tv ],ti)=>{
+      const tc=THEMES[tk];if(!tc)return;
+      const offset=(ti-(themeCount-1)/2)*4;
+      const angle=Math.atan2(a.y-centerN.y,a.x-centerN.x);
+      const perpX=-Math.sin(angle)*offset;
+      const perpY=Math.cos(angle)*offset;
+      const lw=1+tv*.4;
+
+      ctx.save();
+      ctx.strokeStyle=dimmed?hexAlpha(tc.color,.06):hexAlpha(tc.color,.55);
+      ctx.lineWidth=lw;
+      ctx.beginPath();
+      ctx.moveTo(centerN.x+perpX,centerN.y+perpY);
+      ctx.lineTo(a.x+perpX,a.y+perpY);
+      ctx.stroke();
+      ctx.restore();
+    });
+  });
+
+  // Draw nodes
+  // Co-authors first
+  visible.forEach(a=>{
+    const dimmed=hoveredNode&&hoveredNode!=='center'&&hoveredNode!==a.id;
+    const highlighted=hoveredNode===a.id;
+    const alpha=dimmed?.15:1;
+
+    // Glow
+    if(highlighted){
+      ctx.save();
+      const g=ctx.createRadialGradient(a.x,a.y,a.r,a.x,a.y,a.r+12);
+      g.addColorStop(0,'rgba(96,165,250,.25)');g.addColorStop(1,'transparent');
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(a.x,a.y,a.r+12,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();ctx.globalAlpha=alpha;
+    // Circle
+    ctx.fillStyle='#1e293b';ctx.strokeStyle='#60a5fa';ctx.lineWidth=highlighted?2.5:1.5;
+    ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    // Name
+    ctx.fillStyle='#e2e8f0';ctx.font=`${Math.max(9,a.r*.7)}px "Segoe UI",system-ui,sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    const shortName=a.name.replace(/^(Prof\.|Dr\.)\s*/,'').split(' ');
+    if(a.r>18){
+      ctx.fillText(shortName[0],a.x,a.y-5);
+      if(shortName[1])ctx.fillText(shortName[1],a.x,a.y+7);
+    }else{
+      ctx.fillText(shortName[shortName.length-1],a.x,a.y);
+    }
+    ctx.restore();
+  });
+
+  // Center node
+  ctx.save();
+  const cGlow=ctx.createRadialGradient(centerN.x,centerN.y,centerN.r-4,centerN.x,centerN.y,centerN.r+16);
+  cGlow.addColorStop(0,'rgba(96,165,250,.2)');cGlow.addColorStop(1,'transparent');
+  ctx.fillStyle=cGlow;ctx.beginPath();ctx.arc(centerN.x,centerN.y,centerN.r+16,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#1a2332';ctx.strokeStyle='#60a5fa';ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(centerN.x,centerN.y,centerN.r,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle='#60a5fa';ctx.font='bold 11px "Segoe UI",system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('Frederick',centerN.x,centerN.y-6);
+  ctx.fillText('Benaben',centerN.x,centerN.y+7);
+  ctx.restore();
+}
+
+function hexAlpha(hex,a){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// --- INTERACTION ---
+canvas.addEventListener('mousemove',function(e){
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let found=null;
+
+  // Check nodes
+  for(const n of nodePositions){
+    if(!n.visible)continue;
+    const dx=mx-n.x, dy=my-n.y;
+    if(dx*dx+dy*dy<(n.r+6)*(n.r+6)){found=n;break}
+  }
+
+  if(found){
+    hoveredNode=found.id;
+    canvas.style.cursor='pointer';
+    if(found.id==='center'){
+      showTip(e,`<strong>${found.name}</strong><div class="affil">${found.affil}</div><span class="total">${COAUTHORS.length} co-auteurs</span>`);
+    }else{
+      let bars='';
+      Object.entries(found.themes).forEach(([tk,tv])=>{
+        const tc=THEMES[tk];if(!tc)return;
+        bars+=`<div class="theme-bar"><div class="theme-dot" style="background:${tc.color}"></div><span class="theme-count">${tc.label}: ${tv}</span></div>`;
+      });
+      showTip(e,`<strong>${found.name}</strong><div class="affil">${found.affil}</div>${bars}<span class="total">${found.total} co-publications</span>`);
+    }
+    draw();
+    return;
+  }
+
+  // Check edges (approximate: line proximity)
+  const centerN=nodePositions[0];
+  const visible=nodePositions.filter(n=>n.visible&&n.id!=='center');
+  let edgeFound=null;
+  for(const a of visible){
+    const dist=pointToSegDist(mx,my,centerN.x,centerN.y,a.x,a.y);
+    if(dist<8){edgeFound=a;break}
+  }
+
+  if(edgeFound){
+    canvas.style.cursor='pointer';
+    hoveredNode=null;
+    let themeInfo='';
+    Object.entries(edgeFound.themes).forEach(([tk,tv])=>{
+      const tc=THEMES[tk];if(!tc)return;
+      themeInfo+=`<div class="theme-bar"><div class="theme-dot" style="background:${tc.color}"></div><span class="theme-count">${tc.label}: ${tv} pubs</span></div>`;
+    });
+    showTip(e,`<div class="edge-info"><strong>${CENTER.name}</strong> &harr; <strong>${edgeFound.name}</strong></div>${themeInfo}`);
+    draw();
+    return;
+  }
+
+  if(hoveredNode){hoveredNode=null;draw()}
+  canvas.style.cursor='default';
+  hideTip();
+});
+
+canvas.addEventListener('click',function(e){
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  for(const n of nodePositions){
+    if(!n.visible||n.id==='center')continue;
+    const dx=mx-n.x,dy=my-n.y;
+    if(dx*dx+dy*dy<(n.r+6)*(n.r+6)){
+      // Show action tooltip
+      let bars='';
+      Object.entries(n.themes).forEach(([tk,tv])=>{
+        const tc=THEMES[tk];if(!tc)return;
+        bars+=`<div class="theme-bar"><div class="theme-dot" style="background:${tc.color}"></div><span class="theme-count">${tc.label}: ${tv}</span></div>`;
+      });
+      showTip(e,`<strong>${n.name}</strong><div class="affil">${n.affil}</div>${bars}<span class="total">${n.total} co-publications</span><div class="action">Ouvrir le dashboard de ${n.name.replace(/^(Prof\.|Dr\.)\s*/,'')}</div>`);
+      return;
+    }
+  }
+});
+
+canvas.addEventListener('mouseleave',function(){
+  hoveredNode=null;hideTip();draw();
+});
+
+function pointToSegDist(px,py,ax,ay,bx,by){
+  const dx=bx-ax,dy=by-ay;
+  const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));
+  const nx=ax+t*dx,ny=ay+t*dy;
+  return Math.sqrt((px-nx)**2+(py-ny)**2);
+}
+
+// --- TOOLTIP ---
+function showTip(e,html){tip.innerHTML=html;tip.classList.add('show');moveTip(e)}
+function moveTip(e){tip.style.left=Math.min(e.clientX+14,window.innerWidth-290)+'px';tip.style.top=(e.clientY+14)+'px'}
+function hideTip(){tip.classList.remove('show')}
+document.addEventListener('mousemove',e=>{if(tip.classList.contains('show'))moveTip(e)});
+
+// --- INIT ---
+resize();
+window.addEventListener('resize',resize);
+</script>
+</body>
+</html>

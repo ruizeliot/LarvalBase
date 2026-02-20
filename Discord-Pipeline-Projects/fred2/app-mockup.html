@@ -3,235 +3,3253 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ScholarScope — App Mockup Compilation</title>
+<title>ScholarScope - Compilation des maquettes</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1729; color: #e2e8f0; min-height: 100vh; display: flex; flex-direction: column; }
-
-/* Header */
-.header { background: #1a2332; border-bottom: 1px solid #1e293b; padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-.header .logo { font-size: 1.3rem; font-weight: 800; background: linear-gradient(135deg, #60a5fa, #a78bfa); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-.header .subtitle { font-size: 0.85rem; color: #94a3b8; margin-left: 1rem; }
-
-/* Navigation tabs */
-.nav-tabs { display: flex; gap: 0.25rem; background: #1a2332; padding: 0.5rem 1.5rem; border-bottom: 1px solid #1e293b; overflow-x: auto; flex-shrink: 0; }
-.nav-tabs button { background: none; border: none; color: #94a3b8; padding: 0.5rem 0.9rem; border-radius: 8px; font-size: 0.8rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-.nav-tabs button:hover { background: rgba(96,165,250,0.1); color: #cbd5e1; }
-.nav-tabs button.active { background: rgba(96,165,250,0.15); color: #60a5fa; font-weight: 600; }
-
-/* Content area */
-.content { flex: 1; display: flex; flex-direction: column; }
-.tab-panel { display: none; flex: 1; flex-direction: column; }
-.tab-panel.active { display: flex; }
-
-/* Iframe container */
-.iframe-container { flex: 1; position: relative; }
-.iframe-container iframe { width: 100%; height: 100%; border: none; min-height: 80vh; }
-
-/* Missing mockup notice */
-.missing-notice { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 3rem; text-align: center; }
-.missing-notice .icon { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
-.missing-notice h3 { font-size: 1.2rem; color: #60a5fa; margin-bottom: 0.5rem; }
-.missing-notice p { color: #94a3b8; max-width: 500px; line-height: 1.6; font-size: 0.9rem; }
-.missing-notice .version { display: inline-block; margin-top: 0.75rem; padding: 0.25rem 0.75rem; background: rgba(96,165,250,0.1); border-radius: 6px; font-size: 0.8rem; color: #60a5fa; }
-
-/* Section summary */
-.section-summary { padding: 1.5rem 2rem; background: #141d2e; border-bottom: 1px solid #1e293b; }
-.section-summary h2 { font-size: 1rem; color: #e2e8f0; margin-bottom: 0.5rem; }
-.section-summary ul { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.5rem; }
-.section-summary li { font-size: 0.8rem; color: #94a3b8; padding: 0.25rem 0.6rem; background: rgba(148,163,184,0.1); border-radius: 4px; }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+  .app-header {
+    background: #1a2332;
+    border-bottom: 1px solid #293548;
+    padding: 1.25rem 2rem;
+    text-align: center;
+  }
+  .app-logo {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 0.25rem;
+  }
+  .app-logo span:first-child { color: #60a5fa; }
+  .app-logo span:last-child { color: #a78bfa; }
+  .app-subtitle {
+    color: #94a3b8;
+    font-size: 0.9rem;
+  }
+  .nav-bar {
+    background: #1a2332;
+    border-bottom: 1px solid #293548;
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .nav-tab {
+    background: transparent;
+    border: 1px solid transparent;
+    color: #94a3b8;
+    padding: 0.55rem 1.1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .nav-tab:hover {
+    background: rgba(96,165,250,0.08);
+    color: #e2e8f0;
+  }
+  .nav-tab.active {
+    background: rgba(96,165,250,0.15);
+    border-color: #60a5fa;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  .tab-panel {
+    display: none;
+    padding: 1rem;
+  }
+  .tab-panel.active {
+    display: block;
+  }
+  .section-summary {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .section-summary h3 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #60a5fa;
+    margin-bottom: 0.75rem;
+  }
+  .section-summary ul {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .section-summary li {
+    background: rgba(96,165,250,0.08);
+    border: 1px solid rgba(96,165,250,0.15);
+    color: #94a3b8;
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+  }
+  @media (max-width: 640px) {
+    .app-header { padding: 1rem; }
+    .app-logo { font-size: 1.5rem; }
+    .nav-tab { font-size: 0.75rem; padding: 0.4rem 0.7rem; }
+    .tab-panel { padding: 0.5rem; }
+  }
 </style>
 </head>
 <body>
 
-<div class="header">
-  <div style="display:flex;align-items:center;">
-    <span class="logo">ScholarScope</span>
-    <span class="subtitle">Dashboard chercheur academique — Compilation des maquettes</span>
+<header class="app-header">
+  <div class="app-logo"><span>Scholar</span><span>Scope</span></div>
+  <p class="app-subtitle">Dashboard chercheur académique — Compilation des maquettes</p>
+</header>
+
+<nav class="nav-bar">
+        <button class="nav-tab active" data-tab="recherche">&#128269; Recherche</button>
+        <button class="nav-tab" data-tab="vue-densemble">&#128202; Vue d'ensemble</button>
+        <button class="nav-tab" data-tab="publications">&#128218; Publications</button>
+        <button class="nav-tab" data-tab="cartographie">&#128506; Cartographie</button>
+        <button class="nav-tab" data-tab="timeline">&#128200; Timeline</button>
+        <button class="nav-tab" data-tab="reseau">&#128101; Réseau</button>
+        <button class="nav-tab" data-tab="export">&#128196; Export PDF</button>
+</nav>
+
+<main>
+    <div class="tab-panel active" id="panel-recherche">
+      <div class="section-summary">
+        <h3>Recherche (V1)</h3>
+        <ul><li>Barre de recherche centrale</li><li>Autocomplétion + désambiguïsation</li><li>Détection auto format (nom, ORCID, Scopus ID, URL Scholar)</li><li>Raccourcis d'exemple sous le champ</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope - Recherche</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .search-container {
+    width: 100%;
+    max-width: 680px;
+    text-align: center;
+  }
+  .logo {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    letter-spacing: -0.5px;
+  }
+  .logo span:first-child { color: #60a5fa; }
+  .logo span:last-child { color: #a78bfa; }
+  .subtitle {
+    color: #94a3b8;
+    font-size: 1rem;
+    margin-bottom: 2.5rem;
+  }
+  .search-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+  .search-input {
+    width: 100%;
+    padding: 1rem 7.5rem 1rem 3rem;
+    font-size: 1.1rem;
+    background: #1e293b;
+    border: 2px solid #334155;
+    border-radius: 14px;
+    color: #e2e8f0;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+  }
+  .search-input::placeholder { color: #64748b; }
+  .search-input:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+  }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+  }
+  .format-badge {
+    display: none;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    animation: badgePop 0.25s ease;
+  }
+  .format-badge.name { background: rgba(96,165,250,0.2); color: #60a5fa; border: 1px solid rgba(96,165,250,0.3); }
+  .format-badge.orcid { background: rgba(167,139,250,0.2); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+  .format-badge.scopus { background: rgba(245,158,11,0.2); color: #f59e0b; border: 1px solid rgba(245,158,11,0.3); }
+  .format-badge.url { background: rgba(52,211,153,0.2); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .format-badge.visible { display: inline-flex; align-items: center; gap: 0.35rem; }
+
+  @keyframes badgePop {
+    from { opacity: 0; transform: translateY(-50%) scale(0.85); }
+    to { opacity: 1; transform: translateY(-50%) scale(1); }
+  }
+
+  /* Autocomplete dropdown */
+  .autocomplete {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0; right: 0;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+  }
+  .autocomplete.visible { display: block; animation: slideDown 0.2s ease; }
+  @keyframes slideDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .ac-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.85rem 1rem;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-bottom: 1px solid #293548;
+  }
+  .ac-item:last-child { border-bottom: none; }
+  .ac-item:hover, .ac-item.active { background: #273548; }
+  .ac-avatar {
+    width: 42px; height: 42px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+  .ac-info { flex: 1; min-width: 0; }
+  .ac-name { font-weight: 600; font-size: 0.95rem; }
+  .ac-name mark { background: none; color: #60a5fa; font-weight: 700; }
+  .ac-meta { font-size: 0.8rem; color: #64748b; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ac-hindex {
+    background: rgba(245,158,11,0.15);
+    color: #f59e0b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  /* Shortcuts */
+  .shortcuts-label {
+    color: #64748b;
+    font-size: 0.82rem;
+    margin-bottom: 0.75rem;
+    margin-top: 1.75rem;
+  }
+  .shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+  .shortcut-btn {
+    background: #1e293b;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .shortcut-btn:hover {
+    background: #273548;
+    border-color: #60a5fa;
+    color: #e2e8f0;
+    transform: translateY(-1px);
+  }
+  .shortcut-btn:active { transform: translateY(0); }
+
+  /* Tips row */
+  .tips {
+    margin-top: 3rem;
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .tip {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: #475569;
+  }
+  .tip-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 480px) {
+    body { padding: 1.5rem 0.75rem; justify-content: flex-start; padding-top: 15vh; }
+    .logo { font-size: 2rem; }
+    .subtitle { font-size: 0.9rem; margin-bottom: 2rem; }
+    .search-input { font-size: 1rem; padding: 0.9rem 6rem 0.9rem 2.6rem; }
+    .format-badge { font-size: 0.68rem; padding: 0.2rem 0.55rem; }
+    .tips { flex-direction: column; align-items: center; gap: 0.75rem; }
+    .shortcut-btn { font-size: 0.75rem; padding: 0.4rem 0.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="search-container">
+  <div class="logo"><span>Scholar</span><span>Scope</span></div>
+  <p class="subtitle">Explorez les profils academiques en un instant</p>
+
+  <div class="search-wrapper">
+    <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" class="search-input" id="searchInput" placeholder="Rechercher un chercheur..." autocomplete="off" spellcheck="false">
+    <span class="format-badge" id="formatBadge"></span>
+
+    <div class="autocomplete" id="autocomplete"></div>
   </div>
-</div>
 
-<div class="nav-tabs" id="navTabs">
-  <button class="active" data-tab="recherche">&#128269; Recherche</button>
-  <button data-tab="vue-densemble">&#128202; Vue d'ensemble</button>
-  <button data-tab="publications">&#128218; Publications</button>
-  <button data-tab="cartographie">&#128506;&#65039; Cartographie</button>
-  <button data-tab="timeline">&#128200; Timeline</button>
-  <button data-tab="reseau">&#128101; Reseau</button>
-  <button data-tab="export">&#128196; Export PDF</button>
-</div>
-
-<div class="content">
-
-  <!-- 1. Recherche -->
-  <div class="tab-panel active" id="panel-recherche">
-    <div class="section-summary">
-      <h2>&#128269; Recherche — Page d'accueil (V1)</h2>
-      <ul>
-        <li>Barre de recherche centrale</li>
-        <li>Autocompletion + desambiguisation</li>
-        <li>Detection auto format (nom, ORCID, Scopus ID, URL Scholar)</li>
-        <li>Raccourcis d'exemple sous le champ</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128269;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Recherche" du canal fred2.</p>
-      <span class="version">Version validee : V1</span>
-    </div>
+  <div class="shortcuts-label">Essayez un exemple :</div>
+  <div class="shortcuts">
+    <button class="shortcut-btn" data-value="Frederick Benaben">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      Frederick Benaben
+    </button>
+    <button class="shortcut-btn" data-value="0000-0003-1894-5128">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M12 8v8M8 12h8"/></svg>
+      0000-0003-1894-5128
+    </button>
+    <button class="shortcut-btn" data-value="Scopus: 56273849100">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      Scopus: 56273849100
+    </button>
+    <button class="shortcut-btn" data-value="scholar.google.com/citations?user=abc123XYZ">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+      scholar.google.com/...
+    </button>
   </div>
 
-  <!-- 2. Vue d'ensemble -->
-  <div class="tab-panel" id="panel-vue-densemble">
-    <div class="section-summary">
-      <h2>&#128202; Vue d'ensemble — Dashboard principal (V2)</h2>
-      <ul>
-        <li>Metriques cles (h-index, citations, publications)</li>
-        <li>Sparkline citations/an avec tooltip</li>
-        <li>Selecteur de periode (De/A)</li>
-        <li>Top thematiques en tags</li>
-        <li>Navigation cross-filtree</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128202;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Vue d'ensemble" du canal fred2.</p>
-      <span class="version">Version validee : V2</span>
-    </div>
+  <div class="tips">
+    <div class="tip"><span class="tip-dot" style="background:#60a5fa"></span>Nom complet</div>
+    <div class="tip"><span class="tip-dot" style="background:#a78bfa"></span>ORCID</div>
+    <div class="tip"><span class="tip-dot" style="background:#f59e0b"></span>Scopus ID</div>
+    <div class="tip"><span class="tip-dot" style="background:#34d399"></span>Google Scholar URL</div>
   </div>
-
-  <!-- 3. Publications -->
-  <div class="tab-panel" id="panel-publications">
-    <div class="section-summary">
-      <h2>&#128218; Publications (V1)</h2>
-      <ul>
-        <li>Liste filtrable (annee, thematique, type, journal)</li>
-        <li>Tri par citations ou date</li>
-        <li>Detail expandable par article</li>
-        <li>Badges open access + citations</li>
-        <li>Pagination</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128218;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Publications" du canal fred2.</p>
-      <span class="version">Version validee : V1</span>
-    </div>
-  </div>
-
-  <!-- 4. Cartographie thematique -->
-  <div class="tab-panel" id="panel-cartographie">
-    <div class="section-summary">
-      <h2>&#128506;&#65039; Cartographie thematique (V5)</h2>
-      <ul>
-        <li>Bubble chart des clusters thematiques</li>
-        <li>Drill-down sous-themes</li>
-        <li>Citations par cluster</li>
-        <li>Evolution temporelle (stacked bars)</li>
-        <li>Cross-filtering publications + reseau</li>
-        <li>Bandeau homogene ScholarScope</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128506;&#65039;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee (V5 — bandeau homogene, onglets a droite, sans avatar) est disponible en piece jointe dans le thread Discord "Cartographie thematique" du canal fred2.</p>
-      <span class="version">Version validee : V5</span>
-    </div>
-  </div>
-
-  <!-- 5. Timeline -->
-  <div class="tab-panel" id="panel-timeline">
-    <div class="section-summary">
-      <h2>&#128200; Timeline (V3.5)</h2>
-      <ul>
-        <li>Barres publications/an + courbe citations SVG</li>
-        <li>Selecteur de periode (boutons + double slider)</li>
-        <li>Timeline affiliations institutionnelles</li>
-        <li>Tooltips enrichis (conf/journaux/citations)</li>
-        <li>Jalons de carriere IA (Mistral)</li>
-        <li>Overlay EPFL visiting researcher</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128200;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee (V3.5 — 6 iterations, timeline affiliations, tooltips enrichis, fix EPFL overlay) est disponible en piece jointe dans le thread Discord "Timeline" du canal fred2.</p>
-      <span class="version">Version validee : V3.5</span>
-    </div>
-  </div>
-
-  <!-- 6. Reseau de co-auteurs -->
-  <div class="tab-panel" id="panel-reseau">
-    <div class="section-summary">
-      <h2>&#128101; Reseau de co-auteurs (V3)</h2>
-      <ul>
-        <li>Graphe canvas interactif niveau 1</li>
-        <li>Liens colores par thematique + epaisseur</li>
-        <li>Cross-links co-auteurs independants</li>
-        <li>Tooltips noeuds et liens</li>
-        <li>Filtres de profondeur (sliders)</li>
-        <li>Navigation profil en profil</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128101;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee (V3 — canvas radial, liens thematiques, tooltips, filtres profondeur) est disponible en piece jointe dans le thread Discord "Reseau de co-auteurs" du canal fred2.</p>
-      <span class="version">Version validee : V3</span>
-    </div>
-  </div>
-
-  <!-- 7. Export PDF -->
-  <div class="tab-panel" id="panel-export">
-    <div class="section-summary">
-      <h2>&#128196; Export PDF (V1)</h2>
-      <ul>
-        <li>Selection des sections (toggles)</li>
-        <li>Options de personnalisation</li>
-        <li>Apercu live du rapport</li>
-        <li>Generation + telechargement</li>
-      </ul>
-    </div>
-    <div class="missing-notice">
-      <div class="icon">&#128196;</div>
-      <h3>Maquette non disponible localement</h3>
-      <p>Le fichier HTML de la maquette n'a pas ete telecharge depuis Discord. La maquette validee est disponible en piece jointe dans le thread Discord "Export PDF" du canal fred2.</p>
-      <span class="version">Version validee : V1</span>
-    </div>
-  </div>
-
 </div>
 
 <script>
-// Tab navigation
-document.getElementById('navTabs').addEventListener('click', function(e) {
-  if (e.target.tagName !== 'BUTTON') return;
-  const tab = e.target.dataset.tab;
+const input = document.getElementById(&#39;searchInput&#39;);
+const badge = document.getElementById(&#39;formatBadge&#39;);
+const acContainer = document.getElementById(&#39;autocomplete&#39;);
 
-  // Update buttons
-  document.querySelectorAll('.nav-tabs button').forEach(b => b.classList.remove('active'));
-  e.target.classList.add('active');
+const researchers = [
+  { initials: &#39;FB&#39;, name: &#39;Frederick Benaben&#39;, inst: &#39;IMT Mines Albi&#39;, domain: &#39;Crisis Management, Interoperability&#39;, h: 27, bg: &#39;#1e3a5f&#39;, fg: &#39;#60a5fa&#39; },
+  { initials: &#39;MD&#39;, name: &#39;Dr. Marie Dupont&#39;, inst: &#39;Universite Paris-Saclay&#39;, domain: &#39;Machine Learning, NLP&#39;, h: 34, bg: &#39;#2d1b4e&#39;, fg: &#39;#a78bfa&#39; },
+  { initials: &#39;FF&#39;, name: &#39;Francois Fournier&#39;, inst: &#39;CNRS - LAAS&#39;, domain: &#39;Robotics, Control Systems&#39;, h: 19, bg: &#39;#1a3328&#39;, fg: &#39;#34d399&#39; },
+  { initials: &#39;SL&#39;, name: &#39;Sophie Leroy&#39;, inst: &#39;INRIA Grenoble&#39;, domain: &#39;Computer Vision, Deep Learning&#39;, h: 22, bg: &#39;#3b2317&#39;, fg: &#39;#fb923c&#39; },
+  { initials: &#39;AB&#39;, name: &#39;Aurelie Bertrand&#39;, inst: &#39;Ecole des Mines de Paris&#39;, domain: &#39;Supply Chain, Operations Research&#39;, h: 16, bg: &#39;#2d1b4e&#39;, fg: &#39;#c084fc&#39; },
+];
 
-  // Update panels
-  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.getElementById('panel-' + tab).classList.add('active');
+const formats = [
+  { regex: /^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$/i, label: &#39;ORCID detecte&#39;, cls: &#39;orcid&#39;, icon: &#39;<svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>&#39; },
+  { regex: /^scopus:\s*\d+$/i, label: &#39;Scopus ID detecte&#39;, cls: &#39;scopus&#39;, icon: &#39;<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>&#39; },
+  { regex: /scholar\.google/i, label: &#39;Google Scholar detecte&#39;, cls: &#39;url&#39;, icon: &#39;<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>&#39; },
+  { regex: /^[a-zA-Z\u00C0-\u024F\s.\-]{3,}$/i, label: &#39;Nom detecte&#39;, cls: &#39;name&#39;, icon: &#39;<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>&#39; },
+];
+
+function highlightMatch(name, query) {
+  const lower = name.toLowerCase();
+  const qLower = query.toLowerCase();
+  const idx = lower.indexOf(qLower);
+  if (idx === -1) return name;
+  return name.slice(0, idx) + &#39;<mark>&#39; + name.slice(idx, idx + query.length) + &#39;</mark>&#39; + name.slice(idx + query.length);
+}
+
+function renderAutocomplete(query) {
+  const lower = query.toLowerCase();
+  const matches = researchers.filter(r => r.name.toLowerCase().includes(lower));
+  if (matches.length === 0) {
+    acContainer.classList.remove(&#39;visible&#39;);
+    return;
+  }
+  acContainer.innerHTML = matches.map(r => `
+    <div class="ac-item" data-name="${r.name}">
+      <div class="ac-avatar" style="background:${r.bg};color:${r.fg}">${r.initials}</div>
+      <div class="ac-info">
+        <div class="ac-name">${highlightMatch(r.name, query)}</div>
+        <div class="ac-meta">${r.inst} &amp;middot; ${r.domain}</div>
+      </div>
+      <span class="ac-hindex">h:${r.h}</span>
+    </div>
+  `).join(&#39;&#39;);
+  acContainer.classList.add(&#39;visible&#39;);
+
+  acContainer.querySelectorAll(&#39;.ac-item&#39;).forEach(item => {
+    item.addEventListener(&#39;click&#39;, () => {
+      input.value = item.dataset.name;
+      acContainer.classList.remove(&#39;visible&#39;);
+      input.dispatchEvent(new Event(&#39;input&#39;));
+    });
+    item.addEventListener(&#39;mouseenter&#39;, () => {
+      acContainer.querySelectorAll(&#39;.ac-item&#39;).forEach(i => i.classList.remove(&#39;active&#39;));
+      item.classList.add(&#39;active&#39;);
+    });
+  });
+}
+
+input.addEventListener(&#39;input&#39;, () => {
+  const val = input.value.trim();
+  badge.className = &#39;format-badge&#39;;
+  badge.innerHTML = &#39;&#39;;
+
+  if (val.length > 2) {
+    for (const f of formats) {
+      if (f.regex.test(val)) {
+        badge.innerHTML = f.icon + &#39; &#39; + f.label;
+        badge.className = &#39;format-badge visible &#39; + f.cls;
+        break;
+      }
+    }
+  }
+
+  if (val.length >= 2 &amp;&amp; /^[a-zA-Z\u00C0-\u024F\s.\-]+$/.test(val)) {
+    renderAutocomplete(val);
+  } else {
+    acContainer.classList.remove(&#39;visible&#39;);
+  }
 });
 
-// Handle hash navigation
-function navigateToHash() {
-  const hash = window.location.hash.replace('#', '');
-  if (hash) {
-    const btn = document.querySelector('[data-tab="' + hash + '"]');
-    if (btn) btn.click();
+input.addEventListener(&#39;focus&#39;, () => {
+  const val = input.value.trim();
+  if (val.length >= 2 &amp;&amp; /^[a-zA-Z\u00C0-\u024F\s.\-]+$/.test(val)) {
+    renderAutocomplete(val);
   }
-}
-window.addEventListener('hashchange', navigateToHash);
-navigateToHash();
-</script>
+});
 
+document.addEventListener(&#39;click&#39;, (e) => {
+  if (!e.target.closest(&#39;.search-wrapper&#39;)) acContainer.classList.remove(&#39;visible&#39;);
+});
+
+document.querySelectorAll(&#39;.shortcut-btn&#39;).forEach(btn => {
+  btn.addEventListener(&#39;click&#39;, () => {
+    input.value = btn.dataset.value;
+    input.focus();
+    input.dispatchEvent(new Event(&#39;input&#39;));
+  });
+});
+
+// Keyboard navigation
+let activeIdx = -1;
+input.addEventListener(&#39;keydown&#39;, (e) => {
+  const items = acContainer.querySelectorAll(&#39;.ac-item&#39;);
+  if (!acContainer.classList.contains(&#39;visible&#39;) || items.length === 0) return;
+  if (e.key === &#39;ArrowDown&#39;) {
+    e.preventDefault();
+    activeIdx = Math.min(activeIdx + 1, items.length - 1);
+    items.forEach((it, i) => it.classList.toggle(&#39;active&#39;, i === activeIdx));
+  } else if (e.key === &#39;ArrowUp&#39;) {
+    e.preventDefault();
+    activeIdx = Math.max(activeIdx - 1, 0);
+    items.forEach((it, i) => it.classList.toggle(&#39;active&#39;, i === activeIdx));
+  } else if (e.key === &#39;Enter&#39; &amp;&amp; activeIdx >= 0) {
+    e.preventDefault();
+    items[activeIdx].click();
+    activeIdx = -1;
+  }
+});
+</script>
+</body>
+</html>
+' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+    <div class="tab-panel" id="panel-vue-densemble">
+      <div class="section-summary">
+        <h3>Vue d'ensemble (V2)</h3>
+        <ul><li>Métriques clés (h-index, citations, publications)</li><li>Sparkline citations/an avec tooltip</li><li>Sélecteur de période (De/À)</li><li>Top thématiques en tags</li><li>Navigation cross-filtrée</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope - Vue d&#39;ensemble</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 2rem 1.25rem;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  /* Researcher Header */
+  .researcher-header {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin-bottom: 2rem;
+  }
+  .avatar {
+    width: 72px; height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1e3a5f, #2d1b69);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #60a5fa;
+    flex-shrink: 0;
+    border: 3px solid #334155;
+  }
+  .researcher-info h1 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+  }
+  .researcher-info .institution {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .researcher-info .ids {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .id-badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 6px;
+    font-weight: 600;
+  }
+  .id-badge.orcid { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .id-badge.scopus { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+  /* Metrics Cards */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .metric-card {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .metric-card:hover {
+    transform: translateY(-2px);
+    border-color: #3b4f6b;
+  }
+  .metric-value {
+    font-size: 2rem;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 0.35rem;
+  }
+  .metric-label {
+    font-size: 0.8rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .metric-card:nth-child(1) .metric-value { color: #60a5fa; }
+  .metric-card:nth-child(2) .metric-value { color: #f59e0b; }
+  .metric-card:nth-child(3) .metric-value { color: #a78bfa; }
+  .metric-card:nth-child(4) .metric-value { color: #34d399; }
+
+  /* Period selector */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .period-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+  .period-selector label { color: #64748b; }
+  .period-selector select {
+    background: #1e293b;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+  }
+  .period-selector select:focus { border-color: #60a5fa; outline: none; }
+
+  /* Chart */
+  .chart-container {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+  }
+  .chart-wrapper {
+    position: relative;
+    min-width: 500px;
+  }
+  .chart-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    height: 160px;
+    padding-bottom: 1.75rem;
+    position: relative;
+  }
+  .chart-bar-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+    justify-content: flex-end;
+    position: relative;
+  }
+  .chart-bar {
+    width: 100%;
+    max-width: 28px;
+    border-radius: 4px 4px 0 0;
+    transition: all 0.2s;
+    cursor: pointer;
+    position: relative;
+    min-height: 3px;
+  }
+  .chart-bar:hover { filter: brightness(1.3); }
+  .chart-year {
+    font-size: 0.6rem;
+    color: #475569;
+    position: absolute;
+    bottom: 0;
+    transform: rotate(-45deg);
+    transform-origin: top left;
+    white-space: nowrap;
+  }
+  .chart-tooltip {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #334155;
+    color: #e2e8f0;
+    padding: 0.35rem 0.65rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .chart-tooltip::after {
+    content: &#39;&#39;;
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: #334155;
+  }
+  .chart-bar-wrapper:hover .chart-tooltip { display: block; }
+
+  /* Tags */
+  .tags-section { margin-bottom: 2rem; }
+  .tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .tag {
+    padding: 0.4rem 0.85rem;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    transition: transform 0.15s;
+    cursor: default;
+  }
+  .tag:hover { transform: scale(1.05); }
+  .tag:nth-child(1) { background: rgba(96,165,250,0.15); color: #60a5fa; }
+  .tag:nth-child(2) { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .tag:nth-child(3) { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .tag:nth-child(4) { background: rgba(52,211,153,0.15); color: #34d399; }
+  .tag:nth-child(5) { background: rgba(251,113,133,0.15); color: #fb7185; }
+  .tag:nth-child(6) { background: rgba(96,165,250,0.15); color: #93c5fd; }
+  .tag-count {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-left: 0.25rem;
+  }
+
+  /* Publications */
+  .publications-section { margin-bottom: 2rem; }
+  .pub-card {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 0.75rem;
+    transition: border-color 0.2s;
+    cursor: default;
+  }
+  .pub-card:hover { border-color: #3b4f6b; }
+  .pub-title {
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.3rem;
+    line-height: 1.4;
+  }
+  .pub-meta {
+    font-size: 0.8rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .pub-citations {
+    color: #f59e0b;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .pub-year {
+    background: rgba(96,165,250,0.1);
+    color: #60a5fa;
+    padding: 0.1rem 0.45rem;
+    border-radius: 4px;
+    font-weight: 600;
+    font-size: 0.75rem;
+  }
+  .pub-journal { color: #94a3b8; }
+  .see-all {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #60a5fa;
+    font-size: 0.88rem;
+    font-weight: 600;
+    text-decoration: none;
+    margin-top: 0.5rem;
+    cursor: pointer;
+    transition: color 0.2s;
+  }
+  .see-all:hover { color: #93c5fd; }
+
+  /* Nav links */
+  .nav-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .nav-link {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 10px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: #e2e8f0;
+  }
+  .nav-link:hover {
+    border-color: #60a5fa;
+    background: #1e293b;
+    transform: translateY(-1px);
+  }
+  .nav-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .nav-link-text { font-weight: 600; font-size: 0.9rem; }
+
+  @media (max-width: 640px) {
+    .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+    .researcher-header { flex-direction: column; text-align: center; }
+    .researcher-info .ids { justify-content: center; }
+    .researcher-info .institution { justify-content: center; }
+    .metric-value { font-size: 1.6rem; }
+    .nav-links { grid-template-columns: 1fr; }
+    .section-header { flex-direction: column; align-items: flex-start; }
+  }
+  @media (max-width: 375px) {
+    body { padding: 1rem 0.75rem; }
+    .metrics-grid { gap: 0.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Researcher Header -->
+  <div class="researcher-header">
+    <div class="avatar">FB</div>
+    <div class="researcher-info">
+      <h1>Prof. Frederick Benaben</h1>
+      <div class="institution">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+        IMT Mines Albi &amp;mdash; Centre Genie Industriel
+      </div>
+      <div class="ids">
+        <span class="id-badge orcid">ORCID: 0000-0003-1894-5128</span>
+        <span class="id-badge scopus">Scopus: 56273849100</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-value">27</div>
+      <div class="metric-label">h-index</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">3,456</div>
+      <div class="metric-label">Citations</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value">142</div>
+      <div class="metric-label">Publications</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-value" style="font-size:1.3rem;padding-top:0.35rem">2002-2025</div>
+      <div class="metric-label">Annees actives</div>
+    </div>
+  </div>
+
+  <!-- Citations Chart -->
+  <div class="chart-container">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg>
+        Citations par annee
+      </div>
+      <div class="period-selector">
+        <label>De:</label>
+        <select id="yearFrom"></select>
+        <label>A:</label>
+        <select id="yearTo"></select>
+      </div>
+    </div>
+    <div class="chart-wrapper">
+      <div class="chart-bars" id="chartBars"></div>
+    </div>
+  </div>
+
+  <!-- Thematic Tags -->
+  <div class="tags-section">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+        Thematiques principales
+      </div>
+    </div>
+    <div class="tags-container">
+      <span class="tag">Crisis Management<span class="tag-count">(38)</span></span>
+      <span class="tag">Interoperability<span class="tag-count">(29)</span></span>
+      <span class="tag">Supply Chain<span class="tag-count">(24)</span></span>
+      <span class="tag">Digital Twins<span class="tag-count">(18)</span></span>
+      <span class="tag">Simulation<span class="tag-count">(15)</span></span>
+      <span class="tag">Enterprise Modeling<span class="tag-count">(12)</span></span>
+    </div>
+  </div>
+
+  <!-- Recent Publications -->
+  <div class="publications-section">
+    <div class="section-header">
+      <div class="section-title">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Publications recentes
+      </div>
+    </div>
+
+    <div class="pub-card">
+      <div class="pub-title">A knowledge-based metamodel for crisis management collaborative processes</div>
+      <div class="pub-meta">
+        <span class="pub-year">2024</span>
+        <span class="pub-journal">International Journal of Disaster Risk Reduction</span>
+        <span class="pub-citations">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          89
+        </span>
+      </div>
+    </div>
+
+    <div class="pub-card">
+      <div class="pub-title">Digital twin-driven supply chain resilience: a framework for disruption detection and recovery</div>
+      <div class="pub-meta">
+        <span class="pub-year">2023</span>
+        <span class="pub-journal">Computers in Industry</span>
+        <span class="pub-citations">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          156
+        </span>
+      </div>
+    </div>
+
+    <div class="pub-card">
+      <div class="pub-title">Towards a model-driven interoperability framework for crisis management systems</div>
+      <div class="pub-meta">
+        <span class="pub-year">2023</span>
+        <span class="pub-journal">Enterprise Information Systems</span>
+        <span class="pub-citations">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          124
+        </span>
+      </div>
+    </div>
+
+    <div class="pub-card">
+      <div class="pub-title">An agile approach for collaborative situation assessment in crisis response</div>
+      <div class="pub-meta">
+        <span class="pub-year">2022</span>
+        <span class="pub-journal">IFAC-PapersOnLine</span>
+        <span class="pub-citations">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          67
+        </span>
+      </div>
+    </div>
+
+    <a class="see-all">
+      Voir toutes les publications
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+    </a>
+  </div>
+
+  <!-- Navigation Links -->
+  <div class="nav-links">
+    <a class="nav-link">
+      <div class="nav-icon" style="background:rgba(96,165,250,0.15)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
+      <span class="nav-link-text">Publications</span>
+    </a>
+    <a class="nav-link">
+      <div class="nav-icon" style="background:rgba(167,139,250,0.15)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10"/></svg>
+      </div>
+      <span class="nav-link-text">Cartographie</span>
+    </a>
+    <a class="nav-link">
+      <div class="nav-icon" style="background:rgba(245,158,11,0.15)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </div>
+      <span class="nav-link-text">Reseau</span>
+    </a>
+    <a class="nav-link">
+      <div class="nav-icon" style="background:rgba(52,211,153,0.15)">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4z"/></svg>
+      </div>
+      <span class="nav-link-text">Export PDF</span>
+    </a>
+  </div>
+</div>
+
+<script>
+// Citation data by year
+const citationData = {
+  2002: 5, 2003: 8, 2004: 12, 2005: 18, 2006: 25, 2007: 38, 2008: 52,
+  2009: 67, 2010: 89, 2011: 105, 2012: 134, 2013: 158, 2014: 189,
+  2015: 215, 2016: 248, 2017: 278, 2018: 312, 2019: 345, 2020: 298,
+  2021: 356, 2022: 389, 2023: 412, 2024: 378, 2025: 145
+};
+
+const years = Object.keys(citationData).map(Number);
+const fromSelect = document.getElementById(&#39;yearFrom&#39;);
+const toSelect = document.getElementById(&#39;yearTo&#39;);
+
+years.forEach(y => {
+  fromSelect.innerHTML += `<option value="${y}" ${y === 2002 ? &#39;selected&#39; : &#39;&#39;}>${y}</option>`;
+  toSelect.innerHTML += `<option value="${y}" ${y === 2025 ? &#39;selected&#39; : &#39;&#39;}>${y}</option>`;
+});
+
+function renderChart() {
+  const from = parseInt(fromSelect.value);
+  const to = parseInt(toSelect.value);
+  const container = document.getElementById(&#39;chartBars&#39;);
+  const filtered = years.filter(y => y >= from &amp;&amp; y <= to);
+  const maxVal = Math.max(...filtered.map(y => citationData[y]));
+
+  container.innerHTML = filtered.map(y => {
+    const val = citationData[y];
+    const pct = (val / maxVal) * 100;
+    const hue = 210 + (val / maxVal) * 40;
+    return `
+      <div class="chart-bar-wrapper">
+        <div class="chart-tooltip">${y}: ${val} citations</div>
+        <div class="chart-bar" style="height:${pct}%;background:hsl(${hue},80%,60%)"></div>
+        <span class="chart-year">${y}</span>
+      </div>`;
+  }).join(&#39;&#39;);
+}
+
+fromSelect.addEventListener(&#39;change&#39;, renderChart);
+toSelect.addEventListener(&#39;change&#39;, renderChart);
+renderChart();
+</script>
+</body>
+</html>
+' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+    <div class="tab-panel" id="panel-publications">
+      <div class="section-summary">
+        <h3>Publications (V1)</h3>
+        <ul><li>Liste filtrable (année, thématique, type, journal)</li><li>Tri par citations ou date</li><li>Détail expandable par article</li><li>Badges open access + citations</li><li>Pagination</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope - Publications</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 2rem 1.25rem;
+  }
+  .container { max-width: 960px; margin: 0 auto; }
+
+  .page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .page-subtitle { color: #64748b; font-size: 0.88rem; margin-bottom: 1.5rem; }
+  .count-highlight { color: #60a5fa; }
+
+  /* Filter Bar */
+  .filter-bar {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 12px;
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+  }
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .filter-label {
+    font-size: 0.7rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+  .filter-select {
+    background: #0f1729;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.45rem 0.65rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    min-width: 120px;
+  }
+  .filter-select:focus { border-color: #60a5fa; outline: none; }
+
+  /* Sort Bar */
+  .sort-bar {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .sort-label { font-size: 0.82rem; color: #64748b; margin-right: 0.25rem; }
+  .sort-btn {
+    background: #1a2332;
+    border: 1px solid #293548;
+    color: #94a3b8;
+    padding: 0.4rem 0.85rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    font-weight: 500;
+  }
+  .sort-btn.active {
+    background: rgba(96,165,250,0.15);
+    border-color: #60a5fa;
+    color: #60a5fa;
+  }
+  .sort-btn:hover:not(.active) { border-color: #475569; color: #e2e8f0; }
+  .results-count {
+    margin-left: auto;
+    font-size: 0.82rem;
+    color: #64748b;
+  }
+
+  /* Publication Cards */
+  .pub-list { display: flex; flex-direction: column; gap: 0.75rem; }
+  .pub-card {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 12px;
+    padding: 1.25rem;
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+  .pub-card:hover { border-color: #3b4f6b; }
+  .pub-card.expanded { border-color: #60a5fa; }
+
+  .pub-top {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .pub-number {
+    font-size: 0.75rem;
+    color: #475569;
+    font-weight: 700;
+    min-width: 24px;
+    padding-top: 2px;
+  }
+  .pub-content { flex: 1; min-width: 0; }
+  .pub-title {
+    font-weight: 600;
+    font-size: 1rem;
+    line-height: 1.45;
+    margin-bottom: 0.4rem;
+  }
+  .pub-authors {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+  .pub-authors strong { color: #60a5fa; font-weight: 600; }
+  .pub-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+  .pub-year-badge {
+    background: rgba(96,165,250,0.1);
+    color: #60a5fa;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    font-weight: 700;
+    font-size: 0.78rem;
+  }
+  .pub-journal-name {
+    font-size: 0.82rem;
+    color: #94a3b8;
+    font-style: italic;
+  }
+  .pub-type-badge {
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 5px;
+    font-weight: 600;
+  }
+  .pub-type-badge.journal { background: rgba(167,139,250,0.15); color: #a78bfa; }
+  .pub-type-badge.conference { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .pub-type-badge.chapter { background: rgba(52,211,153,0.15); color: #34d399; }
+
+  .pub-badges {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .citation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    background: rgba(245,158,11,0.12);
+    color: #f59e0b;
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 0.35rem 0.65rem;
+    border-radius: 8px;
+  }
+  .oa-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    background: rgba(52,211,153,0.12);
+    color: #34d399;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 0.3rem 0.55rem;
+    border-radius: 8px;
+  }
+
+  /* Expandable detail */
+  .pub-detail {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease, padding 0.3s ease;
+  }
+  .pub-card.expanded .pub-detail {
+    max-height: 500px;
+    padding-top: 1rem;
+    margin-top: 1rem;
+    border-top: 1px solid #293548;
+  }
+  .pub-abstract-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+  }
+  .pub-abstract {
+    font-size: 0.88rem;
+    color: #94a3b8;
+    line-height: 1.6;
+    margin-bottom: 0.75rem;
+  }
+  .pub-full-authors {
+    font-size: 0.82rem;
+    color: #64748b;
+    line-height: 1.5;
+  }
+  .pub-full-authors strong { color: #60a5fa; }
+  .pub-detail-meta {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+  }
+  .detail-item {
+    font-size: 0.78rem;
+    color: #64748b;
+  }
+  .detail-item span { color: #94a3b8; font-weight: 600; }
+
+  /* Expand indicator */
+  .expand-icon {
+    color: #475569;
+    transition: transform 0.2s;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .pub-card.expanded .expand-icon { transform: rotate(180deg); color: #60a5fa; }
+
+  /* Pagination */
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 2rem;
+  }
+  .page-btn {
+    background: #1a2332;
+    border: 1px solid #293548;
+    color: #94a3b8;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .page-btn:hover:not(.active):not(:disabled) { border-color: #475569; color: #e2e8f0; }
+  .page-btn.active {
+    background: #60a5fa;
+    border-color: #60a5fa;
+    color: #0f1729;
+    font-weight: 700;
+  }
+  .page-btn:disabled { opacity: 0.3; cursor: default; }
+  .page-ellipsis { color: #475569; padding: 0 0.25rem; font-size: 0.85rem; }
+
+  @media (max-width: 640px) {
+    .filter-bar { flex-direction: column; }
+    .filter-group { width: 100%; }
+    .filter-select { width: 100%; }
+    .pub-badges { margin-left: 0; margin-top: 0.5rem; }
+    .pub-top { flex-direction: column; gap: 0; }
+    .pub-number { display: none; }
+    .results-count { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-title">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Publications
+  </div>
+  <p class="page-subtitle">Prof. Frederick Benaben &amp;mdash; <span class="count-highlight">142 publications</span> (2002&amp;ndash;2025)</p>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Annee</span>
+      <select class="filter-select" id="filterYear">
+        <option value="">Toutes</option>
+        <option>2025</option><option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option><option>2019</option><option>2018</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Thematique</span>
+      <select class="filter-select">
+        <option value="">Toutes</option>
+        <option>Crisis Management</option><option>Interoperability</option><option>Supply Chain</option><option>Digital Twins</option><option>Simulation</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Type</span>
+      <select class="filter-select" id="filterType">
+        <option value="">Tous</option>
+        <option value="journal">Journal</option><option value="conference">Conference</option><option value="chapter">Book Chapter</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Journal / Conference</span>
+      <select class="filter-select">
+        <option value="">Tous</option>
+        <option>Computers in Industry</option><option>Enterprise Information Systems</option><option>Int. J. Disaster Risk Reduction</option><option>IFAC-PapersOnLine</option><option>ISCRAM Conference</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Sort Bar -->
+  <div class="sort-bar">
+    <span class="sort-label">Trier par:</span>
+    <button class="sort-btn active" id="sortCitations">Par citations &amp;#8595;</button>
+    <button class="sort-btn" id="sortDate">Par date &amp;#8595;</button>
+    <span class="results-count" id="resultsCount">Affichage: 6 sur 142</span>
+  </div>
+
+  <!-- Publication List -->
+  <div class="pub-list" id="pubList"></div>
+
+  <!-- Pagination -->
+  <div class="pagination">
+    <button class="page-btn" disabled>&amp;laquo;</button>
+    <button class="page-btn active">1</button>
+    <button class="page-btn">2</button>
+    <button class="page-btn">3</button>
+    <button class="page-btn">4</button>
+    <span class="page-ellipsis">...</span>
+    <button class="page-btn">12</button>
+    <button class="page-btn">&amp;raquo;</button>
+  </div>
+</div>
+
+<script>
+const publications = [
+  {
+    num: 1,
+    title: "A knowledge-based metamodel for crisis management collaborative processes",
+    authors: "Benaben, F., Lauras, M., Truptil, S., Salatge, N.",
+    authorsHighlight: "<strong>Benaben, F.</strong>, Lauras, M., Truptil, S., Salatge, N.",
+    fullAuthors: "<strong>Benaben, Frederick</strong>, Lauras, Matthieu, Truptil, Sebastien, Salatge, Nicolas, Couget, Pierre",
+    journal: "International Journal of Disaster Risk Reduction",
+    year: 2024,
+    type: "journal",
+    typeLabel: "Journal",
+    citations: 89,
+    oa: true,
+    abstract: "This paper presents a metamodel-based approach for designing and managing collaborative crisis response processes. By leveraging ontological knowledge representation, the framework enables automated process generation that adapts to evolving crisis situations. The approach has been validated through multiple real-world exercises with French civil protection agencies.",
+    doi: "10.1016/j.ijdrr.2024.103452",
+    volume: "Vol. 98"
+  },
+  {
+    num: 2,
+    title: "Digital twin-driven supply chain resilience: a framework for disruption detection and recovery",
+    authors: "Benaben, F., Mu, W., Boissel-Dallier, N., Barthe-Delanoe, A.-M.",
+    authorsHighlight: "<strong>Benaben, F.</strong>, Mu, W., Boissel-Dallier, N., Barthe-Delanoe, A.-M.",
+    fullAuthors: "<strong>Benaben, Frederick</strong>, Mu, Wenxin, Boissel-Dallier, Nicolas, Barthe-Delanoe, Anne-Marie, Pingaud, Herve",
+    journal: "Computers in Industry",
+    year: 2023,
+    type: "journal",
+    typeLabel: "Journal",
+    citations: 156,
+    oa: false,
+    abstract: "This paper introduces a digital twin framework designed to enhance supply chain resilience through real-time monitoring and automated disruption response. The system combines model-driven engineering with simulation capabilities to predict cascading failures and suggest recovery strategies.",
+    doi: "10.1016/j.compind.2023.103891",
+    volume: "Vol. 147"
+  },
+  {
+    num: 3,
+    title: "Towards a model-driven interoperability framework for crisis management systems",
+    authors: "Benaben, F., Touzi, J., Rajsiri, V., Pingaud, H.",
+    authorsHighlight: "<strong>Benaben, F.</strong>, Touzi, J., Rajsiri, V., Pingaud, H.",
+    fullAuthors: "<strong>Benaben, Frederick</strong>, Touzi, Jihed, Rajsiri, Vatcharaphun, Pingaud, Herve, Lorr, Jean-Pierre",
+    journal: "Enterprise Information Systems",
+    year: 2023,
+    type: "journal",
+    typeLabel: "Journal",
+    citations: 124,
+    oa: true,
+    abstract: "Interoperability between heterogeneous information systems remains a major challenge in crisis management contexts. This paper proposes a model-driven framework that bridges semantic gaps between partner organizations through automated mediation schema generation.",
+    doi: "10.1080/17517575.2023.2198765",
+    volume: "Vol. 17, No. 4"
+  },
+  {
+    num: 4,
+    title: "An agile approach for collaborative situation assessment in crisis response",
+    authors: "Barthe-Delanoe, A.-M., Benaben, F., Lauras, M.",
+    authorsHighlight: "Barthe-Delanoe, A.-M., <strong>Benaben, F.</strong>, Lauras, M.",
+    fullAuthors: "Barthe-Delanoe, Anne-Marie, <strong>Benaben, Frederick</strong>, Lauras, Matthieu, Truptil, Sebastien",
+    journal: "ISCRAM 2022 Conference Proceedings",
+    year: 2022,
+    type: "conference",
+    typeLabel: "Conference",
+    citations: 67,
+    oa: true,
+    abstract: "This paper presents an agile methodology for continuous situation assessment during large-scale crisis events. The approach integrates heterogeneous data sources and uses a collaborative filtering mechanism to maintain an accurate common operational picture.",
+    doi: "10.24251/HICSS.2022.268",
+    volume: "pp. 234-243"
+  },
+  {
+    num: 5,
+    title: "Simulation-based approach for supply chain disruption management: from risk detection to recovery",
+    authors: "Mu, W., Benaben, F., Pingaud, H.",
+    authorsHighlight: "Mu, W., <strong>Benaben, F.</strong>, Pingaud, H.",
+    fullAuthors: "Mu, Wenxin, <strong>Benaben, Frederick</strong>, Pingaud, Herve, Boissel-Dallier, Nicolas",
+    journal: "Simulation Modelling Practice and Theory",
+    year: 2021,
+    type: "journal",
+    typeLabel: "Journal",
+    citations: 198,
+    oa: false,
+    abstract: "Supply chain disruptions pose significant threats to organizational performance. This paper proposes a simulation-based decision support system that models disruption propagation across multi-tier supply networks and evaluates recovery strategies through scenario analysis.",
+    doi: "10.1016/j.simpat.2021.102387",
+    volume: "Vol. 112"
+  },
+  {
+    num: 6,
+    title: "Enterprise interoperability: a model-based approach",
+    authors: "Benaben, F., Pingaud, H., Touzi, J.",
+    authorsHighlight: "<strong>Benaben, F.</strong>, Pingaud, H., Touzi, J.",
+    fullAuthors: "<strong>Benaben, Frederick</strong>, Pingaud, Herve, Touzi, Jihed, Rajsiri, Vatcharaphun",
+    journal: "Enterprise Interoperability: New Challenges and Approaches, Springer",
+    year: 2020,
+    type: "chapter",
+    typeLabel: "Book Chapter",
+    citations: 245,
+    oa: false,
+    abstract: "This book chapter provides a comprehensive overview of model-based enterprise interoperability, covering ontological foundations, mediation mechanisms, and practical implementation guidelines for achieving seamless information exchange between partner organizations.",
+    doi: "10.1007/978-1-84996-257-5_6",
+    volume: "Ch. 6, pp. 97-118"
+  }
+];
+
+function renderPublications(pubs) {
+  const list = document.getElementById(&#39;pubList&#39;);
+  list.innerHTML = pubs.map((p, i) => `
+    <div class="pub-card" data-idx="${i}">
+      <div class="pub-top">
+        <span class="pub-number">#${p.num}</span>
+        <div class="pub-content">
+          <div class="pub-title">${p.title}</div>
+          <div class="pub-authors">${p.authorsHighlight}</div>
+          <div class="pub-meta-row">
+            <span class="pub-year-badge">${p.year}</span>
+            <span class="pub-journal-name">${p.journal}</span>
+            <span class="pub-type-badge ${p.type}">${p.typeLabel}</span>
+          </div>
+        </div>
+        <div class="pub-badges">
+          ${p.oa ? &#39;<span class="oa-badge"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Open Access</span>&#39; : &#39;&#39;}
+          <span class="citation-badge">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10M18 20V4M6 20v-4"/></svg>
+            ${p.citations}
+          </span>
+          <svg class="expand-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+      </div>
+      <div class="pub-detail">
+        <div class="pub-abstract-label">Resume</div>
+        <div class="pub-abstract">${p.abstract}</div>
+        <div class="pub-abstract-label">Auteurs complets</div>
+        <div class="pub-full-authors">${p.fullAuthors}</div>
+        <div class="pub-detail-meta">
+          <div class="detail-item">DOI: <span>${p.doi}</span></div>
+          <div class="detail-item">Volume: <span>${p.volume}</span></div>
+          <div class="detail-item">Citations: <span>${p.citations}</span></div>
+        </div>
+      </div>
+    </div>
+  `).join(&#39;&#39;);
+
+  list.querySelectorAll(&#39;.pub-card&#39;).forEach(card => {
+    card.addEventListener(&#39;click&#39;, () => {
+      const wasExpanded = card.classList.contains(&#39;expanded&#39;);
+      list.querySelectorAll(&#39;.pub-card&#39;).forEach(c => c.classList.remove(&#39;expanded&#39;));
+      if (!wasExpanded) card.classList.add(&#39;expanded&#39;);
+    });
+  });
+}
+
+// Sort buttons
+const sortCit = document.getElementById(&#39;sortCitations&#39;);
+const sortDate = document.getElementById(&#39;sortDate&#39;);
+
+sortCit.addEventListener(&#39;click&#39;, () => {
+  sortCit.classList.add(&#39;active&#39;);
+  sortDate.classList.remove(&#39;active&#39;);
+  const sorted = [...publications].sort((a, b) => b.citations - a.citations);
+  renderPublications(sorted);
+});
+
+sortDate.addEventListener(&#39;click&#39;, () => {
+  sortDate.classList.add(&#39;active&#39;);
+  sortCit.classList.remove(&#39;active&#39;);
+  const sorted = [...publications].sort((a, b) => b.year - a.year);
+  renderPublications(sorted);
+});
+
+// Pagination click handlers
+document.querySelectorAll(&#39;.page-btn&#39;).forEach(btn => {
+  btn.addEventListener(&#39;click&#39;, () => {
+    if (btn.disabled) return;
+    document.querySelectorAll(&#39;.page-btn&#39;).forEach(b => b.classList.remove(&#39;active&#39;));
+    btn.classList.add(&#39;active&#39;);
+  });
+});
+
+// Initial render
+renderPublications(publications);
+</script>
+</body>
+</html>
+' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+    <div class="tab-panel" id="panel-cartographie">
+      <div class="section-summary">
+        <h3>Cartographie thématique (V5)</h3>
+        <ul><li>Bubble chart des clusters thématiques</li><li>Drill-down sous-thèmes</li><li>Citations par cluster</li><li>Évolution temporelle (stacked bars)</li><li>Cross-filtering publications + réseau</li><li>Bandeau homogène ScholarScope</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Cartographie Thematique</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1729;color:#e2e8f0;font-family:&#39;Segoe UI&#39;,system-ui,-apple-system,sans-serif;overflow-x:hidden}
+.page{display:grid;grid-template-columns:1fr 320px;grid-template-rows:1fr auto;gap:16px;padding:20px;min-height:100vh}
+@media(max-width:900px){.page{grid-template-columns:1fr;grid-template-rows:auto auto auto}}
+.panel{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);padding:20px;position:relative}
+.panel-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.panel-title::before{content:&#39;&#39;;width:4px;height:16px;border-radius:2px;background:#60a5fa;flex-shrink:0}
+
+/* Bubble Chart */
+.bubble-area{display:flex;align-items:center;justify-content:center;min-height:440px;overflow:visible}
+.bubble-svg{width:100%;height:100%;min-height:440px}
+.bubble{cursor:pointer;transition:opacity .35s ease}
+.bubble text{pointer-events:none;fill:#fff;font-weight:600;text-anchor:middle;dominant-baseline:central}
+.bubble text.b-label{font-size:13px}
+.bubble text.b-count{font-size:11px;font-weight:400;opacity:.75}
+.bubble circle{transition:r .5s cubic-bezier(.34,1.56,.64,1),fill-opacity .35s,stroke-width .2s}
+.bubble:hover circle{stroke-width:3;fill-opacity:.35}
+.dimmed .bubble{opacity:.15}
+.dimmed .bubble.active{opacity:1}
+
+/* Sub-topic pills overlay */
+.sub-overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;align-items:center;justify-content:center}
+.sub-ring{display:none;position:relative}
+.sub-ring.visible{display:block;pointer-events:auto}
+.sub-pill{position:absolute;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);border-radius:20px;padding:5px 14px;font-size:11px;color:#cbd5e1;white-space:nowrap;opacity:0;transform:scale(.7);transition:opacity .35s ease,transform .35s ease;backdrop-filter:blur(4px)}
+.sub-pill.show{opacity:1;transform:scale(1)}
+
+/* Right Panel - Citations bar chart */
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;transition:opacity .35s}
+.bar-label{width:120px;font-size:12px;color:#94a3b8;text-align:right;flex-shrink:0;line-height:1.2}
+.bar-track{flex:1;height:24px;background:rgba(255,255,255,.04);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .7s cubic-bezier(.22,1,.36,1);display:flex;align-items:center;padding-left:8px;font-size:11px;font-weight:700;color:#fff;min-width:36px}
+.cf-dim{opacity:.12!important}
+.cf-bright{opacity:1!important}
+
+/* Bottom Panel - Stacked bars */
+.bottom-panel{grid-column:1/-1}
+@media(max-width:900px){.bottom-panel{grid-column:1}}
+.stacked-wrapper{display:flex;align-items:flex-end;gap:0;height:180px;padding:0 4px;position:relative}
+.stacked-col{flex:1;display:flex;flex-direction:column-reverse;align-items:center;padding:0 8px}
+.stacked-seg{width:100%;border-radius:2px;transition:height .5s ease,opacity .35s;cursor:pointer}
+.stacked-seg:hover{filter:brightness(1.2)}
+.stacked-seg.cf-dim-seg{opacity:.1!important}
+.period-label{margin-top:8px;font-size:11px;color:#64748b;text-align:center}
+.y-axis{position:absolute;left:0;top:0;height:100%;display:flex;flex-direction:column-reverse;justify-content:space-between;padding:0 4px}
+.y-tick{font-size:10px;color:#475569}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8;cursor:pointer;transition:opacity .2s}
+.legend-item:hover{opacity:.8}
+.legend-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
+
+/* Tooltip */
+.tip{position:fixed;background:#1e293b;border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;max-width:240px;box-shadow:0 8px 32px rgba(0,0,0,.5);line-height:1.5}
+.tip.show{opacity:1}
+.tip strong{color:#60a5fa}
+.tip .cit{color:#f59e0b}
+</style>
+</head>
+<body>
+<div class="page">
+  <!-- Main: Bubble Chart -->
+  <div class="panel bubble-area" id="bubblePanel">
+    <svg class="bubble-svg" id="bubbleSvg" viewBox="0 0 600 440"></svg>
+    <div class="sub-overlay"><div class="sub-ring" id="subRing"></div></div>
+  </div>
+
+  <!-- Right: Citations -->
+  <div class="panel" id="citPanel">
+    <div class="panel-title">Citations par cluster</div>
+    <div id="citBars"></div>
+  </div>
+
+  <!-- Bottom: Evolution -->
+  <div class="panel bottom-panel">
+    <div class="panel-title">Evolution thematique (2002 - 2025)</div>
+    <div class="stacked-wrapper" id="stackedChart"></div>
+    <div class="legend" id="legend"></div>
+  </div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script>
+const T = [
+  {id:&#39;crisis&#39;,label:&#39;Gestion de crises&#39;,color:&#39;#3b82f6&#39;,pubs:42,cit:820,sub:[&#39;Evaluation des risques&#39;,&#39;Reponse d\&#39;urgence&#39;,&#39;Resilience&#39;,&#39;Alerte precoce&#39;]},
+  {id:&#39;interop&#39;,label:&#39;Interoperabilite&#39;,color:&#39;#8b5cf6&#39;,pubs:31,cit:610,sub:[&#39;Standards ouverts&#39;,&#39;Mediation&#39;,&#39;Ontologies&#39;,&#39;Enterprise Integration&#39;]},
+  {id:&#39;supply&#39;,label:&#39;Supply Chain&#39;,color:&#39;#22c55e&#39;,pubs:28,cit:540,sub:[&#39;Logistique&#39;,&#39;Planification&#39;,&#39;Tracabilite&#39;]},
+  {id:&#39;twins&#39;,label:&#39;Digital Twins&#39;,color:&#39;#f97316&#39;,pubs:18,cit:320,sub:[&#39;Modelisation&#39;,&#39;Jumeaux physiques&#39;,&#39;IoT&#39;]},
+  {id:&#39;sim&#39;,label:&#39;Simulation&#39;,color:&#39;#2dd4bf&#39;,pubs:14,cit:260,sub:[&#39;Agents&#39;,&#39;Monte Carlo&#39;,&#39;Scenarios&#39;]},
+  {id:&#39;decision&#39;,label:&#39;Aide a la decision&#39;,color:&#39;#f472b6&#39;,pubs:11,cit:180,sub:[&#39;Multicritere&#39;,&#39;Tableaux de bord&#39;]}
+];
+const PERIODS = [&#39;2002-2005&#39;,&#39;2006-2010&#39;,&#39;2011-2015&#39;,&#39;2016-2020&#39;,&#39;2021-2025&#39;];
+const EVO = {
+  crisis:[3,7,10,12,10], interop:[2,5,8,9,7], supply:[1,3,6,9,9],
+  twins:[0,0,2,7,9], sim:[1,2,3,4,4], decision:[0,1,2,4,4]
+};
+
+const tip = document.getElementById(&#39;tip&#39;);
+let active = null;
+
+// --- TOOLTIP ---
+function showTip(e,html){
+  tip.innerHTML=html; tip.classList.add(&#39;show&#39;);
+  moveTip(e);
+}
+function moveTip(e){
+  const x=Math.min(e.clientX+14,window.innerWidth-250);
+  tip.style.left=x+&#39;px&#39;; tip.style.top=(e.clientY+14)+&#39;px&#39;;
+}
+function hideTip(){tip.classList.remove(&#39;show&#39;)}
+document.addEventListener(&#39;mousemove&#39;,e=>{if(tip.classList.contains(&#39;show&#39;))moveTip(e)});
+
+// --- BUBBLES ---
+(function drawBubbles(){
+  const svg=document.getElementById(&#39;bubbleSvg&#39;);
+  const maxP=Math.max(...T.map(t=>t.pubs));
+  const pos=[{x:260,y:190},{x:420,y:130},{x:130,y:270},{x:460,y:300},{x:160,y:110},{x:340,y:360}];
+  T.forEach((t,i)=>{
+    const r=30+(t.pubs/maxP)*60;
+    const{x,y}=pos[i];
+    t._x=x;t._y=y;t._r=r;
+    const g=document.createElementNS(&#39;http://www.w3.org/2000/svg&#39;,&#39;g&#39;);
+    g.classList.add(&#39;bubble&#39;);g.dataset.id=t.id;
+    g.innerHTML=`<circle cx="${x}" cy="${y}" r="${r}" fill="${t.color}" fill-opacity=".22" stroke="${t.color}" stroke-width="2"/>
+      <text x="${x}" y="${y-7}" class="b-label">${t.label}</text>
+      <text x="${x}" y="${y+10}" class="b-count">${t.pubs} pubs</text>`;
+    g.addEventListener(&#39;click&#39;,()=>toggleActive(t.id));
+    g.addEventListener(&#39;mouseenter&#39;,e=>showTip(e,`<strong>${t.label}</strong><br>${t.pubs} publications<br><span class="cit">${t.cit} citations</span>`));
+    g.addEventListener(&#39;mouseleave&#39;,hideTip);
+    svg.appendChild(g);
+  });
+})();
+
+function toggleActive(id){
+  const svg=document.getElementById(&#39;bubbleSvg&#39;);
+  const ring=document.getElementById(&#39;subRing&#39;);
+  if(active===id){
+    active=null;
+    svg.classList.remove(&#39;dimmed&#39;);
+    svg.querySelectorAll(&#39;.bubble&#39;).forEach(b=>b.classList.remove(&#39;active&#39;));
+    ring.classList.remove(&#39;visible&#39;);ring.innerHTML=&#39;&#39;;
+    clearCF(); return;
+  }
+  active=id;
+  svg.classList.add(&#39;dimmed&#39;);
+  svg.querySelectorAll(&#39;.bubble&#39;).forEach(b=>b.classList.toggle(&#39;active&#39;,b.dataset.id===id));
+  // Show sub-topics in a ring
+  const t=T.find(x=>x.id===id);
+  ring.innerHTML=&#39;&#39;;
+  const panel=document.getElementById(&#39;bubblePanel&#39;).getBoundingClientRect();
+  const svgEl=document.getElementById(&#39;bubbleSvg&#39;).getBoundingClientRect();
+  const scaleX=svgEl.width/600, scaleY=svgEl.height/440;
+  const cx=svgEl.left+t._x*scaleX-panel.left, cy=svgEl.top+t._y*scaleY-panel.top;
+  const ringR=t._r*scaleX+45;
+  t.sub.forEach((s,i)=>{
+    const angle=(i/t.sub.length)*Math.PI*2 - Math.PI/2;
+    const px=cx+Math.cos(angle)*ringR, py=cy+Math.sin(angle)*ringR;
+    const pill=document.createElement(&#39;div&#39;);
+    pill.className=&#39;sub-pill&#39;;
+    pill.textContent=s;
+    pill.style.left=px+&#39;px&#39;;pill.style.top=py+&#39;px&#39;;
+    pill.style.transform=&#39;translate(-50%,-50%) scale(.7)&#39;;
+    ring.appendChild(pill);
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{pill.classList.add(&#39;show&#39;);pill.style.transform=&#39;translate(-50%,-50%) scale(1)&#39;}));
+  });
+  ring.classList.add(&#39;visible&#39;);
+  applyCF(id);
+}
+
+// --- CITATIONS BAR CHART ---
+(function drawCitations(){
+  const c=document.getElementById(&#39;citBars&#39;);
+  const maxC=Math.max(...T.map(t=>t.cit));
+  T.forEach(t=>{
+    const pct=(t.cit/maxC)*100;
+    const row=document.createElement(&#39;div&#39;);
+    row.className=&#39;bar-row&#39;;row.dataset.id=t.id;
+    row.innerHTML=`<div class="bar-label">${t.label}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:0%;background:linear-gradient(90deg,${t.color},${t.color}cc)">${t.cit}</div></div>`;
+    c.appendChild(row);
+    setTimeout(()=>row.querySelector(&#39;.bar-fill&#39;).style.width=pct+&#39;%&#39;,80);
+  });
+})();
+
+// --- STACKED BAR CHART ---
+(function drawStacked(){
+  const c=document.getElementById(&#39;stackedChart&#39;);
+  const leg=document.getElementById(&#39;legend&#39;);
+  const totals=PERIODS.map((_,i)=>T.reduce((s,t)=>s+EVO[t.id][i],0));
+  const maxT=Math.max(...totals);
+
+  PERIODS.forEach((p,pi)=>{
+    const col=document.createElement(&#39;div&#39;);
+    col.className=&#39;stacked-col&#39;;
+    T.forEach(t=>{
+      const v=EVO[t.id][pi];
+      const h=(v/maxT)*160;
+      const seg=document.createElement(&#39;div&#39;);
+      seg.className=&#39;stacked-seg&#39;;seg.dataset.id=t.id;
+      seg.style.height=h+&#39;px&#39;;seg.style.background=t.color;seg.style.opacity=&#39;.65&#39;;
+      seg.addEventListener(&#39;mouseenter&#39;,e=>showTip(e,`<strong>${t.label}</strong><br>${p} : ${v} publications`));
+      seg.addEventListener(&#39;mouseleave&#39;,hideTip);
+      seg.addEventListener(&#39;click&#39;,()=>toggleActive(t.id));
+      col.appendChild(seg);
+    });
+    const lbl=document.createElement(&#39;div&#39;);
+    lbl.className=&#39;period-label&#39;;lbl.textContent=p;
+    col.appendChild(lbl);
+    c.appendChild(col);
+  });
+
+  T.forEach(t=>{
+    const item=document.createElement(&#39;div&#39;);
+    item.className=&#39;legend-item&#39;;
+    item.innerHTML=`<div class="legend-dot" style="background:${t.color}"></div>${t.label}`;
+    item.addEventListener(&#39;click&#39;,()=>toggleActive(t.id));
+    leg.appendChild(item);
+  });
+})();
+
+// --- CROSS-FILTER ---
+function applyCF(id){
+  document.querySelectorAll(&#39;#citBars .bar-row&#39;).forEach(r=>{
+    r.classList.toggle(&#39;cf-dim&#39;,r.dataset.id!==id);
+    r.classList.toggle(&#39;cf-bright&#39;,r.dataset.id===id);
+  });
+  document.querySelectorAll(&#39;.stacked-seg&#39;).forEach(s=>s.classList.toggle(&#39;cf-dim-seg&#39;,s.dataset.id!==id));
+}
+function clearCF(){
+  document.querySelectorAll(&#39;#citBars .bar-row&#39;).forEach(r=>{r.classList.remove(&#39;cf-dim&#39;,&#39;cf-bright&#39;)});
+  document.querySelectorAll(&#39;.stacked-seg&#39;).forEach(s=>s.classList.remove(&#39;cf-dim-seg&#39;));
+}
+</script>
+</body>
+</html>' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+    <div class="tab-panel" id="panel-timeline">
+      <div class="section-summary">
+        <h3>Timeline (V3.5)</h3>
+        <ul><li>Barres publications/an + courbe citations SVG</li><li>Sélecteur de période (boutons + double slider)</li><li>Timeline affiliations institutionnelles</li><li>Tooltips enrichis (conf/journaux/citations)</li><li>Jalons de carrière IA (Mistral)</li><li>Overlay EPFL visiting researcher</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Timeline</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1729;color:#e2e8f0;font-family:&#39;Segoe UI&#39;,system-ui,-apple-system,sans-serif;overflow-x:hidden;padding:20px}
+.section{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);padding:20px;margin-bottom:16px}
+.section-title{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-title::before{content:&#39;&#39;;width:4px;height:16px;border-radius:2px;background:#60a5fa;flex-shrink:0}
+
+/* Controls bar */
+.controls{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
+.pill-group{display:flex;gap:0;border-radius:8px;overflow:hidden;border:1px solid rgba(96,165,250,.2)}
+.pill{padding:6px 16px;font-size:12px;font-weight:600;color:#94a3b8;background:transparent;border:none;cursor:pointer;transition:all .2s}
+.pill:hover{color:#e2e8f0;background:rgba(96,165,250,.08)}
+.pill.active{background:#60a5fa;color:#0f1729}
+
+/* Range slider */
+.range-wrap{flex:1;min-width:200px;display:flex;align-items:center;gap:10px}
+.range-labels{font-size:11px;color:#64748b;white-space:nowrap}
+.dual-range{position:relative;height:24px;flex:1}
+.dual-range input[type=range]{position:absolute;width:100%;top:0;height:24px;-webkit-appearance:none;appearance:none;background:none;pointer-events:none}
+.dual-range input[type=range]::-webkit-slider-runnable-track{height:4px;background:#1e293b;border-radius:2px}
+.dual-range input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#60a5fa;border:2px solid #0f1729;margin-top:-6px;pointer-events:auto;cursor:pointer;box-shadow:0 0 6px rgba(96,165,250,.4)}
+.range-track-fill{position:absolute;top:10px;height:4px;background:#60a5fa;border-radius:2px;opacity:.35;pointer-events:none}
+
+/* Theme chips */
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:5px 14px;font-size:12px;border-radius:20px;border:1px solid rgba(96,165,250,.25);color:#94a3b8;cursor:pointer;transition:all .25s;background:transparent;user-select:none}
+.chip.on{background:rgba(96,165,250,.15);color:#e2e8f0;border-color:#60a5fa}
+.chip:hover{border-color:#60a5fa}
+
+/* Main chart */
+.chart-container{position:relative;height:300px;padding:20px 55px 40px 50px}
+@media(max-width:600px){.chart-container{padding:20px 40px 40px 35px;height:260px}}
+.chart-canvas{position:absolute;inset:0}
+.y-left,.y-right{position:absolute;top:20px;bottom:40px;display:flex;flex-direction:column-reverse;justify-content:space-between}
+.y-left{left:0;width:45px;text-align:right;padding-right:6px}
+.y-right{right:0;width:50px;text-align:left;padding-left:6px}
+.y-label{font-size:10px;color:#475569}
+.y-label.cit{color:#f59e0b}
+.x-axis{position:absolute;bottom:0;left:50px;right:55px;display:flex;justify-content:space-between}
+.x-label{font-size:10px;color:#475569;transform:rotate(-45deg);transform-origin:top left;white-space:nowrap}
+.y-title{position:absolute;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.5px}
+.y-title.left{left:0;top:4px}
+.y-title.right{right:0;top:4px;color:#f59e0b}
+
+/* Affiliations */
+.affil-track{display:flex;height:42px;border-radius:6px;overflow:hidden;position:relative;margin-bottom:8px}
+.affil-seg{position:relative;display:flex;align-items:center;justify-content:center;padding:0 8px;font-size:10px;font-weight:600;color:#fff;text-align:center;line-height:1.2;cursor:pointer;transition:filter .2s;overflow:hidden}
+.affil-seg:hover{filter:brightness(1.2)}
+.affil-seg .role{font-size:9px;font-weight:400;opacity:.8;display:block}
+.affil-date{position:absolute;bottom:-18px;font-size:10px;color:#94a3b8;white-space:nowrap;transform:translateX(-50%)}
+/* hatched overlay for visiting */
+.hatch{position:absolute;inset:0;background:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(255,255,255,.12) 3px,rgba(255,255,255,.12) 6px);pointer-events:none}
+.affil-dates{position:relative;height:22px;margin-bottom:4px}
+
+/* Milestones */
+.milestones{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:8px}
+.milestone-card{background:rgba(96,165,250,.06);border:1px solid rgba(96,165,250,.15);border-radius:10px;padding:14px 16px;position:relative;overflow:hidden}
+.milestone-card::before{content:&#39;&#39;;position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#60a5fa,#a78bfa)}
+.ms-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;color:#a78bfa;background:rgba(167,139,250,.1);border:1px solid rgba(167,139,250,.2);border-radius:12px;padding:3px 10px;margin-bottom:8px;position:relative}
+.ms-badge::after{content:&#39;&#39;;position:absolute;inset:-2px;border-radius:14px;background:rgba(167,139,250,.15);animation:glow 2s ease-in-out infinite alternate;pointer-events:none}
+@keyframes glow{from{opacity:0;transform:scale(1)}to{opacity:1;transform:scale(1.08)}}
+.ms-year{font-size:11px;color:#64748b;margin-bottom:4px}
+.ms-title{font-size:14px;font-weight:600;color:#e2e8f0}
+.ms-desc{font-size:12px;color:#94a3b8;margin-top:4px;line-height:1.4}
+
+/* Tooltip */
+.tip{position:fixed;background:#1e293b;border:1px solid rgba(96,165,250,.3);border-radius:8px;padding:10px 14px;font-size:12px;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;max-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.5);line-height:1.5}
+.tip.show{opacity:1}
+.tip strong{color:#60a5fa}
+.tip .cit-val{color:#f59e0b;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="section">
+  <div class="controls">
+    <div class="pill-group">
+      <button class="pill" data-range="5" onclick="setRange(5)">5 ans</button>
+      <button class="pill" data-range="10" onclick="setRange(10)">10 ans</button>
+      <button class="pill active" data-range="0" onclick="setRange(0)">Tout</button>
+    </div>
+    <div class="range-wrap">
+      <span class="range-labels" id="rMin">2002</span>
+      <div class="dual-range">
+        <div class="range-track-fill" id="trackFill"></div>
+        <input type="range" id="rngMin" min="2002" max="2025" value="2002" oninput="updateRange()">
+        <input type="range" id="rngMax" min="2002" max="2025" value="2025" oninput="updateRange()">
+      </div>
+      <span class="range-labels" id="rMax">2025</span>
+    </div>
+    <div class="chips">
+      <div class="chip on" data-theme="interop" onclick="toggleChip(this)">Interoperabilite</div>
+      <div class="chip on" data-theme="crisis" onclick="toggleChip(this)">Gestion de crises</div>
+      <div class="chip on" data-theme="supply" onclick="toggleChip(this)">Supply chain</div>
+    </div>
+  </div>
+</div>
+
+<!-- Main Chart -->
+<div class="section">
+  <div class="section-title">Publications et citations par annee</div>
+  <div class="chart-container" id="chartWrap">
+    <div class="y-title left">Publications</div>
+    <div class="y-title right">Citations</div>
+    <div class="y-left" id="yLeft"></div>
+    <div class="y-right" id="yRight"></div>
+    <canvas class="chart-canvas" id="chartCanvas"></canvas>
+    <div class="x-axis" id="xAxis"></div>
+  </div>
+</div>
+
+<!-- Affiliations -->
+<div class="section">
+  <div class="section-title">Parcours institutionnel</div>
+  <div class="affil-track" id="affilTrack"></div>
+  <div class="affil-dates" id="affilDates"></div>
+</div>
+
+<!-- Milestones -->
+<div class="section">
+  <div class="section-title">Jalons de carriere</div>
+  <div class="milestones" id="milestones"></div>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+// --- DATA ---
+const YEARS = [];
+for(let y=2002;y<=2025;y++) YEARS.push(y);
+const PUBS = [1,2,1,3,2,4,3,5,4,6,7,8,6,9,10,8,11,12,9,13,10,11,8,7];
+const CITS = [0,2,5,8,12,18,28,35,42,55,72,90,105,118,130,142,160,175,155,185,170,145,120,95];
+const MAX_PUB = 15, MAX_CIT = 200;
+
+const AFFILS = [
+  {start:2002,end:2006,label:&#39;Univ. Bordeaux&#39;,role:&#39;Doctorant&#39;,color:&#39;#475569&#39;,articles:8,journals:2,cit:45},
+  {start:2006,end:2010,label:&#39;Univ. Bordeaux&#39;,role:&#39;MCF&#39;,color:&#39;#3b82f6&#39;,articles:14,journals:5,cit:120},
+  {start:2010,end:2015,label:&#39;IMT Mines Albi&#39;,role:&#39;MCF&#39;,color:&#39;#0d9488&#39;,articles:22,journals:8,cit:280},
+  {start:2015,end:2024,label:&#39;IMT Mines Albi&#39;,role:&#39;Professeur&#39;,color:&#39;#7c3aed&#39;,articles:45,journals:18,cit:620},
+  {start:2024,end:2026,label:&#39;IMT Mines Albi&#39;,role:&#39;Professeur des Universites&#39;,color:&#39;#4338ca&#39;,articles:12,journals:4,cit:95}
+];
+const VISITING = {start:2021,end:2022,label:&#39;EPFL&#39;,role:&#39;Visiting Researcher&#39;};
+
+const MILESTONES = [
+  {year:&#39;2004&#39;,title:&#39;Premiere publication internationale&#39;,desc:&#39;Article sur la modelisation des crises au ISCRAM Conference.&#39;},
+  {year:&#39;2011&#39;,title:&#39;100 citations franchies&#39;,desc:&#39;Seuil symbolique atteint, reconnaissance de l\&#39;impact en gestion de crises.&#39;},
+  {year:&#39;2015&#39;,title:&#39;HDR soutenue&#39;,desc:&#39;Habilitation a Diriger des Recherches a l\&#39;IMT Mines Albi.&#39;},
+  {year:&#39;2024&#39;,title:&#39;Nomination Professeur des Universites&#39;,desc:&#39;Promotion au grade de Professeur des Universites, section CNU 61.&#39;}
+];
+
+let rangeMin=2002, rangeMax=2025;
+const tip=document.getElementById(&#39;tip&#39;);
+
+// --- TOOLTIP ---
+function showTip(e,html){tip.innerHTML=html;tip.classList.add(&#39;show&#39;);moveTip(e)}
+function moveTip(e){tip.style.left=Math.min(e.clientX+14,window.innerWidth-270)+&#39;px&#39;;tip.style.top=(e.clientY+14)+&#39;px&#39;}
+function hideTip(){tip.classList.remove(&#39;show&#39;)}
+document.addEventListener(&#39;mousemove&#39;,e=>{if(tip.classList.contains(&#39;show&#39;))moveTip(e)});
+
+// --- RANGE ---
+function setRange(n){
+  document.querySelectorAll(&#39;.pill&#39;).forEach(p=>p.classList.remove(&#39;active&#39;));
+  if(n===0){rangeMin=2002;rangeMax=2025;document.querySelector(&#39;[data-range="0"]&#39;).classList.add(&#39;active&#39;)}
+  else{rangeMax=2025;rangeMin=2025-n;document.querySelector(`[data-range="${n}"]`).classList.add(&#39;active&#39;)}
+  document.getElementById(&#39;rngMin&#39;).value=rangeMin;
+  document.getElementById(&#39;rngMax&#39;).value=rangeMax;
+  updateRangeUI();drawChart();
+}
+function updateRange(){
+  let lo=+document.getElementById(&#39;rngMin&#39;).value, hi=+document.getElementById(&#39;rngMax&#39;).value;
+  if(lo>hi){const t=lo;lo=hi;hi=t}
+  rangeMin=lo;rangeMax=hi;
+  document.querySelectorAll(&#39;.pill&#39;).forEach(p=>p.classList.remove(&#39;active&#39;));
+  updateRangeUI();drawChart();
+}
+function updateRangeUI(){
+  document.getElementById(&#39;rMin&#39;).textContent=rangeMin;
+  document.getElementById(&#39;rMax&#39;).textContent=rangeMax;
+  const pct1=((rangeMin-2002)/23)*100, pct2=((rangeMax-2002)/23)*100;
+  const fill=document.getElementById(&#39;trackFill&#39;);
+  fill.style.left=pct1+&#39;%&#39;;fill.style.width=(pct2-pct1)+&#39;%&#39;;
+}
+
+// --- CHIPS ---
+function toggleChip(el){el.classList.toggle(&#39;on&#39;)}
+
+// --- MAIN CHART ---
+function drawChart(){
+  const canvas=document.getElementById(&#39;chartCanvas&#39;);
+  const wrap=document.getElementById(&#39;chartWrap&#39;);
+  const rect=wrap.getBoundingClientRect();
+  canvas.width=rect.width;canvas.height=rect.height;
+  const ctx=canvas.getContext(&#39;2d&#39;);
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const padL=50,padR=55,padT=24,padB=40;
+  const w=canvas.width-padL-padR, h=canvas.height-padT-padB;
+
+  const filtered=YEARS.filter(y=>y>=rangeMin&amp;&amp;y<=rangeMax);
+  const n=filtered.length;if(!n)return;
+  const barW=Math.min(w/n*.7,28);
+  const gap=(w-barW*n)/(n+1);
+
+  // Grid lines
+  ctx.strokeStyle=&#39;rgba(255,255,255,.04)&#39;;ctx.lineWidth=1;
+  for(let i=0;i<=5;i++){
+    const y=padT+h-(i/5)*h;
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+w,y);ctx.stroke();
+  }
+
+  // Bars
+  filtered.forEach((yr,i)=>{
+    const idx=yr-2002;
+    const pv=PUBS[idx]||0;
+    const bh=(pv/MAX_PUB)*h;
+    const x=padL+gap+(barW+gap)*i;
+    const y=padT+h-bh;
+    const grad=ctx.createLinearGradient(x,y,x,padT+h);
+    grad.addColorStop(0,&#39;#60a5fa&#39;);grad.addColorStop(1,&#39;#2563eb&#39;);
+    ctx.fillStyle=grad;
+    ctx.beginPath();
+    const r=3;
+    ctx.moveTo(x+r,y);ctx.lineTo(x+barW-r,y);ctx.quadraticCurveTo(x+barW,y,x+barW,y+r);
+    ctx.lineTo(x+barW,padT+h);ctx.lineTo(x,padT+h);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);
+    ctx.fill();
+  });
+
+  // Citations polyline
+  ctx.strokeStyle=&#39;#f59e0b&#39;;ctx.lineWidth=2.5;ctx.lineJoin=&#39;round&#39;;ctx.beginPath();
+  const points=[];
+  filtered.forEach((yr,i)=>{
+    const idx=yr-2002;
+    const cv=CITS[idx]||0;
+    const x=padL+gap+(barW+gap)*i+barW/2;
+    const y=padT+h-(cv/MAX_CIT)*h;
+    points.push({x,y});
+    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // dots
+  points.forEach(p=>{
+    ctx.fillStyle=&#39;#f59e0b&#39;;ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle=&#39;#0f1729&#39;;ctx.beginPath();ctx.arc(p.x,p.y,2,0,Math.PI*2);ctx.fill();
+  });
+
+  // Y axes
+  const yLeft=document.getElementById(&#39;yLeft&#39;);yLeft.innerHTML=&#39;&#39;;
+  const yRight=document.getElementById(&#39;yRight&#39;);yRight.innerHTML=&#39;&#39;;
+  for(let i=0;i<=5;i++){
+    const lbl=document.createElement(&#39;span&#39;);lbl.className=&#39;y-label&#39;;lbl.textContent=Math.round(MAX_PUB/5*i);yLeft.appendChild(lbl);
+    const lbl2=document.createElement(&#39;span&#39;);lbl2.className=&#39;y-label cit&#39;;lbl2.textContent=Math.round(MAX_CIT/5*i);yRight.appendChild(lbl2);
+  }
+  // X axis
+  const xAxis=document.getElementById(&#39;xAxis&#39;);xAxis.innerHTML=&#39;&#39;;
+  filtered.forEach(yr=>{
+    const lbl=document.createElement(&#39;span&#39;);lbl.className=&#39;x-label&#39;;lbl.textContent=yr;xAxis.appendChild(lbl);
+  });
+
+  // Hover on canvas
+  canvas.onmousemove=function(e){
+    const cr=canvas.getBoundingClientRect();
+    const mx=e.clientX-cr.left;
+    const idx=Math.floor((mx-padL-gap/2)/(barW+gap));
+    if(idx>=0&amp;&amp;idx<n){
+      const yr=filtered[idx];const di=yr-2002;
+      showTip(e,`<strong>${yr}</strong><br>${PUBS[di]} publications<br><span class="cit-val">${CITS[di]} citations</span>`);
+    }else hideTip();
+  };
+  canvas.onmouseleave=hideTip;
+}
+
+// --- AFFILIATIONS ---
+(function drawAffil(){
+  const track=document.getElementById(&#39;affilTrack&#39;);
+  const dates=document.getElementById(&#39;affilDates&#39;);
+  const totalYears=2026-2002;
+  // Segments
+  AFFILS.forEach(a=>{
+    const pct=((a.end-a.start)/totalYears)*100;
+    const seg=document.createElement(&#39;div&#39;);
+    seg.className=&#39;affil-seg&#39;;seg.style.width=pct+&#39;%&#39;;seg.style.background=a.color;
+    seg.innerHTML=`${a.label}<span class="role">${a.role}</span>`;
+    seg.addEventListener(&#39;mouseenter&#39;,e=>showTip(e,`<strong>${a.label}</strong><br>${a.role}<br>${a.start} - ${a.end===2026?&#39;present&#39;:a.end}<br>Conf. articles: ${a.articles}<br>Journal articles: ${a.journals}<br><span class="cit-val">${a.cit} citations cumulees</span>`));
+    seg.addEventListener(&#39;mouseleave&#39;,hideTip);
+    // EPFL hatch overlay
+    if(a.start<=VISITING.start&amp;&amp;a.end>VISITING.start){
+      const vStart=((VISITING.start-a.start)/(a.end-a.start))*100;
+      const vW=((VISITING.end-VISITING.start)/(a.end-a.start))*100;
+      const hatch=document.createElement(&#39;div&#39;);
+      hatch.className=&#39;hatch&#39;;hatch.style.left=vStart+&#39;%&#39;;hatch.style.width=vW+&#39;%&#39;;
+      hatch.title=&#39;EPFL Visiting Researcher 2021&#39;;
+      seg.appendChild(hatch);
+    }
+    track.appendChild(seg);
+  });
+  // Date markers
+  [2002,2006,2010,2015,2021,2024].forEach(d=>{
+    const pct=((d-2002)/totalYears)*100;
+    const lbl=document.createElement(&#39;div&#39;);
+    lbl.className=&#39;affil-date&#39;;lbl.style.left=pct+&#39;%&#39;;lbl.textContent=d;
+    dates.appendChild(lbl);
+  });
+})();
+
+// --- MILESTONES ---
+(function drawMilestones(){
+  const c=document.getElementById(&#39;milestones&#39;);
+  MILESTONES.forEach(m=>{
+    const card=document.createElement(&#39;div&#39;);
+    card.className=&#39;milestone-card&#39;;
+    card.innerHTML=`<div class="ms-badge"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> Genere par IA (Mistral)</div>
+      <div class="ms-year">${m.year}</div>
+      <div class="ms-title">${m.title}</div>
+      <div class="ms-desc">${m.desc}</div>`;
+    c.appendChild(card);
+  });
+})();
+
+// Init
+updateRangeUI();
+drawChart();
+window.addEventListener(&#39;resize&#39;,drawChart);
+</script>
+</body>
+</html>' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+    <div class="tab-panel" id="panel-reseau">
+      <div class="section-summary">
+        <h3>Réseau de co-auteurs (V3)</h3>
+        <ul><li>Graphe canvas interactif niveau 1</li><li>Liens colorés par thématique + épaisseur</li><li>Cross-links co-auteurs indépendants</li><li>Tooltips nœuds et liens</li><li>Filtres de profondeur (sliders)</li><li>Navigation profil en profil</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope — Reseau de co-auteurs</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f1729;color:#e2e8f0;font-family:&#39;Segoe UI&#39;,system-ui,-apple-system,sans-serif;overflow-x:hidden;padding:20px}
+.controls-bar{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);padding:14px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;gap:20px;align-items:center}
+.legend-row{display:flex;flex-wrap:wrap;gap:14px;flex:1}
+.leg-item{display:flex;align-items:center;gap:6px;font-size:11px;color:#94a3b8}
+.leg-line{width:20px;height:3px;border-radius:2px}
+.slider-group{display:flex;align-items:center;gap:8px}
+.slider-label{font-size:11px;color:#64748b;white-space:nowrap}
+.slider-val{font-size:12px;color:#60a5fa;font-weight:700;min-width:20px;text-align:center}
+input[type=range]{-webkit-appearance:none;appearance:none;height:4px;background:#1e293b;border-radius:2px;outline:none;width:100px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:#60a5fa;border:2px solid #0f1729;cursor:pointer;box-shadow:0 0 6px rgba(96,165,250,.3)}
+
+.graph-panel{background:#1a2332;border-radius:12px;border:1px solid rgba(96,165,250,.12);position:relative;overflow:hidden}
+canvas#graph{width:100%;display:block;cursor:default}
+
+/* Tooltip */
+.tip{position:fixed;background:#1e293b;border:1px solid rgba(96,165,250,.3);border-radius:10px;padding:14px 16px;font-size:12px;color:#e2e8f0;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;max-width:280px;box-shadow:0 12px 40px rgba(0,0,0,.55);line-height:1.6}
+.tip.show{opacity:1}
+.tip strong{color:#60a5fa;font-size:13px}
+.tip .affil{color:#94a3b8;font-style:italic}
+.tip .theme-bar{display:flex;align-items:center;gap:6px;margin-top:2px}
+.tip .theme-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.tip .theme-count{color:#cbd5e1;font-size:11px}
+.tip .total{color:#f59e0b;font-weight:700;margin-top:4px;display:block}
+.tip .action{display:block;margin-top:8px;padding:6px 12px;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.3);border-radius:6px;color:#60a5fa;font-size:11px;text-align:center;cursor:pointer;transition:background .2s}
+.tip .action:hover{background:rgba(96,165,250,.2)}
+
+/* Edge tooltip */
+.tip .edge-info{font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- Controls -->
+<div class="controls-bar">
+  <div class="legend-row">
+    <div class="leg-item"><div class="leg-line" style="background:#3b82f6"></div>Gestion de crises</div>
+    <div class="leg-item"><div class="leg-line" style="background:#8b5cf6"></div>Interoperabilite</div>
+    <div class="leg-item"><div class="leg-line" style="background:#22c55e"></div>Supply Chain</div>
+    <div class="leg-item"><div class="leg-line" style="background:#f97316"></div>Digital Twins</div>
+  </div>
+  <div class="slider-group">
+    <span class="slider-label">Co-publications min</span>
+    <input type="range" id="minPubs" min="1" max="10" value="1" oninput="updateFilters()">
+    <span class="slider-val" id="minPubsVal">1</span>
+  </div>
+  <div class="slider-group">
+    <span class="slider-label">Co-auteurs max</span>
+    <input type="range" id="maxAuth" min="5" max="20" value="15" oninput="updateFilters()">
+    <span class="slider-val" id="maxAuthVal">15</span>
+  </div>
+</div>
+
+<!-- Graph -->
+<div class="graph-panel">
+  <canvas id="graph"></canvas>
+</div>
+
+<div class="tip" id="tip"></div>
+
+<script>
+// --- DATA ---
+const THEMES = {
+  crisis:{color:&#39;#3b82f6&#39;,label:&#39;Gestion de crises&#39;},
+  interop:{color:&#39;#8b5cf6&#39;,label:&#39;Interoperabilite&#39;},
+  supply:{color:&#39;#22c55e&#39;,label:&#39;Supply Chain&#39;},
+  twins:{color:&#39;#f97316&#39;,label:&#39;Digital Twins&#39;}
+};
+
+const CENTER = {id:&#39;center&#39;,name:&#39;Frederick Benaben&#39;,affil:&#39;IMT Mines Albi&#39;,r:32};
+
+const COAUTHORS = [
+  {id:&#39;a1&#39;,name:&#39;Prof. Aurelie Montarnal&#39;,affil:&#39;IMT Mines Albi&#39;,themes:{crisis:8,interop:5},total:13},
+  {id:&#39;a2&#39;,name:&#39;Dr. Matthieu Lauras&#39;,affil:&#39;IMT Mines Albi&#39;,themes:{crisis:7,supply:4},total:11},
+  {id:&#39;a3&#39;,name:&#39;Dr. Jean-Pierre Martin&#39;,affil:&#39;Universite de Toulouse&#39;,themes:{interop:6,twins:3},total:9},
+  {id:&#39;a4&#39;,name:&#39;Prof. Nicolas Sallaberry&#39;,affil:&#39;Universite de Bordeaux&#39;,themes:{crisis:5,supply:3},total:8},
+  {id:&#39;a5&#39;,name:&#39;Dr. Sebastien Truptil&#39;,affil:&#39;IMT Mines Albi&#39;,themes:{crisis:6,interop:2},total:8},
+  {id:&#39;a6&#39;,name:&#39;Prof. Herve Pingaud&#39;,affil:&#39;IMT Mines Albi&#39;,themes:{supply:5,interop:2},total:7},
+  {id:&#39;a7&#39;,name:&#39;Dr. Wenxin Mu&#39;,affil:&#39;EPFL Lausanne&#39;,themes:{twins:4,crisis:2},total:6},
+  {id:&#39;a8&#39;,name:&#39;Dr. Benoit Montreuil&#39;,affil:&#39;Georgia Tech&#39;,themes:{supply:4,twins:1},total:5},
+  {id:&#39;a9&#39;,name:&#39;Prof. Jacques Lamothe&#39;,affil:&#39;IMT Mines Albi&#39;,themes:{supply:3,crisis:2},total:5},
+  {id:&#39;a10&#39;,name:&#39;Dr. Franck Fontanili&#39;,affil:&#39;IMT Mines Albi&#39;,themes:{twins:3,interop:1},total:4}
+];
+
+// Cross-links (co-authors who publish together independently)
+const CROSS_LINKS = [
+  {from:&#39;a1&#39;,to:&#39;a2&#39;},{from:&#39;a1&#39;,to:&#39;a5&#39;},{from:&#39;a2&#39;,to:&#39;a9&#39;},
+  {from:&#39;a3&#39;,to:&#39;a7&#39;},{from:&#39;a6&#39;,to:&#39;a9&#39;}
+];
+
+let filterMinPubs=1, filterMaxAuth=15;
+let hoveredNode=null, hoveredEdge=null, clickedNode=null;
+let cx,cy,canvasW,canvasH;
+let nodePositions=[];
+const tip=document.getElementById(&#39;tip&#39;);
+
+// --- CANVAS SETUP ---
+const canvas=document.getElementById(&#39;graph&#39;);
+const ctx=canvas.getContext(&#39;2d&#39;);
+const dpr=window.devicePixelRatio||1;
+
+function resize(){
+  const panel=canvas.parentElement;
+  const w=panel.clientWidth;
+  const h=Math.max(500,Math.min(w*.7,650));
+  canvas.style.height=h+&#39;px&#39;;
+  canvas.width=w*dpr;canvas.height=h*dpr;
+  canvasW=w;canvasH=h;cx=w/2;cy=h/2;
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  layoutNodes();draw();
+}
+
+function layoutNodes(){
+  nodePositions=[];
+  const visible=getVisibleAuthors();
+  const n=visible.length;
+  const baseR=Math.min(canvasW,canvasH)*.32;
+  // Center
+  nodePositions.push({...CENTER,x:cx,y:cy,visible:true});
+  // Radial layout
+  visible.forEach((a,i)=>{
+    const angle=(i/n)*Math.PI*2 - Math.PI/2;
+    const r=baseR + (Math.random()-.5)*20;
+    const nodeR=12+(a.total/13)*14;
+    nodePositions.push({...a,x:cx+Math.cos(angle)*r,y:cy+Math.sin(angle)*r,r:nodeR,visible:true});
+  });
+  // Hidden authors
+  COAUTHORS.filter(a=>!visible.includes(a)).forEach(a=>{
+    nodePositions.push({...a,x:0,y:0,r:0,visible:false});
+  });
+}
+
+function getVisibleAuthors(){
+  return COAUTHORS.filter(a=>a.total>=filterMinPubs).slice(0,filterMaxAuth);
+}
+
+function updateFilters(){
+  filterMinPubs=+document.getElementById(&#39;minPubs&#39;).value;
+  filterMaxAuth=+document.getElementById(&#39;maxAuth&#39;).value;
+  document.getElementById(&#39;minPubsVal&#39;).textContent=filterMinPubs;
+  document.getElementById(&#39;maxAuthVal&#39;).textContent=filterMaxAuth;
+  layoutNodes();draw();
+}
+
+// --- DRAWING ---
+function draw(){
+  ctx.clearRect(0,0,canvasW,canvasH);
+
+  // Background glow at center
+  const grd=ctx.createRadialGradient(cx,cy,0,cx,cy,80);
+  grd.addColorStop(0,&#39;rgba(96,165,250,.06)&#39;);grd.addColorStop(1,&#39;transparent&#39;);
+  ctx.fillStyle=grd;ctx.fillRect(0,0,canvasW,canvasH);
+
+  const visible=nodePositions.filter(n=>n.visible&amp;&amp;n.id!==&#39;center&#39;);
+  const centerN=nodePositions[0];
+
+  // Draw cross-links first (dashed)
+  CROSS_LINKS.forEach(cl=>{
+    const from=nodePositions.find(n=>n.id===cl.from&amp;&amp;n.visible);
+    const to=nodePositions.find(n=>n.id===cl.to&amp;&amp;n.visible);
+    if(!from||!to)return;
+    const dimmed=hoveredNode&amp;&amp;hoveredNode!==&#39;center&#39;&amp;&amp;hoveredNode!==cl.from&amp;&amp;hoveredNode!==cl.to;
+    ctx.save();
+    ctx.strokeStyle=dimmed?&#39;rgba(100,116,139,.08)&#39;:&#39;rgba(100,116,139,.2)&#39;;
+    ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();
+    ctx.restore();
+  });
+
+  // Draw edges from center to each co-author
+  visible.forEach(a=>{
+    const themes=Object.entries(a.themes);
+    const themeCount=themes.length;
+    const dimmed=hoveredNode&amp;&amp;hoveredNode!==&#39;center&#39;&amp;&amp;hoveredNode!==a.id;
+
+    themes.forEach(([ tk, tv ],ti)=>{
+      const tc=THEMES[tk];if(!tc)return;
+      const offset=(ti-(themeCount-1)/2)*4;
+      const angle=Math.atan2(a.y-centerN.y,a.x-centerN.x);
+      const perpX=-Math.sin(angle)*offset;
+      const perpY=Math.cos(angle)*offset;
+      const lw=1+tv*.4;
+
+      ctx.save();
+      ctx.strokeStyle=dimmed?hexAlpha(tc.color,.06):hexAlpha(tc.color,.55);
+      ctx.lineWidth=lw;
+      ctx.beginPath();
+      ctx.moveTo(centerN.x+perpX,centerN.y+perpY);
+      ctx.lineTo(a.x+perpX,a.y+perpY);
+      ctx.stroke();
+      ctx.restore();
+    });
+  });
+
+  // Draw nodes
+  // Co-authors first
+  visible.forEach(a=>{
+    const dimmed=hoveredNode&amp;&amp;hoveredNode!==&#39;center&#39;&amp;&amp;hoveredNode!==a.id;
+    const highlighted=hoveredNode===a.id;
+    const alpha=dimmed?.15:1;
+
+    // Glow
+    if(highlighted){
+      ctx.save();
+      const g=ctx.createRadialGradient(a.x,a.y,a.r,a.x,a.y,a.r+12);
+      g.addColorStop(0,&#39;rgba(96,165,250,.25)&#39;);g.addColorStop(1,&#39;transparent&#39;);
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(a.x,a.y,a.r+12,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.save();ctx.globalAlpha=alpha;
+    // Circle
+    ctx.fillStyle=&#39;#1e293b&#39;;ctx.strokeStyle=&#39;#60a5fa&#39;;ctx.lineWidth=highlighted?2.5:1.5;
+    ctx.beginPath();ctx.arc(a.x,a.y,a.r,0,Math.PI*2);ctx.fill();ctx.stroke();
+    // Name
+    ctx.fillStyle=&#39;#e2e8f0&#39;;ctx.font=`${Math.max(9,a.r*.7)}px "Segoe UI",system-ui,sans-serif`;ctx.textAlign=&#39;center&#39;;ctx.textBaseline=&#39;middle&#39;;
+    const shortName=a.name.replace(/^(Prof\.|Dr\.)\s*/,&#39;&#39;).split(&#39; &#39;);
+    if(a.r>18){
+      ctx.fillText(shortName[0],a.x,a.y-5);
+      if(shortName[1])ctx.fillText(shortName[1],a.x,a.y+7);
+    }else{
+      ctx.fillText(shortName[shortName.length-1],a.x,a.y);
+    }
+    ctx.restore();
+  });
+
+  // Center node
+  ctx.save();
+  const cGlow=ctx.createRadialGradient(centerN.x,centerN.y,centerN.r-4,centerN.x,centerN.y,centerN.r+16);
+  cGlow.addColorStop(0,&#39;rgba(96,165,250,.2)&#39;);cGlow.addColorStop(1,&#39;transparent&#39;);
+  ctx.fillStyle=cGlow;ctx.beginPath();ctx.arc(centerN.x,centerN.y,centerN.r+16,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=&#39;#1a2332&#39;;ctx.strokeStyle=&#39;#60a5fa&#39;;ctx.lineWidth=3;
+  ctx.beginPath();ctx.arc(centerN.x,centerN.y,centerN.r,0,Math.PI*2);ctx.fill();ctx.stroke();
+  ctx.fillStyle=&#39;#60a5fa&#39;;ctx.font=&#39;bold 11px "Segoe UI",system-ui,sans-serif&#39;;ctx.textAlign=&#39;center&#39;;ctx.textBaseline=&#39;middle&#39;;
+  ctx.fillText(&#39;Frederick&#39;,centerN.x,centerN.y-6);
+  ctx.fillText(&#39;Benaben&#39;,centerN.x,centerN.y+7);
+  ctx.restore();
+}
+
+function hexAlpha(hex,a){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// --- INTERACTION ---
+canvas.addEventListener(&#39;mousemove&#39;,function(e){
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  let found=null;
+
+  // Check nodes
+  for(const n of nodePositions){
+    if(!n.visible)continue;
+    const dx=mx-n.x, dy=my-n.y;
+    if(dx*dx+dy*dy<(n.r+6)*(n.r+6)){found=n;break}
+  }
+
+  if(found){
+    hoveredNode=found.id;
+    canvas.style.cursor=&#39;pointer&#39;;
+    if(found.id===&#39;center&#39;){
+      showTip(e,`<strong>${found.name}</strong><div class="affil">${found.affil}</div><span class="total">${COAUTHORS.length} co-auteurs</span>`);
+    }else{
+      let bars=&#39;&#39;;
+      Object.entries(found.themes).forEach(([tk,tv])=>{
+        const tc=THEMES[tk];if(!tc)return;
+        bars+=`<div class="theme-bar"><div class="theme-dot" style="background:${tc.color}"></div><span class="theme-count">${tc.label}: ${tv}</span></div>`;
+      });
+      showTip(e,`<strong>${found.name}</strong><div class="affil">${found.affil}</div>${bars}<span class="total">${found.total} co-publications</span>`);
+    }
+    draw();
+    return;
+  }
+
+  // Check edges (approximate: line proximity)
+  const centerN=nodePositions[0];
+  const visible=nodePositions.filter(n=>n.visible&amp;&amp;n.id!==&#39;center&#39;);
+  let edgeFound=null;
+  for(const a of visible){
+    const dist=pointToSegDist(mx,my,centerN.x,centerN.y,a.x,a.y);
+    if(dist<8){edgeFound=a;break}
+  }
+
+  if(edgeFound){
+    canvas.style.cursor=&#39;pointer&#39;;
+    hoveredNode=null;
+    let themeInfo=&#39;&#39;;
+    Object.entries(edgeFound.themes).forEach(([tk,tv])=>{
+      const tc=THEMES[tk];if(!tc)return;
+      themeInfo+=`<div class="theme-bar"><div class="theme-dot" style="background:${tc.color}"></div><span class="theme-count">${tc.label}: ${tv} pubs</span></div>`;
+    });
+    showTip(e,`<div class="edge-info"><strong>${CENTER.name}</strong> &amp;harr; <strong>${edgeFound.name}</strong></div>${themeInfo}`);
+    draw();
+    return;
+  }
+
+  if(hoveredNode){hoveredNode=null;draw()}
+  canvas.style.cursor=&#39;default&#39;;
+  hideTip();
+});
+
+canvas.addEventListener(&#39;click&#39;,function(e){
+  const rect=canvas.getBoundingClientRect();
+  const mx=e.clientX-rect.left, my=e.clientY-rect.top;
+  for(const n of nodePositions){
+    if(!n.visible||n.id===&#39;center&#39;)continue;
+    const dx=mx-n.x,dy=my-n.y;
+    if(dx*dx+dy*dy<(n.r+6)*(n.r+6)){
+      // Show action tooltip
+      let bars=&#39;&#39;;
+      Object.entries(n.themes).forEach(([tk,tv])=>{
+        const tc=THEMES[tk];if(!tc)return;
+        bars+=`<div class="theme-bar"><div class="theme-dot" style="background:${tc.color}"></div><span class="theme-count">${tc.label}: ${tv}</span></div>`;
+      });
+      showTip(e,`<strong>${n.name}</strong><div class="affil">${n.affil}</div>${bars}<span class="total">${n.total} co-publications</span><div class="action">Ouvrir le dashboard de ${n.name.replace(/^(Prof\.|Dr\.)\s*/,&#39;&#39;)}</div>`);
+      return;
+    }
+  }
+});
+
+canvas.addEventListener(&#39;mouseleave&#39;,function(){
+  hoveredNode=null;hideTip();draw();
+});
+
+function pointToSegDist(px,py,ax,ay,bx,by){
+  const dx=bx-ax,dy=by-ay;
+  const t=Math.max(0,Math.min(1,((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy)));
+  const nx=ax+t*dx,ny=ay+t*dy;
+  return Math.sqrt((px-nx)**2+(py-ny)**2);
+}
+
+// --- TOOLTIP ---
+function showTip(e,html){tip.innerHTML=html;tip.classList.add(&#39;show&#39;);moveTip(e)}
+function moveTip(e){tip.style.left=Math.min(e.clientX+14,window.innerWidth-290)+&#39;px&#39;;tip.style.top=(e.clientY+14)+&#39;px&#39;}
+function hideTip(){tip.classList.remove(&#39;show&#39;)}
+document.addEventListener(&#39;mousemove&#39;,e=>{if(tip.classList.contains(&#39;show&#39;))moveTip(e)});
+
+// --- INIT ---
+resize();
+window.addEventListener(&#39;resize&#39;,resize);
+</script>
+</body>
+</html>' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+    <div class="tab-panel" id="panel-export">
+      <div class="section-summary">
+        <h3>Export PDF (V1)</h3>
+        <ul><li>Sélection des sections (toggles)</li><li>Options de personnalisation</li><li>Aperçu live du rapport</li><li>Génération + téléchargement</li></ul>
+      </div>
+      <iframe srcdoc='<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope - Export PDF</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, &#39;Segoe UI&#39;, Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 2rem 1.25rem;
+  }
+  .container { max-width: 1060px; margin: 0 auto; }
+
+  .page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .page-subtitle { color: #64748b; font-size: 0.88rem; margin-bottom: 1.5rem; }
+
+  /* Two-column layout */
+  .export-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* Panel styling */
+  .panel {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 14px;
+    padding: 1.5rem;
+  }
+  .panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Section Toggles */
+  .section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #293548;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  .section-toggle:last-of-type { border-bottom: none; }
+  .section-toggle:hover { background: rgba(96,165,250,0.05); }
+
+  .toggle-checkbox {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .toggle-checkbox input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+  .toggle-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #334155;
+    border-radius: 22px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .toggle-slider::before {
+    content: &#39;&#39;;
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 3px; bottom: 3px;
+    background: #94a3b8;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .toggle-checkbox input:checked + .toggle-slider {
+    background: #60a5fa;
+  }
+  .toggle-checkbox input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+    background: #fff;
+  }
+
+  .toggle-info { flex: 1; }
+  .toggle-name { font-weight: 600; font-size: 0.92rem; }
+  .toggle-desc { font-size: 0.78rem; color: #64748b; margin-top: 0.15rem; }
+  .toggle-icon { flex-shrink: 0; }
+
+  /* Divider */
+  .panel-divider {
+    height: 1px;
+    background: #293548;
+    margin: 1.25rem 0;
+  }
+
+  /* Options */
+  .option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+  }
+  .option-label {
+    font-size: 0.88rem;
+    color: #94a3b8;
+  }
+  .option-select {
+    background: #0f1729;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    min-width: 100px;
+  }
+  .option-select:focus { border-color: #60a5fa; outline: none; }
+
+  /* Radio group for format */
+  .radio-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .radio-btn {
+    background: #0f1729;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .radio-btn.active {
+    background: rgba(96,165,250,0.15);
+    border-color: #60a5fa;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  .radio-btn:hover:not(.active) { border-color: #475569; }
+
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .btn {
+    flex: 1;
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .btn-generate {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    color: #0f1729;
+  }
+  .btn-generate:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate.generating {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  .btn-download {
+    background: #1e293b;
+    border: 2px solid #334155;
+    color: #64748b;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+  .btn-download.ready {
+    border-color: #34d399;
+    color: #34d399;
+    pointer-events: auto;
+    opacity: 1;
+  }
+  .btn-download.ready:hover {
+    background: rgba(52,211,153,0.1);
+    transform: translateY(-1px);
+  }
+
+  /* Progress bar */
+  .progress-container {
+    display: none;
+    margin-top: 1rem;
+  }
+  .progress-container.visible { display: block; }
+  .progress-bar-bg {
+    height: 6px;
+    background: #293548;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa);
+    border-radius: 6px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+    text-align: center;
+  }
+
+  /* PDF Preview */
+  .preview-panel {
+    position: sticky;
+    top: 1rem;
+  }
+  .pdf-preview {
+    background: #fff;
+    border-radius: 4px;
+    padding: 1.75rem;
+    color: #1a1a2e;
+    min-height: 480px;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .pdf-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: rgba(0,0,0,0.04);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .pdf-header {
+    border-bottom: 2px solid #60a5fa;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .pdf-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1a1a2e;
+  }
+  .pdf-inst {
+    font-size: 0.72rem;
+    color: #6b7280;
+    margin-top: 0.15rem;
+  }
+  .pdf-section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #60a5fa;
+    margin-top: 0.75rem;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pdf-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .pdf-metric {
+    text-align: center;
+    padding: 0.4rem;
+    background: #f0f4ff;
+    border-radius: 4px;
+  }
+  .pdf-metric-val { font-size: 1rem; font-weight: 800; color: #1e40af; }
+  .pdf-metric-label { font-size: 0.55rem; color: #6b7280; text-transform: uppercase; }
+  .pdf-chart-placeholder {
+    height: 50px;
+    background: linear-gradient(90deg, #e0e7ff 0%, #dbeafe 50%, #e0e7ff 100%);
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 0 8px 4px;
+  }
+  .pdf-mini-bar {
+    flex: 1;
+    background: #3b82f6;
+    border-radius: 2px 2px 0 0;
+    opacity: 0.6;
+  }
+  .pdf-pub-item {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .pdf-pub-title { font-weight: 600; font-size: 0.68rem; color: #1a1a2e; }
+  .pdf-pub-meta { font-size: 0.6rem; color: #6b7280; }
+  .pdf-footer {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 1.75rem;
+    right: 1.75rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.55rem;
+    color: #9ca3af;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.4rem;
+  }
+
+  /* Section visibility */
+  .pdf-section { transition: opacity 0.3s, max-height 0.3s; }
+  .pdf-section.hidden { opacity: 0.15; }
+
+  @media (max-width: 768px) {
+    .export-layout {
+      grid-template-columns: 1fr;
+    }
+    .preview-panel { position: static; }
+    .pdf-preview { min-height: 400px; }
+    .pdf-metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-title">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+    Export PDF
+  </div>
+  <p class="page-subtitle">Generez un rapport complet pour Prof. Frederick Benaben</p>
+
+  <div class="export-layout">
+    <!-- Left: Options -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+          Sections a inclure
+        </div>
+
+        <div class="section-toggle" data-section="overview">
+          <label class="toggle-checkbox">
+            <input type="checkbox" checked data-section="overview">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Vue d&#39;ensemble</div>
+            <div class="toggle-desc">Metriques, h-index, resume du profil</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="publications">
+          <label class="toggle-checkbox">
+            <input type="checkbox" checked data-section="publications">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Publications</div>
+            <div class="toggle-desc">Liste des publications avec citations</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="cartography">
+          <label class="toggle-checkbox">
+            <input type="checkbox" checked data-section="cartography">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Cartographie</div>
+            <div class="toggle-desc">Carte thematique des domaines</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="timeline">
+          <label class="toggle-checkbox">
+            <input type="checkbox" data-section="timeline">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Timeline</div>
+            <div class="toggle-desc">Evolution chronologique de la carriere</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><polyline points="18 20 18 4 6 20 6 16"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="network">
+          <label class="toggle-checkbox">
+            <input type="checkbox" data-section="network">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Reseau</div>
+            <div class="toggle-desc">Graphe de co-auteurs et collaborations</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:1rem;">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Options
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Nombre de publications</span>
+          <select class="option-select" id="optPubCount">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="all">Toutes (142)</option>
+          </select>
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Visualisations</span>
+          <label class="toggle-checkbox" style="position:relative;">
+            <input type="checkbox" checked id="optViz">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Langue</span>
+          <div class="radio-group">
+            <button class="radio-btn active" data-group="lang">FR</button>
+            <button class="radio-btn" data-group="lang">EN</button>
+          </div>
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Format</span>
+          <div class="radio-group">
+            <button class="radio-btn active" data-group="format">A4</button>
+            <button class="radio-btn" data-group="format">Letter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn-group">
+        <button class="btn btn-generate" id="btnGenerate">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+          Generer le PDF
+        </button>
+        <button class="btn btn-download" id="btnDownload">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Telecharger
+        </button>
+      </div>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">Preparation...</div>
+      </div>
+    </div>
+
+    <!-- Right: Preview -->
+    <div class="preview-panel">
+      <div class="panel" style="padding:1rem;">
+        <div class="panel-title" style="margin-bottom:0.75rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Apercu
+        </div>
+        <div class="pdf-preview" id="pdfPreview">
+          <div class="pdf-watermark">APERCU</div>
+
+          <div class="pdf-header">
+            <div class="pdf-name">Prof. Frederick Benaben</div>
+            <div class="pdf-inst">IMT Mines Albi &amp;mdash; Centre Genie Industriel</div>
+          </div>
+
+          <div class="pdf-section" data-preview="overview">
+            <div class="pdf-section-title">Vue d&#39;ensemble</div>
+            <div class="pdf-metrics">
+              <div class="pdf-metric"><div class="pdf-metric-val">27</div><div class="pdf-metric-label">h-index</div></div>
+              <div class="pdf-metric"><div class="pdf-metric-val">3,456</div><div class="pdf-metric-label">Citations</div></div>
+              <div class="pdf-metric"><div class="pdf-metric-val">142</div><div class="pdf-metric-label">Publi.</div></div>
+              <div class="pdf-metric"><div class="pdf-metric-val">23</div><div class="pdf-metric-label">Annees</div></div>
+            </div>
+            <div class="pdf-chart-placeholder" id="pdfChart"></div>
+          </div>
+
+          <div class="pdf-section" data-preview="publications">
+            <div class="pdf-section-title">Publications</div>
+            <div class="pdf-pub-item">
+              <div class="pdf-pub-title">1. A knowledge-based metamodel for crisis management...</div>
+              <div class="pdf-pub-meta">Benaben et al. &amp;mdash; IJDRR, 2024 &amp;mdash; 89 citations</div>
+            </div>
+            <div class="pdf-pub-item">
+              <div class="pdf-pub-title">2. Digital twin-driven supply chain resilience...</div>
+              <div class="pdf-pub-meta">Benaben et al. &amp;mdash; Computers in Industry, 2023 &amp;mdash; 156 citations</div>
+            </div>
+            <div class="pdf-pub-item">
+              <div class="pdf-pub-title">3. Towards a model-driven interoperability framework...</div>
+              <div class="pdf-pub-meta">Benaben et al. &amp;mdash; EIS, 2023 &amp;mdash; 124 citations</div>
+            </div>
+          </div>
+
+          <div class="pdf-section hidden" data-preview="cartography">
+            <div class="pdf-section-title">Cartographie thematique</div>
+            <div style="height:35px;background:#f0f4ff;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.6rem;">[Carte thematique]</div>
+          </div>
+
+          <div class="pdf-section hidden" data-preview="timeline">
+            <div class="pdf-section-title">Timeline</div>
+            <div style="height:30px;background:#f0f4ff;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.6rem;">[Frise chronologique]</div>
+          </div>
+
+          <div class="pdf-section hidden" data-preview="network">
+            <div class="pdf-section-title">Reseau de co-auteurs</div>
+            <div style="height:35px;background:#f0f4ff;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.6rem;">[Graphe de collaborations]</div>
+          </div>
+
+          <div class="pdf-footer">
+            <span>ScholarScope &amp;mdash; Rapport genere le 20/02/2026</span>
+            <span>Page 1/3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mini chart bars in PDF preview
+const chartData = [15,22,35,45,58,72,89,105,134,156,189,215,248,278,312,345,298,356,389,412,378,145];
+const chartEl = document.getElementById(&#39;pdfChart&#39;);
+const maxC = Math.max(...chartData);
+chartEl.innerHTML = chartData.map(v => `<div class="pdf-mini-bar" style="height:${(v/maxC)*100}%"></div>`).join(&#39;&#39;);
+
+// Section toggle -> preview sync
+const sectionMap = {
+  overview: &#39;overview&#39;,
+  publications: &#39;publications&#39;,
+  cartography: &#39;cartography&#39;,
+  timeline: &#39;timeline&#39;,
+  network: &#39;network&#39;
+};
+
+document.querySelectorAll(&#39;.section-toggle input[type="checkbox"]&#39;).forEach(cb => {
+  cb.addEventListener(&#39;change&#39;, () => {
+    const section = cb.dataset.section;
+    const previewEl = document.querySelector(`.pdf-section[data-preview="${sectionMap[section]}"]`);
+    if (previewEl) {
+      previewEl.classList.toggle(&#39;hidden&#39;, !cb.checked);
+    }
+  });
+});
+
+// Radio buttons
+document.querySelectorAll(&#39;.radio-btn&#39;).forEach(btn => {
+  btn.addEventListener(&#39;click&#39;, () => {
+    const group = btn.dataset.group;
+    document.querySelectorAll(`.radio-btn[data-group="${group}"]`).forEach(b => b.classList.remove(&#39;active&#39;));
+    btn.classList.add(&#39;active&#39;);
+  });
+});
+
+// Generate button
+const btnGenerate = document.getElementById(&#39;btnGenerate&#39;);
+const btnDownload = document.getElementById(&#39;btnDownload&#39;);
+const progressContainer = document.getElementById(&#39;progressContainer&#39;);
+const progressBar = document.getElementById(&#39;progressBar&#39;);
+const progressText = document.getElementById(&#39;progressText&#39;);
+
+const steps = [
+  { pct: 15, text: "Collecte des donnees..." },
+  { pct: 35, text: "Analyse des publications..." },
+  { pct: 55, text: "Generation des graphiques..." },
+  { pct: 75, text: "Mise en page du document..." },
+  { pct: 90, text: "Finalisation..." },
+  { pct: 100, text: "PDF genere avec succes !" },
+];
+
+btnGenerate.addEventListener(&#39;click&#39;, () => {
+  btnGenerate.classList.add(&#39;generating&#39;);
+  btnGenerate.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+    Generation en cours...
+  `;
+  progressContainer.classList.add(&#39;visible&#39;);
+  btnDownload.classList.remove(&#39;ready&#39;);
+
+  let step = 0;
+  const interval = setInterval(() => {
+    if (step < steps.length) {
+      progressBar.style.width = steps[step].pct + &#39;%&#39;;
+      progressText.textContent = steps[step].text;
+      step++;
+    } else {
+      clearInterval(interval);
+      btnGenerate.classList.remove(&#39;generating&#39;);
+      btnGenerate.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Regenerer
+      `;
+      btnDownload.classList.add(&#39;ready&#39;);
+    }
+  }, 600);
+});
+
+// Download button
+btnDownload.addEventListener(&#39;click&#39;, () => {
+  if (!btnDownload.classList.contains(&#39;ready&#39;)) return;
+  btnDownload.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    Telecharge !
+  `;
+  setTimeout(() => {
+    btnDownload.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Telecharger
+    `;
+  }, 2000);
+});
+
+// Add spin keyframes
+const style = document.createElement(&#39;style&#39;);
+style.textContent = &#39;@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }&#39;;
+document.head.appendChild(style);
+</script>
+</body>
+</html>
+' style="width:100%;min-height:85vh;border:none;background:#0f1729;"></iframe>
+    </div>
+</main>
+
+<script>
+(function() {
+  var tabs = document.querySelectorAll('.nav-tab');
+  var panels = document.querySelectorAll('.tab-panel');
+
+  function switchTab(tabId) {
+    tabs.forEach(function(t) { t.classList.toggle('active', t.getAttribute('data-tab') === tabId); });
+    panels.forEach(function(p) { p.classList.toggle('active', p.id === 'panel-' + tabId); });
+  }
+
+  tabs.forEach(function(t) {
+    t.addEventListener('click', function() {
+      var tabId = this.getAttribute('data-tab');
+      switchTab(tabId);
+      history.replaceState(null, '', '#' + tabId);
+    });
+  });
+
+  // Hash navigation
+  function handleHash() {
+    var hash = location.hash.replace('#', '');
+    if (hash) switchTab(hash);
+  }
+  window.addEventListener('hashchange', handleHash);
+  if (location.hash) handleHash();
+})();
+</script>
 </body>
 </html>

@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ScholarScope - Export PDF</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 2rem 1.25rem;
+  }
+  .container { max-width: 1060px; margin: 0 auto; }
+
+  .page-title {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin-bottom: 0.3rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .page-subtitle { color: #64748b; font-size: 0.88rem; margin-bottom: 1.5rem; }
+
+  /* Two-column layout */
+  .export-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  /* Panel styling */
+  .panel {
+    background: #1a2332;
+    border: 1px solid #293548;
+    border-radius: 14px;
+    padding: 1.5rem;
+  }
+  .panel-title {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  /* Section Toggles */
+  .section-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #293548;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+  .section-toggle:last-of-type { border-bottom: none; }
+  .section-toggle:hover { background: rgba(96,165,250,0.05); }
+
+  .toggle-checkbox {
+    position: relative;
+    width: 40px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .toggle-checkbox input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+  }
+  .toggle-slider {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: #334155;
+    border-radius: 22px;
+    transition: background 0.2s;
+    cursor: pointer;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    width: 16px; height: 16px;
+    left: 3px; bottom: 3px;
+    background: #94a3b8;
+    border-radius: 50%;
+    transition: all 0.2s;
+  }
+  .toggle-checkbox input:checked + .toggle-slider {
+    background: #60a5fa;
+  }
+  .toggle-checkbox input:checked + .toggle-slider::before {
+    transform: translateX(18px);
+    background: #fff;
+  }
+
+  .toggle-info { flex: 1; }
+  .toggle-name { font-weight: 600; font-size: 0.92rem; }
+  .toggle-desc { font-size: 0.78rem; color: #64748b; margin-top: 0.15rem; }
+  .toggle-icon { flex-shrink: 0; }
+
+  /* Divider */
+  .panel-divider {
+    height: 1px;
+    background: #293548;
+    margin: 1.25rem 0;
+  }
+
+  /* Options */
+  .option-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+  }
+  .option-label {
+    font-size: 0.88rem;
+    color: #94a3b8;
+  }
+  .option-select {
+    background: #0f1729;
+    color: #e2e8f0;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 0.4rem 0.65rem;
+    font-size: 0.82rem;
+    font-family: inherit;
+    cursor: pointer;
+    min-width: 100px;
+  }
+  .option-select:focus { border-color: #60a5fa; outline: none; }
+
+  /* Radio group for format */
+  .radio-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .radio-btn {
+    background: #0f1729;
+    border: 1px solid #334155;
+    color: #94a3b8;
+    padding: 0.35rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .radio-btn.active {
+    background: rgba(96,165,250,0.15);
+    border-color: #60a5fa;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  .radio-btn:hover:not(.active) { border-color: #475569; }
+
+  /* Buttons */
+  .btn-group {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1.5rem;
+  }
+  .btn {
+    flex: 1;
+    padding: 0.85rem 1.25rem;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+  .btn-generate {
+    background: linear-gradient(135deg, #60a5fa, #a78bfa);
+    color: #0f1729;
+  }
+  .btn-generate:hover { filter: brightness(1.1); transform: translateY(-1px); }
+  .btn-generate:active { transform: translateY(0); }
+  .btn-generate.generating {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  .btn-download {
+    background: #1e293b;
+    border: 2px solid #334155;
+    color: #64748b;
+    pointer-events: none;
+    opacity: 0.4;
+  }
+  .btn-download.ready {
+    border-color: #34d399;
+    color: #34d399;
+    pointer-events: auto;
+    opacity: 1;
+  }
+  .btn-download.ready:hover {
+    background: rgba(52,211,153,0.1);
+    transform: translateY(-1px);
+  }
+
+  /* Progress bar */
+  .progress-container {
+    display: none;
+    margin-top: 1rem;
+  }
+  .progress-container.visible { display: block; }
+  .progress-bar-bg {
+    height: 6px;
+    background: #293548;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+  .progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #60a5fa, #a78bfa);
+    border-radius: 6px;
+    width: 0%;
+    transition: width 0.3s ease;
+  }
+  .progress-text {
+    font-size: 0.78rem;
+    color: #64748b;
+    margin-top: 0.4rem;
+    text-align: center;
+  }
+
+  /* PDF Preview */
+  .preview-panel {
+    position: sticky;
+    top: 1rem;
+  }
+  .pdf-preview {
+    background: #fff;
+    border-radius: 4px;
+    padding: 1.75rem;
+    color: #1a1a2e;
+    min-height: 480px;
+    font-size: 0.72rem;
+    line-height: 1.6;
+    position: relative;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  }
+  .pdf-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: rgba(0,0,0,0.04);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  .pdf-header {
+    border-bottom: 2px solid #60a5fa;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .pdf-name {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: #1a1a2e;
+  }
+  .pdf-inst {
+    font-size: 0.72rem;
+    color: #6b7280;
+    margin-top: 0.15rem;
+  }
+  .pdf-section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #60a5fa;
+    margin-top: 0.75rem;
+    margin-bottom: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .pdf-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .pdf-metric {
+    text-align: center;
+    padding: 0.4rem;
+    background: #f0f4ff;
+    border-radius: 4px;
+  }
+  .pdf-metric-val { font-size: 1rem; font-weight: 800; color: #1e40af; }
+  .pdf-metric-label { font-size: 0.55rem; color: #6b7280; text-transform: uppercase; }
+  .pdf-chart-placeholder {
+    height: 50px;
+    background: linear-gradient(90deg, #e0e7ff 0%, #dbeafe 50%, #e0e7ff 100%);
+    border-radius: 4px;
+    margin: 0.5rem 0;
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    padding: 0 8px 4px;
+  }
+  .pdf-mini-bar {
+    flex: 1;
+    background: #3b82f6;
+    border-radius: 2px 2px 0 0;
+    opacity: 0.6;
+  }
+  .pdf-pub-item {
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  .pdf-pub-title { font-weight: 600; font-size: 0.68rem; color: #1a1a2e; }
+  .pdf-pub-meta { font-size: 0.6rem; color: #6b7280; }
+  .pdf-footer {
+    position: absolute;
+    bottom: 0.75rem;
+    left: 1.75rem;
+    right: 1.75rem;
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.55rem;
+    color: #9ca3af;
+    border-top: 1px solid #e5e7eb;
+    padding-top: 0.4rem;
+  }
+
+  /* Section visibility */
+  .pdf-section { transition: opacity 0.3s, max-height 0.3s; }
+  .pdf-section.hidden { opacity: 0.15; }
+
+  @media (max-width: 768px) {
+    .export-layout {
+      grid-template-columns: 1fr;
+    }
+    .preview-panel { position: static; }
+    .pdf-preview { min-height: 400px; }
+    .pdf-metrics { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="page-title">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+    Export PDF
+  </div>
+  <p class="page-subtitle">Generez un rapport complet pour Prof. Frederick Benaben</p>
+
+  <div class="export-layout">
+    <!-- Left: Options -->
+    <div>
+      <div class="panel">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h18"/></svg>
+          Sections a inclure
+        </div>
+
+        <div class="section-toggle" data-section="overview">
+          <label class="toggle-checkbox">
+            <input type="checkbox" checked data-section="overview">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Vue d'ensemble</div>
+            <div class="toggle-desc">Metriques, h-index, resume du profil</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="publications">
+          <label class="toggle-checkbox">
+            <input type="checkbox" checked data-section="publications">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Publications</div>
+            <div class="toggle-desc">Liste des publications avec citations</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="cartography">
+          <label class="toggle-checkbox">
+            <input type="checkbox" checked data-section="cartography">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Cartographie</div>
+            <div class="toggle-desc">Carte thematique des domaines</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="timeline">
+          <label class="toggle-checkbox">
+            <input type="checkbox" data-section="timeline">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Timeline</div>
+            <div class="toggle-desc">Evolution chronologique de la carriere</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><polyline points="18 20 18 4 6 20 6 16"/></svg>
+        </div>
+
+        <div class="section-toggle" data-section="network">
+          <label class="toggle-checkbox">
+            <input type="checkbox" data-section="network">
+            <span class="toggle-slider"></span>
+          </label>
+          <div class="toggle-info">
+            <div class="toggle-name">Reseau</div>
+            <div class="toggle-desc">Graphe de co-auteurs et collaborations</div>
+          </div>
+          <svg class="toggle-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fb7185" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:1rem;">
+        <div class="panel-title">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+          Options
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Nombre de publications</span>
+          <select class="option-select" id="optPubCount">
+            <option value="10" selected>10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="all">Toutes (142)</option>
+          </select>
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Visualisations</span>
+          <label class="toggle-checkbox" style="position:relative;">
+            <input type="checkbox" checked id="optViz">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Langue</span>
+          <div class="radio-group">
+            <button class="radio-btn active" data-group="lang">FR</button>
+            <button class="radio-btn" data-group="lang">EN</button>
+          </div>
+        </div>
+
+        <div class="option-row">
+          <span class="option-label">Format</span>
+          <div class="radio-group">
+            <button class="radio-btn active" data-group="format">A4</button>
+            <button class="radio-btn" data-group="format">Letter</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="btn-group">
+        <button class="btn btn-generate" id="btnGenerate">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/></svg>
+          Generer le PDF
+        </button>
+        <button class="btn btn-download" id="btnDownload">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Telecharger
+        </button>
+      </div>
+
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar-bg">
+          <div class="progress-bar" id="progressBar"></div>
+        </div>
+        <div class="progress-text" id="progressText">Preparation...</div>
+      </div>
+    </div>
+
+    <!-- Right: Preview -->
+    <div class="preview-panel">
+      <div class="panel" style="padding:1rem;">
+        <div class="panel-title" style="margin-bottom:0.75rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Apercu
+        </div>
+        <div class="pdf-preview" id="pdfPreview">
+          <div class="pdf-watermark">APERCU</div>
+
+          <div class="pdf-header">
+            <div class="pdf-name">Prof. Frederick Benaben</div>
+            <div class="pdf-inst">IMT Mines Albi &mdash; Centre Genie Industriel</div>
+          </div>
+
+          <div class="pdf-section" data-preview="overview">
+            <div class="pdf-section-title">Vue d'ensemble</div>
+            <div class="pdf-metrics">
+              <div class="pdf-metric"><div class="pdf-metric-val">27</div><div class="pdf-metric-label">h-index</div></div>
+              <div class="pdf-metric"><div class="pdf-metric-val">3,456</div><div class="pdf-metric-label">Citations</div></div>
+              <div class="pdf-metric"><div class="pdf-metric-val">142</div><div class="pdf-metric-label">Publi.</div></div>
+              <div class="pdf-metric"><div class="pdf-metric-val">23</div><div class="pdf-metric-label">Annees</div></div>
+            </div>
+            <div class="pdf-chart-placeholder" id="pdfChart"></div>
+          </div>
+
+          <div class="pdf-section" data-preview="publications">
+            <div class="pdf-section-title">Publications</div>
+            <div class="pdf-pub-item">
+              <div class="pdf-pub-title">1. A knowledge-based metamodel for crisis management...</div>
+              <div class="pdf-pub-meta">Benaben et al. &mdash; IJDRR, 2024 &mdash; 89 citations</div>
+            </div>
+            <div class="pdf-pub-item">
+              <div class="pdf-pub-title">2. Digital twin-driven supply chain resilience...</div>
+              <div class="pdf-pub-meta">Benaben et al. &mdash; Computers in Industry, 2023 &mdash; 156 citations</div>
+            </div>
+            <div class="pdf-pub-item">
+              <div class="pdf-pub-title">3. Towards a model-driven interoperability framework...</div>
+              <div class="pdf-pub-meta">Benaben et al. &mdash; EIS, 2023 &mdash; 124 citations</div>
+            </div>
+          </div>
+
+          <div class="pdf-section hidden" data-preview="cartography">
+            <div class="pdf-section-title">Cartographie thematique</div>
+            <div style="height:35px;background:#f0f4ff;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.6rem;">[Carte thematique]</div>
+          </div>
+
+          <div class="pdf-section hidden" data-preview="timeline">
+            <div class="pdf-section-title">Timeline</div>
+            <div style="height:30px;background:#f0f4ff;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.6rem;">[Frise chronologique]</div>
+          </div>
+
+          <div class="pdf-section hidden" data-preview="network">
+            <div class="pdf-section-title">Reseau de co-auteurs</div>
+            <div style="height:35px;background:#f0f4ff;border-radius:4px;display:flex;align-items:center;justify-content:center;color:#9ca3af;font-size:0.6rem;">[Graphe de collaborations]</div>
+          </div>
+
+          <div class="pdf-footer">
+            <span>ScholarScope &mdash; Rapport genere le 20/02/2026</span>
+            <span>Page 1/3</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Mini chart bars in PDF preview
+const chartData = [15,22,35,45,58,72,89,105,134,156,189,215,248,278,312,345,298,356,389,412,378,145];
+const chartEl = document.getElementById('pdfChart');
+const maxC = Math.max(...chartData);
+chartEl.innerHTML = chartData.map(v => `<div class="pdf-mini-bar" style="height:${(v/maxC)*100}%"></div>`).join('');
+
+// Section toggle -> preview sync
+const sectionMap = {
+  overview: 'overview',
+  publications: 'publications',
+  cartography: 'cartography',
+  timeline: 'timeline',
+  network: 'network'
+};
+
+document.querySelectorAll('.section-toggle input[type="checkbox"]').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const section = cb.dataset.section;
+    const previewEl = document.querySelector(`.pdf-section[data-preview="${sectionMap[section]}"]`);
+    if (previewEl) {
+      previewEl.classList.toggle('hidden', !cb.checked);
+    }
+  });
+});
+
+// Radio buttons
+document.querySelectorAll('.radio-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const group = btn.dataset.group;
+    document.querySelectorAll(`.radio-btn[data-group="${group}"]`).forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+
+// Generate button
+const btnGenerate = document.getElementById('btnGenerate');
+const btnDownload = document.getElementById('btnDownload');
+const progressContainer = document.getElementById('progressContainer');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+
+const steps = [
+  { pct: 15, text: "Collecte des donnees..." },
+  { pct: 35, text: "Analyse des publications..." },
+  { pct: 55, text: "Generation des graphiques..." },
+  { pct: 75, text: "Mise en page du document..." },
+  { pct: 90, text: "Finalisation..." },
+  { pct: 100, text: "PDF genere avec succes !" },
+];
+
+btnGenerate.addEventListener('click', () => {
+  btnGenerate.classList.add('generating');
+  btnGenerate.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+    Generation en cours...
+  `;
+  progressContainer.classList.add('visible');
+  btnDownload.classList.remove('ready');
+
+  let step = 0;
+  const interval = setInterval(() => {
+    if (step < steps.length) {
+      progressBar.style.width = steps[step].pct + '%';
+      progressText.textContent = steps[step].text;
+      step++;
+    } else {
+      clearInterval(interval);
+      btnGenerate.classList.remove('generating');
+      btnGenerate.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        Regenerer
+      `;
+      btnDownload.classList.add('ready');
+    }
+  }, 600);
+});
+
+// Download button
+btnDownload.addEventListener('click', () => {
+  if (!btnDownload.classList.contains('ready')) return;
+  btnDownload.innerHTML = `
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    Telecharge !
+  `;
+  setTimeout(() => {
+    btnDownload.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Telecharger
+    `;
+  }, 2000);
+});
+
+// Add spin keyframes
+const style = document.createElement('style');
+style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+document.head.appendChild(style);
+</script>
+</body>
+</html>
