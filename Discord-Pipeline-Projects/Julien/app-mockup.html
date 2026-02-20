@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NeuralForge — App Mockup</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f0f1a;
+    color: #e0e0e0;
+    min-height: 100vh;
+  }
+  header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-bottom: 1px solid #2a2a4a;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    font-size: 20px;
+    font-weight: 700;
+    color: #a78bfa;
+    white-space: nowrap;
+  }
+  .tagline {
+    font-size: 13px;
+    color: #8888aa;
+    flex: 1;
+  }
+  nav {
+    display: flex;
+    gap: 4px;
+    background: #1a1a2e;
+    padding: 8px 16px;
+    border-bottom: 1px solid #2a2a4a;
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 10px 18px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #8888aa;
+    transition: all 0.2s;
+    white-space: nowrap;
+    border: 1px solid transparent;
+  }
+  .tab:hover {
+    background: #2a2a4a;
+    color: #c0c0e0;
+  }
+  .tab.active {
+    background: #a78bfa22;
+    color: #a78bfa;
+    border-color: #a78bfa44;
+  }
+  .content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .section-frame {
+    display: none;
+    flex: 1;
+    min-height: calc(100vh - 120px);
+  }
+  .section-frame.active {
+    display: flex;
+    flex-direction: column;
+  }
+  .section-frame iframe {
+    flex: 1;
+    border: none;
+    width: 100%;
+    min-height: calc(100vh - 120px);
+    background: #0f0f1a;
+  }
+  .missing-mockup {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 48px;
+    text-align: center;
+  }
+  .missing-mockup .icon {
+    font-size: 48px;
+    opacity: 0.5;
+  }
+  .missing-mockup h2 {
+    font-size: 20px;
+    color: #a78bfa;
+  }
+  .missing-mockup p {
+    font-size: 14px;
+    color: #8888aa;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+  .missing-mockup .file-ref {
+    font-family: monospace;
+    font-size: 13px;
+    color: #a78bfa88;
+    background: #1a1a2e;
+    padding: 8px 16px;
+    border-radius: 6px;
+    border: 1px solid #2a2a4a;
+  }
+  .specs-summary {
+    text-align: left;
+    max-width: 600px;
+    margin-top: 16px;
+    padding: 20px;
+    background: #1a1a2e;
+    border-radius: 8px;
+    border: 1px solid #2a2a4a;
+  }
+  .specs-summary h3 {
+    font-size: 14px;
+    color: #a78bfa;
+    margin-bottom: 8px;
+  }
+  .specs-summary ul {
+    list-style: none;
+    font-size: 13px;
+    color: #aaaacc;
+    line-height: 1.8;
+  }
+  .specs-summary ul li::before {
+    content: "- ";
+    color: #a78bfa66;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">NeuralForge</div>
+  <div class="tagline">Editeur visuel de reseaux de neurones pour forecasting timeseries — Tauri + React + Burn</div>
+</header>
+
+<nav id="tabs"></nav>
+
+<div class="content" id="content"></div>
+
+<script>
+const sections = [
+  {
+    id: 'accueil-projets',
+    label: '\u{1F3E0} Accueil / Projets',
+    file: 'mockups/accueil-projets.html',
+    specs: [
+      'Cards de projets (nom, date, datasets/archis/runs)',
+      'Boutons ouvrir / supprimer par projet',
+      'Bouton creer nouveau projet + modale',
+      'Modale confirmation suppression',
+      'Barre de recherche, filtres, tri',
+      'Animations hover, dark theme, responsive 375px+'
+    ]
+  },
+  {
+    id: 'editeur-reseau',
+    label: '\u{1F9E0} Editeur de reseau',
+    file: 'mockups/network-editor.html',
+    specs: [
+      'Palette: Dense, Dropout, Transformer, Conv, LSTM, Activation, BatchNorm + Input/Output/Reshape/Concat/Split',
+      'Canvas avec noeuds draggables + connexions bezier',
+      'Inspecteur de proprietes au clic (units, rate, filters...)',
+      'Toolbar: zoom, undo/redo, train, export',
+      'Minimap en bas a droite',
+      'Reseau NN pre-charge (Input > Dense > Activation > Dropout > Dense > Output)'
+    ]
+  },
+  {
+    id: 'gestion-donnees',
+    label: '\u{1F4CA} Gestion des donnees',
+    file: 'mockups/gestion-donnees.html',
+    specs: [
+      'Cards datasets avec stats (series, points, selection)',
+      'Import CSV drag & drop + barre de progression',
+      'Vue detail: Apercu table, Graphique SVG, Selection series',
+      'Stats par serie: nb points, date range, min/max, moyenne',
+      'Checkboxes selection series pour training',
+      'Format: id, unique_id, ds, y (multi-series)'
+    ]
+  },
+  {
+    id: 'training',
+    label: '\u{26A1} Training',
+    file: 'mockups/training-dashboard.html',
+    specs: [
+      'Courbe de loss temps reel (train + validation)',
+      'Metriques par epoch: loss, MAE, RMSE',
+      'Barre de progression + estimation temps restant',
+      'Early stopping (indicateur visuel)',
+      'Controles: Pause/Resume, Stop, Sauvegarder',
+      'Sidebar hyperparametres: learning rate, batch size, epochs, optimizer',
+      'Historique des runs precedents'
+    ]
+  },
+  {
+    id: 'predictions',
+    label: '\u{1F4C8} Predictions',
+    file: 'mockups/predictions-dashboard.html',
+    specs: [
+      'Graphique echarts: historique (bleu) + prediction (orange) + zone de confiance',
+      'Selecteur serie (unique_id) + selecteur modele (runs)',
+      'Slider horizon de prediction',
+      'Cards metriques: MAE, RMSE, MAPE',
+      'Export CSV des predictions',
+      'Comparaison: superposition de 2 modeles'
+    ]
+  },
+  {
+    id: 'parametres',
+    label: '\u{2699}\u{FE0F} Parametres',
+    file: 'mockups/settings-page.html',
+    specs: [
+      'Section GPU: detection Wgpu (Vulkan/Metal/DX12), CPU fallback',
+      'Section Theme: Dark/Light toggle',
+      'Section Donnees: chemins par defaut, separateur CSV',
+      'Section Training: valeurs par defaut (LR, batch, epochs, patience)',
+      'Section Export: format modeles, chemin par defaut',
+      'Bouton reinitialiser + toast confirmation'
+    ]
+  }
+];
+
+const tabsEl = document.getElementById('tabs');
+const contentEl = document.getElementById('content');
+
+sections.forEach((s, i) => {
+  // Tab
+  const tab = document.createElement('div');
+  tab.className = 'tab' + (i === 0 ? ' active' : '');
+  tab.textContent = s.label;
+  tab.dataset.index = i;
+  tab.addEventListener('click', () => switchTab(i));
+  tabsEl.appendChild(tab);
+
+  // Content section
+  const div = document.createElement('div');
+  div.className = 'section-frame' + (i === 0 ? ' active' : '');
+  div.id = 'section-' + s.id;
+
+  // Try to load the mockup file via fetch, show placeholder if not found
+  div.innerHTML = `
+    <div class="missing-mockup">
+      <div class="icon">\u{1F6A7}</div>
+      <h2>${s.label}</h2>
+      <p>Mockup HTML non disponible. Le fichier a ete genere par Storm pendant le brainstorm Discord mais n'a pas pu etre recupere lors de la compilation (API Discord indisponible).</p>
+      <div class="file-ref">${s.file}</div>
+      <div class="specs-summary">
+        <h3>Specifications validees :</h3>
+        <ul>${s.specs.map(sp => '<li>' + sp + '</li>').join('')}</ul>
+      </div>
+    </div>
+  `;
+
+  contentEl.appendChild(div);
+
+  // Try loading the actual file
+  tryLoadMockup(s, div);
+});
+
+async function tryLoadMockup(section, container) {
+  try {
+    const resp = await fetch(section.file);
+    if (!resp.ok) return;
+    const html = await resp.text();
+    if (html.trim().length < 50) return;
+    // Replace content with iframe srcdoc
+    const escaped = html.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    container.innerHTML = `<iframe srcdoc="${escaped}" title="${section.label}"></iframe>`;
+  } catch (e) {
+    // File not available, keep placeholder
+  }
+}
+
+function switchTab(index) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', i === index);
+  });
+  document.querySelectorAll('.section-frame').forEach((s, i) => {
+    s.classList.toggle('active', i === index);
+  });
+}
+</style>
+</script>
+
+</body>
+</html>
