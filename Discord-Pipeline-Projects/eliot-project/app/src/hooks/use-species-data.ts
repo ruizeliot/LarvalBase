@@ -70,13 +70,26 @@ export function useSpeciesData(): SpeciesDataState {
         const traitTypes = new Set<string>();
 
         // Include ALL species — don't filter by traits/images
+        let anyHasImages = false;
         for (const sp of speciesData.species as ApiSpeciesItem[]) {
+          const traits: TraitData[] = [];
           if (sp.traits && sp.traits.length > 0) {
-            traitsBySpecies.set(sp.id, sp.traits);
+            traits.push(...sp.traits);
             for (const trait of sp.traits) {
               traitTypes.add(trait.traitType);
             }
           }
+          // Add virtual "has_images" trait for species with photos
+          if (sp.hasImages) {
+            traits.push({ traitType: 'has_images', value: 1, unit: '' });
+            anyHasImages = true;
+          }
+          if (traits.length > 0) {
+            traitsBySpecies.set(sp.id, traits);
+          }
+        }
+        if (anyHasImages) {
+          traitTypes.add('has_images');
         }
 
         const allSpecies = speciesData.species as ApiSpeciesItem[];
