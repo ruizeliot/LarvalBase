@@ -42,7 +42,7 @@ describe('US-2.2: Horizontal barplots counts per trait', () => {
   it('should display a legend with all 5 categories', () => {
     render(<TraitBarplots stats={mockStats} />);
 
-    expect(screen.getByText('Records')).toBeInTheDocument();
+    expect(screen.getByText('Row')).toBeInTheDocument();
     expect(screen.getByText('Species')).toBeInTheDocument();
     expect(screen.getByText('Genus')).toBeInTheDocument();
     expect(screen.getByText('Family')).toBeInTheDocument();
