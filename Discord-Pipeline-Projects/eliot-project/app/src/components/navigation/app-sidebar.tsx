@@ -19,7 +19,6 @@ import { SpeciesCount } from "./species-count";
 import { useSpeciesData } from "@/hooks/use-species-data";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFilteredSpecies } from "@/hooks/use-filtered-species";
-import { ExportButton } from "@/components/export/export-button";
 import { Input } from "@/components/ui/input";
 
 interface AppSidebarProps {
@@ -72,17 +71,6 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
       return scientificMatch || commonMatch;
     });
   }, [filteredSpecies, debouncedFilteredSearch]);
-
-  // Prepare export data from filtered species
-  const exportData = useMemo(() => {
-    return displayedSpecies.map((sp) => ({
-      Scientific_Name: sp.scientificName,
-      Common_Name: sp.commonName || "",
-      Family: sp.family,
-      Order: sp.order,
-      Genus: sp.genus,
-    }));
-  }, [displayedSpecies]);
 
   // Handlers
   const handleTraitToggle = useCallback((trait: string) => {
@@ -199,14 +187,6 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
           className="h-8 text-xs"
         />
         <SpeciesCount total={species.length} filtered={displayedSpecies.length} />
-        <ExportButton
-          data={exportData}
-          filename={`species-list-${new Date().toISOString().split("T")[0]}`}
-          label="Export Species List"
-          variant="outline"
-          size="sm"
-          className="w-full"
-        />
       </SidebarFooter>
     </Sidebar>
   );
