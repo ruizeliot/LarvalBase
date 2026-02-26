@@ -72,12 +72,13 @@ export async function GET() {
       });
     }
 
-    // Sort families by order, then family name
+    // Sort families by order, then family name; exclude families without images
     const families = Array.from(familyMap.values())
+      .filter((f) => familyImageMap.has(f.family))
       .sort((a, b) => a.order.localeCompare(b.order) || a.family.localeCompare(b.family))
       .map((f) => ({
         ...f,
-        imageUrl: familyImageMap.get(f.family) ?? null,
+        imageUrl: familyImageMap.get(f.family)!,
       }));
 
     return NextResponse.json(
