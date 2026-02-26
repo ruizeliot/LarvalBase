@@ -16,6 +16,9 @@ const PublicationChart = lazy(() =>
 const PhotoGrid = lazy(() =>
   import("@/components/homepage/photo-grid").then((m) => ({ default: m.PhotoGrid }))
 );
+const FamilyGallery = lazy(() =>
+  import("@/components/homepage/family-gallery").then((m) => ({ default: m.FamilyGallery }))
+);
 
 interface SelectedSpecies {
   id: string;
@@ -31,15 +34,29 @@ function HomepageSkeleton() {
 }
 
 export default function Home() {
-  const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(
-    null
-  );
+  const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(null);
+  const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
   const { barplotStats, publicationYears, familyPhotos } = useHomepageStats();
+
+  // Selecting a species from the gallery
+  const handleGallerySpeciesSelect = (name: string) => {
+    const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    setSelectedFamily(null);
+    setSelectedSpecies({ id: slug, scientificName: name });
+  };
 
   return (
     <MainLayout sidebar={<AppSidebar onSelectSpecies={setSelectedSpecies} />}>
       {selectedSpecies ? (
         <SpeciesDetail speciesId={selectedSpecies.id} />
+      ) : selectedFamily ? (
+        <Suspense fallback={<HomepageSkeleton />}>
+          <FamilyGallery
+            family={selectedFamily}
+            onBack={() => setSelectedFamily(null)}
+            onSelectSpecies={handleGallerySpeciesSelect}
+          />
+        </Suspense>
       ) : (
         <div className="space-y-6">
           <div>
@@ -58,6 +75,7 @@ export default function Home() {
           <Suspense fallback={<HomepageSkeleton />}>
             <PhotoGrid
               families={familyPhotos}
+              onSelectFamily={setSelectedFamily}
               onSelectSpecies={(name) => {
                 const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
                 setSelectedSpecies({ id: slug, scientificName: name });

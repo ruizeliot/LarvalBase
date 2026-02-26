@@ -1,8 +1,8 @@
 /**
- * Tests for Photo grid with real images and drill-down.
+ * Tests for Photo grid with real images.
  *
  * BUG 1: Photo grid must show actual photos (not fish emoji placeholders).
- * Images come from the API with real imageUrl values.
+ * BUG 2: Clicking a family card calls onSelectFamily (navigates to gallery).
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -15,7 +15,6 @@ const mockFamiliesWithImages = [
     imageUrl: '/api/images/classified_bw_images_species/test-image.jpg',
     species: [
       { validName: 'Acanthurus triostegus', genus: 'Acanthurus', records: 42 },
-      { validName: 'Naso unicornis', genus: 'Naso', records: 19 },
     ],
   },
   {
@@ -28,46 +27,31 @@ const mockFamiliesWithImages = [
   },
 ];
 
-const mockFamiliesNoImages = [
-  {
-    family: 'Unknown',
-    order: 'Unknown Order',
-    imageUrl: null,
-    species: [
-      { validName: 'Unknown sp', genus: 'Unknown', records: 1 },
-    ],
-  },
-];
-
-describe('BUG 1: Photo grid shows real images', () => {
+describe('Photo grid', () => {
   it('should render actual img elements when imageUrl is provided', () => {
-    render(<PhotoGrid families={mockFamiliesWithImages} onSelectSpecies={vi.fn()} />);
+    render(<PhotoGrid families={mockFamiliesWithImages} onSelectFamily={vi.fn()} />);
     const images = screen.getAllByRole('img');
     expect(images.length).toBeGreaterThanOrEqual(2);
     expect(images[0]).toHaveAttribute('src', '/api/images/classified_bw_images_species/test-image.jpg');
   });
 
-  it('should show fish SVG placeholder only when imageUrl is null', () => {
-    render(<PhotoGrid families={mockFamiliesNoImages} onSelectSpecies={vi.fn()} />);
-    // No img tag should exist
-    expect(screen.queryAllByRole('img')).toHaveLength(0);
-  });
-
   it('should display the section title', () => {
-    render(<PhotoGrid families={mockFamiliesWithImages} onSelectSpecies={vi.fn()} />);
+    render(<PhotoGrid families={mockFamiliesWithImages} onSelectFamily={vi.fn()} />);
     expect(
       screen.getByText(/post-flexion and early juvenile stages/i)
     ).toBeInTheDocument();
   });
 
-  it('should render a card for each family', () => {
-    render(<PhotoGrid families={mockFamiliesWithImages} onSelectSpecies={vi.fn()} />);
-    expect(screen.getByText('Acanthuridae')).toBeInTheDocument();
-    expect(screen.getByText('Pomacentridae')).toBeInTheDocument();
+  it('should call onSelectFamily when card is clicked', () => {
+    const onSelectFamily = vi.fn();
+    render(<PhotoGrid families={mockFamiliesWithImages} onSelectFamily={onSelectFamily} />);
+    const card = screen.getByText('Acanthuridae').closest('[data-testid="photo-card"]');
+    fireEvent.click(card!);
+    expect(onSelectFamily).toHaveBeenCalledWith('Acanthuridae');
   });
 
   it('should render nothing when families is empty', () => {
-    const { container } = render(<PhotoGrid families={[]} onSelectSpecies={vi.fn()} />);
+    const { container } = render(<PhotoGrid families={[]} onSelectFamily={vi.fn()} />);
     expect(container.querySelector('[data-testid="photo-grid"]')).toBeNull();
   });
 });

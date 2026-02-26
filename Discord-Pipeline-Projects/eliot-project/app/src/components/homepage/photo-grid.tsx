@@ -1,10 +1,8 @@
 "use client";
 
-import { useState } from "react";
-
 /**
  * Photo grid showing one image per family, sorted by order.
- * Click a family card to drill down to genus/species modal.
+ * Click a family card to navigate to a full gallery page.
  */
 
 export interface FamilyPhotoData {
@@ -21,11 +19,10 @@ export interface FamilyPhotoData {
 interface PhotoGridProps {
   families: FamilyPhotoData[];
   onSelectSpecies?: (speciesName: string) => void;
+  onSelectFamily?: (family: string) => void;
 }
 
-export function PhotoGrid({ families, onSelectSpecies }: PhotoGridProps) {
-  const [selectedFamily, setSelectedFamily] = useState<FamilyPhotoData | null>(null);
-
+export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
   if (families.length === 0) return null;
 
   return (
@@ -41,7 +38,7 @@ export function PhotoGrid({ families, onSelectSpecies }: PhotoGridProps) {
             key={fam.family}
             data-testid="photo-card"
             className="rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03] hover:border-primary"
-            onClick={() => setSelectedFamily(fam)}
+            onClick={() => onSelectFamily?.(fam.family)}
           >
             {/* Image placeholder or actual image */}
             <div className="w-full h-20 bg-muted flex items-center justify-center text-2xl">
@@ -68,45 +65,6 @@ export function PhotoGrid({ families, onSelectSpecies }: PhotoGridProps) {
           </div>
         ))}
       </div>
-
-      {/* Drill-down modal */}
-      {selectedFamily && (
-        <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center"
-          onClick={() => setSelectedFamily(null)}
-        >
-          <div
-            className="rounded-lg border bg-card p-6 max-w-lg w-[90%] max-h-[80vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-primary">
-                {selectedFamily.family} — Species in database
-              </h3>
-              <button
-                className="text-muted-foreground hover:text-foreground text-xl"
-                onClick={() => setSelectedFamily(null)}
-              >
-                ×
-              </button>
-            </div>
-            <div className="space-y-1">
-              {selectedFamily.species.map((sp) => (
-                <div
-                  key={sp.validName}
-                  className="text-sm text-muted-foreground italic py-1 px-2 rounded hover:bg-accent cursor-pointer"
-                  onClick={() => {
-                    onSelectSpecies?.(sp.validName);
-                    setSelectedFamily(null);
-                  }}
-                >
-                  {sp.validName} — {sp.records} records
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
