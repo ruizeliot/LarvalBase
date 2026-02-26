@@ -20,6 +20,7 @@ import { useSpeciesData } from "@/hooks/use-species-data";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFilteredSpecies } from "@/hooks/use-filtered-species";
 import { ExportButton } from "@/components/export/export-button";
+import { Input } from "@/components/ui/input";
 
 interface AppSidebarProps {
   onSelectSpecies?: (species: { id: string; scientificName: string }) => void;
@@ -48,8 +49,10 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState("");
+  const [filteredSearchTerm, setFilteredSearchTerm] = useState("");
   const [selectedTraits, setSelectedTraits] = useState<Set<string>>(new Set());
   const debouncedSearch = useDebouncedValue(searchTerm, 200);
+  const debouncedFilteredSearch = useDebouncedValue(filteredSearchTerm, 200);
 
   // Filter species using the dedicated hook (for tree/count display)
   const filteredSpecies = useFilteredSpecies({
@@ -59,16 +62,27 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
     traitsBySpecies,
   });
 
+  // Apply second search bar (searches within filtered results)
+  const displayedSpecies = useMemo(() => {
+    if (!debouncedFilteredSearch.trim()) return filteredSpecies;
+    const lower = debouncedFilteredSearch.toLowerCase();
+    return filteredSpecies.filter((sp) => {
+      const scientificMatch = sp.scientificName.toLowerCase().includes(lower);
+      const commonMatch = sp.commonName?.toLowerCase().includes(lower);
+      return scientificMatch || commonMatch;
+    });
+  }, [filteredSpecies, debouncedFilteredSearch]);
+
   // Prepare export data from filtered species
   const exportData = useMemo(() => {
-    return filteredSpecies.map((sp) => ({
+    return displayedSpecies.map((sp) => ({
       Scientific_Name: sp.scientificName,
       Common_Name: sp.commonName || "",
       Family: sp.family,
       Order: sp.order,
       Genus: sp.genus,
     }));
-  }, [filteredSpecies]);
+  }, [displayedSpecies]);
 
   // Handlers
   const handleTraitToggle = useCallback((trait: string) => {
@@ -176,9 +190,15 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
         </ScrollArea>
       </SidebarContent>
 
-      {/* Species count and export at bottom */}
+      {/* Filtered search, species count and export at bottom */}
       <SidebarFooter className="p-2 space-y-2 border-t">
-        <SpeciesCount total={species.length} filtered={filteredSpecies.length} />
+        <Input
+          placeholder="Search filtered species..."
+          value={filteredSearchTerm}
+          onChange={(e) => setFilteredSearchTerm(e.target.value)}
+          className="h-8 text-xs"
+        />
+        <SpeciesCount total={species.length} filtered={displayedSpecies.length} />
         <ExportButton
           data={exportData}
           filename={`species-list-${new Date().toISOString().split("T")[0]}`}
