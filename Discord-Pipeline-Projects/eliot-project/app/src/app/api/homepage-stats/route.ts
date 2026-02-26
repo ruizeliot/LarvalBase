@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
+import path from 'path';
+import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
 
 /**
@@ -36,18 +39,99 @@ function getTraitDisplayName(filename: string): string {
 }
 
 /**
+ * Load publication year data from the reference data file.
+ * Groups by 5-year bins and source category (Origin + Type).
+ */
+async function loadPublicationYears(): Promise<{ year: number; source: string; count: number }[]> {
+  const refPath = path.join(process.cwd(), '..', 'reference-data', 'All references and publication dates.txt');
+
+  try {
+    const content = await fs.readFile(refPath, 'utf-8');
+
+    // Parse the @ delimited reference data
+    interface RefRow {
+      VARIABLE: string;
+      ORIGIN: string;
+      EXT_REF_DATE: string;
+      REFERENCE_DATE: string;
+      EXT_REF_UNIQUE: string;
+      REFERENCE_UNIQUE: string;
+    }
+
+    const parseResult = Papa.parse<RefRow>(content, {
+      delimiter: '@',
+      header: true,
+      skipEmptyLines: true,
+      quoteChar: '"',
+    });
+
+    // Count unique references per 5-year bin and source category
+    // Source categories match Figure 2: Original reference + Cited reference, split by Origin
+    const binCounts = new Map<string, Set<string>>();
+
+    for (const row of parseResult.data) {
+      const origin = row.ORIGIN === 'NA' || !row.ORIGIN ? 'Unrecorded' : row.ORIGIN;
+
+      // Process original references (REFERENCE)
+      if (row.REFERENCE_DATE && row.REFERENCE_DATE !== 'NA') {
+        const year = parseInt(row.REFERENCE_DATE, 10);
+        if (!isNaN(year) && year >= 1800 && year <= 2030) {
+          const bin = Math.floor(year / 5) * 5;
+          const source = `Original\n${origin}`;
+          const key = `${bin}|${source}`;
+          if (!binCounts.has(key)) binCounts.set(key, new Set());
+          if (row.REFERENCE_UNIQUE && row.REFERENCE_UNIQUE !== 'NA') {
+            binCounts.get(key)!.add(row.REFERENCE_UNIQUE);
+          }
+        }
+      }
+
+      // Process cited references (EXT_REF)
+      if (row.EXT_REF_DATE && row.EXT_REF_DATE !== 'NA') {
+        const year = parseInt(row.EXT_REF_DATE, 10);
+        if (!isNaN(year) && year >= 1800 && year <= 2030) {
+          const bin = Math.floor(year / 5) * 5;
+          const source = `Cited\n${origin}`;
+          const key = `${bin}|${source}`;
+          if (!binCounts.has(key)) binCounts.set(key, new Set());
+          if (row.EXT_REF_UNIQUE && row.EXT_REF_UNIQUE !== 'NA') {
+            binCounts.get(key)!.add(row.EXT_REF_UNIQUE);
+          }
+        }
+      }
+    }
+
+    // Convert to output format
+    const result: { year: number; source: string; count: number }[] = [];
+    for (const [key, refs] of binCounts) {
+      if (refs.size === 0) continue;
+      const [yearStr, source] = key.split('|');
+      result.push({
+        year: parseInt(yearStr, 10),
+        source,
+        count: refs.size,
+      });
+    }
+
+    result.sort((a, b) => a.year - b.year || a.source.localeCompare(b.source));
+    return result;
+  } catch (error) {
+    console.warn('[homepage-stats] Could not load reference data:', error);
+    return [];
+  }
+}
+
+/**
  * GET /api/homepage-stats
  *
- * Returns barplot statistics per trait database:
- * - records: total row count
- * - species: unique VALID_NAME count
- * - genus: unique genus count
- * - family: unique family count
- * - order: unique order count
+ * Returns barplot statistics per trait database and publication year data.
  */
 export async function GET() {
   try {
-    const data = await getOrLoadData();
+    const [data, pubYearData] = await Promise.all([
+      getOrLoadData(),
+      loadPublicationYears(),
+    ]);
     const registry = data.databaseRegistry;
 
     const stats = [];
@@ -82,44 +166,6 @@ export async function GET() {
 
     // Sort by record count descending
     stats.sort((a, b) => b.records - a.records);
-
-    // Compute publication year & origin data from trait references
-    const pubYearData: { year: number; source: string; count: number }[] = [];
-    const yearSourceCounts = new Map<string, number>();
-
-    for (const [filename, speciesSet] of registry.databaseSpecies) {
-      const displayName = getTraitDisplayName(filename);
-
-      // Count records per year extracted from references
-      for (const traits of data.traitsBySpecies.values()) {
-        for (const trait of traits) {
-          if (!trait.source) continue;
-          // Extract year from reference string (e.g., "Smith et al. 2015")
-          const yearMatch = trait.source.match(/\b(19|20)\d{2}\b/);
-          if (!yearMatch) continue;
-          const year = parseInt(yearMatch[0], 10);
-          const key = `${year}|${displayName}`;
-          yearSourceCounts.set(key, (yearSourceCounts.get(key) ?? 0) + 1);
-        }
-      }
-    }
-
-    // Deduplicate: aggregate by year and source category
-    const yearAgg = new Map<string, number>();
-    for (const [key, count] of yearSourceCounts) {
-      const [yearStr] = key.split('|');
-      const year = parseInt(yearStr, 10);
-      // Bin sources into major categories
-      const binKey = `${year}|Database`;
-      yearAgg.set(binKey, (yearAgg.get(binKey) ?? 0) + count);
-    }
-
-    for (const [key, count] of yearAgg) {
-      const [yearStr, source] = key.split('|');
-      pubYearData.push({ year: parseInt(yearStr, 10), source, count });
-    }
-
-    pubYearData.sort((a, b) => a.year - b.year);
 
     return NextResponse.json(
       { stats, publicationYears: pubYearData },
