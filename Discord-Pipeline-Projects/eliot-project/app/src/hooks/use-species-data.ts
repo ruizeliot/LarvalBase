@@ -81,7 +81,7 @@ export function useSpeciesData(): SpeciesDataState {
           }
           // Add virtual "has_images" trait for species with photos
           if (sp.hasImages) {
-            traits.push({ traitType: 'has_images', value: 1, unit: '' });
+            traits.push({ traitType: 'has_images', value: 1, unit: '', source: null, doi: null });
             anyHasImages = true;
           }
           if (traits.length > 0) {
