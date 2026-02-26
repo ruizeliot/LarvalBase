@@ -48,204 +48,73 @@
     margin-top: 8px;
   }
   nav button {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: block;
     width: 100%;
+    text-align: left;
     padding: 10px 16px;
     background: none;
     border: none;
     color: #94a3b8;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
-    text-align: left;
     transition: all 0.15s;
+    border-left: 3px solid transparent;
   }
-  nav button:hover { background: #2d3748; color: #e2e8f0; }
-  nav button.active { background: #1e3a5f; color: #60a5fa; border-left: 3px solid #60a5fa; }
-  nav button .icon { font-size: 18px; width: 24px; text-align: center; }
-  nav button .badge {
-    margin-left: auto;
-    font-size: 10px;
-    padding: 2px 6px;
-    border-radius: 4px;
+  nav button:hover {
+    background: rgba(96, 165, 250, 0.08);
+    color: #e2e8f0;
+  }
+  nav button.active {
+    background: rgba(96, 165, 250, 0.12);
+    color: #60a5fa;
+    border-left-color: #60a5fa;
     font-weight: 600;
   }
-  .badge-mod { background: #854d0e; color: #fbbf24; }
-  .badge-new { background: #166534; color: #4ade80; }
-  main {
-    flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-  .tab-header {
-    background: #1a2332;
-    border-bottom: 1px solid #2d3748;
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-  .tab-header h2 { font-size: 16px; font-weight: 600; }
-  .tab-header .status { font-size: 12px; color: #94a3b8; }
   .content {
     flex: 1;
-    overflow: auto;
-    padding: 0;
+    overflow: hidden;
   }
-  .panel { display: none; height: 100%; }
-  .panel.active { display: flex; flex-direction: column; }
+  .section {
+    display: none;
+    width: 100%;
+    height: 100%;
+  }
+  .section.active {
+    display: block;
+  }
+  .section iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #0a1628;
+  }
 </style>
 </head>
 <body>
 <header>
   <h1>LarvalBase V2 — App Mockup Compilation</h1>
-  <p>Global pelagic dispersal traits databases for early-life stages of marine fishes — Ruiz et al. (2026)</p>
+  <p>9 sections — Interactive mockups from brainstorm phase</p>
 </header>
 <div class="layout">
-  <nav id="nav">
-    <div class="section-label">Pages</div>
-    <button class="active" data-section="homepage">
-      <span class="icon">🏠</span> Homepage
-      <span class="badge badge-mod">MOD</span>
-    </button>
-    <div class="section-label">Species Detail Sections</div>
-    <button data-section="egg-taxonomy">
-      <span class="icon">🥚</span> Egg &amp; Taxonomy
-      <span class="badge badge-mod">MOD</span>
-    </button>
-    <button data-section="growth-curves">
-      <span class="icon">📈</span> Growth Curves
-      <span class="badge badge-mod">MOD</span>
-    </button>
-    <button data-section="images-display">
-      <span class="icon">🖼️</span> Images &amp; Display
-      <span class="badge badge-mod">MOD</span>
-    </button>
-    <button data-section="pelagic-juvenile">
-      <span class="icon">🐟</span> Pelagic Juvenile
-      <span class="badge badge-new">NEW</span>
-    </button>
-    <button data-section="rafting">
-      <span class="icon">🚢</span> Rafting
-      <span class="badge badge-new">NEW</span>
-    </button>
-    <button data-section="active-behaviors">
-      <span class="icon">🏊</span> Active Behaviors
-      <span class="badge badge-mod">MOD</span>
-    </button>
-    <div class="section-label">Cross-Cutting</div>
-    <button data-section="ui-export">
-      <span class="icon">🔧</span> UI &amp; Export
-      <span class="badge badge-mod">MOD</span>
-    </button>
-    <button data-section="infrastructure">
-      <span class="icon">⚡</span> Infrastructure
-      <span class="badge badge-mod">MOD</span>
-    </button>
+  <nav>
+    <div class="section-label">Sections</div>
+    <button class="nav-btn active" onclick="showSection('homepage', this)">🏠 Homepage</button>
+    <button class="nav-btn" onclick="showSection('egg-taxonomy', this)">🥚 Egg & Taxonomy</button>
+    <button class="nav-btn" onclick="showSection('growth-curves', this)">📈 Growth Curves</button>
+    <button class="nav-btn" onclick="showSection('images-display', this)">🖼️ Images & Display</button>
+    <button class="nav-btn" onclick="showSection('pelagic-juvenile', this)">🐟 Pelagic Juvenile</button>
+    <button class="nav-btn" onclick="showSection('rafting', this)">🚢 Rafting</button>
+    <button class="nav-btn" onclick="showSection('active-behaviors', this)">🏊 Active Behaviors</button>
+    <button class="nav-btn" onclick="showSection('ui-export', this)">🔧 UI & Export</button>
+    <button class="nav-btn" onclick="showSection('infrastructure', this)">⚡ Infrastructure</button>
   </nav>
-  <main>
-    <div class="panel active" id="panel-homepage">
-      <div class="tab-header">
-        <h2>🏠 Homepage</h2>
-        <span class="status">Mockup v2 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-homepage" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-egg-taxonomy">
-      <div class="tab-header">
-        <h2>🥚 Egg &amp; Taxonomy</h2>
-        <span class="status">Mockup v2 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-egg-taxonomy" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-growth-curves">
-      <div class="tab-header">
-        <h2>📈 Growth Curves</h2>
-        <span class="status">Mockup v1 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-growth-curves" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-images-display">
-      <div class="tab-header">
-        <h2>🖼️ Images &amp; Display</h2>
-        <span class="status">Mockup v1 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-images-display" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-pelagic-juvenile">
-      <div class="tab-header">
-        <h2>🐟 Pelagic Juvenile</h2>
-        <span class="status">NEW — Mockup v1.1 validated (error bars)</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-pelagic-juvenile" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-rafting">
-      <div class="tab-header">
-        <h2>🚢 Rafting</h2>
-        <span class="status">NEW — Mockup v1 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-rafting" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-active-behaviors">
-      <div class="tab-header">
-        <h2>🏊 Active Behaviors</h2>
-        <span class="status">Renamed from "Swimming & Comparisons"</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-active-behaviors" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-ui-export">
-      <div class="tab-header">
-        <h2>🔧 UI &amp; Export</h2>
-        <span class="status">Mockup v1 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-ui-export" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-    <div class="panel" id="panel-infrastructure">
-      <div class="tab-header">
-        <h2>⚡ Infrastructure</h2>
-        <span class="status">Mockup v1 validated</span>
-      </div>
-      <div class="content">
-        <iframe id="iframe-infrastructure" style="width:100%;height:100%;border:none;background:#fff;"></iframe>
-      </div>
-    </div>
-
-  </main>
-</div>
-
-<script>
-  var mockups = {};
-  mockups['homepage'] = `<!DOCTYPE html>
-<html lang="en">
+  <div class="content">
+  <div class="section active" id="section-homepage">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
 <title>Homepage — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -266,7 +135,7 @@
   .filter-options { padding-left: 8px; display: none; }
   .filter-title.open + .filter-options { display: block; }
   .filter-options label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; padding: 3px 0; cursor: pointer; }
-  .filter-options input[type="checkbox"] { accent-color: #60a5fa; }
+  .filter-options input[type=&quot;checkbox&quot;] { accent-color: #60a5fa; }
   .species-list { margin-top: 8px; }
   .species-item { padding: 6px 8px; font-size: 12px; color: #94a3b8; border-radius: 4px; cursor: pointer; font-style: italic; }
   .species-item:hover { background: #1a2d4a; color: #e2e8f0; }
@@ -312,250 +181,251 @@
 </style>
 </head>
 <body>
-<div class="header">
+<div class=&quot;header&quot;>
   <h1>LarvalBase: Global pelagic dispersal traits databases for early-life stages of marine fishes</h1>
   <p>Ruiz et al. (2026) — 2,847 species · 15,230 records · 412 families</p>
 </div>
-<div class="main">
-  <div class="sidebar">
-    <input class="search-input" placeholder="🔍 Search all species..." />
+<div class=&quot;main&quot;>
+  <div class=&quot;sidebar&quot;>
+    <input class=&quot;search-input&quot; placeholder=&quot;🔍 Search all species...&quot; />
     <h3>Filter by Trait</h3>
-    <div class="filter-section">
-      <div class="filter-title open" onclick="this.classList.toggle('open')">Egg Traits</div>
-      <div class="filter-options">
-        <label><input type="checkbox" /> Egg location</label>
-        <label><input type="checkbox" /> Egg shape</label>
-        <label><input type="checkbox" /> Oil globule</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title open&quot; onclick=&quot;this.classList.toggle('open')&quot;>Egg Traits</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; /> Egg location</label>
+        <label><input type=&quot;checkbox&quot; /> Egg shape</label>
+        <label><input type=&quot;checkbox&quot; /> Oil globule</label>
       </div>
     </div>
-    <div class="filter-section">
-      <div class="filter-title" onclick="this.classList.toggle('open')">Age-at-Length</div>
-      <div class="filter-options">
-        <label><input type="checkbox" /> Raw data</label>
-        <label><input type="checkbox" /> Growth model</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title&quot; onclick=&quot;this.classList.toggle('open')&quot;>Age-at-Length</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; /> Raw data</label>
+        <label><input type=&quot;checkbox&quot; /> Growth model</label>
       </div>
     </div>
-    <div class="filter-section">
-      <div class="filter-title" onclick="this.classList.toggle('open')">Settlement map</div>
-      <div class="filter-options">
-        <label><input type="checkbox" /> Settlement size location</label>
-        <label><input type="checkbox" /> Settlement age location</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title&quot; onclick=&quot;this.classList.toggle('open')&quot;>Settlement map</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; /> Settlement size location</label>
+        <label><input type=&quot;checkbox&quot; /> Settlement age location</label>
       </div>
     </div>
-    <div class="filter-section">
-      <div class="filter-title" onclick="this.classList.toggle('open')">Swimming Ability</div>
-      <div class="filter-options">
-        <label><input type="checkbox" /> Critical speed</label>
-        <label><input type="checkbox" /> In situ speed</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title&quot; onclick=&quot;this.classList.toggle('open')&quot;>Swimming Ability</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; /> Critical speed</label>
+        <label><input type=&quot;checkbox&quot; /> In situ speed</label>
       </div>
     </div>
-    <div class="filter-section">
-      <div class="filter-title" onclick="this.classList.toggle('open')">Pelagic Juvenile</div>
-      <div class="filter-options">
-        <label><input type="checkbox" /> Known</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title&quot; onclick=&quot;this.classList.toggle('open')&quot;>Pelagic Juvenile</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; /> Known</label>
       </div>
     </div>
-    <div class="filter-section">
-      <div class="filter-title" onclick="this.classList.toggle('open')">Rafting</div>
-      <div class="filter-options">
-        <label><input type="checkbox" /> Known</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title&quot; onclick=&quot;this.classList.toggle('open')&quot;>Rafting</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; /> Known</label>
       </div>
     </div>
-    <div class="filter-section">
-      <div class="filter-title" onclick="this.classList.toggle('open')">Picture</div>
-      <div class="filter-options">
-        <label><input type="checkbox" checked /> All</label>
-        <label><input type="checkbox" /> Ruiz</label>
-        <label><input type="checkbox" /> Leis</label>
-        <label><input type="checkbox" /> Moser</label>
-        <label><input type="checkbox" /> Baldwin</label>
-        <label><input type="checkbox" /> Johnson</label>
+    <div class=&quot;filter-section&quot;>
+      <div class=&quot;filter-title&quot; onclick=&quot;this.classList.toggle('open')&quot;>Picture</div>
+      <div class=&quot;filter-options&quot;>
+        <label><input type=&quot;checkbox&quot; checked /> All</label>
+        <label><input type=&quot;checkbox&quot; /> Ruiz</label>
+        <label><input type=&quot;checkbox&quot; /> Leis</label>
+        <label><input type=&quot;checkbox&quot; /> Moser</label>
+        <label><input type=&quot;checkbox&quot; /> Baldwin</label>
+        <label><input type=&quot;checkbox&quot; /> Johnson</label>
       </div>
     </div>
     <h3>Available Species</h3>
-    <div class="species-list">
-      <div class="species-item">Acanthurus triostegus</div>
-      <div class="species-item">Chaetodon lunulatus</div>
-      <div class="species-item">Chromis viridis</div>
-      <div class="species-item">Dascyllus aruanus</div>
-      <div class="species-item">Epinephelus merra</div>
-      <div class="species-item">Lutjanus kasmira</div>
-      <div class="species-item">Myripristis berndti</div>
-      <div class="species-item">Naso unicornis</div>
-      <div class="species-item">Pomacentrus pavo</div>
-      <div class="species-item">Siganus argenteus</div>
-      <div class="species-item">Stegastes nigricans</div>
-      <div class="species-item">Thalassoma hardwicke</div>
+    <div class=&quot;species-list&quot;>
+      <div class=&quot;species-item&quot;>Acanthurus triostegus</div>
+      <div class=&quot;species-item&quot;>Chaetodon lunulatus</div>
+      <div class=&quot;species-item&quot;>Chromis viridis</div>
+      <div class=&quot;species-item&quot;>Dascyllus aruanus</div>
+      <div class=&quot;species-item&quot;>Epinephelus merra</div>
+      <div class=&quot;species-item&quot;>Lutjanus kasmira</div>
+      <div class=&quot;species-item&quot;>Myripristis berndti</div>
+      <div class=&quot;species-item&quot;>Naso unicornis</div>
+      <div class=&quot;species-item&quot;>Pomacentrus pavo</div>
+      <div class=&quot;species-item&quot;>Siganus argenteus</div>
+      <div class=&quot;species-item&quot;>Stegastes nigricans</div>
+      <div class=&quot;species-item&quot;>Thalassoma hardwicke</div>
     </div>
-    <input class="search-input" placeholder="🔍 Search filtered species..." style="margin-top: 10px;" />
-    <button class="btn-export">📥 Export Species List</button>
+    <input class=&quot;search-input&quot; placeholder=&quot;🔍 Search filtered species...&quot; style=&quot;margin-top: 10px;&quot; />
+    <button class=&quot;btn-export&quot;>📥 Export Species List</button>
   </div>
-  <div class="content">
-    <div class="section-title">Database Coverage</div>
-    <div class="barplot-container">
+  <div class=&quot;content&quot;>
+    <div class=&quot;section-title&quot;>Database Coverage</div>
+    <div class=&quot;barplot-container&quot;>
       <h4>Records / Species / Genus / Family / Order counts per trait</h4>
-      <div class="bar-row">
-        <span class="bar-label">Egg traits</span>
-        <div class="bar-track">
-          <div class="bar-seg" style="width:35%;background:#F8766D">1,240</div>
-          <div class="bar-seg" style="width:25%;background:#A3A500">890</div>
-          <div class="bar-seg" style="width:20%;background:#00BF7D">412</div>
-          <div class="bar-seg" style="width:12%;background:#00B0F6">186</div>
-          <div class="bar-seg" style="width:8%;background:#E76BF3">42</div>
+      <div class=&quot;bar-row&quot;>
+        <span class=&quot;bar-label&quot;>Egg traits</span>
+        <div class=&quot;bar-track&quot;>
+          <div class=&quot;bar-seg&quot; style=&quot;width:35%;background:#F8766D&quot;>1,240</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:25%;background:#A3A500&quot;>890</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:20%;background:#00BF7D&quot;>412</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:12%;background:#00B0F6&quot;>186</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:8%;background:#E76BF3&quot;>42</div>
         </div>
       </div>
-      <div class="bar-row">
-        <span class="bar-label">Growth curves</span>
-        <div class="bar-track">
-          <div class="bar-seg" style="width:30%;background:#F8766D">980</div>
-          <div class="bar-seg" style="width:22%;background:#A3A500">720</div>
-          <div class="bar-seg" style="width:22%;background:#00BF7D">350</div>
-          <div class="bar-seg" style="width:15%;background:#00B0F6">155</div>
-          <div class="bar-seg" style="width:11%;background:#E76BF3">38</div>
+      <div class=&quot;bar-row&quot;>
+        <span class=&quot;bar-label&quot;>Growth curves</span>
+        <div class=&quot;bar-track&quot;>
+          <div class=&quot;bar-seg&quot; style=&quot;width:30%;background:#F8766D&quot;>980</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:22%;background:#A3A500&quot;>720</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:22%;background:#00BF7D&quot;>350</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:15%;background:#00B0F6&quot;>155</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:11%;background:#E76BF3&quot;>38</div>
         </div>
       </div>
-      <div class="bar-row">
-        <span class="bar-label">Settlement</span>
-        <div class="bar-track">
-          <div class="bar-seg" style="width:28%;background:#F8766D">850</div>
-          <div class="bar-seg" style="width:24%;background:#A3A500">680</div>
-          <div class="bar-seg" style="width:20%;background:#00BF7D">320</div>
-          <div class="bar-seg" style="width:16%;background:#00B0F6">140</div>
-          <div class="bar-seg" style="width:12%;background:#E76BF3">35</div>
+      <div class=&quot;bar-row&quot;>
+        <span class=&quot;bar-label&quot;>Settlement</span>
+        <div class=&quot;bar-track&quot;>
+          <div class=&quot;bar-seg&quot; style=&quot;width:28%;background:#F8766D&quot;>850</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:24%;background:#A3A500&quot;>680</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:20%;background:#00BF7D&quot;>320</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:16%;background:#00B0F6&quot;>140</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:12%;background:#E76BF3&quot;>35</div>
         </div>
       </div>
-      <div class="bar-row">
-        <span class="bar-label">Swimming</span>
-        <div class="bar-track">
-          <div class="bar-seg" style="width:20%;background:#F8766D">420</div>
-          <div class="bar-seg" style="width:18%;background:#A3A500">310</div>
-          <div class="bar-seg" style="width:22%;background:#00BF7D">180</div>
-          <div class="bar-seg" style="width:22%;background:#00B0F6">95</div>
-          <div class="bar-seg" style="width:18%;background:#E76BF3">28</div>
+      <div class=&quot;bar-row&quot;>
+        <span class=&quot;bar-label&quot;>Swimming</span>
+        <div class=&quot;bar-track&quot;>
+          <div class=&quot;bar-seg&quot; style=&quot;width:20%;background:#F8766D&quot;>420</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:18%;background:#A3A500&quot;>310</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:22%;background:#00BF7D&quot;>180</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:22%;background:#00B0F6&quot;>95</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:18%;background:#E76BF3&quot;>28</div>
         </div>
       </div>
-      <div class="bar-row">
-        <span class="bar-label">Pelagic juv.</span>
-        <div class="bar-track">
-          <div class="bar-seg" style="width:18%;background:#F8766D">280</div>
-          <div class="bar-seg" style="width:20%;background:#A3A500">195</div>
-          <div class="bar-seg" style="width:24%;background:#00BF7D">120</div>
-          <div class="bar-seg" style="width:22%;background:#00B0F6">68</div>
-          <div class="bar-seg" style="width:16%;background:#E76BF3">22</div>
+      <div class=&quot;bar-row&quot;>
+        <span class=&quot;bar-label&quot;>Pelagic juv.</span>
+        <div class=&quot;bar-track&quot;>
+          <div class=&quot;bar-seg&quot; style=&quot;width:18%;background:#F8766D&quot;>280</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:20%;background:#A3A500&quot;>195</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:24%;background:#00BF7D&quot;>120</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:22%;background:#00B0F6&quot;>68</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:16%;background:#E76BF3&quot;>22</div>
         </div>
       </div>
-      <div class="bar-row">
-        <span class="bar-label">Rafting</span>
-        <div class="bar-track">
-          <div class="bar-seg" style="width:15%;background:#F8766D">150</div>
-          <div class="bar-seg" style="width:18%;background:#A3A500">110</div>
-          <div class="bar-seg" style="width:25%;background:#00BF7D">85</div>
-          <div class="bar-seg" style="width:24%;background:#00B0F6">52</div>
-          <div class="bar-seg" style="width:18%;background:#E76BF3">18</div>
+      <div class=&quot;bar-row&quot;>
+        <span class=&quot;bar-label&quot;>Rafting</span>
+        <div class=&quot;bar-track&quot;>
+          <div class=&quot;bar-seg&quot; style=&quot;width:15%;background:#F8766D&quot;>150</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:18%;background:#A3A500&quot;>110</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:25%;background:#00BF7D&quot;>85</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:24%;background:#00B0F6&quot;>52</div>
+          <div class=&quot;bar-seg&quot; style=&quot;width:18%;background:#E76BF3&quot;>18</div>
         </div>
       </div>
-      <div class="legend">
-        <div class="legend-item"><div class="legend-dot" style="background:#F8766D"></div> Records</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#A3A500"></div> Species</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#00BF7D"></div> Genus</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#00B0F6"></div> Family</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#E76BF3"></div> Order</div>
+      <div class=&quot;legend&quot;>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#F8766D&quot;></div> Records</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#A3A500&quot;></div> Species</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#00BF7D&quot;></div> Genus</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#00B0F6&quot;></div> Family</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#E76BF3&quot;></div> Order</div>
       </div>
     </div>
 
-    <div class="pub-chart">
-      <h4>Publications by Year & Data Source</h4>
-      <div class="year-bars">
-        <div class="year-col"><div class="year-bar" style="height:15%;background:#60a5fa"></div><span class="year-label">2000</span></div>
-        <div class="year-col"><div class="year-bar" style="height:18%;background:#60a5fa"></div><span class="year-label">2002</span></div>
-        <div class="year-col"><div class="year-bar" style="height:22%;background:#60a5fa"></div><span class="year-label">2004</span></div>
-        <div class="year-col"><div class="year-bar" style="height:30%;background:#60a5fa"></div><span class="year-label">2006</span></div>
-        <div class="year-col"><div class="year-bar" style="height:35%;background:#a78bfa"></div><span class="year-label">2008</span></div>
-        <div class="year-col"><div class="year-bar" style="height:42%;background:#a78bfa"></div><span class="year-label">2010</span></div>
-        <div class="year-col"><div class="year-bar" style="height:55%;background:#a78bfa"></div><span class="year-label">2012</span></div>
-        <div class="year-col"><div class="year-bar" style="height:48%;background:#f59e0b"></div><span class="year-label">2014</span></div>
-        <div class="year-col"><div class="year-bar" style="height:62%;background:#f59e0b"></div><span class="year-label">2016</span></div>
-        <div class="year-col"><div class="year-bar" style="height:75%;background:#f59e0b"></div><span class="year-label">2018</span></div>
-        <div class="year-col"><div class="year-bar" style="height:88%;background:#4ade80"></div><span class="year-label">2020</span></div>
-        <div class="year-col"><div class="year-bar" style="height:95%;background:#4ade80"></div><span class="year-label">2022</span></div>
-        <div class="year-col"><div class="year-bar" style="height:100%;background:#4ade80"></div><span class="year-label">2024</span></div>
-        <div class="year-col"><div class="year-bar" style="height:70%;background:#4ade80"></div><span class="year-label">2026</span></div>
+    <div class=&quot;pub-chart&quot;>
+      <h4>Publications by Year &amp; Data Source</h4>
+      <div class=&quot;year-bars&quot;>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:15%;background:#60a5fa&quot;></div><span class=&quot;year-label&quot;>2000</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:18%;background:#60a5fa&quot;></div><span class=&quot;year-label&quot;>2002</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:22%;background:#60a5fa&quot;></div><span class=&quot;year-label&quot;>2004</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:30%;background:#60a5fa&quot;></div><span class=&quot;year-label&quot;>2006</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:35%;background:#a78bfa&quot;></div><span class=&quot;year-label&quot;>2008</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:42%;background:#a78bfa&quot;></div><span class=&quot;year-label&quot;>2010</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:55%;background:#a78bfa&quot;></div><span class=&quot;year-label&quot;>2012</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:48%;background:#f59e0b&quot;></div><span class=&quot;year-label&quot;>2014</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:62%;background:#f59e0b&quot;></div><span class=&quot;year-label&quot;>2016</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:75%;background:#f59e0b&quot;></div><span class=&quot;year-label&quot;>2018</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:88%;background:#4ade80&quot;></div><span class=&quot;year-label&quot;>2020</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:95%;background:#4ade80&quot;></div><span class=&quot;year-label&quot;>2022</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:100%;background:#4ade80&quot;></div><span class=&quot;year-label&quot;>2024</span></div>
+        <div class=&quot;year-col&quot;><div class=&quot;year-bar&quot; style=&quot;height:70%;background:#4ade80&quot;></div><span class=&quot;year-label&quot;>2026</span></div>
       </div>
-      <div class="legend" style="margin-top:12px">
-        <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Literature</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> FishBase</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Field studies</div>
-        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Ruiz et al.</div>
+      <div class=&quot;legend&quot; style=&quot;margin-top:12px&quot;>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#60a5fa&quot;></div> Literature</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#a78bfa&quot;></div> FishBase</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#f59e0b&quot;></div> Field studies</div>
+        <div class=&quot;legend-item&quot;><div class=&quot;legend-dot&quot; style=&quot;background:#4ade80&quot;></div> Ruiz et al.</div>
       </div>
     </div>
 
-    <div class="section-title">Photo Gallery — 1 per family (sorted by order)</div>
-    <div class="photo-grid">
-      <div class="photo-card" onclick="document.getElementById('modal').classList.add('active')">
-        <div class="photo-thumb" style="background:#1a3550">🐠</div>
-        <div class="photo-info"><div class="family">Acanthuridae</div><div class="order">Acanthuriformes</div></div>
+    <div class=&quot;section-title&quot;>Photo Gallery — 1 per family (sorted by order)</div>
+    <div class=&quot;photo-grid&quot;>
+      <div class=&quot;photo-card&quot; onclick=&quot;document.getElementById('modal').classList.add('active')&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#1a3550&quot;>🐠</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Acanthuridae</div><div class=&quot;order&quot;>Acanthuriformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#1a3520">🐡</div>
-        <div class="photo-info"><div class="family">Chaetodontidae</div><div class="order">Acanthuriformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#1a3520&quot;>🐡</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Chaetodontidae</div><div class=&quot;order&quot;>Acanthuriformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#351a50">🐟</div>
-        <div class="photo-info"><div class="family">Pomacentridae</div><div class="order">Ovalentaria</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#351a50&quot;>🐟</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Pomacentridae</div><div class=&quot;order&quot;>Ovalentaria</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#35301a">🐠</div>
-        <div class="photo-info"><div class="family">Labridae</div><div class="order">Labriformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#35301a&quot;>🐠</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Labridae</div><div class=&quot;order&quot;>Labriformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#1a2535">🐡</div>
-        <div class="photo-info"><div class="family">Serranidae</div><div class="order">Perciformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#1a2535&quot;>🐡</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Serranidae</div><div class=&quot;order&quot;>Perciformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#351a20">🐟</div>
-        <div class="photo-info"><div class="family">Lutjanidae</div><div class="order">Lutjaniformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#351a20&quot;>🐟</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Lutjanidae</div><div class=&quot;order&quot;>Lutjaniformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#20351a">🐠</div>
-        <div class="photo-info"><div class="family">Holocentridae</div><div class="order">Holocentriformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#20351a&quot;>🐠</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Holocentridae</div><div class=&quot;order&quot;>Holocentriformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#1a3535">🐡</div>
-        <div class="photo-info"><div class="family">Siganidae</div><div class="order">Acanthuriformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#1a3535&quot;>🐡</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Siganidae</div><div class=&quot;order&quot;>Acanthuriformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#351a35">🐟</div>
-        <div class="photo-info"><div class="family">Scaridae</div><div class="order">Labriformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#351a35&quot;>🐟</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Scaridae</div><div class=&quot;order&quot;>Labriformes</div></div>
       </div>
-      <div class="photo-card">
-        <div class="photo-thumb" style="background:#2a2a1a">🐠</div>
-        <div class="photo-info"><div class="family">Gobiidae</div><div class="order">Gobiiformes</div></div>
+      <div class=&quot;photo-card&quot;>
+        <div class=&quot;photo-thumb&quot; style=&quot;background:#2a2a1a&quot;>🐠</div>
+        <div class=&quot;photo-info&quot;><div class=&quot;family&quot;>Gobiidae</div><div class=&quot;order&quot;>Gobiiformes</div></div>
       </div>
     </div>
   </div>
 </div>
 <!-- Drill-down modal -->
-<div class="modal-overlay" id="modal">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">&times;</button>
+<div class=&quot;modal-overlay&quot; id=&quot;modal&quot;>
+  <div class=&quot;modal&quot;>
+    <button class=&quot;modal-close&quot; onclick=&quot;document.getElementById('modal').classList.remove('active')&quot;>&amp;times;</button>
     <h3>Acanthuridae — Species in database</h3>
-    <div class="modal-species">Acanthurus triostegus — 42 records</div>
-    <div class="modal-species">Acanthurus lineatus — 28 records</div>
-    <div class="modal-species">Acanthurus nigrofuscus — 15 records</div>
-    <div class="modal-species">Ctenochaetus striatus — 31 records</div>
-    <div class="modal-species">Naso unicornis — 19 records</div>
-    <div class="modal-species">Zebrasoma scopas — 8 records</div>
+    <div class=&quot;modal-species&quot;>Acanthurus triostegus — 42 records</div>
+    <div class=&quot;modal-species&quot;>Acanthurus lineatus — 28 records</div>
+    <div class=&quot;modal-species&quot;>Acanthurus nigrofuscus — 15 records</div>
+    <div class=&quot;modal-species&quot;>Ctenochaetus striatus — 31 records</div>
+    <div class=&quot;modal-species&quot;>Naso unicornis — 19 records</div>
+    <div class=&quot;modal-species&quot;>Zebrasoma scopas — 8 records</div>
   </div>
 </div>
 </body>
-</html>`;
-
-  mockups['egg-taxonomy'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Homepage"></iframe>
+  </div>
+  <div class="section" id="section-egg-taxonomy">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Egg &amp; Taxonomy — LarvalBase V2</title>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>Egg &amp;amp; Taxonomy — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; }
@@ -614,180 +484,181 @@
 </style>
 </head>
 <body>
-<div class="layout">
-  <div class="tax-sidebar">
+<div class=&quot;layout&quot;>
+  <div class=&quot;tax-sidebar&quot;>
     <h3>Taxonomy</h3>
-    <div class="tax-node">
-      <div class="tax-item"><span class="tax-icon">📁</span> All species <span class="tax-level">2,847</span></div>
+    <div class=&quot;tax-node&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>📁</span> All species <span class=&quot;tax-level&quot;>2,847</span></div>
     </div>
-    <div class="tax-node indent-1">
-      <div class="tax-item"><span class="tax-icon">🔶</span> Perciformes <span class="tax-level">Order</span></div>
+    <div class=&quot;tax-node indent-1&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🔶</span> Perciformes <span class=&quot;tax-level&quot;>Order</span></div>
     </div>
-    <div class="tax-node indent-2">
-      <div class="tax-item"><span class="tax-icon">🔷</span> Pomacentridae <span class="tax-level">Family</span></div>
+    <div class=&quot;tax-node indent-2&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🔷</span> Pomacentridae <span class=&quot;tax-level&quot;>Family</span></div>
     </div>
-    <div class="tax-node indent-3">
-      <div class="tax-item"><span class="tax-icon">🔹</span> Chromis <span class="tax-level">Genus</span></div>
+    <div class=&quot;tax-node indent-3&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🔹</span> Chromis <span class=&quot;tax-level&quot;>Genus</span></div>
     </div>
-    <div class="tax-node indent-3">
-      <div class="tax-item active"><span class="tax-icon">🐟</span> <em>C. viridis</em> <span class="tax-level">Species</span></div>
+    <div class=&quot;tax-node indent-3&quot;>
+      <div class=&quot;tax-item active&quot;><span class=&quot;tax-icon&quot;>🐟</span> <em>C. viridis</em> <span class=&quot;tax-level&quot;>Species</span></div>
     </div>
-    <div class="tax-node indent-3">
-      <div class="tax-item"><span class="tax-icon">🐟</span> <em>C. atripectoralis</em> <span class="tax-level">Species</span></div>
+    <div class=&quot;tax-node indent-3&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🐟</span> <em>C. atripectoralis</em> <span class=&quot;tax-level&quot;>Species</span></div>
     </div>
-    <div class="tax-node indent-2">
-      <div class="tax-item"><span class="tax-icon">🔷</span> Labridae <span class="tax-level">Family</span></div>
+    <div class=&quot;tax-node indent-2&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🔷</span> Labridae <span class=&quot;tax-level&quot;>Family</span></div>
     </div>
-    <div class="tax-node indent-2">
-      <div class="tax-item"><span class="tax-icon">🔷</span> Acanthuridae <span class="tax-level">Family</span></div>
+    <div class=&quot;tax-node indent-2&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🔷</span> Acanthuridae <span class=&quot;tax-level&quot;>Family</span></div>
     </div>
-    <div class="tax-node indent-1">
-      <div class="tax-item"><span class="tax-icon">🔶</span> Clupeiformes <span class="tax-level">Order</span></div>
+    <div class=&quot;tax-node indent-1&quot;>
+      <div class=&quot;tax-item&quot;><span class=&quot;tax-icon&quot;>🔶</span> Clupeiformes <span class=&quot;tax-level&quot;>Order</span></div>
     </div>
   </div>
-  <div class="content">
-    <div class="page-title">🥚 Egg &amp; Taxonomy — <span class="species-name">Chromis viridis</span></div>
-    <div class="page-subtitle">Pomacentridae · Perciformes</div>
+  <div class=&quot;content&quot;>
+    <div class=&quot;page-title&quot;>🥚 Egg &amp;amp; Taxonomy — <span class=&quot;species-name&quot;>Chromis viridis</span></div>
+    <div class=&quot;page-subtitle&quot;>Pomacentridae · Perciformes</div>
 
     <!-- Qualitative Egg Panel -->
-    <div class="panel">
-      <h3>Qualitative Egg Traits <span class="data-level level-species">Species data</span></h3>
+    <div class=&quot;panel&quot;>
+      <h3>Qualitative Egg Traits <span class=&quot;data-level level-species&quot;>Species data</span></h3>
 
-      <div class="freq-row">
-        <div class="freq-label">EGG_LOCATION</div>
-        <div class="freq-bars">
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">Demersal</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:85%;background:#60a5fa">17</div></div>
-            <span class="freq-bar-count">17</span>
+      <div class=&quot;freq-row&quot;>
+        <div class=&quot;freq-label&quot;>EGG_LOCATION</div>
+        <div class=&quot;freq-bars&quot;>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>Demersal</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:85%;background:#60a5fa&quot;>17</div></div>
+            <span class=&quot;freq-bar-count&quot;>17</span>
           </div>
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">Pelagic</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:15%;background:#60a5fa">3</div></div>
-            <span class="freq-bar-count">3</span>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>Pelagic</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:15%;background:#60a5fa&quot;>3</div></div>
+            <span class=&quot;freq-bar-count&quot;>3</span>
           </div>
         </div>
       </div>
 
-      <div class="freq-row">
-        <div class="freq-label">EGG_DETAILS</div>
-        <div class="freq-bars">
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">Attached</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:70%;background:#a78bfa">14</div></div>
-            <span class="freq-bar-count">14</span>
+      <div class=&quot;freq-row&quot;>
+        <div class=&quot;freq-label&quot;>EGG_DETAILS</div>
+        <div class=&quot;freq-bars&quot;>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>Attached</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:70%;background:#a78bfa&quot;>14</div></div>
+            <span class=&quot;freq-bar-count&quot;>14</span>
           </div>
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">Guarded</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:55%;background:#a78bfa">11</div></div>
-            <span class="freq-bar-count">11</span>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>Guarded</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:55%;background:#a78bfa&quot;>11</div></div>
+            <span class=&quot;freq-bar-count&quot;>11</span>
           </div>
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">In nest</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:30%;background:#a78bfa">6</div></div>
-            <span class="freq-bar-count">6</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="freq-row">
-        <div class="freq-label">EGG_SHAPE</div>
-        <div class="freq-bars">
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">Elliptical</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:90%;background:#4ade80">18</div></div>
-            <span class="freq-bar-count">18</span>
-          </div>
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">Spherical</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:10%;background:#4ade80">2</div></div>
-            <span class="freq-bar-count">2</span>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>In nest</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:30%;background:#a78bfa&quot;>6</div></div>
+            <span class=&quot;freq-bar-count&quot;>6</span>
           </div>
         </div>
       </div>
 
-      <div class="freq-row">
-        <div class="freq-label">NB_OIL_GLOBULE</div>
-        <div class="freq-bars">
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">0</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:95%;background:#f59e0b">19</div></div>
-            <span class="freq-bar-count">19</span>
+      <div class=&quot;freq-row&quot;>
+        <div class=&quot;freq-label&quot;>EGG_SHAPE</div>
+        <div class=&quot;freq-bars&quot;>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>Elliptical</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:90%;background:#4ade80&quot;>18</div></div>
+            <span class=&quot;freq-bar-count&quot;>18</span>
           </div>
-          <div class="freq-bar-row">
-            <span class="freq-bar-name">1</span>
-            <div class="freq-bar-track"><div class="freq-bar-fill" style="width:5%;background:#f59e0b">1</div></div>
-            <span class="freq-bar-count">1</span>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>Spherical</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:10%;background:#4ade80&quot;>2</div></div>
+            <span class=&quot;freq-bar-count&quot;>2</span>
+          </div>
+        </div>
+      </div>
+
+      <div class=&quot;freq-row&quot;>
+        <div class=&quot;freq-label&quot;>NB_OIL_GLOBULE</div>
+        <div class=&quot;freq-bars&quot;>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>0</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:95%;background:#f59e0b&quot;>19</div></div>
+            <span class=&quot;freq-bar-count&quot;>19</span>
+          </div>
+          <div class=&quot;freq-bar-row&quot;>
+            <span class=&quot;freq-bar-name&quot;>1</span>
+            <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:5%;background:#f59e0b&quot;>1</div></div>
+            <span class=&quot;freq-bar-count&quot;>1</span>
           </div>
         </div>
       </div>
     </div>
 
     <!-- Quantitative Egg Panel -->
-    <div class="panel">
-      <h3>Quantitative Egg Traits <span class="data-level level-species">Species data</span></h3>
-      <div class="quant-grid">
-        <div class="quant-card">
-          <div class="label">EGG_DIAMETER (mm)</div>
-          <div class="value">0.72</div>
-          <div class="range">Range: 0.65 – 0.80 · 12 refs</div>
+    <div class=&quot;panel&quot;>
+      <h3>Quantitative Egg Traits <span class=&quot;data-level level-species&quot;>Species data</span></h3>
+      <div class=&quot;quant-grid&quot;>
+        <div class=&quot;quant-card&quot;>
+          <div class=&quot;label&quot;>EGG_DIAMETER (mm)</div>
+          <div class=&quot;value&quot;>0.72</div>
+          <div class=&quot;range&quot;>Range: 0.65 – 0.80 · 12 refs</div>
         </div>
-        <div class="quant-card">
-          <div class="label">HATCHING_TIME (hours)</div>
-          <div class="value">72.5</div>
-          <div class="range">Range: 60 – 84 · 8 refs</div>
+        <div class=&quot;quant-card&quot;>
+          <div class=&quot;label&quot;>HATCHING_TIME (hours)</div>
+          <div class=&quot;value&quot;>72.5</div>
+          <div class=&quot;range&quot;>Range: 60 – 84 · 8 refs</div>
         </div>
-        <div class="quant-card">
-          <div class="label">HATCHING_SIZE (mm)</div>
-          <div class="value">2.8</div>
-          <div class="range">Range: 2.5 – 3.1 · 6 refs</div>
+        <div class=&quot;quant-card&quot;>
+          <div class=&quot;label&quot;>HATCHING_SIZE (mm)</div>
+          <div class=&quot;value&quot;>2.8</div>
+          <div class=&quot;range&quot;>Range: 2.5 – 3.1 · 6 refs</div>
         </div>
-        <div class="quant-card">
-          <div class="label">YOLK_VOLUME (mm³)</div>
-          <div class="value">0.12</div>
-          <div class="range">Range: 0.09 – 0.15 · 4 refs</div>
+        <div class=&quot;quant-card&quot;>
+          <div class=&quot;label&quot;>YOLK_VOLUME (mm³)</div>
+          <div class=&quot;value&quot;>0.12</div>
+          <div class=&quot;range&quot;>Range: 0.09 – 0.15 · 4 refs</div>
         </div>
       </div>
-      <div style="margin-top: 12px; text-align: right;">
-        <button class="btn-raw" onclick="document.getElementById('raw-modal').classList.add('active')">📋 View Raw Data</button>
+      <div style=&quot;margin-top: 12px; text-align: right;&quot;>
+        <button class=&quot;btn-raw&quot; onclick=&quot;document.getElementById('raw-modal').classList.add('active')&quot;>📋 View Raw Data</button>
       </div>
     </div>
 
     <!-- Genus fallback example -->
-    <div class="panel" style="opacity: 0.7;">
-      <h3>Example: Genus-level fallback <span class="data-level level-genus">Genus data (Chromis)</span></h3>
-      <p style="font-size: 12px; color: #94a3b8;">When species-level data is unavailable, the system falls back to genus-level aggregated frequencies. A yellow badge indicates genus-level data is being shown.</p>
+    <div class=&quot;panel&quot; style=&quot;opacity: 0.7;&quot;>
+      <h3>Example: Genus-level fallback <span class=&quot;data-level level-genus&quot;>Genus data (Chromis)</span></h3>
+      <p style=&quot;font-size: 12px; color: #94a3b8;&quot;>When species-level data is unavailable, the system falls back to genus-level aggregated frequencies. A yellow badge indicates genus-level data is being shown.</p>
     </div>
   </div>
 </div>
 
 <!-- Raw data modal -->
-<div class="modal-overlay" id="raw-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="document.getElementById('raw-modal').classList.remove('active')">&times;</button>
+<div class=&quot;modal-overlay&quot; id=&quot;raw-modal&quot;>
+  <div class=&quot;modal&quot;>
+    <button class=&quot;modal-close&quot; onclick=&quot;document.getElementById('raw-modal').classList.remove('active')&quot;>&amp;times;</button>
     <h3>Raw Data — <em>Chromis viridis</em> — Egg Traits</h3>
-    <table class="raw-table">
+    <table class=&quot;raw-table&quot;>
       <thead>
         <tr><th>TRAIT</th><th>MEAN</th><th>MIN</th><th>MAX</th><th>CONF</th><th>REFERENCE</th></tr>
       </thead>
       <tbody>
         <tr><td>EGG_DIAMETER</td><td>0.72</td><td>0.65</td><td>0.80</td><td>Measured</td><td>Thresher 1984</td></tr>
-        <tr><td>EGG_DIAMETER</td><td>0.74</td><td>0.70</td><td>0.78</td><td>Measured</td><td>Wellington & Victor 1989</td></tr>
-        <tr><td>HATCHING_TIME</td><td>72.5</td><td>60</td><td>84</td><td>Observed</td><td>Leis & Carson-Ewart 2004</td></tr>
-        <tr><td>HATCHING_SIZE</td><td>2.8</td><td>2.5</td><td>3.1</td><td>Measured</td><td>Leis & Carson-Ewart 2004</td></tr>
+        <tr><td>EGG_DIAMETER</td><td>0.74</td><td>0.70</td><td>0.78</td><td>Measured</td><td>Wellington &amp; Victor 1989</td></tr>
+        <tr><td>HATCHING_TIME</td><td>72.5</td><td>60</td><td>84</td><td>Observed</td><td>Leis &amp; Carson-Ewart 2004</td></tr>
+        <tr><td>HATCHING_SIZE</td><td>2.8</td><td>2.5</td><td>3.1</td><td>Measured</td><td>Leis &amp; Carson-Ewart 2004</td></tr>
         <tr><td>YOLK_VOLUME</td><td>0.12</td><td>0.09</td><td>0.15</td><td>Estimated</td><td>Thresher 1984</td></tr>
       </tbody>
     </table>
   </div>
 </div>
 </body>
-</html>`;
-
-  mockups['growth-curves'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Egg & Taxonomy"></iframe>
+  </div>
+  <div class="section" id="section-growth-curves">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
 <title>Growth Curves — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -834,120 +705,120 @@
 </style>
 </head>
 <body>
-<div class="page-title">📈 Growth Curves — <span class="species-name">Chromis viridis</span></div>
-<div class="page-subtitle">Pomacentridae · Perciformes · Axis capped at species-level max</div>
+<div class=&quot;page-title&quot;>📈 Growth Curves — <span class=&quot;species-name&quot;>Chromis viridis</span></div>
+<div class=&quot;page-subtitle&quot;>Pomacentridae · Perciformes · Axis capped at species-level max</div>
 
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Size-at-Age Growth Curves</h3>
-  <div class="chart-container" id="chart">
-    <svg class="chart-svg" viewBox="0 0 700 320">
+  <div class=&quot;chart-container&quot; id=&quot;chart&quot;>
+    <svg class=&quot;chart-svg&quot; viewBox=&quot;0 0 700 320&quot;>
       <!-- Grid -->
-      <line x1="60" y1="10" x2="60" y2="280" stroke="#1e3a5f" stroke-width="1"/>
-      <line x1="60" y1="280" x2="680" y2="280" stroke="#1e3a5f" stroke-width="1"/>
+      <line x1=&quot;60&quot; y1=&quot;10&quot; x2=&quot;60&quot; y2=&quot;280&quot; stroke=&quot;#1e3a5f&quot; stroke-width=&quot;1&quot;/>
+      <line x1=&quot;60&quot; y1=&quot;280&quot; x2=&quot;680&quot; y2=&quot;280&quot; stroke=&quot;#1e3a5f&quot; stroke-width=&quot;1&quot;/>
       <!-- Grid lines -->
-      <line x1="60" y1="226" x2="680" y2="226" class="grid-line"/>
-      <line x1="60" y1="172" x2="680" y2="172" class="grid-line"/>
-      <line x1="60" y1="118" x2="680" y2="118" class="grid-line"/>
-      <line x1="60" y1="64" x2="680" y2="64" class="grid-line"/>
+      <line x1=&quot;60&quot; y1=&quot;226&quot; x2=&quot;680&quot; y2=&quot;226&quot; class=&quot;grid-line&quot;/>
+      <line x1=&quot;60&quot; y1=&quot;172&quot; x2=&quot;680&quot; y2=&quot;172&quot; class=&quot;grid-line&quot;/>
+      <line x1=&quot;60&quot; y1=&quot;118&quot; x2=&quot;680&quot; y2=&quot;118&quot; class=&quot;grid-line&quot;/>
+      <line x1=&quot;60&quot; y1=&quot;64&quot; x2=&quot;680&quot; y2=&quot;64&quot; class=&quot;grid-line&quot;/>
       <!-- Axis cap lines -->
-      <line x1="580" y1="10" x2="580" y2="280" class="cap-line"/>
-      <text x="582" y="24" class="cap-label">Max age: 65 dph</text>
-      <line x1="60" y1="40" x2="680" y2="40" class="cap-line"/>
-      <text x="62" y="36" class="cap-label">Max size: 28 mm</text>
+      <line x1=&quot;580&quot; y1=&quot;10&quot; x2=&quot;580&quot; y2=&quot;280&quot; class=&quot;cap-line&quot;/>
+      <text x=&quot;582&quot; y=&quot;24&quot; class=&quot;cap-label&quot;>Max age: 65 dph</text>
+      <line x1=&quot;60&quot; y1=&quot;40&quot; x2=&quot;680&quot; y2=&quot;40&quot; class=&quot;cap-line&quot;/>
+      <text x=&quot;62&quot; y=&quot;36&quot; class=&quot;cap-label&quot;>Max size: 28 mm</text>
       <!-- Y axis labels -->
-      <text x="50" y="284" class="axis-label" text-anchor="end">0</text>
-      <text x="50" y="230" class="axis-label" text-anchor="end">7</text>
-      <text x="50" y="176" class="axis-label" text-anchor="end">14</text>
-      <text x="50" y="122" class="axis-label" text-anchor="end">21</text>
-      <text x="50" y="68" class="axis-label" text-anchor="end">28</text>
-      <text x="20" y="160" class="axis-title" text-anchor="middle" transform="rotate(-90,20,160)">Size (mm)</text>
+      <text x=&quot;50&quot; y=&quot;284&quot; class=&quot;axis-label&quot; text-anchor=&quot;end&quot;>0</text>
+      <text x=&quot;50&quot; y=&quot;230&quot; class=&quot;axis-label&quot; text-anchor=&quot;end&quot;>7</text>
+      <text x=&quot;50&quot; y=&quot;176&quot; class=&quot;axis-label&quot; text-anchor=&quot;end&quot;>14</text>
+      <text x=&quot;50&quot; y=&quot;122&quot; class=&quot;axis-label&quot; text-anchor=&quot;end&quot;>21</text>
+      <text x=&quot;50&quot; y=&quot;68&quot; class=&quot;axis-label&quot; text-anchor=&quot;end&quot;>28</text>
+      <text x=&quot;20&quot; y=&quot;160&quot; class=&quot;axis-title&quot; text-anchor=&quot;middle&quot; transform=&quot;rotate(-90,20,160)&quot;>Size (mm)</text>
       <!-- X axis labels -->
-      <text x="60" y="298" class="axis-label" text-anchor="middle">0</text>
-      <text x="190" y="298" class="axis-label" text-anchor="middle">15</text>
-      <text x="320" y="298" class="axis-label" text-anchor="middle">30</text>
-      <text x="450" y="298" class="axis-label" text-anchor="middle">45</text>
-      <text x="580" y="298" class="axis-label" text-anchor="middle">60</text>
-      <text x="370" y="315" class="axis-title" text-anchor="middle">Age (days post-hatch)</text>
+      <text x=&quot;60&quot; y=&quot;298&quot; class=&quot;axis-label&quot; text-anchor=&quot;middle&quot;>0</text>
+      <text x=&quot;190&quot; y=&quot;298&quot; class=&quot;axis-label&quot; text-anchor=&quot;middle&quot;>15</text>
+      <text x=&quot;320&quot; y=&quot;298&quot; class=&quot;axis-label&quot; text-anchor=&quot;middle&quot;>30</text>
+      <text x=&quot;450&quot; y=&quot;298&quot; class=&quot;axis-label&quot; text-anchor=&quot;middle&quot;>45</text>
+      <text x=&quot;580&quot; y=&quot;298&quot; class=&quot;axis-label&quot; text-anchor=&quot;middle&quot;>60</text>
+      <text x=&quot;370&quot; y=&quot;315&quot; class=&quot;axis-title&quot; text-anchor=&quot;middle&quot;>Age (days post-hatch)</text>
       <!-- Curve 1 - Warm (28°C) - Ruiz 2024 -->
-      <path d="M60,280 C120,260 200,210 280,170 C340,140 400,100 480,72 C520,58 560,50 580,48" class="curve" stroke="#d73027">
-        <animate attributeName="stroke-dashoffset" from="800" to="0" dur="1.5s" fill="freeze"/>
-        <animate attributeName="stroke-dasharray" from="800" to="800" dur="0.01s" fill="freeze"/>
+      <path d=&quot;M60,280 C120,260 200,210 280,170 C340,140 400,100 480,72 C520,58 560,50 580,48&quot; class=&quot;curve&quot; stroke=&quot;#d73027&quot;>
+        <animate attributeName=&quot;stroke-dashoffset&quot; from=&quot;800&quot; to=&quot;0&quot; dur=&quot;1.5s&quot; fill=&quot;freeze&quot;/>
+        <animate attributeName=&quot;stroke-dasharray&quot; from=&quot;800&quot; to=&quot;800&quot; dur=&quot;0.01s&quot; fill=&quot;freeze&quot;/>
       </path>
       <!-- Curve 2 - Medium (24°C) - Leis 2006 -->
-      <path d="M60,280 C130,265 220,230 310,195 C380,165 440,135 510,108 C550,95 580,85 580,82" class="curve" stroke="#fee08b">
-        <animate attributeName="stroke-dashoffset" from="800" to="0" dur="1.5s" fill="freeze"/>
-        <animate attributeName="stroke-dasharray" from="800" to="800" dur="0.01s" fill="freeze"/>
+      <path d=&quot;M60,280 C130,265 220,230 310,195 C380,165 440,135 510,108 C550,95 580,85 580,82&quot; class=&quot;curve&quot; stroke=&quot;#fee08b&quot;>
+        <animate attributeName=&quot;stroke-dashoffset&quot; from=&quot;800&quot; to=&quot;0&quot; dur=&quot;1.5s&quot; fill=&quot;freeze&quot;/>
+        <animate attributeName=&quot;stroke-dasharray&quot; from=&quot;800&quot; to=&quot;800&quot; dur=&quot;0.01s&quot; fill=&quot;freeze&quot;/>
       </path>
       <!-- Curve 3 - Cool (20°C) - Wellington 1992 -->
-      <path d="M60,280 C140,270 240,248 340,220 C410,198 470,175 530,155 C560,145 580,138 580,135" class="curve" stroke="#4575b4">
-        <animate attributeName="stroke-dashoffset" from="800" to="0" dur="1.5s" fill="freeze"/>
-        <animate attributeName="stroke-dasharray" from="800" to="800" dur="0.01s" fill="freeze"/>
+      <path d=&quot;M60,280 C140,270 240,248 340,220 C410,198 470,175 530,155 C560,145 580,138 580,135&quot; class=&quot;curve&quot; stroke=&quot;#4575b4&quot;>
+        <animate attributeName=&quot;stroke-dashoffset&quot; from=&quot;800&quot; to=&quot;0&quot; dur=&quot;1.5s&quot; fill=&quot;freeze&quot;/>
+        <animate attributeName=&quot;stroke-dasharray&quot; from=&quot;800&quot; to=&quot;800&quot; dur=&quot;0.01s&quot; fill=&quot;freeze&quot;/>
       </path>
       <!-- Data points - Curve 1 -->
-      <circle cx="120" cy="260" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 7 dph','Size: 2.6 mm')" onmouseout="hideTip()"/>
-      <circle cx="200" cy="210" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 16 dph','Size: 9.1 mm')" onmouseout="hideTip()"/>
-      <circle cx="340" cy="140" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 32 dph','Size: 18.2 mm')" onmouseout="hideTip()"/>
-      <circle cx="480" cy="72" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 48 dph','Size: 27.0 mm')" onmouseout="hideTip()"/>
+      <circle cx=&quot;120&quot; cy=&quot;260&quot; r=&quot;4&quot; fill=&quot;#d73027&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 7 dph','Size: 2.6 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;200&quot; cy=&quot;210&quot; r=&quot;4&quot; fill=&quot;#d73027&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 16 dph','Size: 9.1 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;340&quot; cy=&quot;140&quot; r=&quot;4&quot; fill=&quot;#d73027&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 32 dph','Size: 18.2 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;480&quot; cy=&quot;72&quot; r=&quot;4&quot; fill=&quot;#d73027&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 48 dph','Size: 27.0 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
       <!-- Data points - Curve 2 -->
-      <circle cx="130" cy="265" r="4" fill="#fee08b" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 8 dph','Size: 1.9 mm')" onmouseout="hideTip()"/>
-      <circle cx="310" cy="195" r="4" fill="#fee08b" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 29 dph','Size: 11.0 mm')" onmouseout="hideTip()"/>
-      <circle cx="510" cy="108" r="4" fill="#fee08b" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 52 dph','Size: 22.3 mm')" onmouseout="hideTip()"/>
+      <circle cx=&quot;130&quot; cy=&quot;265&quot; r=&quot;4&quot; fill=&quot;#fee08b&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 8 dph','Size: 1.9 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;310&quot; cy=&quot;195&quot; r=&quot;4&quot; fill=&quot;#fee08b&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 29 dph','Size: 11.0 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;510&quot; cy=&quot;108&quot; r=&quot;4&quot; fill=&quot;#fee08b&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 52 dph','Size: 22.3 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
       <!-- Data points - Curve 3 -->
-      <circle cx="140" cy="270" r="4" fill="#4575b4" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 9 dph','Size: 1.3 mm')" onmouseout="hideTip()"/>
-      <circle cx="340" cy="220" r="4" fill="#4575b4" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 32 dph','Size: 7.8 mm')" onmouseout="hideTip()"/>
-      <circle cx="530" cy="155" r="4" fill="#4575b4" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 54 dph','Size: 16.2 mm')" onmouseout="hideTip()"/>
+      <circle cx=&quot;140&quot; cy=&quot;270&quot; r=&quot;4&quot; fill=&quot;#4575b4&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 9 dph','Size: 1.3 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;340&quot; cy=&quot;220&quot; r=&quot;4&quot; fill=&quot;#4575b4&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 32 dph','Size: 7.8 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;530&quot; cy=&quot;155&quot; r=&quot;4&quot; fill=&quot;#4575b4&quot; stroke=&quot;#0a1628&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 54 dph','Size: 16.2 mm')&quot; onmouseout=&quot;hideTip()&quot;/>
       <!-- Scatter points (no curve) -->
-      <circle cx="160" cy="255" r="3.5" fill="none" stroke="#f59e0b" stroke-width="1.5" class="data-point" onmouseover="showTip(evt,'Age: 12 dph','Size: 3.2 mm · No model')" onmouseout="hideTip()"/>
-      <circle cx="250" cy="232" r="3.5" fill="none" stroke="#f59e0b" stroke-width="1.5" class="data-point" onmouseover="showTip(evt,'Age: 22 dph','Size: 6.2 mm · No model')" onmouseout="hideTip()"/>
-      <circle cx="390" cy="178" r="3.5" fill="none" stroke="#f59e0b" stroke-width="1.5" class="data-point" onmouseover="showTip(evt,'Age: 38 dph','Size: 13.2 mm · No model')" onmouseout="hideTip()"/>
+      <circle cx=&quot;160&quot; cy=&quot;255&quot; r=&quot;3.5&quot; fill=&quot;none&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1.5&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 12 dph','Size: 3.2 mm · No model')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;250&quot; cy=&quot;232&quot; r=&quot;3.5&quot; fill=&quot;none&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1.5&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 22 dph','Size: 6.2 mm · No model')&quot; onmouseout=&quot;hideTip()&quot;/>
+      <circle cx=&quot;390&quot; cy=&quot;178&quot; r=&quot;3.5&quot; fill=&quot;none&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1.5&quot; class=&quot;data-point&quot; onmouseover=&quot;showTip(evt,'Age: 38 dph','Size: 13.2 mm · No model')&quot; onmouseout=&quot;hideTip()&quot;/>
     </svg>
-    <div class="tooltip" id="tooltip">
-      <div class="t-age"></div>
-      <div class="t-size"></div>
+    <div class=&quot;tooltip&quot; id=&quot;tooltip&quot;>
+      <div class=&quot;t-age&quot;></div>
+      <div class=&quot;t-size&quot;></div>
     </div>
   </div>
-  <div class="temp-scale">
-    <span class="temp-label">18°C</span>
-    <div class="temp-gradient"></div>
-    <span class="temp-label">32°C</span>
-    <span class="temp-label" style="margin-left: 8px;">Spectral color scale by TEMPERATURE_MEAN</span>
+  <div class=&quot;temp-scale&quot;>
+    <span class=&quot;temp-label&quot;>18°C</span>
+    <div class=&quot;temp-gradient&quot;></div>
+    <span class=&quot;temp-label&quot;>32°C</span>
+    <span class=&quot;temp-label&quot; style=&quot;margin-left: 8px;&quot;>Spectral color scale by TEMPERATURE_MEAN</span>
   </div>
-  <div class="scatter-note">
+  <div class=&quot;scatter-note&quot;>
     <strong>⚬ Open circles</strong> = data points without a fitted growth model (scatter only), color-coded by reference + temperature.
   </div>
 </div>
 
-<div class="legend-panel">
+<div class=&quot;legend-panel&quot;>
   <h4>Growth Equations by Reference</h4>
-  <div class="legend-entry">
-    <div class="legend-color" style="background:#d73027"></div>
+  <div class=&quot;legend-entry&quot;>
+    <div class=&quot;legend-color&quot; style=&quot;background:#d73027&quot;></div>
     <div>
-      <div class="legend-ref">Ruiz et al. 2024</div>
-      <div class="legend-eq">L(t) = 28.5 × (1 − e^(−0.065 × (t − 2.1)))</div>
-      <div class="legend-temp">T = 28°C · Age-at-length: 2.1 – 55 dph</div>
+      <div class=&quot;legend-ref&quot;>Ruiz et al. 2024</div>
+      <div class=&quot;legend-eq&quot;>L(t) = 28.5 × (1 − e^(−0.065 × (t − 2.1)))</div>
+      <div class=&quot;legend-temp&quot;>T = 28°C · Age-at-length: 2.1 – 55 dph</div>
     </div>
   </div>
-  <div class="legend-entry">
-    <div class="legend-color" style="background:#fee08b"></div>
+  <div class=&quot;legend-entry&quot;>
+    <div class=&quot;legend-color&quot; style=&quot;background:#fee08b&quot;></div>
     <div>
-      <div class="legend-ref">Leis & Carson-Ewart 2006</div>
-      <div class="legend-eq">L(t) = 24.8 × (1 − e^(−0.048 × (t − 3.0)))</div>
-      <div class="legend-temp">T = 24°C · Age-at-length: 3.0 – 58 dph</div>
+      <div class=&quot;legend-ref&quot;>Leis &amp; Carson-Ewart 2006</div>
+      <div class=&quot;legend-eq&quot;>L(t) = 24.8 × (1 − e^(−0.048 × (t − 3.0)))</div>
+      <div class=&quot;legend-temp&quot;>T = 24°C · Age-at-length: 3.0 – 58 dph</div>
     </div>
   </div>
-  <div class="legend-entry">
-    <div class="legend-color" style="background:#4575b4"></div>
+  <div class=&quot;legend-entry&quot;>
+    <div class=&quot;legend-color&quot; style=&quot;background:#4575b4&quot;></div>
     <div>
-      <div class="legend-ref">Wellington & Victor 1992</div>
-      <div class="legend-eq">L(t) = 20.2 × (1 − e^(−0.035 × (t − 4.2)))</div>
-      <div class="legend-temp">T = 20°C · Age-at-length: 4.2 – 62 dph</div>
+      <div class=&quot;legend-ref&quot;>Wellington &amp; Victor 1992</div>
+      <div class=&quot;legend-eq&quot;>L(t) = 20.2 × (1 − e^(−0.035 × (t − 4.2)))</div>
+      <div class=&quot;legend-temp&quot;>T = 20°C · Age-at-length: 4.2 – 62 dph</div>
     </div>
   </div>
-  <div class="legend-entry">
-    <div class="legend-color" style="background:#f59e0b"></div>
+  <div class=&quot;legend-entry&quot;>
+    <div class=&quot;legend-color&quot; style=&quot;background:#f59e0b&quot;></div>
     <div>
-      <div class="legend-ref">Thresher 1984 — <em>no fitted model</em></div>
-      <div class="legend-temp">T = 25°C · Scatter points only</div>
+      <div class=&quot;legend-ref&quot;>Thresher 1984 — <em>no fitted model</em></div>
+      <div class=&quot;legend-temp&quot;>T = 25°C · Scatter points only</div>
     </div>
   </div>
 </div>
@@ -966,14 +837,15 @@
   function hideTip() { tip.classList.remove('visible'); }
 </script>
 </body>
-</html>`;
-
-  mockups['images-display'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Growth Curves"></iframe>
+  </div>
+  <div class="section" id="section-images-display">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Images &amp; Display — LarvalBase V2</title>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>Images &amp;amp; Display — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
@@ -1020,108 +892,108 @@
 </style>
 </head>
 <body>
-<div class="page-title">🖼️ Images &amp; Display — <span class="species-name">Chromis viridis</span> <span class="img-only-badge">📷 Image-only species</span></div>
-<div class="page-subtitle">Image priority, black-bar enlargement, caption fixes</div>
+<div class=&quot;page-title&quot;>🖼️ Images &amp;amp; Display — <span class=&quot;species-name&quot;>Chromis viridis</span> <span class=&quot;img-only-badge&quot;>📷 Image-only species</span></div>
+<div class=&quot;page-subtitle&quot;>Image priority, black-bar enlargement, caption fixes</div>
 
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Image Source Priority Order</h3>
-  <ul class="priority-list">
-    <li class="priority-item"><span class="priority-rank">1</span><span class="priority-name">Blackwater</span><span class="priority-badge badge-bw">Blackwater</span></li>
-    <li class="priority-item"><span class="priority-rank">2</span><span class="priority-name">Ocea Consult–IHSM</span><span class="priority-badge badge-field">Field</span></li>
-    <li class="priority-item"><span class="priority-rank">3</span><span class="priority-name">IchthyoGwada</span><span class="priority-badge badge-field">Field</span></li>
-    <li class="priority-item"><span class="priority-rank">4</span><span class="priority-name">ADLIFISH 1</span><span class="priority-badge badge-field">Field</span></li>
-    <li class="priority-item"><span class="priority-rank">5</span><span class="priority-name">CRIOBE</span><span class="priority-badge badge-field">Field</span></li>
-    <li class="priority-item"><span class="priority-rank">6</span><span class="priority-name">Pham &amp; Durand</span><span class="priority-badge badge-lit">Literature</span></li>
-    <li class="priority-item"><span class="priority-rank">7</span><span class="priority-name">Amelia Chatagnon</span><span class="priority-badge badge-field">Field</span></li>
-    <li class="priority-item"><span class="priority-rank">8</span><span class="priority-name">Fisher et al. 2022</span><span class="priority-badge badge-lit">Literature</span></li>
+  <ul class=&quot;priority-list&quot;>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>1</span><span class=&quot;priority-name&quot;>Blackwater</span><span class=&quot;priority-badge badge-bw&quot;>Blackwater</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>2</span><span class=&quot;priority-name&quot;>Ocea Consult–IHSM</span><span class=&quot;priority-badge badge-field&quot;>Field</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>3</span><span class=&quot;priority-name&quot;>IchthyoGwada</span><span class=&quot;priority-badge badge-field&quot;>Field</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>4</span><span class=&quot;priority-name&quot;>ADLIFISH 1</span><span class=&quot;priority-badge badge-field&quot;>Field</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>5</span><span class=&quot;priority-name&quot;>CRIOBE</span><span class=&quot;priority-badge badge-field&quot;>Field</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>6</span><span class=&quot;priority-name&quot;>Pham &amp;amp; Durand</span><span class=&quot;priority-badge badge-lit&quot;>Literature</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>7</span><span class=&quot;priority-name&quot;>Amelia Chatagnon</span><span class=&quot;priority-badge badge-field&quot;>Field</span></li>
+    <li class=&quot;priority-item&quot;><span class=&quot;priority-rank&quot;>8</span><span class=&quot;priority-name&quot;>Fisher et al. 2022</span><span class=&quot;priority-badge badge-lit&quot;>Literature</span></li>
   </ul>
 </div>
 
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Image Gallery (sorted by priority)</h3>
-  <div class="gallery">
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#0a0a1e">🐠<span class="img-source">Blackwater</span></div>
-      <div class="img-caption"><span class="stage">Larva</span> · 4.2 mm SL · Polynesia</div>
+  <div class=&quot;gallery&quot;>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#0a0a1e&quot;>🐠<span class=&quot;img-source&quot;>Blackwater</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Larva</span> · 4.2 mm SL · Polynesia</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#0a1a0a">🐟<span class="img-source">Ocea–IHSM</span></div>
-      <div class="img-caption"><span class="stage">Pre-flexion</span> · 3.1 mm SL · Madagascar</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#0a1a0a&quot;>🐟<span class=&quot;img-source&quot;>Ocea–IHSM</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Pre-flexion</span> · 3.1 mm SL · Madagascar</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#1a1a0a">🐡<span class="img-source">IchthyoGwada</span></div>
-      <div class="img-caption"><span class="stage">Flexion</span> · 6.8 mm SL · Guadeloupe</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#1a1a0a&quot;>🐡<span class=&quot;img-source&quot;>IchthyoGwada</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Flexion</span> · 6.8 mm SL · Guadeloupe</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#0a1a1a">🐠<span class="img-source">ADLIFISH 1</span></div>
-      <div class="img-caption"><span class="stage">Post-flexion</span> · 12.5 mm SL · Maldives</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#0a1a1a&quot;>🐠<span class=&quot;img-source&quot;>ADLIFISH 1</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Post-flexion</span> · 12.5 mm SL · Maldives</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#1a0a1a">🐟<span class="img-source">CRIOBE</span></div>
-      <div class="img-caption"><span class="stage">Settlement</span> · 15.2 mm SL · Polynesia</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#1a0a1a&quot;>🐟<span class=&quot;img-source&quot;>CRIOBE</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Settlement</span> · 15.2 mm SL · Polynesia</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#0a0a0a">🐡<span class="img-source">Pham &amp; Durand</span></div>
-      <div class="img-caption"><span class="stage">Juvenile</span> · 22.0 mm SL · Vietnam</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#0a0a0a&quot;>🐡<span class=&quot;img-source&quot;>Pham &amp;amp; Durand</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Juvenile</span> · 22.0 mm SL · Vietnam</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#1a0a0a">🐠<span class="img-source">A. Chatagnon</span></div>
-      <div class="img-caption"><span class="stage">Larva</span> · 5.5 mm SL · Guadeloupe</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#1a0a0a&quot;>🐠<span class=&quot;img-source&quot;>A. Chatagnon</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Larva</span> · 5.5 mm SL · Guadeloupe</div>
     </div>
-    <div class="img-card" onclick="openLightbox()">
-      <div class="img-thumb" style="background:#0a0a1a">🐟<span class="img-source">Fisher et al.</span></div>
-      <div class="img-caption"><span class="stage">Adult SVG</span> · BW drawing · FishBase</div>
+    <div class=&quot;img-card&quot; onclick=&quot;openLightbox()&quot;>
+      <div class=&quot;img-thumb&quot; style=&quot;background:#0a0a1a&quot;>🐟<span class=&quot;img-source&quot;>Fisher et al.</span></div>
+      <div class=&quot;img-caption&quot;><span class=&quot;stage&quot;>Adult SVG</span> · BW drawing · FishBase</div>
     </div>
   </div>
 </div>
 
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Enlargement — Black Bars (Letterbox / Pillarbox)</h3>
-  <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Full image always visible without dezooming. Black bars fill remaining space.</p>
-  <div style="display: flex; gap: 16px;">
-    <div style="flex:1; text-align: center;">
-      <div style="background:#000; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border-radius:4px;">
-        <div style="background:#1a2d4a; width:60%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px;">🐠</div>
+  <p style=&quot;font-size: 12px; color: #94a3b8; margin-bottom: 12px;&quot;>Full image always visible without dezooming. Black bars fill remaining space.</p>
+  <div style=&quot;display: flex; gap: 16px;&quot;>
+    <div style=&quot;flex:1; text-align: center;&quot;>
+      <div style=&quot;background:#000; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border-radius:4px;&quot;>
+        <div style=&quot;background:#1a2d4a; width:60%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px;&quot;>🐠</div>
       </div>
-      <div style="font-size:11px; color:#64748b; margin-top:4px;">Pillarbox (portrait image)</div>
+      <div style=&quot;font-size:11px; color:#64748b; margin-top:4px;&quot;>Pillarbox (portrait image)</div>
     </div>
-    <div style="flex:1; text-align: center;">
-      <div style="background:#000; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border-radius:4px;">
-        <div style="background:#1a2d4a; width:100%; height:60%; display:flex; align-items:center; justify-content:center; font-size:24px;">🐟</div>
+    <div style=&quot;flex:1; text-align: center;&quot;>
+      <div style=&quot;background:#000; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border-radius:4px;&quot;>
+        <div style=&quot;background:#1a2d4a; width:100%; height:60%; display:flex; align-items:center; justify-content:center; font-size:24px;&quot;>🐟</div>
       </div>
-      <div style="font-size:11px; color:#64748b; margin-top:4px;">Letterbox (landscape image)</div>
+      <div style=&quot;font-size:11px; color:#64748b; margin-top:4px;&quot;>Letterbox (landscape image)</div>
     </div>
   </div>
 </div>
 
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Caption Fixes</h3>
-  <div class="fix-demo">
-    <div class="fix-card">
+  <div class=&quot;fix-demo&quot;>
+    <div class=&quot;fix-card&quot;>
       <h5>Polynesia</h5>
-      <div class="before">Source: "French Polynesia photos"</div>
-      <div class="after">Source: "Polynesia — CRIOBE field collection"</div>
+      <div class=&quot;before&quot;>Source: &quot;French Polynesia photos&quot;</div>
+      <div class=&quot;after&quot;>Source: &quot;Polynesia — CRIOBE field collection&quot;</div>
     </div>
-    <div class="fix-card">
+    <div class=&quot;fix-card&quot;>
       <h5>Maldives</h5>
-      <div class="before">Source: "Maldives photos"</div>
-      <div class="after">Source: "Maldives — ADLIFISH survey"</div>
+      <div class=&quot;before&quot;>Source: &quot;Maldives photos&quot;</div>
+      <div class=&quot;after&quot;>Source: &quot;Maldives — ADLIFISH survey&quot;</div>
     </div>
-    <div class="fix-card">
+    <div class=&quot;fix-card&quot;>
       <h5>classified_bw_images_species</h5>
-      <div class="before">Source: "classified_bw_images_species"</div>
-      <div class="after">Source: "Blackwater — Species ID confirmed"</div>
+      <div class=&quot;before&quot;>Source: &quot;classified_bw_images_species&quot;</div>
+      <div class=&quot;after&quot;>Source: &quot;Blackwater — Species ID confirmed&quot;</div>
     </div>
   </div>
 </div>
 
 <!-- Lightbox -->
-<div class="lightbox" id="lightbox">
-  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-  <div class="black-bars">
-    <div class="lightbox-placeholder">🐠</div>
+<div class=&quot;lightbox&quot; id=&quot;lightbox&quot;>
+  <button class=&quot;lightbox-close&quot; onclick=&quot;closeLightbox()&quot;>&amp;times;</button>
+  <div class=&quot;black-bars&quot;>
+    <div class=&quot;lightbox-placeholder&quot;>🐠</div>
   </div>
-  <div class="lightbox-caption"><em>Chromis viridis</em> · Larva, 4.2 mm SL · Blackwater · Polynesia</div>
+  <div class=&quot;lightbox-caption&quot;><em>Chromis viridis</em> · Larva, 4.2 mm SL · Blackwater · Polynesia</div>
 </div>
 
 <script>
@@ -1130,13 +1002,14 @@ function closeLightbox() { document.getElementById('lightbox').classList.remove(
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 </script>
 </body>
-</html>`;
-
-  mockups['pelagic-juvenile'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Images & Display"></iframe>
+  </div>
+  <div class="section" id="section-pelagic-juvenile">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
 <title>Pelagic Juvenile — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1191,128 +1064,129 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 </style>
 </head>
 <body>
-<div class="page-title">🐟 Pelagic Juvenile — <span class="species-name">Chromis viridis</span> <span class="badge-new">NEW</span></div>
-<div class="page-subtitle">Placed after Settlement section · 3 panels: qualitative + size + duration</div>
+<div class=&quot;page-title&quot;>🐟 Pelagic Juvenile — <span class=&quot;species-name&quot;>Chromis viridis</span> <span class=&quot;badge-new&quot;>NEW</span></div>
+<div class=&quot;page-subtitle&quot;>Placed after Settlement section · 3 panels: qualitative + size + duration</div>
 
-<div class="panels">
+<div class=&quot;panels&quot;>
   <!-- Panel 1: Qualitative -->
-  <div class="panel">
+  <div class=&quot;panel&quot;>
     <h3>Pelagic Juvenile</h3>
-    <div class="qual-row">
-      <div class="qual-label">Pelagic juvenile</div>
-      <div class="qual-value known">Known</div>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Pelagic juvenile</div>
+      <div class=&quot;qual-value known&quot;>Known</div>
     </div>
-    <div class="qual-row">
-      <div class="qual-label">Name given</div>
-      <div class="qual-value">acronurus, post-larva</div>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Name given</div>
+      <div class=&quot;qual-value&quot;>acronurus, post-larva</div>
     </div>
-    <div class="qual-row">
-      <div class="qual-label">Known pelagic juvenile in this genus</div>
-      <div class="species-list-italic">Chromis atripectoralis, Chromis margaritifer, Chromis xanthura</div>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Known pelagic juvenile in this genus</div>
+      <div class=&quot;species-list-italic&quot;>Chromis atripectoralis, Chromis margaritifer, Chromis xanthura</div>
     </div>
-    <div class="qual-row">
-      <div class="qual-label">Known pelagic juvenile in this family</div>
-      <div class="species-list-italic">Dascyllus aruanus, Pomacentrus pavo, Stegastes nigricans, Abudefduf vaigiensis</div>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Known pelagic juvenile in this family</div>
+      <div class=&quot;species-list-italic&quot;>Dascyllus aruanus, Pomacentrus pavo, Stegastes nigricans, Abudefduf vaigiensis</div>
     </div>
   </div>
 
   <!-- Panel 2: Size -->
-  <div class="panel">
+  <div class=&quot;panel&quot;>
     <h3>Pelagic Juvenile Size</h3>
-    <div class="stats-row">
-      <div class="stat-card"><div class="label">Mean</div><div class="value">12.4</div><div class="unit">mm SL</div></div>
-      <div class="stat-card"><div class="label">Range</div><div class="value">8.2–16.8</div><div class="unit">mm SL</div></div>
-      <div class="stat-card"><div class="label">Records</div><div class="value">7</div><div class="unit">refs</div></div>
+    <div class=&quot;stats-row&quot;>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Mean</div><div class=&quot;value&quot;>12.4</div><div class=&quot;unit&quot;>mm SL</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Range</div><div class=&quot;value&quot;>8.2–16.8</div><div class=&quot;unit&quot;>mm SL</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Records</div><div class=&quot;value&quot;>7</div><div class=&quot;unit&quot;>refs</div></div>
     </div>
-    <div class="chart-title">Size by reference (mm SL) — with error bars (±1 SD)</div>
-    <div class="dot-strip">
+    <div class=&quot;chart-title&quot;>Size by reference (mm SL) — with error bars (±1 SD)</div>
+    <div class=&quot;dot-strip&quot;>
       <!-- Reference 1: with error bar -->
-      <div class="strip-row">
-        <span class="strip-ref">Ruiz 2024</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:30%;width:30%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:45%;background:#60a5fa;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Ruiz 2024</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:30%;width:30%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:45%;background:#60a5fa;&quot;></div>
         </div>
       </div>
       <!-- Reference 2: with error bar -->
-      <div class="strip-row">
-        <span class="strip-ref">Leis 2006</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:35%;width:25%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:47%;background:#a78bfa;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Leis 2006</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:35%;width:25%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:47%;background:#a78bfa;&quot;></div>
         </div>
       </div>
       <!-- Reference 3: no error bar (single obs) -->
-      <div class="strip-row">
-        <span class="strip-ref">Victor 1986</span>
-        <div class="strip-track">
-          <div class="dot dot-no-bar" style="left:40%;background:#f59e0b;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Victor 1986</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;dot dot-no-bar&quot; style=&quot;left:40%;background:#f59e0b;&quot;></div>
         </div>
       </div>
       <!-- Reference 4: with error bar -->
-      <div class="strip-row">
-        <span class="strip-ref">Wellington 1992</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:25%;width:35%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:42%;background:#4ade80;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Wellington 1992</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:25%;width:35%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:42%;background:#4ade80;&quot;></div>
         </div>
       </div>
-      <div class="no-bar-note">Points without bars = single observation / no reported variance</div>
+      <div class=&quot;no-bar-note&quot;>Points without bars = single observation / no reported variance</div>
     </div>
-    <div class="comp-bars">
-      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill comp-species" style="width:62%"></div></div><span class="comp-val">12.4 mm</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill comp-genus" style="width:55%"></div></div><span class="comp-val">11.0 mm</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill comp-family" style="width:48%"></div></div><span class="comp-val">9.6 mm</span></div>
+    <div class=&quot;comp-bars&quot;>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Species</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill comp-species&quot; style=&quot;width:62%&quot;></div></div><span class=&quot;comp-val&quot;>12.4 mm</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Genus</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill comp-genus&quot; style=&quot;width:55%&quot;></div></div><span class=&quot;comp-val&quot;>11.0 mm</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Family</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill comp-family&quot; style=&quot;width:48%&quot;></div></div><span class=&quot;comp-val&quot;>9.6 mm</span></div>
     </div>
   </div>
 
   <!-- Panel 3: Duration -->
-  <div class="panel">
+  <div class=&quot;panel&quot;>
     <h3>Pelagic Juvenile Duration</h3>
-    <div class="stats-row">
-      <div class="stat-card"><div class="label">Mean</div><div class="value">18.5</div><div class="unit">days</div></div>
-      <div class="stat-card"><div class="label">Range</div><div class="value">12–28</div><div class="unit">days</div></div>
-      <div class="stat-card"><div class="label">Records</div><div class="value">5</div><div class="unit">refs</div></div>
+    <div class=&quot;stats-row&quot;>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Mean</div><div class=&quot;value&quot;>18.5</div><div class=&quot;unit&quot;>days</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Range</div><div class=&quot;value&quot;>12–28</div><div class=&quot;unit&quot;>days</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Records</div><div class=&quot;value&quot;>5</div><div class=&quot;unit&quot;>refs</div></div>
     </div>
-    <div class="chart-title">Duration by reference (days) — with error bars (±1 SD)</div>
-    <div class="dot-strip">
-      <div class="strip-row">
-        <span class="strip-ref">Ruiz 2024</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:28%;width:32%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:44%;background:#60a5fa;"></div>
+    <div class=&quot;chart-title&quot;>Duration by reference (days) — with error bars (±1 SD)</div>
+    <div class=&quot;dot-strip&quot;>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Ruiz 2024</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:28%;width:32%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:44%;background:#60a5fa;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Leis 2006</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:32%;width:28%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:46%;background:#a78bfa;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Leis 2006</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:32%;width:28%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:46%;background:#a78bfa;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Victor 1986</span>
-        <div class="strip-track">
-          <div class="dot dot-no-bar" style="left:38%;background:#f59e0b;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Victor 1986</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;dot dot-no-bar&quot; style=&quot;left:38%;background:#f59e0b;&quot;></div>
         </div>
       </div>
-      <div class="no-bar-note">Points without bars = single observation / no reported variance</div>
+      <div class=&quot;no-bar-note&quot;>Points without bars = single observation / no reported variance</div>
     </div>
-    <div class="comp-bars">
-      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill comp-species" style="width:55%"></div></div><span class="comp-val">18.5 d</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill comp-genus" style="width:48%"></div></div><span class="comp-val">16.2 d</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill comp-family" style="width:42%"></div></div><span class="comp-val">14.0 d</span></div>
+    <div class=&quot;comp-bars&quot;>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Species</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill comp-species&quot; style=&quot;width:55%&quot;></div></div><span class=&quot;comp-val&quot;>18.5 d</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Genus</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill comp-genus&quot; style=&quot;width:48%&quot;></div></div><span class=&quot;comp-val&quot;>16.2 d</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Family</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill comp-family&quot; style=&quot;width:42%&quot;></div></div><span class=&quot;comp-val&quot;>14.0 d</span></div>
     </div>
   </div>
 </div>
 </body>
-</html>`;
-
-  mockups['rafting'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Pelagic Juvenile"></iframe>
+  </div>
+  <div class="section" id="section-rafting">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
 <title>Rafting — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1373,158 +1247,159 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 </style>
 </head>
 <body>
-<div class="page-title">🚢 Rafting — <span class="species-name">Kyphosus vaigiensis</span> <span class="badge-new">NEW</span></div>
-<div class="page-subtitle">Purple accent · 3 panels: qualitative (frequency barplots) + rafter size + duration</div>
+<div class=&quot;page-title&quot;>🚢 Rafting — <span class=&quot;species-name&quot;>Kyphosus vaigiensis</span> <span class=&quot;badge-new&quot;>NEW</span></div>
+<div class=&quot;page-subtitle&quot;>Purple accent · 3 panels: qualitative (frequency barplots) + rafter size + duration</div>
 
-<div class="panels">
+<div class=&quot;panels&quot;>
   <!-- Panel 1: Qualitative with frequency barplots -->
-  <div class="panel">
-    <h3>Rafting <span class="data-level level-species">Species data</span></h3>
-    <div class="qual-row">
-      <div class="qual-label">Rafting</div>
-      <div class="qual-value known">Known</div>
+  <div class=&quot;panel&quot;>
+    <h3>Rafting <span class=&quot;data-level level-species&quot;>Species data</span></h3>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Rafting</div>
+      <div class=&quot;qual-value known&quot;>Known</div>
     </div>
 
-    <div class="freq-row" style="margin-top: 12px;">
-      <div class="freq-label">Flotsam type</div>
-      <div class="freq-bars">
-        <div class="freq-bar-row">
-          <span class="freq-bar-name">FAD</span>
-          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:65%;background:#a78bfa">8</div></div>
-          <span class="freq-bar-count">8</span>
+    <div class=&quot;freq-row&quot; style=&quot;margin-top: 12px;&quot;>
+      <div class=&quot;freq-label&quot;>Flotsam type</div>
+      <div class=&quot;freq-bars&quot;>
+        <div class=&quot;freq-bar-row&quot;>
+          <span class=&quot;freq-bar-name&quot;>FAD</span>
+          <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:65%;background:#a78bfa&quot;>8</div></div>
+          <span class=&quot;freq-bar-count&quot;>8</span>
         </div>
-        <div class="freq-bar-row">
-          <span class="freq-bar-name">Other object</span>
-          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:40%;background:#a78bfa">5</div></div>
-          <span class="freq-bar-count">5</span>
+        <div class=&quot;freq-bar-row&quot;>
+          <span class=&quot;freq-bar-name&quot;>Other object</span>
+          <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:40%;background:#a78bfa&quot;>5</div></div>
+          <span class=&quot;freq-bar-count&quot;>5</span>
         </div>
-        <div class="freq-bar-row">
-          <span class="freq-bar-name">Gelat. zooplankton</span>
-          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:16%;background:#a78bfa">2</div></div>
-          <span class="freq-bar-count">2</span>
+        <div class=&quot;freq-bar-row&quot;>
+          <span class=&quot;freq-bar-name&quot;>Gelat. zooplankton</span>
+          <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:16%;background:#a78bfa&quot;>2</div></div>
+          <span class=&quot;freq-bar-count&quot;>2</span>
         </div>
       </div>
     </div>
 
-    <div class="freq-row">
-      <div class="freq-label">Stage</div>
-      <div class="freq-bars">
-        <div class="freq-bar-row">
-          <span class="freq-bar-name">Juvenile</span>
-          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:70%;background:#c084fc">9</div></div>
-          <span class="freq-bar-count">9</span>
+    <div class=&quot;freq-row&quot;>
+      <div class=&quot;freq-label&quot;>Stage</div>
+      <div class=&quot;freq-bars&quot;>
+        <div class=&quot;freq-bar-row&quot;>
+          <span class=&quot;freq-bar-name&quot;>Juvenile</span>
+          <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:70%;background:#c084fc&quot;>9</div></div>
+          <span class=&quot;freq-bar-count&quot;>9</span>
         </div>
-        <div class="freq-bar-row">
-          <span class="freq-bar-name">Post-flexion</span>
-          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:30%;background:#c084fc">4</div></div>
-          <span class="freq-bar-count">4</span>
+        <div class=&quot;freq-bar-row&quot;>
+          <span class=&quot;freq-bar-name&quot;>Post-flexion</span>
+          <div class=&quot;freq-bar-track&quot;><div class=&quot;freq-bar-fill&quot; style=&quot;width:30%;background:#c084fc&quot;>4</div></div>
+          <span class=&quot;freq-bar-count&quot;>4</span>
         </div>
       </div>
     </div>
 
-    <div class="qual-row">
-      <div class="qual-label">Known rafters in this genus</div>
-      <div class="species-list-italic">Kyphosus cinerascens, Kyphosus bigibbus</div>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Known rafters in this genus</div>
+      <div class=&quot;species-list-italic&quot;>Kyphosus cinerascens, Kyphosus bigibbus</div>
     </div>
-    <div class="qual-row">
-      <div class="qual-label">Known rafters in this family</div>
-      <div class="species-list-italic">Girella punctata, Hermosilla azurea</div>
+    <div class=&quot;qual-row&quot;>
+      <div class=&quot;qual-label&quot;>Known rafters in this family</div>
+      <div class=&quot;species-list-italic&quot;>Girella punctata, Hermosilla azurea</div>
     </div>
   </div>
 
   <!-- Panel 2: Rafter Size -->
-  <div class="panel">
+  <div class=&quot;panel&quot;>
     <h3>Rafters Size</h3>
-    <div class="stats-row">
-      <div class="stat-card"><div class="label">Mean</div><div class="value">45.2</div><div class="unit">mm SL</div></div>
-      <div class="stat-card"><div class="label">Range</div><div class="value">22–85</div><div class="unit">mm SL</div></div>
-      <div class="stat-card"><div class="label">Records</div><div class="value">6</div><div class="unit">refs</div></div>
+    <div class=&quot;stats-row&quot;>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Mean</div><div class=&quot;value&quot;>45.2</div><div class=&quot;unit&quot;>mm SL</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Range</div><div class=&quot;value&quot;>22–85</div><div class=&quot;unit&quot;>mm SL</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Records</div><div class=&quot;value&quot;>6</div><div class=&quot;unit&quot;>refs</div></div>
     </div>
-    <div class="chart-title">Size by reference (mm SL) — with error bars (±1 SD)</div>
-    <div class="dot-strip">
-      <div class="strip-row">
-        <span class="strip-ref">Castro 2002</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:20%;width:35%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:38%;background:#a78bfa;"></div>
+    <div class=&quot;chart-title&quot;>Size by reference (mm SL) — with error bars (±1 SD)</div>
+    <div class=&quot;dot-strip&quot;>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Castro 2002</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:20%;width:35%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:38%;background:#a78bfa;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Luiz 2009</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:30%;width:40%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:50%;background:#c084fc;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Luiz 2009</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:30%;width:40%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:50%;background:#c084fc;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Thiel 2003</span>
-        <div class="strip-track">
-          <div class="dot dot-no-bar" style="left:55%;background:#e9d5ff;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Thiel 2003</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;dot dot-no-bar&quot; style=&quot;left:55%;background:#e9d5ff;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Kingsford 1992</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:15%;width:30%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:30%;background:#7c3aed;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Kingsford 1992</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:15%;width:30%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:30%;background:#7c3aed;&quot;></div>
         </div>
       </div>
-      <div class="no-bar-note">Points without bars = single observation</div>
+      <div class=&quot;no-bar-note&quot;>Points without bars = single observation</div>
     </div>
-    <div class="comp-bars">
-      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill" style="width:53%;background:#a78bfa"></div></div><span class="comp-val">45.2 mm</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill" style="width:48%;background:#c084fc"></div></div><span class="comp-val">40.8 mm</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill" style="width:38%;background:#e9d5ff"></div></div><span class="comp-val">32.1 mm</span></div>
+    <div class=&quot;comp-bars&quot;>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Species</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill&quot; style=&quot;width:53%;background:#a78bfa&quot;></div></div><span class=&quot;comp-val&quot;>45.2 mm</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Genus</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill&quot; style=&quot;width:48%;background:#c084fc&quot;></div></div><span class=&quot;comp-val&quot;>40.8 mm</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Family</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill&quot; style=&quot;width:38%;background:#e9d5ff&quot;></div></div><span class=&quot;comp-val&quot;>32.1 mm</span></div>
     </div>
   </div>
 
   <!-- Panel 3: Rafting Duration -->
-  <div class="panel">
+  <div class=&quot;panel&quot;>
     <h3>Rafting Duration</h3>
-    <div class="stats-row">
-      <div class="stat-card"><div class="label">Mean</div><div class="value">35</div><div class="unit">days</div></div>
-      <div class="stat-card"><div class="label">Range</div><div class="value">15–60</div><div class="unit">days</div></div>
-      <div class="stat-card"><div class="label">Records</div><div class="value">4</div><div class="unit">refs</div></div>
+    <div class=&quot;stats-row&quot;>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Mean</div><div class=&quot;value&quot;>35</div><div class=&quot;unit&quot;>days</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Range</div><div class=&quot;value&quot;>15–60</div><div class=&quot;unit&quot;>days</div></div>
+      <div class=&quot;stat-card&quot;><div class=&quot;label&quot;>Records</div><div class=&quot;value&quot;>4</div><div class=&quot;unit&quot;>refs</div></div>
     </div>
-    <div class="chart-title">Duration by reference (days) — with error bars (±1 SD)</div>
-    <div class="dot-strip">
-      <div class="strip-row">
-        <span class="strip-ref">Castro 2002</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:22%;width:30%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:37%;background:#a78bfa;"></div>
+    <div class=&quot;chart-title&quot;>Duration by reference (days) — with error bars (±1 SD)</div>
+    <div class=&quot;dot-strip&quot;>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Castro 2002</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:22%;width:30%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:37%;background:#a78bfa;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Luiz 2009</span>
-        <div class="strip-track">
-          <div class="error-bar" style="left:35%;width:35%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
-          <div class="dot" style="left:52%;background:#c084fc;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Luiz 2009</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;error-bar&quot; style=&quot;left:35%;width:35%;&quot;><div class=&quot;error-cap-l&quot;></div><div class=&quot;error-cap-r&quot;></div></div>
+          <div class=&quot;dot&quot; style=&quot;left:52%;background:#c084fc;&quot;></div>
         </div>
       </div>
-      <div class="strip-row">
-        <span class="strip-ref">Thiel 2003</span>
-        <div class="strip-track">
-          <div class="dot dot-no-bar" style="left:25%;background:#e9d5ff;"></div>
+      <div class=&quot;strip-row&quot;>
+        <span class=&quot;strip-ref&quot;>Thiel 2003</span>
+        <div class=&quot;strip-track&quot;>
+          <div class=&quot;dot dot-no-bar&quot; style=&quot;left:25%;background:#e9d5ff;&quot;></div>
         </div>
       </div>
-      <div class="no-bar-note">Points without bars = single observation</div>
+      <div class=&quot;no-bar-note&quot;>Points without bars = single observation</div>
     </div>
-    <div class="comp-bars">
-      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill" style="width:58%;background:#a78bfa"></div></div><span class="comp-val">35 d</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill" style="width:50%;background:#c084fc"></div></div><span class="comp-val">30 d</span></div>
-      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill" style="width:40%;background:#e9d5ff"></div></div><span class="comp-val">24 d</span></div>
+    <div class=&quot;comp-bars&quot;>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Species</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill&quot; style=&quot;width:58%;background:#a78bfa&quot;></div></div><span class=&quot;comp-val&quot;>35 d</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Genus</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill&quot; style=&quot;width:50%;background:#c084fc&quot;></div></div><span class=&quot;comp-val&quot;>30 d</span></div>
+      <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;>Family</span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill&quot; style=&quot;width:40%;background:#e9d5ff&quot;></div></div><span class=&quot;comp-val&quot;>24 d</span></div>
     </div>
   </div>
 </div>
 </body>
-</html>`;
-
-  mockups['active-behaviors'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Rafting"></iframe>
+  </div>
+  <div class="section" id="section-active-behaviors">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
 <title>Active Behaviors — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1579,112 +1454,112 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbo
 </style>
 </head>
 <body>
-<div class="page-title">🏊 Active Behaviors — <span class="species-name">Chromis viridis</span> <span class="badge-mod">MOD</span></div>
-<div class="page-subtitle">Renamed from "Swimming &amp; Comparisons" · Vertical Distribution moved to first panel</div>
+<div class=&quot;page-title&quot;>🏊 Active Behaviors — <span class=&quot;species-name&quot;>Chromis viridis</span> <span class=&quot;badge-mod&quot;>MOD</span></div>
+<div class=&quot;page-subtitle&quot;>Renamed from &quot;Swimming &amp;amp; Comparisons&quot; · Vertical Distribution moved to first panel</div>
 
 <!-- Panel 1: Vertical Distribution (FIRST) -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Vertical Distribution</h3>
-  <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Depth chart with day/night/unknown color coding and water gradient background</p>
-  <div class="depth-chart">
-    <div class="depth-label" style="top:5px">0 m (surface)</div>
-    <div class="depth-label" style="top:25%">25 m</div>
-    <div class="depth-label" style="top:50%">50 m</div>
-    <div class="depth-label" style="top:75%">75 m</div>
-    <div class="depth-label" style="bottom:5px">100 m</div>
+  <p style=&quot;font-size: 12px; color: #94a3b8; margin-bottom: 12px;&quot;>Depth chart with day/night/unknown color coding and water gradient background</p>
+  <div class=&quot;depth-chart&quot;>
+    <div class=&quot;depth-label&quot; style=&quot;top:5px&quot;>0 m (surface)</div>
+    <div class=&quot;depth-label&quot; style=&quot;top:25%&quot;>25 m</div>
+    <div class=&quot;depth-label&quot; style=&quot;top:50%&quot;>50 m</div>
+    <div class=&quot;depth-label&quot; style=&quot;top:75%&quot;>75 m</div>
+    <div class=&quot;depth-label&quot; style=&quot;bottom:5px&quot;>100 m</div>
     <!-- Day observations -->
-    <div class="depth-zone" style="top:8%"><div class="depth-marker day"></div><div class="depth-info">Day · 5m · 4.2 mm · Ruiz 2024</div></div>
-    <div class="depth-zone" style="top:15%"><div class="depth-marker day"></div><div class="depth-info">Day · 12m · 8.1 mm · Leis 2006</div></div>
-    <div class="depth-zone" style="top:22%"><div class="depth-marker day"></div><div class="depth-info">Day · 18m · 12.5 mm · Victor 1986</div></div>
+    <div class=&quot;depth-zone&quot; style=&quot;top:8%&quot;><div class=&quot;depth-marker day&quot;></div><div class=&quot;depth-info&quot;>Day · 5m · 4.2 mm · Ruiz 2024</div></div>
+    <div class=&quot;depth-zone&quot; style=&quot;top:15%&quot;><div class=&quot;depth-marker day&quot;></div><div class=&quot;depth-info&quot;>Day · 12m · 8.1 mm · Leis 2006</div></div>
+    <div class=&quot;depth-zone&quot; style=&quot;top:22%&quot;><div class=&quot;depth-marker day&quot;></div><div class=&quot;depth-info&quot;>Day · 18m · 12.5 mm · Victor 1986</div></div>
     <!-- Night observations -->
-    <div class="depth-zone" style="top:5%"><div class="depth-marker night" style="margin-left:160px"></div><div class="depth-info" style="margin-left:160px">Night · 3m · 6.0 mm · Ruiz 2024</div></div>
-    <div class="depth-zone" style="top:12%"><div class="depth-marker night" style="margin-left:200px"></div><div class="depth-info" style="margin-left:200px">Night · 8m · 10.2 mm · Leis 2006</div></div>
+    <div class=&quot;depth-zone&quot; style=&quot;top:5%&quot;><div class=&quot;depth-marker night&quot; style=&quot;margin-left:160px&quot;></div><div class=&quot;depth-info&quot; style=&quot;margin-left:160px&quot;>Night · 3m · 6.0 mm · Ruiz 2024</div></div>
+    <div class=&quot;depth-zone&quot; style=&quot;top:12%&quot;><div class=&quot;depth-marker night&quot; style=&quot;margin-left:200px&quot;></div><div class=&quot;depth-info&quot; style=&quot;margin-left:200px&quot;>Night · 8m · 10.2 mm · Leis 2006</div></div>
     <!-- Unknown -->
-    <div class="depth-zone" style="top:35%"><div class="depth-marker unknown" style="margin-left:100px"></div><div class="depth-info" style="margin-left:100px">Unknown · 30m · 15.0 mm · Wellington 1992</div></div>
+    <div class=&quot;depth-zone&quot; style=&quot;top:35%&quot;><div class=&quot;depth-marker unknown&quot; style=&quot;margin-left:100px&quot;></div><div class=&quot;depth-info&quot; style=&quot;margin-left:100px&quot;>Unknown · 30m · 15.0 mm · Wellington 1992</div></div>
   </div>
-  <div class="depth-legend">
-    <div class="depth-legend-item"><div class="depth-legend-dot" style="background:#fbbf24"></div> Day</div>
-    <div class="depth-legend-item"><div class="depth-legend-dot" style="background:#6366f1"></div> Night</div>
-    <div class="depth-legend-item"><div class="depth-legend-dot" style="background:#94a3b8"></div> Unknown</div>
+  <div class=&quot;depth-legend&quot;>
+    <div class=&quot;depth-legend-item&quot;><div class=&quot;depth-legend-dot&quot; style=&quot;background:#fbbf24&quot;></div> Day</div>
+    <div class=&quot;depth-legend-item&quot;><div class=&quot;depth-legend-dot&quot; style=&quot;background:#6366f1&quot;></div> Night</div>
+    <div class=&quot;depth-legend-item&quot;><div class=&quot;depth-legend-dot&quot; style=&quot;background:#94a3b8&quot;></div> Unknown</div>
   </div>
-  <div style="margin-top:12px; font-size:12px; color:#94a3b8;">Size vs Depth scatter</div>
-  <div class="scatter-area">
-    <span class="scatter-axis" style="bottom:2px;left:50%">Size (mm SL) →</span>
-    <span class="scatter-axis" style="top:50%;left:2px;transform:rotate(-90deg) translateX(-50%);transform-origin:left">Depth (m) →</span>
-    <div class="scatter-dot" style="left:15%;top:10%;background:#fbbf24"></div>
-    <div class="scatter-dot" style="left:28%;top:18%;background:#fbbf24"></div>
-    <div class="scatter-dot" style="left:42%;top:25%;background:#fbbf24"></div>
-    <div class="scatter-dot" style="left:20%;top:6%;background:#6366f1"></div>
-    <div class="scatter-dot" style="left:35%;top:14%;background:#6366f1"></div>
-    <div class="scatter-dot" style="left:50%;top:40%;background:#94a3b8"></div>
+  <div style=&quot;margin-top:12px; font-size:12px; color:#94a3b8;&quot;>Size vs Depth scatter</div>
+  <div class=&quot;scatter-area&quot;>
+    <span class=&quot;scatter-axis&quot; style=&quot;bottom:2px;left:50%&quot;>Size (mm SL) →</span>
+    <span class=&quot;scatter-axis&quot; style=&quot;top:50%;left:2px;transform:rotate(-90deg) translateX(-50%);transform-origin:left&quot;>Depth (m) →</span>
+    <div class=&quot;scatter-dot&quot; style=&quot;left:15%;top:10%;background:#fbbf24&quot;></div>
+    <div class=&quot;scatter-dot&quot; style=&quot;left:28%;top:18%;background:#fbbf24&quot;></div>
+    <div class=&quot;scatter-dot&quot; style=&quot;left:42%;top:25%;background:#fbbf24&quot;></div>
+    <div class=&quot;scatter-dot&quot; style=&quot;left:20%;top:6%;background:#6366f1&quot;></div>
+    <div class=&quot;scatter-dot&quot; style=&quot;left:35%;top:14%;background:#6366f1&quot;></div>
+    <div class=&quot;scatter-dot&quot; style=&quot;left:50%;top:40%;background:#94a3b8&quot;></div>
   </div>
 </div>
 
-<!-- Panels 2 & 3: Swimming Speed (Tabbed) -->
-<div class="panel">
+<!-- Panels 2 &amp; 3: Swimming Speed (Tabbed) -->
+<div class=&quot;panel&quot;>
   <h3>Swimming Speed</h3>
-  <div class="tabs">
-    <div class="tab active" onclick="switchTab(0)">Critical Swimming Speed (Absolute)</div>
-    <div class="tab" onclick="switchTab(1)">In Situ Swimming Speed (Absolute)</div>
+  <div class=&quot;tabs&quot;>
+    <div class=&quot;tab active&quot; onclick=&quot;switchTab(0)&quot;>Critical Swimming Speed (Absolute)</div>
+    <div class=&quot;tab&quot; onclick=&quot;switchTab(1)&quot;>In Situ Swimming Speed (Absolute)</div>
   </div>
 
-  <div class="tab-content active" id="tab-0">
-    <div class="strip-row">
-      <span class="strip-ref">Leis 2006</span>
-      <div class="strip-track"><div class="dot" style="left:55%;background:#60a5fa"></div></div>
-      <span class="strip-val">18.2 cm/s</span>
+  <div class=&quot;tab-content active&quot; id=&quot;tab-0&quot;>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Leis 2006</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:55%;background:#60a5fa&quot;></div></div>
+      <span class=&quot;strip-val&quot;>18.2 cm/s</span>
     </div>
-    <div class="strip-row">
-      <span class="strip-ref">Fisher 2005</span>
-      <div class="strip-track"><div class="dot" style="left:48%;background:#a78bfa"></div></div>
-      <span class="strip-val">15.8 cm/s</span>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Fisher 2005</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:48%;background:#a78bfa&quot;></div></div>
+      <span class=&quot;strip-val&quot;>15.8 cm/s</span>
     </div>
-    <div class="strip-row">
-      <span class="strip-ref">Stobutzki 1997</span>
-      <div class="strip-track"><div class="dot" style="left:62%;background:#4ade80"></div></div>
-      <span class="strip-val">21.0 cm/s</span>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Stobutzki 1997</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:62%;background:#4ade80&quot;></div></div>
+      <span class=&quot;strip-val&quot;>21.0 cm/s</span>
     </div>
-    <div class="strip-row">
-      <span class="strip-ref">Bellwood 2002</span>
-      <div class="strip-track"><div class="dot" style="left:42%;background:#f59e0b"></div></div>
-      <span class="strip-val">13.5 cm/s</span>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Bellwood 2002</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:42%;background:#f59e0b&quot;></div></div>
+      <span class=&quot;strip-val&quot;>13.5 cm/s</span>
     </div>
 
-    <div class="comp-title">Family comparison — Pomacentridae (12 species)</div>
-    <div class="mode-toggle">
-      <button class="toggle-btn active">Normal (&lt;20 spp)</button>
-      <button class="toggle-btn">Genus average (&gt;20)</button>
+    <div class=&quot;comp-title&quot;>Family comparison — Pomacentridae (12 species)</div>
+    <div class=&quot;mode-toggle&quot;>
+      <button class=&quot;toggle-btn active&quot;>Normal (&amp;lt;20 spp)</button>
+      <button class=&quot;toggle-btn&quot;>Genus average (&amp;gt;20)</button>
     </div>
-    <div class="comp-bar-row"><span class="comp-label"><em>C. viridis</em></span><div class="comp-track"><div class="comp-fill current" style="width:55%"></div></div><span class="comp-val">18.2 cm/s</span></div>
-    <div class="comp-bar-row"><span class="comp-label"><em>D. aruanus</em></span><div class="comp-track"><div class="comp-fill other" style="width:48%"></div></div><span class="comp-val">15.8 cm/s</span></div>
-    <div class="comp-bar-row"><span class="comp-label"><em>P. pavo</em></span><div class="comp-track"><div class="comp-fill other" style="width:65%"></div></div><span class="comp-val">21.4 cm/s</span></div>
-    <div class="comp-bar-row"><span class="comp-label"><em>S. nigricans</em></span><div class="comp-track"><div class="comp-fill other" style="width:42%"></div></div><span class="comp-val">13.8 cm/s</span></div>
-    <div class="comp-bar-row"><span class="comp-label"><em>A. vaigiensis</em></span><div class="comp-track"><div class="comp-fill other" style="width:58%"></div></div><span class="comp-val">19.1 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>C. viridis</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill current&quot; style=&quot;width:55%&quot;></div></div><span class=&quot;comp-val&quot;>18.2 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>D. aruanus</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill other&quot; style=&quot;width:48%&quot;></div></div><span class=&quot;comp-val&quot;>15.8 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>P. pavo</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill other&quot; style=&quot;width:65%&quot;></div></div><span class=&quot;comp-val&quot;>21.4 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>S. nigricans</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill other&quot; style=&quot;width:42%&quot;></div></div><span class=&quot;comp-val&quot;>13.8 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>A. vaigiensis</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill other&quot; style=&quot;width:58%&quot;></div></div><span class=&quot;comp-val&quot;>19.1 cm/s</span></div>
   </div>
 
-  <div class="tab-content" id="tab-1">
-    <div class="strip-row">
-      <span class="strip-ref">Leis 2006</span>
-      <div class="strip-track"><div class="dot" style="left:40%;background:#60a5fa"></div></div>
-      <span class="strip-val">12.5 cm/s</span>
+  <div class=&quot;tab-content&quot; id=&quot;tab-1&quot;>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Leis 2006</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:40%;background:#60a5fa&quot;></div></div>
+      <span class=&quot;strip-val&quot;>12.5 cm/s</span>
     </div>
-    <div class="strip-row">
-      <span class="strip-ref">Leis 2011</span>
-      <div class="strip-track"><div class="dot" style="left:52%;background:#a78bfa"></div></div>
-      <span class="strip-val">16.8 cm/s</span>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Leis 2011</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:52%;background:#a78bfa&quot;></div></div>
+      <span class=&quot;strip-val&quot;>16.8 cm/s</span>
     </div>
-    <div class="strip-row">
-      <span class="strip-ref">Fisher 2005</span>
-      <div class="strip-track"><div class="dot" style="left:35%;background:#4ade80"></div></div>
-      <span class="strip-val">11.2 cm/s</span>
+    <div class=&quot;strip-row&quot;>
+      <span class=&quot;strip-ref&quot;>Fisher 2005</span>
+      <div class=&quot;strip-track&quot;><div class=&quot;dot&quot; style=&quot;left:35%;background:#4ade80&quot;></div></div>
+      <span class=&quot;strip-val&quot;>11.2 cm/s</span>
     </div>
 
-    <div class="comp-title">Family comparison — Pomacentridae</div>
-    <div class="comp-bar-row"><span class="comp-label"><em>C. viridis</em></span><div class="comp-track"><div class="comp-fill current" style="width:40%"></div></div><span class="comp-val">12.5 cm/s</span></div>
-    <div class="comp-bar-row"><span class="comp-label"><em>D. aruanus</em></span><div class="comp-track"><div class="comp-fill other" style="width:35%"></div></div><span class="comp-val">11.0 cm/s</span></div>
-    <div class="comp-bar-row"><span class="comp-label"><em>P. pavo</em></span><div class="comp-track"><div class="comp-fill other" style="width:50%"></div></div><span class="comp-val">15.8 cm/s</span></div>
+    <div class=&quot;comp-title&quot;>Family comparison — Pomacentridae</div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>C. viridis</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill current&quot; style=&quot;width:40%&quot;></div></div><span class=&quot;comp-val&quot;>12.5 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>D. aruanus</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill other&quot; style=&quot;width:35%&quot;></div></div><span class=&quot;comp-val&quot;>11.0 cm/s</span></div>
+    <div class=&quot;comp-bar-row&quot;><span class=&quot;comp-label&quot;><em>P. pavo</em></span><div class=&quot;comp-track&quot;><div class=&quot;comp-fill other&quot; style=&quot;width:50%&quot;></div></div><span class=&quot;comp-val&quot;>15.8 cm/s</span></div>
 
-    <div class="hidden-note">💡 Comparison hidden for species where n_sp = 1 and it's the current species (only one data point in the family).</div>
+    <div class=&quot;hidden-note&quot;>💡 Comparison hidden for species where n_sp = 1 and it's the current species (only one data point in the family).</div>
   </div>
 </div>
 
@@ -1695,14 +1570,15 @@ function switchTab(idx) {
 }
 </script>
 </body>
-</html>`;
-
-  mockups['ui-export'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="Active Behaviors"></iframe>
+  </div>
+  <div class="section" id="section-ui-export">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UI &amp; Export — LarvalBase V2</title>
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
+<title>UI &amp;amp; Export — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
@@ -1753,153 +1629,153 @@ function switchTab(idx) {
 </style>
 </head>
 <body>
-<div class="page-title">🔧 UI &amp; Export</div>
-<div class="page-subtitle">Export buttons, CSV preview, map fixes, section icons, renames</div>
+<div class=&quot;page-title&quot;>🔧 UI &amp;amp; Export</div>
+<div class=&quot;page-subtitle&quot;>Export buttons, CSV preview, map fixes, section icons, renames</div>
 
 <!-- Export buttons per section -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Export Buttons — per Section</h3>
-  <div class="export-grid">
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">🥚</div>
-      <div class="section-name">Egg &amp; Taxonomy</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
-        <button class="export-btn">📥 Family</button>
+  <div class=&quot;export-grid&quot;>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>🥚</div>
+      <div class=&quot;section-name&quot;>Egg &amp;amp; Taxonomy</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
+        <button class=&quot;export-btn&quot;>📥 Family</button>
       </div>
     </div>
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">📈</div>
-      <div class="section-name">Growth Curves</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
-        <button class="export-btn">📥 Family</button>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>📈</div>
+      <div class=&quot;section-name&quot;>Growth Curves</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
+        <button class=&quot;export-btn&quot;>📥 Family</button>
       </div>
     </div>
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">🏠</div>
-      <div class="section-name">Hatching &amp; Pre-flexion Stage</div>
-      <div class="section-renamed">Renamed from "Hatching &amp; Early Development"</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
-        <button class="export-btn">📥 Family</button>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>🏠</div>
+      <div class=&quot;section-name&quot;>Hatching &amp;amp; Pre-flexion Stage</div>
+      <div class=&quot;section-renamed&quot;>Renamed from &quot;Hatching &amp;amp; Early Development&quot;</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
+        <button class=&quot;export-btn&quot;>📥 Family</button>
       </div>
     </div>
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">📍</div>
-      <div class="section-name">Settlement</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
-        <button class="export-btn">📥 Family</button>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>📍</div>
+      <div class=&quot;section-name&quot;>Settlement</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
+        <button class=&quot;export-btn&quot;>📥 Family</button>
       </div>
     </div>
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">🐟</div>
-      <div class="section-name">Pelagic Juvenile</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>🐟</div>
+      <div class=&quot;section-name&quot;>Pelagic Juvenile</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
       </div>
     </div>
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">🚢</div>
-      <div class="section-name">Rafting</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>🚢</div>
+      <div class=&quot;section-name&quot;>Rafting</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
       </div>
     </div>
-    <div class="export-card" onclick="openModal()">
-      <div class="section-icon">🏊</div>
-      <div class="section-name">Active Behaviors</div>
-      <div class="export-btns">
-        <button class="export-btn">📥 Species</button>
-        <button class="export-btn">📥 Genus</button>
-        <button class="export-btn">📥 Family</button>
+    <div class=&quot;export-card&quot; onclick=&quot;openModal()&quot;>
+      <div class=&quot;section-icon&quot;>🏊</div>
+      <div class=&quot;section-name&quot;>Active Behaviors</div>
+      <div class=&quot;export-btns&quot;>
+        <button class=&quot;export-btn&quot;>📥 Species</button>
+        <button class=&quot;export-btn&quot;>📥 Genus</button>
+        <button class=&quot;export-btn&quot;>📥 Family</button>
       </div>
     </div>
   </div>
 </div>
 
 <!-- Rename -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Section Renames</h3>
-  <div class="rename">
-    <span class="old">Hatching &amp; Early Development</span>
-    <span class="arrow">→</span>
-    <span class="new">Hatching &amp; Pre-flexion Stage</span>
+  <div class=&quot;rename&quot;>
+    <span class=&quot;old&quot;>Hatching &amp;amp; Early Development</span>
+    <span class=&quot;arrow&quot;>→</span>
+    <span class=&quot;new&quot;>Hatching &amp;amp; Pre-flexion Stage</span>
   </div>
-  <div class="rename">
-    <span class="old">Swimming &amp; Comparisons</span>
-    <span class="arrow">→</span>
-    <span class="new">Active Behaviors</span>
+  <div class=&quot;rename&quot;>
+    <span class=&quot;old&quot;>Swimming &amp;amp; Comparisons</span>
+    <span class=&quot;arrow&quot;>→</span>
+    <span class=&quot;new&quot;>Active Behaviors</span>
   </div>
 </div>
 
 <!-- Fixes -->
-<div class="panel">
-  <h3>Map &amp; UI Fixes</h3>
-  <div class="fix-grid">
-    <div class="fix-card">
+<div class=&quot;panel&quot;>
+  <h3>Map &amp;amp; UI Fixes</h3>
+  <div class=&quot;fix-grid&quot;>
+    <div class=&quot;fix-card&quot;>
       <h4>Map Edge Deduplication</h4>
-      <div class="fix-before">
-        <div class="fix-label before">BEFORE</div>
-        <div class="fix-desc">Overlapping points at map edges — same location plotted twice when coordinates wrap around 180°/-180° longitude</div>
+      <div class=&quot;fix-before&quot;>
+        <div class=&quot;fix-label before&quot;>BEFORE</div>
+        <div class=&quot;fix-desc&quot;>Overlapping points at map edges — same location plotted twice when coordinates wrap around 180°/-180° longitude</div>
       </div>
-      <div class="fix-after">
-        <div class="fix-label after">AFTER</div>
-        <div class="fix-desc">Deduplicated — each unique GPS coordinate plotted once. Edge-wrap detection removes duplicates within 0.001° tolerance</div>
+      <div class=&quot;fix-after&quot;>
+        <div class=&quot;fix-label after&quot;>AFTER</div>
+        <div class=&quot;fix-desc&quot;>Deduplicated — each unique GPS coordinate plotted once. Edge-wrap detection removes duplicates within 0.001° tolerance</div>
       </div>
     </div>
-    <div class="fix-card">
+    <div class=&quot;fix-card&quot;>
       <h4>Duplicate Magnifier Icon</h4>
-      <div class="fix-before">
-        <div class="fix-label before">BEFORE</div>
-        <div class="fix-desc">Two 🔍 magnifier icons visible in species header (search + zoom)</div>
+      <div class=&quot;fix-before&quot;>
+        <div class=&quot;fix-label before&quot;>BEFORE</div>
+        <div class=&quot;fix-desc&quot;>Two 🔍 magnifier icons visible in species header (search + zoom)</div>
       </div>
-      <div class="fix-after">
-        <div class="fix-label after">AFTER</div>
-        <div class="fix-desc">Single search icon retained. Zoom magnifier removed — use browser zoom or image lightbox instead</div>
+      <div class=&quot;fix-after&quot;>
+        <div class=&quot;fix-label after&quot;>AFTER</div>
+        <div class=&quot;fix-desc&quot;>Single search icon retained. Zoom magnifier removed — use browser zoom or image lightbox instead</div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- SVG Icons -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Section SVG Icons (from section_icons.zip)</h3>
-  <div class="icon-grid">
-    <div class="icon-card"><div class="icon-placeholder">🥚</div><div class="icon-name">egg.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">📈</div><div class="icon-name">growth.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">🖼️</div><div class="icon-name">images.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">📍</div><div class="icon-name">settlement.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">🐟</div><div class="icon-name">pelagic.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">🚢</div><div class="icon-name">rafting.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">🏊</div><div class="icon-name">swimming.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">🔧</div><div class="icon-name">export.svg</div></div>
-    <div class="icon-card"><div class="icon-placeholder">⚡</div><div class="icon-name">infra.svg</div></div>
+  <div class=&quot;icon-grid&quot;>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>🥚</div><div class=&quot;icon-name&quot;>egg.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>📈</div><div class=&quot;icon-name&quot;>growth.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>🖼️</div><div class=&quot;icon-name&quot;>images.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>📍</div><div class=&quot;icon-name&quot;>settlement.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>🐟</div><div class=&quot;icon-name&quot;>pelagic.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>🚢</div><div class=&quot;icon-name&quot;>rafting.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>🏊</div><div class=&quot;icon-name&quot;>swimming.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>🔧</div><div class=&quot;icon-name&quot;>export.svg</div></div>
+    <div class=&quot;icon-card&quot;><div class=&quot;icon-placeholder&quot;>⚡</div><div class=&quot;icon-name&quot;>infra.svg</div></div>
   </div>
-  <p style="font-size:11px; color:#64748b; margin-top:8px;">Placeholders shown — swap with actual SVGs from Eliot's section_icons.zip</p>
+  <p style=&quot;font-size:11px; color:#64748b; margin-top:8px;&quot;>Placeholders shown — swap with actual SVGs from Eliot's section_icons.zip</p>
 </div>
 
 <!-- CSV Preview Modal -->
-<div class="modal-overlay" id="csv-modal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal()">&times;</button>
-    <h3>CSV Preview — Egg &amp; Taxonomy (Species level)</h3>
-    <p style="font-size:11px;color:#94a3b8;margin-bottom:12px;">All metadata visible in scrollable table</p>
-    <div style="overflow-x:auto;">
-      <table class="csv-table">
+<div class=&quot;modal-overlay&quot; id=&quot;csv-modal&quot;>
+  <div class=&quot;modal&quot;>
+    <button class=&quot;modal-close&quot; onclick=&quot;closeModal()&quot;>&amp;times;</button>
+    <h3>CSV Preview — Egg &amp;amp; Taxonomy (Species level)</h3>
+    <p style=&quot;font-size:11px;color:#94a3b8;margin-bottom:12px;&quot;>All metadata visible in scrollable table</p>
+    <div style=&quot;overflow-x:auto;&quot;>
+      <table class=&quot;csv-table&quot;>
         <thead>
           <tr><th>ORDER</th><th>FAMILY</th><th>GENUS</th><th>VALID_NAME</th><th>APHIA_ID</th><th>AUTHORITY</th><th>EGG_LOCATION</th><th>EGG_DETAILS</th><th>EGG_SHAPE</th><th>EGG_DIAMETER_MEAN</th><th>EGG_DIAMETER_MIN</th><th>EGG_DIAMETER_MAX</th><th>MEAN_TYPE</th><th>CONF_TYPE</th><th>EXT_REF</th><th>REFERENCE</th></tr>
         </thead>
         <tbody>
           <tr><td>Perciformes</td><td>Pomacentridae</td><td>Chromis</td><td>Chromis viridis</td><td>212468</td><td>(Cuvier, 1830)</td><td>Demersal</td><td>Attached</td><td>Elliptical</td><td>0.72</td><td>0.65</td><td>0.80</td><td>Arithmetic</td><td>Measured</td><td>FB-1234</td><td>Thresher 1984</td></tr>
-          <tr><td>Perciformes</td><td>Pomacentridae</td><td>Chromis</td><td>Chromis atripectoralis</td><td>277018</td><td>Welander &amp; Schultz, 1951</td><td>Demersal</td><td>Guarded</td><td>Elliptical</td><td>0.68</td><td>0.62</td><td>0.74</td><td>Arithmetic</td><td>Measured</td><td>FB-1235</td><td>Wellington 1989</td></tr>
+          <tr><td>Perciformes</td><td>Pomacentridae</td><td>Chromis</td><td>Chromis atripectoralis</td><td>277018</td><td>Welander &amp;amp; Schultz, 1951</td><td>Demersal</td><td>Guarded</td><td>Elliptical</td><td>0.68</td><td>0.62</td><td>0.74</td><td>Arithmetic</td><td>Measured</td><td>FB-1235</td><td>Wellington 1989</td></tr>
           <tr><td>Perciformes</td><td>Pomacentridae</td><td>Dascyllus</td><td>Dascyllus aruanus</td><td>212464</td><td>(Linnaeus, 1758)</td><td>Demersal</td><td>In nest</td><td>Elliptical</td><td>0.82</td><td>0.75</td><td>0.88</td><td>Geometric</td><td>Estimated</td><td>FB-1236</td><td>Leis 2004</td></tr>
         </tbody>
       </table>
@@ -1913,13 +1789,14 @@ function closeModal() { document.getElementById('csv-modal').classList.remove('a
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 </script>
 </body>
-</html>`;
-
-  mockups['infrastructure'] = `<!DOCTYPE html>
-<html lang="en">
+</html>" title="UI & Export"></iframe>
+  </div>
+  <div class="section" id="section-infrastructure">
+    <iframe srcdoc="<!DOCTYPE html>
+<html lang=&quot;en&quot;>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset=&quot;UTF-8&quot;>
+<meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1.0&quot;>
 <title>Infrastructure — LarvalBase V2</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -1968,50 +1845,50 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 </style>
 </head>
 <body>
-<div class="page-title">⚡ Infrastructure</div>
-<div class="page-subtitle">Architecture, caching, ISR, performance targets, database updates</div>
+<div class=&quot;page-title&quot;>⚡ Infrastructure</div>
+<div class=&quot;page-subtitle&quot;>Architecture, caching, ISR, performance targets, database updates</div>
 
 <!-- Architecture diagram -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Architecture Overview</h3>
-  <div class="arch-flow">
-    <div class="arch-box">
-      <div class="icon">📄</div>
-      <div class="name">CSV Files</div>
-      <div class="detail">~150 MB total</div>
+  <div class=&quot;arch-flow&quot;>
+    <div class=&quot;arch-box&quot;>
+      <div class=&quot;icon&quot;>📄</div>
+      <div class=&quot;name&quot;>CSV Files</div>
+      <div class=&quot;detail&quot;>~150 MB total</div>
     </div>
-    <div class="arch-arrow">→</div>
-    <div class="arch-box">
-      <div class="icon">💾</div>
-      <div class="name">In-Memory Cache</div>
-      <div class="detail">Load once on start</div>
+    <div class=&quot;arch-arrow&quot;>→</div>
+    <div class=&quot;arch-box&quot;>
+      <div class=&quot;icon&quot;>💾</div>
+      <div class=&quot;name&quot;>In-Memory Cache</div>
+      <div class=&quot;detail&quot;>Load once on start</div>
     </div>
-    <div class="arch-arrow">→</div>
-    <div class="arch-box">
-      <div class="icon">🔌</div>
-      <div class="name">API Routes</div>
-      <div class="detail">Next.js endpoints</div>
+    <div class=&quot;arch-arrow&quot;>→</div>
+    <div class=&quot;arch-box&quot;>
+      <div class=&quot;icon&quot;>🔌</div>
+      <div class=&quot;name&quot;>API Routes</div>
+      <div class=&quot;detail&quot;>Next.js endpoints</div>
     </div>
-    <div class="arch-arrow">→</div>
-    <div class="arch-box">
-      <div class="icon">⚡</div>
-      <div class="name">ISR Pages</div>
-      <div class="detail">revalidate: 3600</div>
+    <div class=&quot;arch-arrow&quot;>→</div>
+    <div class=&quot;arch-box&quot;>
+      <div class=&quot;icon&quot;>⚡</div>
+      <div class=&quot;name&quot;>ISR Pages</div>
+      <div class=&quot;detail&quot;>revalidate: 3600</div>
     </div>
-    <div class="arch-arrow">→</div>
-    <div class="arch-box">
-      <div class="icon">🎨</div>
-      <div class="name">React + D3</div>
-      <div class="detail">Interactive charts</div>
+    <div class=&quot;arch-arrow&quot;>→</div>
+    <div class=&quot;arch-box&quot;>
+      <div class=&quot;icon&quot;>🎨</div>
+      <div class=&quot;name&quot;>React + D3</div>
+      <div class=&quot;detail&quot;>Interactive charts</div>
     </div>
   </div>
 </div>
 
 <!-- Layer details -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Implementation Details</h3>
-  <div class="layers">
-    <div class="layer-card">
+  <div class=&quot;layers&quot;>
+    <div class=&quot;layer-card&quot;>
       <h4>💾 CSV Cache Layer</h4>
       <ul>
         <li>Load all CSVs on server startup</li>
@@ -2021,7 +1898,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
         <li>Genus/Family aggregations pre-computed</li>
       </ul>
     </div>
-    <div class="layer-card">
+    <div class=&quot;layer-card&quot;>
       <h4>⚡ ISR (Incremental Static Regeneration)</h4>
       <ul>
         <li>Pre-render species pages at build</li>
@@ -2030,7 +1907,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
         <li>Stale-while-revalidate pattern</li>
       </ul>
     </div>
-    <div class="layer-card">
+    <div class=&quot;layer-card&quot;>
       <h4>🔌 API Routes</h4>
       <ul>
         <li>/api/species/[name] — full species data</li>
@@ -2039,7 +1916,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
         <li>/api/filter — AND-logic trait filtering</li>
       </ul>
     </div>
-    <div class="layer-card">
+    <div class=&quot;layer-card&quot;>
       <h4>🎨 D3.js Charts</h4>
       <ul>
         <li>Growth curves with SVG animation</li>
@@ -2053,127 +1930,106 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal()
 </div>
 
 <!-- Performance -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Performance Targets</h3>
-  <div class="perf-grid">
-    <div class="perf-card">
-      <div class="metric">TTFB</div>
-      <div class="before">4.2s</div>
-      <div class="after">~120ms</div>
-      <div class="improvement">35× faster</div>
+  <div class=&quot;perf-grid&quot;>
+    <div class=&quot;perf-card&quot;>
+      <div class=&quot;metric&quot;>TTFB</div>
+      <div class=&quot;before&quot;>4.2s</div>
+      <div class=&quot;after&quot;>~120ms</div>
+      <div class=&quot;improvement&quot;>35× faster</div>
     </div>
-    <div class="perf-card">
-      <div class="metric">FCP</div>
-      <div class="before">800ms</div>
-      <div class="after">~200ms</div>
-      <div class="improvement">4× faster</div>
+    <div class=&quot;perf-card&quot;>
+      <div class=&quot;metric&quot;>FCP</div>
+      <div class=&quot;before&quot;>800ms</div>
+      <div class=&quot;after&quot;>~200ms</div>
+      <div class=&quot;improvement&quot;>4× faster</div>
     </div>
-    <div class="perf-card">
-      <div class="metric">LCP</div>
-      <div class="before">2.1s</div>
-      <div class="after">~400ms</div>
-      <div class="improvement">5× faster</div>
+    <div class=&quot;perf-card&quot;>
+      <div class=&quot;metric&quot;>LCP</div>
+      <div class=&quot;before&quot;>2.1s</div>
+      <div class=&quot;after&quot;>~400ms</div>
+      <div class=&quot;improvement&quot;>5× faster</div>
     </div>
-    <div class="perf-card">
-      <div class="metric">Memory</div>
-      <div class="before">—</div>
-      <div class="after">~150 MB</div>
-      <div class="improvement">All CSVs cached</div>
+    <div class=&quot;perf-card&quot;>
+      <div class=&quot;metric&quot;>Memory</div>
+      <div class=&quot;before&quot;>—</div>
+      <div class=&quot;after&quot;>~150 MB</div>
+      <div class=&quot;improvement&quot;>All CSVs cached</div>
     </div>
   </div>
-  <div class="mem-bar">
-    <span class="mem-label">RAM usage</span>
-    <div class="mem-track">
-      <div class="mem-fill" style="width: 38%;">~150 MB / 400 MB available</div>
+  <div class=&quot;mem-bar&quot;>
+    <span class=&quot;mem-label&quot;>RAM usage</span>
+    <div class=&quot;mem-track&quot;>
+      <div class=&quot;mem-fill&quot; style=&quot;width: 38%;&quot;>~150 MB / 400 MB available</div>
     </div>
   </div>
 </div>
 
 <!-- Code snippet -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Cache Implementation</h3>
-  <div class="code-block">
-<span class="code-comment">// lib/data/cache.ts — CSV cache singleton</span>
-<span class="code-keyword">import</span> Papa <span class="code-keyword">from</span> <span class="code-string">'papaparse'</span>;
-<span class="code-keyword">import</span> fs <span class="code-keyword">from</span> <span class="code-string">'fs'</span>;
+  <div class=&quot;code-block&quot;>
+<span class=&quot;code-comment&quot;>// lib/data/cache.ts — CSV cache singleton</span>
+<span class=&quot;code-keyword&quot;>import</span> Papa <span class=&quot;code-keyword&quot;>from</span> <span class=&quot;code-string&quot;>'papaparse'</span>;
+<span class=&quot;code-keyword&quot;>import</span> fs <span class=&quot;code-keyword&quot;>from</span> <span class=&quot;code-string&quot;>'fs'</span>;
 
-<span class="code-keyword">class</span> DataCache {
-  <span class="code-keyword">private</span> cache = <span class="code-keyword">new</span> Map&lt;string, any[]&gt;();
+<span class=&quot;code-keyword&quot;>class</span> DataCache {
+  <span class=&quot;code-keyword&quot;>private</span> cache = <span class=&quot;code-keyword&quot;>new</span> Map&amp;lt;string, any[]&amp;gt;();
 
-  <span class="code-keyword">async</span> loadAll() {
-    <span class="code-keyword">const</span> files = [
-      <span class="code-string">'egg_db'</span>, <span class="code-string">'growth_db'</span>, <span class="code-string">'settlement_age_db'</span>,
-      <span class="code-string">'settlement_size_db'</span>, <span class="code-string">'vertical_position_db'</span>,
-      <span class="code-string">'pelagic_juvenile_db'</span>, <span class="code-string">'rafting_db'</span>,
-      <span class="code-string">'swimming_ucrit_db'</span>, <span class="code-string">'swimming_iss_db'</span>
+  <span class=&quot;code-keyword&quot;>async</span> loadAll() {
+    <span class=&quot;code-keyword&quot;>const</span> files = [
+      <span class=&quot;code-string&quot;>'egg_db'</span>, <span class=&quot;code-string&quot;>'growth_db'</span>, <span class=&quot;code-string&quot;>'settlement_age_db'</span>,
+      <span class=&quot;code-string&quot;>'settlement_size_db'</span>, <span class=&quot;code-string&quot;>'vertical_position_db'</span>,
+      <span class=&quot;code-string&quot;>'pelagic_juvenile_db'</span>, <span class=&quot;code-string&quot;>'rafting_db'</span>,
+      <span class=&quot;code-string&quot;>'swimming_ucrit_db'</span>, <span class=&quot;code-string&quot;>'swimming_iss_db'</span>
     ];
-    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> f <span class="code-keyword">of</span> files) {
-      <span class="code-keyword">const</span> csv = fs.readFileSync(<span class="code-string">\`database/\${f}.csv\`</span>, <span class="code-string">'utf-8'</span>);
-      this.cache.set(f, Papa.parse(csv, { header: <span class="code-keyword">true</span> }).data);
+    <span class=&quot;code-keyword&quot;>for</span> (<span class=&quot;code-keyword&quot;>const</span> f <span class=&quot;code-keyword&quot;>of</span> files) {
+      <span class=&quot;code-keyword&quot;>const</span> csv = fs.readFileSync(<span class=&quot;code-string&quot;>`database/${f}.csv`</span>, <span class=&quot;code-string&quot;>'utf-8'</span>);
+      this.cache.set(f, Papa.parse(csv, { header: <span class=&quot;code-keyword&quot;>true</span> }).data);
     }
   }
 }
 
-<span class="code-comment">// pages/species/[name].tsx — ISR config</span>
-<span class="code-keyword">export async function</span> getStaticProps({ params }) {
-  <span class="code-keyword">const</span> data = <span class="code-keyword">await</span> cache.getSpecies(params.name);
-  <span class="code-keyword">return</span> { props: { data }, revalidate: <span class="code-number">3600</span> };
+<span class=&quot;code-comment&quot;>// pages/species/[name].tsx — ISR config</span>
+<span class=&quot;code-keyword&quot;>export async function</span> getStaticProps({ params }) {
+  <span class=&quot;code-keyword&quot;>const</span> data = <span class=&quot;code-keyword&quot;>await</span> cache.getSpecies(params.name);
+  <span class=&quot;code-keyword&quot;>return</span> { props: { data }, revalidate: <span class=&quot;code-number&quot;>3600</span> };
 }
   </div>
 </div>
 
 <!-- Database updates -->
-<div class="panel">
+<div class=&quot;panel&quot;>
   <h3>Database Updates (01.2026)</h3>
-  <div class="db-update">
-    <span class="db-badge">UPDATED</span>
-    <span class="db-name">Settlement_age_database_final_01.2026.txt</span>
-    <span class="db-date">Jan 2026</span>
+  <div class=&quot;db-update&quot;>
+    <span class=&quot;db-badge&quot;>UPDATED</span>
+    <span class=&quot;db-name&quot;>Settlement_age_database_final_01.2026.txt</span>
+    <span class=&quot;db-date&quot;>Jan 2026</span>
   </div>
-  <div class="db-update">
-    <span class="db-badge">UPDATED</span>
-    <span class="db-name">Settlement_size_database_final_01.2026.txt</span>
-    <span class="db-date">Jan 2026</span>
+  <div class=&quot;db-update&quot;>
+    <span class=&quot;db-badge&quot;>UPDATED</span>
+    <span class=&quot;db-name&quot;>Settlement_size_database_final_01.2026.txt</span>
+    <span class=&quot;db-date&quot;>Jan 2026</span>
   </div>
-  <div class="db-update">
-    <span class="db-badge">UPDATED</span>
-    <span class="db-name">Vertical_position_database_final_01.2026.txt</span>
-    <span class="db-date">Jan 2026</span>
+  <div class=&quot;db-update&quot;>
+    <span class=&quot;db-badge&quot;>UPDATED</span>
+    <span class=&quot;db-name&quot;>Vertical_position_database_final_01.2026.txt</span>
+    <span class=&quot;db-date&quot;>Jan 2026</span>
   </div>
 </div>
 </body>
-</html>`;
-
-
-  // Set srcdoc on all iframes
-  function loadIframes() {
-    var ids = ["homepage","egg-taxonomy","growth-curves","images-display","pelagic-juvenile","rafting","active-behaviors","ui-export","infrastructure"];
-    ids.forEach(function(id) {
-      var iframe = document.getElementById('iframe-' + id);
-      if (iframe && mockups[id]) {
-        iframe.srcdoc = mockups[id];
-      }
-    });
-  }
-
-  // Nav switching
-  var buttons = document.querySelectorAll('nav button[data-section]');
-  var allPanels = document.querySelectorAll('.panel');
-  buttons.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      buttons.forEach(function(b) { b.classList.remove('active'); });
-      allPanels.forEach(function(p) { p.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById('panel-' + btn.dataset.section).classList.add('active');
-    });
-  });
-
-  // Load iframes on DOM ready
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadIframes);
-  } else {
-    loadIframes();
-  }
+</html>" title="Infrastructure"></iframe>
+  </div>
+  </div>
+</div>
+<script>
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('section-' + id).classList.add('active');
+  btn.classList.add('active');
+}
 </script>
 </body>
 </html>
