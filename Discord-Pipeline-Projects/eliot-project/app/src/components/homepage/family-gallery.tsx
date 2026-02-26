@@ -15,6 +15,7 @@ interface GalleryImage {
 interface GallerySection {
   genus: string;
   images: GalleryImage[];
+  sectionType?: 'family' | 'genus' | 'species';
 }
 
 interface FamilyGalleryProps {
@@ -115,10 +116,16 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
         <p className="text-muted-foreground">No photos available for this family.</p>
       )}
 
-      {/* Genus sections */}
-      {sections.map((section, sectionIdx) => (
+      {/* Image sections: family → genus → species */}
+      {sections.map((section, sectionIdx) => {
+        const colorClass = section.sectionType === 'family'
+          ? 'text-amber-400'
+          : section.sectionType === 'genus'
+            ? 'text-emerald-400'
+            : 'text-muted-foreground';
+        return (
         <div key={section.genus} className="space-y-2">
-          <h3 className="text-sm font-semibold text-muted-foreground italic">
+          <h3 className={`text-sm font-semibold italic ${colorClass}`}>
             {section.genus}
           </h3>
           <div className="grid grid-cols-5 gap-2">
@@ -154,7 +161,8 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
             ))}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Lightbox */}
       {lightboxIndex !== null && allImages[lightboxIndex] && (
