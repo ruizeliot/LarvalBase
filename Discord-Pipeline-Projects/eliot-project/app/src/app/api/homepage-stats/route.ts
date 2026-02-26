@@ -83,7 +83,45 @@ export async function GET() {
     // Sort by record count descending
     stats.sort((a, b) => b.records - a.records);
 
-    return NextResponse.json({ stats });
+    // Compute publication year & origin data from trait references
+    const pubYearData: { year: number; source: string; count: number }[] = [];
+    const yearSourceCounts = new Map<string, number>();
+
+    for (const [filename, speciesSet] of registry.databaseSpecies) {
+      const displayName = getTraitDisplayName(filename);
+
+      // Count records per year extracted from references
+      for (const traits of data.traitsBySpecies.values()) {
+        for (const trait of traits) {
+          if (!trait.source) continue;
+          // Extract year from reference string (e.g., "Smith et al. 2015")
+          const yearMatch = trait.source.match(/\b(19|20)\d{2}\b/);
+          if (!yearMatch) continue;
+          const year = parseInt(yearMatch[0], 10);
+          const key = `${year}|${displayName}`;
+          yearSourceCounts.set(key, (yearSourceCounts.get(key) ?? 0) + 1);
+        }
+      }
+    }
+
+    // Deduplicate: aggregate by year and source category
+    const yearAgg = new Map<string, number>();
+    for (const [key, count] of yearSourceCounts) {
+      const [yearStr] = key.split('|');
+      const year = parseInt(yearStr, 10);
+      // Bin sources into major categories
+      const binKey = `${year}|Database`;
+      yearAgg.set(binKey, (yearAgg.get(binKey) ?? 0) + count);
+    }
+
+    for (const [key, count] of yearAgg) {
+      const [yearStr, source] = key.split('|');
+      pubYearData.push({ year: parseInt(yearStr, 10), source, count });
+    }
+
+    pubYearData.sort((a, b) => a.year - b.year);
+
+    return NextResponse.json({ stats, publicationYears: pubYearData });
   } catch (error) {
     console.error('Error computing homepage stats:', error);
     return NextResponse.json(

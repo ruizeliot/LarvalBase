@@ -5,6 +5,7 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { SpeciesDetail } from "@/components/species-detail/species-detail";
 import { TraitBarplots } from "@/components/homepage/trait-barplots";
+import { PublicationChart } from "@/components/homepage/publication-chart";
 import { useHomepageStats } from "@/hooks/use-homepage-stats";
 
 interface SelectedSpecies {
@@ -16,7 +17,7 @@ export default function Home() {
   const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(
     null
   );
-  const { barplotStats } = useHomepageStats();
+  const { barplotStats, publicationYears } = useHomepageStats();
 
   return (
     <MainLayout sidebar={<AppSidebar onSelectSpecies={setSelectedSpecies} />}>
@@ -32,6 +33,7 @@ export default function Home() {
           </div>
 
           <TraitBarplots stats={barplotStats} />
+          <PublicationChart data={publicationYears} />
         </div>
       )}
     </MainLayout>

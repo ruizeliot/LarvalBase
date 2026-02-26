@@ -2,19 +2,22 @@
 
 import { useState, useEffect } from "react";
 import type { TraitBarplotStat } from "@/components/homepage/trait-barplots";
+import type { PublicationDataPoint } from "@/components/homepage/publication-chart";
 
 interface HomepageStatsState {
   barplotStats: TraitBarplotStat[];
+  publicationYears: PublicationDataPoint[];
   isLoading: boolean;
   error: string | null;
 }
 
 /**
- * Fetches homepage statistics for barplots from the API.
+ * Fetches homepage statistics for barplots and publication chart from the API.
  */
 export function useHomepageStats(): HomepageStatsState {
   const [state, setState] = useState<HomepageStatsState>({
     barplotStats: [],
+    publicationYears: [],
     isLoading: true,
     error: null,
   });
@@ -27,6 +30,7 @@ export function useHomepageStats(): HomepageStatsState {
         const data = await res.json();
         setState({
           barplotStats: data.stats ?? [],
+          publicationYears: data.publicationYears ?? [],
           isLoading: false,
           error: null,
         });
