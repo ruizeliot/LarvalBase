@@ -128,13 +128,13 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
                 className="rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03]"
                 onClick={() => setLightboxIndex(getGlobalIndex(sectionIdx, imgIdx))}
               >
-                <div className="w-full h-28 bg-muted">
+                <div className="w-full h-28 bg-black">
                   <img
                     src={img.imageUrl}
                     alt={img.species || img.genus || family}
                     loading="lazy"
                     decoding="async"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
                 {img.species && (

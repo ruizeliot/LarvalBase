@@ -40,15 +40,15 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
             className="rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03] hover:border-primary"
             onClick={() => onSelectFamily?.(fam.family)}
           >
-            {/* Image placeholder or actual image */}
-            <div className="w-full h-20 bg-muted flex items-center justify-center text-2xl">
+            {/* Image with letterbox/pillarbox (contain + black bg) */}
+            <div className="w-full h-20 bg-black flex items-center justify-center text-2xl">
               {fam.imageUrl ? (
                 <img
                   src={fam.imageUrl}
                   alt={fam.family}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               ) : (
                 '🐟'
