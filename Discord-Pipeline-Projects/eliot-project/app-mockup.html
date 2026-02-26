@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LarvalBase V2 — App Mockup Compilation</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f1729;
+    color: #e2e8f0;
+    min-height: 100vh;
+  }
+  header {
+    background: #1a2332;
+    border-bottom: 1px solid #2d3748;
+    padding: 16px 24px;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #60a5fa;
+  }
+  header p {
+    font-size: 13px;
+    color: #94a3b8;
+    margin-top: 4px;
+  }
+  .layout {
+    display: flex;
+    height: calc(100vh - 72px);
+  }
+  nav {
+    width: 260px;
+    min-width: 260px;
+    background: #1a2332;
+    border-right: 1px solid #2d3748;
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+  nav .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #64748b;
+    padding: 8px 16px;
+    margin-top: 8px;
+  }
+  nav button {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  nav button:hover { background: #2d3748; color: #e2e8f0; }
+  nav button.active { background: #1e3a5f; color: #60a5fa; border-left: 3px solid #60a5fa; }
+  nav button .icon { font-size: 18px; width: 24px; text-align: center; }
+  nav button .badge {
+    margin-left: auto;
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .badge-mod { background: #854d0e; color: #fbbf24; }
+  .badge-new { background: #166534; color: #4ade80; }
+  main {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .tab-header {
+    background: #1a2332;
+    border-bottom: 1px solid #2d3748;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tab-header h2 { font-size: 16px; font-weight: 600; }
+  .tab-header .status { font-size: 12px; color: #94a3b8; }
+  .content {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+  }
+  .content iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #fff;
+  }
+  .placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    color: #64748b;
+    padding: 40px;
+    text-align: center;
+  }
+  .placeholder .icon-large { font-size: 48px; opacity: 0.5; }
+  .placeholder h3 { font-size: 18px; color: #94a3b8; }
+  .placeholder p { font-size: 14px; max-width: 500px; line-height: 1.6; }
+  .placeholder .spec-list {
+    text-align: left;
+    background: #1a2332;
+    border: 1px solid #2d3748;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-top: 8px;
+    max-width: 600px;
+    width: 100%;
+  }
+  .placeholder .spec-list li {
+    margin: 6px 0;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+  .panel { display: none; height: 100%; }
+  .panel.active { display: flex; flex-direction: column; }
+</style>
+</head>
+<body>
+<header>
+  <h1>LarvalBase V2 — App Mockup Compilation</h1>
+  <p>Global pelagic dispersal traits databases for early-life stages of marine fishes — Ruiz et al. (2026)</p>
+</header>
+<div class="layout">
+  <nav id="nav">
+    <div class="section-label">Pages</div>
+    <button class="active" data-section="homepage">
+      <span class="icon">🏠</span> Homepage
+      <span class="badge badge-mod">MOD</span>
+    </button>
+    <div class="section-label">Species Detail Sections</div>
+    <button data-section="egg-taxonomy">
+      <span class="icon">🥚</span> Egg &amp; Taxonomy
+      <span class="badge badge-mod">MOD</span>
+    </button>
+    <button data-section="growth-curves">
+      <span class="icon">📈</span> Growth Curves
+      <span class="badge badge-mod">MOD</span>
+    </button>
+    <button data-section="images-display">
+      <span class="icon">🖼️</span> Images &amp; Display
+      <span class="badge badge-mod">MOD</span>
+    </button>
+    <button data-section="pelagic-juvenile">
+      <span class="icon">🐟</span> Pelagic Juvenile
+      <span class="badge badge-new">NEW</span>
+    </button>
+    <button data-section="rafting">
+      <span class="icon">🚢</span> Rafting
+      <span class="badge badge-new">NEW</span>
+    </button>
+    <button data-section="active-behaviors">
+      <span class="icon">🏊</span> Active Behaviors
+      <span class="badge badge-mod">MOD</span>
+    </button>
+    <div class="section-label">Cross-Cutting</div>
+    <button data-section="ui-export">
+      <span class="icon">🔧</span> UI &amp; Export
+      <span class="badge badge-mod">MOD</span>
+    </button>
+    <button data-section="infrastructure">
+      <span class="icon">⚡</span> Infrastructure
+      <span class="badge badge-mod">MOD</span>
+    </button>
+  </nav>
+  <main>
+    <!-- Homepage -->
+    <div class="panel active" id="panel-homepage">
+      <div class="tab-header">
+        <h2>🏠 Homepage</h2>
+        <span class="status">Mockup v2 validated — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🏠</div>
+          <h3>Homepage — Mockup Not Available</h3>
+          <p>The validated mockup (homepage-v2.html) was created by Storm as a Discord attachment but was not downloaded to the local mockups/ directory.</p>
+          <ul class="spec-list">
+            <li><strong>Title:</strong> "LarvalBase: Global pelagic dispersal traits databases for early-life stages of marine fishes – Ruiz et al. (2026)"</li>
+            <li><strong>Horizontal barplots:</strong> Record/species/genus/family/order counts per trait. Flat colors (#F8766D, #A3A500, #00BF7D, #00B0F6, #E76BF3), 2px white delineations, NO gradients</li>
+            <li><strong>Publication year chart:</strong> Bar chart by year, colored by data source</li>
+            <li><strong>Photo grid:</strong> 5/row, one blackwater image per family, sorted by order, drill-down modal</li>
+            <li><strong>Filter by Trait:</strong> Left sidebar with AND logic, section-based checkboxes, Picture author filters</li>
+            <li><strong>Available species:</strong> Live-updating list (renamed from Taxonomy)</li>
+            <li><strong>Two search bars:</strong> "Search all species" (top) + "Search filtered species" (bottom)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Egg & Taxonomy -->
+    <div class="panel" id="panel-egg-taxonomy">
+      <div class="tab-header">
+        <h2>🥚 Egg &amp; Taxonomy</h2>
+        <span class="status">Mockup v2 validated — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🥚</div>
+          <h3>Egg &amp; Taxonomy — Mockup Not Available</h3>
+          <p>The validated mockup (egg-taxonomy-v2.html) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Qualitative Egg Panel:</strong> Frequency barplots for EGG_LOCATION, EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE</li>
+            <li><strong>Data cascade:</strong> Species → genus → family fallback with color-coded level indicator</li>
+            <li><strong>Taxonomy sidebar:</strong> SVG icons per level (order/family/genus/species), folder for "All species"</li>
+            <li><strong>Raw data modal:</strong> Shows _MEAN, _MIN, _MAX, _CONF columns in scrollable table</li>
+            <li><strong>No confidence badges</strong> — replaced with frequency distributions</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Growth Curves -->
+    <div class="panel" id="panel-growth-curves">
+      <div class="tab-header">
+        <h2>📈 Growth Curves</h2>
+        <span class="status">Mockup v1 validated — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">📈</div>
+          <h3>Growth Curves — Mockup Not Available</h3>
+          <p>The validated mockup (growth-curves.html) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Equations:</strong> Growth curve equations in legend with age-at-length info per reference</li>
+            <li><strong>Tooltips:</strong> "Age: …" / "Size: …" (not "x: …" / "y: …")</li>
+            <li><strong>Color scale:</strong> Spectral (ggplot) by TEMPERATURE_MEAN (18°C cool → 32°C warm)</li>
+            <li><strong>No-curve data:</strong> Scatter points shown even without modelled curve, color-coded by reference + temperature</li>
+            <li><strong>Axis capping:</strong> Max from met_age/set_age/met_size/set_size databases, species→genus→family→no cap</li>
+            <li><strong>Animated:</strong> Curve drawing animation on load</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Images & Display -->
+    <div class="panel" id="panel-images-display">
+      <div class="tab-header">
+        <h2>🖼️ Images &amp; Display</h2>
+        <span class="status">Mockup v1 validated — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🖼️</div>
+          <h3>Images &amp; Display — Mockup Not Available</h3>
+          <p>The validated mockup (images-display.html) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Priority order:</strong> Blackwater → Ocea Consult–IHSM → IchthyoGwada → ADLIFISH 1 → CRIOBE → Pham &amp; Durand → Amelia Chatagnon → Fisher et al.</li>
+            <li><strong>Enlargement:</strong> Black bars (letterbox/pillarbox) — full image visible without dezooming</li>
+            <li><strong>Caption fixes:</strong> Polynesia, Maldives, classified_bw_images_species</li>
+            <li><strong>Image-only species:</strong> Pages for species with images but no data records</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pelagic Juvenile -->
+    <div class="panel" id="panel-pelagic-juvenile">
+      <div class="tab-header">
+        <h2>🐟 Pelagic Juvenile</h2>
+        <span class="status">NEW — Mockup v1.1 validated (error bars) — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🐟</div>
+          <h3>Pelagic Juvenile — Mockup Not Available</h3>
+          <p>The validated mockup (pelagic-juvenile.html with error bars) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Panel 1 — Qualitative:</strong> Known/Unknown status, KEY_WORD values, related species in genus/family</li>
+            <li><strong>Panel 2 — Size:</strong> PELAGIC_JUV_SIZE columns, dot-strip chart by reference, error bars (±1 SD), comparison bars</li>
+            <li><strong>Panel 3 — Duration:</strong> PELAGIC_JUV_DURATION columns, same layout in days, error bars</li>
+            <li><strong>Placement:</strong> After Settlement section on species detail page</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rafting -->
+    <div class="panel" id="panel-rafting">
+      <div class="tab-header">
+        <h2>🚢 Rafting</h2>
+        <span class="status">NEW — Mockup v1 validated with revisions noted — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🚢</div>
+          <h3>Rafting — Mockup Not Available</h3>
+          <p>The validated mockup (rafting.html) was created by Storm but not downloaded. Revisions noted: frequency barplots + error bars.</p>
+          <ul class="spec-list">
+            <li><strong>Panel 1 — Qualitative:</strong> Rafting status, flotsam type (compound values split), stage, related species. Frequency barplots with species→genus→family fallback</li>
+            <li><strong>Panel 2 — Rafter size:</strong> RAFTING_SIZE columns, dot-strip chart, error bars, comparison bars</li>
+            <li><strong>Panel 3 — Duration:</strong> RAFTING_AGE column, same layout in days, error bars</li>
+            <li><strong>Accent:</strong> Purple to distinguish from other sections</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Active Behaviors -->
+    <div class="panel" id="panel-active-behaviors">
+      <div class="tab-header">
+        <h2>🏊 Active Behaviors</h2>
+        <span class="status">Renamed from "Swimming &amp; Comparisons" — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🏊</div>
+          <h3>Active Behaviors — Mockup Not Available</h3>
+          <p>The validated mockup (active-behaviors.html) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Panel 1 — Vertical Distribution:</strong> MOVED to first position (from removed Behavior &amp; Ecology section). Depth chart with day/night/unknown colors, water gradient, size vs depth scatter</li>
+            <li><strong>Panel 2 — Critical Swimming Speed (Absolute):</strong> Renamed, tabbed dot-strip charts</li>
+            <li><strong>Panel 3 — In Situ Swimming Speed (Absolute):</strong> Renamed, tabbed dot-strip charts</li>
+            <li><strong>Family comparison:</strong> Normal (&lt;20 spp), genus average (&gt;20 spp), hidden (n_sp=1)</li>
+            <li><strong>Removed:</strong> "Behavior &amp; Ecology" section entirely</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- UI & Export -->
+    <div class="panel" id="panel-ui-export">
+      <div class="tab-header">
+        <h2>🔧 UI &amp; Export</h2>
+        <span class="status">Mockup v1 validated — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">🔧</div>
+          <h3>UI &amp; Export — Mockup Not Available</h3>
+          <p>The validated mockup (ui-export.html) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Export buttons:</strong> Species/Genus/Family traits per section with CSV preview modal</li>
+            <li><strong>Columns:</strong> ORDER, FAMILY, GENUS, VALID_NAME, APHIA_ID, AUTHORITY + trait-specific columns</li>
+            <li><strong>All metadata visible:</strong> Scrollable table with EXT_REF, REFERENCE, _MEAN_TYPE, _CONF_TYPE, rearing/temperature columns</li>
+            <li><strong>Map fix:</strong> Edge deduplication for map points</li>
+            <li><strong>Hidden:</strong> Duplicate magnifier icon</li>
+            <li><strong>Renamed:</strong> "Hatching &amp; Early Development" → "Hatching &amp; Pre-flexion Stage"</li>
+            <li><strong>SVG icons:</strong> From section_icons.zip, matched by filename</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Infrastructure -->
+    <div class="panel" id="panel-infrastructure">
+      <div class="tab-header">
+        <h2>⚡ Infrastructure</h2>
+        <span class="status">Mockup v1 validated — mockup file not downloaded</span>
+      </div>
+      <div class="content">
+        <div class="placeholder">
+          <div class="icon-large">⚡</div>
+          <h3>Infrastructure — Mockup Not Available</h3>
+          <p>The validated mockup (infrastructure.html) was created by Storm but not downloaded.</p>
+          <ul class="spec-list">
+            <li><strong>Architecture:</strong> CSV Files → In-Memory Cache → API Routes → ISR Pages → React + D3</li>
+            <li><strong>CSV caching:</strong> Load once on server start, ~150MB in memory</li>
+            <li><strong>ISR:</strong> Pre-rendered species pages, revalidate: 3600 (1 hour)</li>
+            <li><strong>Performance:</strong> TTFB 4.2s → ~120ms, FCP 800ms → ~200ms</li>
+            <li><strong>Database updates:</strong> Settlement age/size (01.2026), Vertical position (01.2026)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const buttons = document.querySelectorAll('nav button[data-section]');
+  const panels = document.querySelectorAll('.panel');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      buttons.forEach(b => b.classList.remove('active'));
+      panels.forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('panel-' + btn.dataset.section).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
