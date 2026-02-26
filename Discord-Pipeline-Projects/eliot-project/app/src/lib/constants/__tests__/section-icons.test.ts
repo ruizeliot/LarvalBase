@@ -9,6 +9,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { SECTION_ICONS, getSectionIcon, getAllSectionIcons } from '../section-icons';
+import { DISPLAY_GROUPS } from '@/components/species-detail/species-detail-config';
 
 describe('US-1.5: SVG Section Icons', () => {
   it('should export a SECTION_ICONS mapping', () => {
@@ -60,5 +61,13 @@ describe('US-1.5: SVG Section Icons', () => {
     expect(SECTION_ICONS['Pelagic Juvenile']).toBeDefined();
     expect(SECTION_ICONS['Rafting']).toBeDefined();
     expect(SECTION_ICONS['Active Behaviors']).toBeDefined();
+  });
+
+  it('should have icon mappings for every DISPLAY_GROUP title', () => {
+    for (const group of DISPLAY_GROUPS) {
+      const icon = getSectionIcon(group.title);
+      expect(icon, `No icon for DISPLAY_GROUP "${group.title}"`).toBeDefined();
+      expect(icon, `Icon for "${group.title}" is not an SVG`).toMatch(/\.svg$/);
+    }
   });
 });
