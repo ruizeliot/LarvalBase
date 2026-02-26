@@ -36,8 +36,8 @@ export const DATABASE_VERSIONS: Record<string, string> = {
   'critical_swimming_speed_database.csv': '06.2025',
   'in_situ_swimming_speed_database.csv': '01.2026',
 
-  // Behavior
-  'vertical_position_database.csv': '06.2025',
+  // Behavior — vertical position updated 01.2026
+  'vertical_position_database.csv': '01.2026',
   'rafting_database.csv': '06.2025',
 };
 

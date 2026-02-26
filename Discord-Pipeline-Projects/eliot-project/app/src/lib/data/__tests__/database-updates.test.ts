@@ -26,11 +26,9 @@ describe('US-1.4: Database Updates (01.2026)', () => {
     expect(version).toBe('01.2026');
   });
 
-  it('should track vertical_position version', () => {
+  it('should track vertical_position as 01.2026 version', () => {
     const version = getDatabaseVersion('vertical_position_database.csv');
-    expect(version).toBeDefined();
-    // Should be the latest available
-    expect(version).toMatch(/\d{2}\.\d{4}/);
+    expect(version).toBe('01.2026');
   });
 
   it('should track settlement_age version', () => {
