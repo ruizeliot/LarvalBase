@@ -121,7 +121,10 @@ export async function GET() {
 
     pubYearData.sort((a, b) => a.year - b.year);
 
-    return NextResponse.json({ stats, publicationYears: pubYearData });
+    return NextResponse.json(
+      { stats, publicationYears: pubYearData },
+      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+    );
   } catch (error) {
     console.error('Error computing homepage stats:', error);
     return NextResponse.json(

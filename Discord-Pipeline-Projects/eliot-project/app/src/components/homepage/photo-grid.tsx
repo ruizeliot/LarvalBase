@@ -49,6 +49,8 @@ export function PhotoGrid({ families, onSelectSpecies }: PhotoGridProps) {
                 <img
                   src={fam.imageUrl}
                   alt={fam.family}
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               ) : (

@@ -80,7 +80,10 @@ export async function GET() {
         imageUrl: familyImageMap.get(f.family) ?? null,
       }));
 
-    return NextResponse.json({ families });
+    return NextResponse.json(
+      { families },
+      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+    );
   } catch (error) {
     console.error('Error loading family data:', error);
     return NextResponse.json(
