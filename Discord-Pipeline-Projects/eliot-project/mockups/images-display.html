@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Images &amp; Display — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .species-name { font-style: italic; color: #60a5fa; }
+  .panel { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .panel h3 { font-size: 14px; color: #60a5fa; margin-bottom: 12px; }
+  /* Priority list */
+  .priority-list { list-style: none; }
+  .priority-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-bottom: 1px solid #1e3a5f; }
+  .priority-item:last-child { border-bottom: none; }
+  .priority-rank { width: 24px; height: 24px; background: #1e3a5f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #60a5fa; flex-shrink: 0; }
+  .priority-name { font-size: 13px; color: #e2e8f0; flex: 1; }
+  .priority-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; }
+  .badge-bw { background: #1a1a2e; color: #a78bfa; }
+  .badge-field { background: #1a2e1a; color: #4ade80; }
+  .badge-lit { background: #2e1a1a; color: #fca5a5; }
+  /* Gallery */
+  .gallery { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+  .img-card { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 6px; overflow: hidden; cursor: pointer; transition: all 0.15s; }
+  .img-card:hover { border-color: #60a5fa; transform: scale(1.02); }
+  .img-thumb { width: 100%; height: 100px; display: flex; align-items: center; justify-content: center; font-size: 28px; position: relative; }
+  .img-source { position: absolute; top: 4px; right: 4px; font-size: 9px; padding: 2px 6px; border-radius: 3px; background: rgba(0,0,0,0.7); color: #94a3b8; }
+  .img-caption { padding: 8px; font-size: 11px; color: #94a3b8; }
+  .img-caption .stage { color: #60a5fa; font-weight: 600; }
+  /* Image-only badge */
+  .img-only-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 10px; background: #854d0e; color: #fbbf24; padding: 2px 8px; border-radius: 10px; margin-left: 8px; }
+  /* Lightbox */
+  .lightbox { display: none; position: fixed; inset: 0; background: #000; z-index: 100; align-items: center; justify-content: center; flex-direction: column; }
+  .lightbox.active { display: flex; }
+  .lightbox-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: #fff; font-size: 28px; cursor: pointer; z-index: 101; }
+  .lightbox-img { max-width: 80%; max-height: 70vh; object-fit: contain; }
+  .lightbox-placeholder { width: 500px; height: 340px; background: #1a2d4a; display: flex; align-items: center; justify-content: center; font-size: 48px; border-radius: 4px; }
+  .black-bars { background: #000; width: 80%; max-width: 700px; aspect-ratio: 16/9; display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+  .lightbox-caption { color: #94a3b8; font-size: 13px; margin-top: 12px; text-align: center; max-width: 600px; }
+  .lightbox-caption em { color: #60a5fa; }
+  /* Caption fixes */
+  .fix-demo { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .fix-card { background: #1a2d4a; border-radius: 6px; padding: 12px; }
+  .fix-card h5 { font-size: 11px; color: #64748b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .fix-card .before { color: #ef4444; font-size: 12px; text-decoration: line-through; }
+  .fix-card .after { color: #4ade80; font-size: 12px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<div class="page-title">🖼️ Images &amp; Display — <span class="species-name">Chromis viridis</span> <span class="img-only-badge">📷 Image-only species</span></div>
+<div class="page-subtitle">Image priority, black-bar enlargement, caption fixes</div>
+
+<div class="panel">
+  <h3>Image Source Priority Order</h3>
+  <ul class="priority-list">
+    <li class="priority-item"><span class="priority-rank">1</span><span class="priority-name">Blackwater</span><span class="priority-badge badge-bw">Blackwater</span></li>
+    <li class="priority-item"><span class="priority-rank">2</span><span class="priority-name">Ocea Consult–IHSM</span><span class="priority-badge badge-field">Field</span></li>
+    <li class="priority-item"><span class="priority-rank">3</span><span class="priority-name">IchthyoGwada</span><span class="priority-badge badge-field">Field</span></li>
+    <li class="priority-item"><span class="priority-rank">4</span><span class="priority-name">ADLIFISH 1</span><span class="priority-badge badge-field">Field</span></li>
+    <li class="priority-item"><span class="priority-rank">5</span><span class="priority-name">CRIOBE</span><span class="priority-badge badge-field">Field</span></li>
+    <li class="priority-item"><span class="priority-rank">6</span><span class="priority-name">Pham &amp; Durand</span><span class="priority-badge badge-lit">Literature</span></li>
+    <li class="priority-item"><span class="priority-rank">7</span><span class="priority-name">Amelia Chatagnon</span><span class="priority-badge badge-field">Field</span></li>
+    <li class="priority-item"><span class="priority-rank">8</span><span class="priority-name">Fisher et al. 2022</span><span class="priority-badge badge-lit">Literature</span></li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h3>Image Gallery (sorted by priority)</h3>
+  <div class="gallery">
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#0a0a1e">🐠<span class="img-source">Blackwater</span></div>
+      <div class="img-caption"><span class="stage">Larva</span> · 4.2 mm SL · Polynesia</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#0a1a0a">🐟<span class="img-source">Ocea–IHSM</span></div>
+      <div class="img-caption"><span class="stage">Pre-flexion</span> · 3.1 mm SL · Madagascar</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#1a1a0a">🐡<span class="img-source">IchthyoGwada</span></div>
+      <div class="img-caption"><span class="stage">Flexion</span> · 6.8 mm SL · Guadeloupe</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#0a1a1a">🐠<span class="img-source">ADLIFISH 1</span></div>
+      <div class="img-caption"><span class="stage">Post-flexion</span> · 12.5 mm SL · Maldives</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#1a0a1a">🐟<span class="img-source">CRIOBE</span></div>
+      <div class="img-caption"><span class="stage">Settlement</span> · 15.2 mm SL · Polynesia</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#0a0a0a">🐡<span class="img-source">Pham &amp; Durand</span></div>
+      <div class="img-caption"><span class="stage">Juvenile</span> · 22.0 mm SL · Vietnam</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#1a0a0a">🐠<span class="img-source">A. Chatagnon</span></div>
+      <div class="img-caption"><span class="stage">Larva</span> · 5.5 mm SL · Guadeloupe</div>
+    </div>
+    <div class="img-card" onclick="openLightbox()">
+      <div class="img-thumb" style="background:#0a0a1a">🐟<span class="img-source">Fisher et al.</span></div>
+      <div class="img-caption"><span class="stage">Adult SVG</span> · BW drawing · FishBase</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>Enlargement — Black Bars (Letterbox / Pillarbox)</h3>
+  <p style="font-size: 12px; color: #94a3b8; margin-bottom: 12px;">Full image always visible without dezooming. Black bars fill remaining space.</p>
+  <div style="display: flex; gap: 16px;">
+    <div style="flex:1; text-align: center;">
+      <div style="background:#000; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border-radius:4px;">
+        <div style="background:#1a2d4a; width:60%; height:100%; display:flex; align-items:center; justify-content:center; font-size:24px;">🐠</div>
+      </div>
+      <div style="font-size:11px; color:#64748b; margin-top:4px;">Pillarbox (portrait image)</div>
+    </div>
+    <div style="flex:1; text-align: center;">
+      <div style="background:#000; aspect-ratio:16/9; display:flex; align-items:center; justify-content:center; border-radius:4px;">
+        <div style="background:#1a2d4a; width:100%; height:60%; display:flex; align-items:center; justify-content:center; font-size:24px;">🐟</div>
+      </div>
+      <div style="font-size:11px; color:#64748b; margin-top:4px;">Letterbox (landscape image)</div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h3>Caption Fixes</h3>
+  <div class="fix-demo">
+    <div class="fix-card">
+      <h5>Polynesia</h5>
+      <div class="before">Source: "French Polynesia photos"</div>
+      <div class="after">Source: "Polynesia — CRIOBE field collection"</div>
+    </div>
+    <div class="fix-card">
+      <h5>Maldives</h5>
+      <div class="before">Source: "Maldives photos"</div>
+      <div class="after">Source: "Maldives — ADLIFISH survey"</div>
+    </div>
+    <div class="fix-card">
+      <h5>classified_bw_images_species</h5>
+      <div class="before">Source: "classified_bw_images_species"</div>
+      <div class="after">Source: "Blackwater — Species ID confirmed"</div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div class="lightbox" id="lightbox">
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  <div class="black-bars">
+    <div class="lightbox-placeholder">🐠</div>
+  </div>
+  <div class="lightbox-caption"><em>Chromis viridis</em> · Larva, 4.2 mm SL · Blackwater · Polynesia</div>
+</div>
+
+<script>
+function openLightbox() { document.getElementById('lightbox').classList.add('active'); }
+function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+</script>
+</body>
+</html>

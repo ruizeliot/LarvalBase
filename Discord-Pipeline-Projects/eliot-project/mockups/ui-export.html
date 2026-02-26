@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UI &amp; Export — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .panel { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .panel h3 { font-size: 14px; color: #60a5fa; margin-bottom: 12px; }
+  /* Export buttons */
+  .export-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .export-card { background: #1a2d4a; border: 1px solid #2d4a6f; border-radius: 8px; padding: 14px; cursor: pointer; transition: all 0.15s; }
+  .export-card:hover { border-color: #60a5fa; transform: translateY(-2px); }
+  .export-card .section-icon { font-size: 24px; margin-bottom: 8px; }
+  .export-card .section-name { font-size: 13px; font-weight: 600; color: #e2e8f0; margin-bottom: 4px; }
+  .export-card .section-renamed { font-size: 10px; color: #f59e0b; margin-bottom: 6px; }
+  .export-btns { display: flex; gap: 4px; flex-wrap: wrap; }
+  .export-btn { padding: 4px 8px; background: #1e3a5f; border: 1px solid #2d4a6f; border-radius: 4px; color: #60a5fa; font-size: 10px; cursor: pointer; }
+  .export-btn:hover { background: #2d4a6f; }
+  /* CSV preview modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 12px; padding: 20px; max-width: 900px; width: 95%; max-height: 80vh; overflow: auto; }
+  .modal h3 { font-size: 15px; color: #60a5fa; margin-bottom: 12px; }
+  .modal-close { float: right; background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; }
+  .csv-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+  .csv-table th { background: #1a2d4a; color: #94a3b8; padding: 5px 6px; text-align: left; border-bottom: 1px solid #2d4a6f; position: sticky; top: 0; white-space: nowrap; }
+  .csv-table td { padding: 4px 6px; border-bottom: 1px solid #1e3a5f; color: #e2e8f0; white-space: nowrap; }
+  .csv-table tr:hover td { background: #1a2d4a; }
+  /* Fix demos */
+  .fix-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .fix-card { background: #1a2d4a; border-radius: 8px; padding: 14px; }
+  .fix-card h4 { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+  .fix-before { border: 1px solid #ef4444; border-radius: 4px; padding: 8px; margin-bottom: 8px; }
+  .fix-after { border: 1px solid #4ade80; border-radius: 4px; padding: 8px; }
+  .fix-label { font-size: 10px; font-weight: 600; margin-bottom: 4px; }
+  .fix-label.before { color: #ef4444; }
+  .fix-label.after { color: #4ade80; }
+  .fix-desc { font-size: 11px; color: #94a3b8; }
+  /* SVG icons grid */
+  .icon-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+  .icon-card { background: #1a2d4a; border-radius: 6px; padding: 12px; text-align: center; }
+  .icon-placeholder { width: 48px; height: 48px; background: #2d4a6f; border-radius: 8px; margin: 0 auto 6px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .icon-name { font-size: 10px; color: #94a3b8; }
+  /* Rename highlight */
+  .rename { display: flex; align-items: center; gap: 8px; padding: 10px; background: #1a2d4a; border-radius: 6px; margin-bottom: 12px; }
+  .rename .old { color: #ef4444; text-decoration: line-through; font-size: 12px; }
+  .rename .arrow { color: #64748b; }
+  .rename .new { color: #4ade80; font-weight: 600; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="page-title">🔧 UI &amp; Export</div>
+<div class="page-subtitle">Export buttons, CSV preview, map fixes, section icons, renames</div>
+
+<!-- Export buttons per section -->
+<div class="panel">
+  <h3>Export Buttons — per Section</h3>
+  <div class="export-grid">
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">🥚</div>
+      <div class="section-name">Egg &amp; Taxonomy</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+        <button class="export-btn">📥 Family</button>
+      </div>
+    </div>
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">📈</div>
+      <div class="section-name">Growth Curves</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+        <button class="export-btn">📥 Family</button>
+      </div>
+    </div>
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">🏠</div>
+      <div class="section-name">Hatching &amp; Pre-flexion Stage</div>
+      <div class="section-renamed">Renamed from "Hatching &amp; Early Development"</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+        <button class="export-btn">📥 Family</button>
+      </div>
+    </div>
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">📍</div>
+      <div class="section-name">Settlement</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+        <button class="export-btn">📥 Family</button>
+      </div>
+    </div>
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">🐟</div>
+      <div class="section-name">Pelagic Juvenile</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+      </div>
+    </div>
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">🚢</div>
+      <div class="section-name">Rafting</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+      </div>
+    </div>
+    <div class="export-card" onclick="openModal()">
+      <div class="section-icon">🏊</div>
+      <div class="section-name">Active Behaviors</div>
+      <div class="export-btns">
+        <button class="export-btn">📥 Species</button>
+        <button class="export-btn">📥 Genus</button>
+        <button class="export-btn">📥 Family</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rename -->
+<div class="panel">
+  <h3>Section Renames</h3>
+  <div class="rename">
+    <span class="old">Hatching &amp; Early Development</span>
+    <span class="arrow">→</span>
+    <span class="new">Hatching &amp; Pre-flexion Stage</span>
+  </div>
+  <div class="rename">
+    <span class="old">Swimming &amp; Comparisons</span>
+    <span class="arrow">→</span>
+    <span class="new">Active Behaviors</span>
+  </div>
+</div>
+
+<!-- Fixes -->
+<div class="panel">
+  <h3>Map &amp; UI Fixes</h3>
+  <div class="fix-grid">
+    <div class="fix-card">
+      <h4>Map Edge Deduplication</h4>
+      <div class="fix-before">
+        <div class="fix-label before">BEFORE</div>
+        <div class="fix-desc">Overlapping points at map edges — same location plotted twice when coordinates wrap around 180°/-180° longitude</div>
+      </div>
+      <div class="fix-after">
+        <div class="fix-label after">AFTER</div>
+        <div class="fix-desc">Deduplicated — each unique GPS coordinate plotted once. Edge-wrap detection removes duplicates within 0.001° tolerance</div>
+      </div>
+    </div>
+    <div class="fix-card">
+      <h4>Duplicate Magnifier Icon</h4>
+      <div class="fix-before">
+        <div class="fix-label before">BEFORE</div>
+        <div class="fix-desc">Two 🔍 magnifier icons visible in species header (search + zoom)</div>
+      </div>
+      <div class="fix-after">
+        <div class="fix-label after">AFTER</div>
+        <div class="fix-desc">Single search icon retained. Zoom magnifier removed — use browser zoom or image lightbox instead</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SVG Icons -->
+<div class="panel">
+  <h3>Section SVG Icons (from section_icons.zip)</h3>
+  <div class="icon-grid">
+    <div class="icon-card"><div class="icon-placeholder">🥚</div><div class="icon-name">egg.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">📈</div><div class="icon-name">growth.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">🖼️</div><div class="icon-name">images.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">📍</div><div class="icon-name">settlement.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">🐟</div><div class="icon-name">pelagic.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">🚢</div><div class="icon-name">rafting.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">🏊</div><div class="icon-name">swimming.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">🔧</div><div class="icon-name">export.svg</div></div>
+    <div class="icon-card"><div class="icon-placeholder">⚡</div><div class="icon-name">infra.svg</div></div>
+  </div>
+  <p style="font-size:11px; color:#64748b; margin-top:8px;">Placeholders shown — swap with actual SVGs from Eliot's section_icons.zip</p>
+</div>
+
+<!-- CSV Preview Modal -->
+<div class="modal-overlay" id="csv-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">&times;</button>
+    <h3>CSV Preview — Egg &amp; Taxonomy (Species level)</h3>
+    <p style="font-size:11px;color:#94a3b8;margin-bottom:12px;">All metadata visible in scrollable table</p>
+    <div style="overflow-x:auto;">
+      <table class="csv-table">
+        <thead>
+          <tr><th>ORDER</th><th>FAMILY</th><th>GENUS</th><th>VALID_NAME</th><th>APHIA_ID</th><th>AUTHORITY</th><th>EGG_LOCATION</th><th>EGG_DETAILS</th><th>EGG_SHAPE</th><th>EGG_DIAMETER_MEAN</th><th>EGG_DIAMETER_MIN</th><th>EGG_DIAMETER_MAX</th><th>MEAN_TYPE</th><th>CONF_TYPE</th><th>EXT_REF</th><th>REFERENCE</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Perciformes</td><td>Pomacentridae</td><td>Chromis</td><td>Chromis viridis</td><td>212468</td><td>(Cuvier, 1830)</td><td>Demersal</td><td>Attached</td><td>Elliptical</td><td>0.72</td><td>0.65</td><td>0.80</td><td>Arithmetic</td><td>Measured</td><td>FB-1234</td><td>Thresher 1984</td></tr>
+          <tr><td>Perciformes</td><td>Pomacentridae</td><td>Chromis</td><td>Chromis atripectoralis</td><td>277018</td><td>Welander &amp; Schultz, 1951</td><td>Demersal</td><td>Guarded</td><td>Elliptical</td><td>0.68</td><td>0.62</td><td>0.74</td><td>Arithmetic</td><td>Measured</td><td>FB-1235</td><td>Wellington 1989</td></tr>
+          <tr><td>Perciformes</td><td>Pomacentridae</td><td>Dascyllus</td><td>Dascyllus aruanus</td><td>212464</td><td>(Linnaeus, 1758)</td><td>Demersal</td><td>In nest</td><td>Elliptical</td><td>0.82</td><td>0.75</td><td>0.88</td><td>Geometric</td><td>Estimated</td><td>FB-1236</td><td>Leis 2004</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal() { document.getElementById('csv-modal').classList.add('active'); }
+function closeModal() { document.getElementById('csv-modal').classList.remove('active'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

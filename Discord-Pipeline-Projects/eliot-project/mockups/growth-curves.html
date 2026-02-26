@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Growth Curves — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .species-name { font-style: italic; color: #60a5fa; }
+  .panel { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .panel h3 { font-size: 14px; color: #60a5fa; margin-bottom: 12px; }
+  /* Chart area */
+  .chart-container { position: relative; background: #0a1225; border-radius: 6px; padding: 16px; height: 360px; }
+  .chart-svg { width: 100%; height: 100%; }
+  /* Axis */
+  .axis-label { font-size: 11px; fill: #64748b; }
+  .axis-title { font-size: 12px; fill: #94a3b8; }
+  .grid-line { stroke: #1e3a5f; stroke-width: 0.5; }
+  .cap-line { stroke: #ef4444; stroke-width: 1; stroke-dasharray: 6 3; }
+  .cap-label { font-size: 10px; fill: #ef4444; }
+  /* Curves */
+  .curve { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+  .data-point { stroke-width: 1.5; cursor: pointer; }
+  .data-point:hover { r: 6; }
+  /* Legend */
+  .legend-panel { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .legend-panel h4 { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
+  .legend-entry { display: flex; align-items: flex-start; gap: 8px; padding: 6px 0; border-bottom: 1px solid #1e3a5f; font-size: 12px; }
+  .legend-entry:last-child { border-bottom: none; }
+  .legend-color { width: 24px; height: 3px; border-radius: 2px; margin-top: 7px; flex-shrink: 0; }
+  .legend-ref { color: #e2e8f0; }
+  .legend-eq { font-family: 'Courier New', monospace; font-size: 11px; color: #94a3b8; margin-top: 2px; }
+  .legend-temp { font-size: 10px; color: #64748b; }
+  /* Temp scale */
+  .temp-scale { display: flex; align-items: center; gap: 4px; margin-top: 12px; }
+  .temp-gradient { width: 200px; height: 12px; border-radius: 6px; background: linear-gradient(to right, #4575b4, #91bfdb, #fee08b, #fc8d59, #d73027); }
+  .temp-label { font-size: 10px; color: #64748b; }
+  /* Tooltip */
+  .tooltip { display: none; position: absolute; background: #1a2d4a; border: 1px solid #2d4a6f; border-radius: 6px; padding: 8px 12px; font-size: 12px; pointer-events: none; z-index: 10; }
+  .tooltip.visible { display: block; }
+  .tooltip .t-age { color: #60a5fa; font-weight: 600; }
+  .tooltip .t-size { color: #4ade80; font-weight: 600; }
+  /* No-curve data */
+  .scatter-note { font-size: 12px; color: #94a3b8; background: #1a2d4a; border-radius: 6px; padding: 10px; margin-top: 8px; }
+  .scatter-note strong { color: #f59e0b; }
+</style>
+</head>
+<body>
+<div class="page-title">📈 Growth Curves — <span class="species-name">Chromis viridis</span></div>
+<div class="page-subtitle">Pomacentridae · Perciformes · Axis capped at species-level max</div>
+
+<div class="panel">
+  <h3>Size-at-Age Growth Curves</h3>
+  <div class="chart-container" id="chart">
+    <svg class="chart-svg" viewBox="0 0 700 320">
+      <!-- Grid -->
+      <line x1="60" y1="10" x2="60" y2="280" stroke="#1e3a5f" stroke-width="1"/>
+      <line x1="60" y1="280" x2="680" y2="280" stroke="#1e3a5f" stroke-width="1"/>
+      <!-- Grid lines -->
+      <line x1="60" y1="226" x2="680" y2="226" class="grid-line"/>
+      <line x1="60" y1="172" x2="680" y2="172" class="grid-line"/>
+      <line x1="60" y1="118" x2="680" y2="118" class="grid-line"/>
+      <line x1="60" y1="64" x2="680" y2="64" class="grid-line"/>
+      <!-- Axis cap lines -->
+      <line x1="580" y1="10" x2="580" y2="280" class="cap-line"/>
+      <text x="582" y="24" class="cap-label">Max age: 65 dph</text>
+      <line x1="60" y1="40" x2="680" y2="40" class="cap-line"/>
+      <text x="62" y="36" class="cap-label">Max size: 28 mm</text>
+      <!-- Y axis labels -->
+      <text x="50" y="284" class="axis-label" text-anchor="end">0</text>
+      <text x="50" y="230" class="axis-label" text-anchor="end">7</text>
+      <text x="50" y="176" class="axis-label" text-anchor="end">14</text>
+      <text x="50" y="122" class="axis-label" text-anchor="end">21</text>
+      <text x="50" y="68" class="axis-label" text-anchor="end">28</text>
+      <text x="20" y="160" class="axis-title" text-anchor="middle" transform="rotate(-90,20,160)">Size (mm)</text>
+      <!-- X axis labels -->
+      <text x="60" y="298" class="axis-label" text-anchor="middle">0</text>
+      <text x="190" y="298" class="axis-label" text-anchor="middle">15</text>
+      <text x="320" y="298" class="axis-label" text-anchor="middle">30</text>
+      <text x="450" y="298" class="axis-label" text-anchor="middle">45</text>
+      <text x="580" y="298" class="axis-label" text-anchor="middle">60</text>
+      <text x="370" y="315" class="axis-title" text-anchor="middle">Age (days post-hatch)</text>
+      <!-- Curve 1 - Warm (28°C) - Ruiz 2024 -->
+      <path d="M60,280 C120,260 200,210 280,170 C340,140 400,100 480,72 C520,58 560,50 580,48" class="curve" stroke="#d73027">
+        <animate attributeName="stroke-dashoffset" from="800" to="0" dur="1.5s" fill="freeze"/>
+        <animate attributeName="stroke-dasharray" from="800" to="800" dur="0.01s" fill="freeze"/>
+      </path>
+      <!-- Curve 2 - Medium (24°C) - Leis 2006 -->
+      <path d="M60,280 C130,265 220,230 310,195 C380,165 440,135 510,108 C550,95 580,85 580,82" class="curve" stroke="#fee08b">
+        <animate attributeName="stroke-dashoffset" from="800" to="0" dur="1.5s" fill="freeze"/>
+        <animate attributeName="stroke-dasharray" from="800" to="800" dur="0.01s" fill="freeze"/>
+      </path>
+      <!-- Curve 3 - Cool (20°C) - Wellington 1992 -->
+      <path d="M60,280 C140,270 240,248 340,220 C410,198 470,175 530,155 C560,145 580,138 580,135" class="curve" stroke="#4575b4">
+        <animate attributeName="stroke-dashoffset" from="800" to="0" dur="1.5s" fill="freeze"/>
+        <animate attributeName="stroke-dasharray" from="800" to="800" dur="0.01s" fill="freeze"/>
+      </path>
+      <!-- Data points - Curve 1 -->
+      <circle cx="120" cy="260" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 7 dph','Size: 2.6 mm')" onmouseout="hideTip()"/>
+      <circle cx="200" cy="210" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 16 dph','Size: 9.1 mm')" onmouseout="hideTip()"/>
+      <circle cx="340" cy="140" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 32 dph','Size: 18.2 mm')" onmouseout="hideTip()"/>
+      <circle cx="480" cy="72" r="4" fill="#d73027" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 48 dph','Size: 27.0 mm')" onmouseout="hideTip()"/>
+      <!-- Data points - Curve 2 -->
+      <circle cx="130" cy="265" r="4" fill="#fee08b" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 8 dph','Size: 1.9 mm')" onmouseout="hideTip()"/>
+      <circle cx="310" cy="195" r="4" fill="#fee08b" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 29 dph','Size: 11.0 mm')" onmouseout="hideTip()"/>
+      <circle cx="510" cy="108" r="4" fill="#fee08b" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 52 dph','Size: 22.3 mm')" onmouseout="hideTip()"/>
+      <!-- Data points - Curve 3 -->
+      <circle cx="140" cy="270" r="4" fill="#4575b4" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 9 dph','Size: 1.3 mm')" onmouseout="hideTip()"/>
+      <circle cx="340" cy="220" r="4" fill="#4575b4" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 32 dph','Size: 7.8 mm')" onmouseout="hideTip()"/>
+      <circle cx="530" cy="155" r="4" fill="#4575b4" stroke="#0a1628" class="data-point" onmouseover="showTip(evt,'Age: 54 dph','Size: 16.2 mm')" onmouseout="hideTip()"/>
+      <!-- Scatter points (no curve) -->
+      <circle cx="160" cy="255" r="3.5" fill="none" stroke="#f59e0b" stroke-width="1.5" class="data-point" onmouseover="showTip(evt,'Age: 12 dph','Size: 3.2 mm · No model')" onmouseout="hideTip()"/>
+      <circle cx="250" cy="232" r="3.5" fill="none" stroke="#f59e0b" stroke-width="1.5" class="data-point" onmouseover="showTip(evt,'Age: 22 dph','Size: 6.2 mm · No model')" onmouseout="hideTip()"/>
+      <circle cx="390" cy="178" r="3.5" fill="none" stroke="#f59e0b" stroke-width="1.5" class="data-point" onmouseover="showTip(evt,'Age: 38 dph','Size: 13.2 mm · No model')" onmouseout="hideTip()"/>
+    </svg>
+    <div class="tooltip" id="tooltip">
+      <div class="t-age"></div>
+      <div class="t-size"></div>
+    </div>
+  </div>
+  <div class="temp-scale">
+    <span class="temp-label">18°C</span>
+    <div class="temp-gradient"></div>
+    <span class="temp-label">32°C</span>
+    <span class="temp-label" style="margin-left: 8px;">Spectral color scale by TEMPERATURE_MEAN</span>
+  </div>
+  <div class="scatter-note">
+    <strong>⚬ Open circles</strong> = data points without a fitted growth model (scatter only), color-coded by reference + temperature.
+  </div>
+</div>
+
+<div class="legend-panel">
+  <h4>Growth Equations by Reference</h4>
+  <div class="legend-entry">
+    <div class="legend-color" style="background:#d73027"></div>
+    <div>
+      <div class="legend-ref">Ruiz et al. 2024</div>
+      <div class="legend-eq">L(t) = 28.5 × (1 − e^(−0.065 × (t − 2.1)))</div>
+      <div class="legend-temp">T = 28°C · Age-at-length: 2.1 – 55 dph</div>
+    </div>
+  </div>
+  <div class="legend-entry">
+    <div class="legend-color" style="background:#fee08b"></div>
+    <div>
+      <div class="legend-ref">Leis & Carson-Ewart 2006</div>
+      <div class="legend-eq">L(t) = 24.8 × (1 − e^(−0.048 × (t − 3.0)))</div>
+      <div class="legend-temp">T = 24°C · Age-at-length: 3.0 – 58 dph</div>
+    </div>
+  </div>
+  <div class="legend-entry">
+    <div class="legend-color" style="background:#4575b4"></div>
+    <div>
+      <div class="legend-ref">Wellington & Victor 1992</div>
+      <div class="legend-eq">L(t) = 20.2 × (1 − e^(−0.035 × (t − 4.2)))</div>
+      <div class="legend-temp">T = 20°C · Age-at-length: 4.2 – 62 dph</div>
+    </div>
+  </div>
+  <div class="legend-entry">
+    <div class="legend-color" style="background:#f59e0b"></div>
+    <div>
+      <div class="legend-ref">Thresher 1984 — <em>no fitted model</em></div>
+      <div class="legend-temp">T = 25°C · Scatter points only</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const tip = document.getElementById('tooltip');
+  function showTip(evt, age, size) {
+    tip.querySelector('.t-age').textContent = age;
+    tip.querySelector('.t-size').textContent = size;
+    const r = evt.target.getBoundingClientRect();
+    const c = document.getElementById('chart').getBoundingClientRect();
+    tip.style.left = (r.left - c.left + 12) + 'px';
+    tip.style.top = (r.top - c.top - 40) + 'px';
+    tip.classList.add('visible');
+  }
+  function hideTip() { tip.classList.remove('visible'); }
+</script>
+</body>
+</html>

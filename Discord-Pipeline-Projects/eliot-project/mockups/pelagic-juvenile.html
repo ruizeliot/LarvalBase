@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pelagic Juvenile — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .species-name { font-style: italic; color: #60a5fa; }
+  .badge-new { background: #166534; color: #4ade80; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 8px; }
+  .panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
+  .panel { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; }
+  .panel h3 { font-size: 14px; color: #60a5fa; margin-bottom: 12px; }
+  /* Qualitative rows */
+  .qual-row { padding: 8px 0; border-bottom: 1px solid #1e3a5f; }
+  .qual-row:last-child { border-bottom: none; }
+  .qual-label { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+  .qual-value { font-size: 13px; color: #e2e8f0; }
+  .qual-value.known { color: #4ade80; font-weight: 600; }
+  .qual-value.unknown { color: #ef4444; }
+  .species-list-italic { font-style: italic; color: #94a3b8; font-size: 12px; }
+  /* Dot-strip chart */
+  .chart-area { position: relative; margin-top: 12px; }
+  .chart-title { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+  .dot-strip { position: relative; height: 200px; background: #0a1225; border-radius: 6px; padding: 10px; }
+  .strip-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .strip-ref { width: 100px; font-size: 10px; color: #94a3b8; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .strip-track { flex: 1; height: 20px; position: relative; background: #1a2d4a; border-radius: 3px; }
+  /* Error bar */
+  .error-bar { position: absolute; top: 50%; transform: translateY(-50%); height: 2px; background: #94a3b8; }
+  .error-cap-l, .error-cap-r { position: absolute; top: 50%; width: 1px; height: 10px; background: #94a3b8; transform: translateY(-50%); }
+  .error-cap-l { left: 0; }
+  .error-cap-r { right: 0; }
+  .dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border-radius: 50%; border: 2px solid #0a1225; z-index: 2; }
+  .dot-no-bar { opacity: 0.7; }
+  .no-bar-note { font-size: 10px; color: #64748b; margin-top: 4px; font-style: italic; }
+  /* Stats */
+  .stats-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .stat-card { flex: 1; background: #1a2d4a; border-radius: 6px; padding: 8px 10px; text-align: center; }
+  .stat-card .label { font-size: 10px; color: #64748b; }
+  .stat-card .value { font-size: 16px; font-weight: 600; color: #e2e8f0; }
+  .stat-card .unit { font-size: 10px; color: #94a3b8; }
+  /* Comparison bars */
+  .comp-bars { margin-top: 12px; }
+  .comp-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .comp-label { width: 60px; font-size: 10px; color: #64748b; text-align: right; }
+  .comp-track { flex: 1; height: 14px; background: #1a2d4a; border-radius: 3px; overflow: hidden; }
+  .comp-fill { height: 100%; border-radius: 3px; }
+  .comp-val { width: 40px; font-size: 10px; color: #94a3b8; }
+  .comp-species { background: #60a5fa; }
+  .comp-genus { background: #a78bfa; }
+  .comp-family { background: #f59e0b; }
+</style>
+</head>
+<body>
+<div class="page-title">🐟 Pelagic Juvenile — <span class="species-name">Chromis viridis</span> <span class="badge-new">NEW</span></div>
+<div class="page-subtitle">Placed after Settlement section · 3 panels: qualitative + size + duration</div>
+
+<div class="panels">
+  <!-- Panel 1: Qualitative -->
+  <div class="panel">
+    <h3>Pelagic Juvenile</h3>
+    <div class="qual-row">
+      <div class="qual-label">Pelagic juvenile</div>
+      <div class="qual-value known">Known</div>
+    </div>
+    <div class="qual-row">
+      <div class="qual-label">Name given</div>
+      <div class="qual-value">acronurus, post-larva</div>
+    </div>
+    <div class="qual-row">
+      <div class="qual-label">Known pelagic juvenile in this genus</div>
+      <div class="species-list-italic">Chromis atripectoralis, Chromis margaritifer, Chromis xanthura</div>
+    </div>
+    <div class="qual-row">
+      <div class="qual-label">Known pelagic juvenile in this family</div>
+      <div class="species-list-italic">Dascyllus aruanus, Pomacentrus pavo, Stegastes nigricans, Abudefduf vaigiensis</div>
+    </div>
+  </div>
+
+  <!-- Panel 2: Size -->
+  <div class="panel">
+    <h3>Pelagic Juvenile Size</h3>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Mean</div><div class="value">12.4</div><div class="unit">mm SL</div></div>
+      <div class="stat-card"><div class="label">Range</div><div class="value">8.2–16.8</div><div class="unit">mm SL</div></div>
+      <div class="stat-card"><div class="label">Records</div><div class="value">7</div><div class="unit">refs</div></div>
+    </div>
+    <div class="chart-title">Size by reference (mm SL) — with error bars (±1 SD)</div>
+    <div class="dot-strip">
+      <!-- Reference 1: with error bar -->
+      <div class="strip-row">
+        <span class="strip-ref">Ruiz 2024</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:30%;width:30%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:45%;background:#60a5fa;"></div>
+        </div>
+      </div>
+      <!-- Reference 2: with error bar -->
+      <div class="strip-row">
+        <span class="strip-ref">Leis 2006</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:35%;width:25%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:47%;background:#a78bfa;"></div>
+        </div>
+      </div>
+      <!-- Reference 3: no error bar (single obs) -->
+      <div class="strip-row">
+        <span class="strip-ref">Victor 1986</span>
+        <div class="strip-track">
+          <div class="dot dot-no-bar" style="left:40%;background:#f59e0b;"></div>
+        </div>
+      </div>
+      <!-- Reference 4: with error bar -->
+      <div class="strip-row">
+        <span class="strip-ref">Wellington 1992</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:25%;width:35%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:42%;background:#4ade80;"></div>
+        </div>
+      </div>
+      <div class="no-bar-note">Points without bars = single observation / no reported variance</div>
+    </div>
+    <div class="comp-bars">
+      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill comp-species" style="width:62%"></div></div><span class="comp-val">12.4 mm</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill comp-genus" style="width:55%"></div></div><span class="comp-val">11.0 mm</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill comp-family" style="width:48%"></div></div><span class="comp-val">9.6 mm</span></div>
+    </div>
+  </div>
+
+  <!-- Panel 3: Duration -->
+  <div class="panel">
+    <h3>Pelagic Juvenile Duration</h3>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Mean</div><div class="value">18.5</div><div class="unit">days</div></div>
+      <div class="stat-card"><div class="label">Range</div><div class="value">12–28</div><div class="unit">days</div></div>
+      <div class="stat-card"><div class="label">Records</div><div class="value">5</div><div class="unit">refs</div></div>
+    </div>
+    <div class="chart-title">Duration by reference (days) — with error bars (±1 SD)</div>
+    <div class="dot-strip">
+      <div class="strip-row">
+        <span class="strip-ref">Ruiz 2024</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:28%;width:32%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:44%;background:#60a5fa;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Leis 2006</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:32%;width:28%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:46%;background:#a78bfa;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Victor 1986</span>
+        <div class="strip-track">
+          <div class="dot dot-no-bar" style="left:38%;background:#f59e0b;"></div>
+        </div>
+      </div>
+      <div class="no-bar-note">Points without bars = single observation / no reported variance</div>
+    </div>
+    <div class="comp-bars">
+      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill comp-species" style="width:55%"></div></div><span class="comp-val">18.5 d</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill comp-genus" style="width:48%"></div></div><span class="comp-val">16.2 d</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill comp-family" style="width:42%"></div></div><span class="comp-val">14.0 d</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

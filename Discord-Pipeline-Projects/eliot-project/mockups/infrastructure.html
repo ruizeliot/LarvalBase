@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Infrastructure — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .panel { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .panel h3 { font-size: 14px; color: #60a5fa; margin-bottom: 12px; }
+  /* Architecture diagram */
+  .arch-flow { display: flex; align-items: center; gap: 0; justify-content: center; flex-wrap: wrap; margin: 20px 0; }
+  .arch-box { background: #1a2d4a; border: 1px solid #2d4a6f; border-radius: 8px; padding: 12px 16px; text-align: center; min-width: 120px; }
+  .arch-box .icon { font-size: 24px; margin-bottom: 4px; }
+  .arch-box .name { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+  .arch-box .detail { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+  .arch-arrow { font-size: 20px; color: #2d4a6f; padding: 0 8px; }
+  /* Layer details */
+  .layers { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+  .layer-card { background: #1a2d4a; border-radius: 8px; padding: 14px; }
+  .layer-card h4 { font-size: 13px; color: #60a5fa; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+  .layer-card ul { list-style: none; }
+  .layer-card li { font-size: 11px; color: #94a3b8; padding: 3px 0; padding-left: 12px; position: relative; }
+  .layer-card li::before { content: '•'; position: absolute; left: 0; color: #60a5fa; }
+  /* Performance metrics */
+  .perf-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .perf-card { background: #1a2d4a; border-radius: 8px; padding: 14px; text-align: center; }
+  .perf-card .metric { font-size: 10px; color: #64748b; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .perf-card .before { font-size: 14px; color: #ef4444; text-decoration: line-through; }
+  .perf-card .after { font-size: 22px; font-weight: 700; color: #4ade80; }
+  .perf-card .improvement { font-size: 10px; color: #4ade80; margin-top: 2px; }
+  /* Code snippet */
+  .code-block { background: #0a1225; border: 1px solid #1e3a5f; border-radius: 6px; padding: 14px; font-family: 'Courier New', monospace; font-size: 11px; color: #94a3b8; overflow-x: auto; line-height: 1.6; }
+  .code-comment { color: #4a6a4a; }
+  .code-keyword { color: #c084fc; }
+  .code-string { color: #4ade80; }
+  .code-number { color: #f59e0b; }
+  /* Memory estimate */
+  .mem-bar { display: flex; align-items: center; gap: 12px; margin: 12px 0; }
+  .mem-track { flex: 1; height: 24px; background: #1a2d4a; border-radius: 4px; overflow: hidden; }
+  .mem-fill { height: 100%; background: linear-gradient(90deg, #60a5fa, #a78bfa); border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 600; color: #fff; }
+  .mem-label { font-size: 12px; color: #94a3b8; width: 80px; }
+  /* DB updates */
+  .db-update { display: flex; align-items: center; gap: 8px; padding: 8px; background: #1a2d4a; border-radius: 6px; margin-bottom: 6px; }
+  .db-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; background: #166534; color: #4ade80; font-weight: 600; }
+  .db-name { font-size: 12px; color: #e2e8f0; flex: 1; }
+  .db-date { font-size: 10px; color: #64748b; }
+</style>
+</head>
+<body>
+<div class="page-title">⚡ Infrastructure</div>
+<div class="page-subtitle">Architecture, caching, ISR, performance targets, database updates</div>
+
+<!-- Architecture diagram -->
+<div class="panel">
+  <h3>Architecture Overview</h3>
+  <div class="arch-flow">
+    <div class="arch-box">
+      <div class="icon">📄</div>
+      <div class="name">CSV Files</div>
+      <div class="detail">~150 MB total</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">
+      <div class="icon">💾</div>
+      <div class="name">In-Memory Cache</div>
+      <div class="detail">Load once on start</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">
+      <div class="icon">🔌</div>
+      <div class="name">API Routes</div>
+      <div class="detail">Next.js endpoints</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">
+      <div class="icon">⚡</div>
+      <div class="name">ISR Pages</div>
+      <div class="detail">revalidate: 3600</div>
+    </div>
+    <div class="arch-arrow">→</div>
+    <div class="arch-box">
+      <div class="icon">🎨</div>
+      <div class="name">React + D3</div>
+      <div class="detail">Interactive charts</div>
+    </div>
+  </div>
+</div>
+
+<!-- Layer details -->
+<div class="panel">
+  <h3>Implementation Details</h3>
+  <div class="layers">
+    <div class="layer-card">
+      <h4>💾 CSV Cache Layer</h4>
+      <ul>
+        <li>Load all CSVs on server startup</li>
+        <li>Parse with Papa Parse (streaming)</li>
+        <li>~150 MB in memory</li>
+        <li>Indexed by VALID_NAME + APHIA_ID</li>
+        <li>Genus/Family aggregations pre-computed</li>
+      </ul>
+    </div>
+    <div class="layer-card">
+      <h4>⚡ ISR (Incremental Static Regeneration)</h4>
+      <ul>
+        <li>Pre-render species pages at build</li>
+        <li>revalidate: 3600 (1 hour cache)</li>
+        <li>On-demand revalidation via API</li>
+        <li>Stale-while-revalidate pattern</li>
+      </ul>
+    </div>
+    <div class="layer-card">
+      <h4>🔌 API Routes</h4>
+      <ul>
+        <li>/api/species/[name] — full species data</li>
+        <li>/api/search — fuzzy name matching</li>
+        <li>/api/export — CSV download endpoint</li>
+        <li>/api/filter — AND-logic trait filtering</li>
+      </ul>
+    </div>
+    <div class="layer-card">
+      <h4>🎨 D3.js Charts</h4>
+      <ul>
+        <li>Growth curves with SVG animation</li>
+        <li>Frequency barplots (qualitative traits)</li>
+        <li>Dot-strip charts with error bars</li>
+        <li>Depth charts with water gradients</li>
+        <li>Spectral temperature color scale</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Performance -->
+<div class="panel">
+  <h3>Performance Targets</h3>
+  <div class="perf-grid">
+    <div class="perf-card">
+      <div class="metric">TTFB</div>
+      <div class="before">4.2s</div>
+      <div class="after">~120ms</div>
+      <div class="improvement">35× faster</div>
+    </div>
+    <div class="perf-card">
+      <div class="metric">FCP</div>
+      <div class="before">800ms</div>
+      <div class="after">~200ms</div>
+      <div class="improvement">4× faster</div>
+    </div>
+    <div class="perf-card">
+      <div class="metric">LCP</div>
+      <div class="before">2.1s</div>
+      <div class="after">~400ms</div>
+      <div class="improvement">5× faster</div>
+    </div>
+    <div class="perf-card">
+      <div class="metric">Memory</div>
+      <div class="before">—</div>
+      <div class="after">~150 MB</div>
+      <div class="improvement">All CSVs cached</div>
+    </div>
+  </div>
+  <div class="mem-bar">
+    <span class="mem-label">RAM usage</span>
+    <div class="mem-track">
+      <div class="mem-fill" style="width: 38%;">~150 MB / 400 MB available</div>
+    </div>
+  </div>
+</div>
+
+<!-- Code snippet -->
+<div class="panel">
+  <h3>Cache Implementation</h3>
+  <div class="code-block">
+<span class="code-comment">// lib/data/cache.ts — CSV cache singleton</span>
+<span class="code-keyword">import</span> Papa <span class="code-keyword">from</span> <span class="code-string">'papaparse'</span>;
+<span class="code-keyword">import</span> fs <span class="code-keyword">from</span> <span class="code-string">'fs'</span>;
+
+<span class="code-keyword">class</span> DataCache {
+  <span class="code-keyword">private</span> cache = <span class="code-keyword">new</span> Map&lt;string, any[]&gt;();
+
+  <span class="code-keyword">async</span> loadAll() {
+    <span class="code-keyword">const</span> files = [
+      <span class="code-string">'egg_db'</span>, <span class="code-string">'growth_db'</span>, <span class="code-string">'settlement_age_db'</span>,
+      <span class="code-string">'settlement_size_db'</span>, <span class="code-string">'vertical_position_db'</span>,
+      <span class="code-string">'pelagic_juvenile_db'</span>, <span class="code-string">'rafting_db'</span>,
+      <span class="code-string">'swimming_ucrit_db'</span>, <span class="code-string">'swimming_iss_db'</span>
+    ];
+    <span class="code-keyword">for</span> (<span class="code-keyword">const</span> f <span class="code-keyword">of</span> files) {
+      <span class="code-keyword">const</span> csv = fs.readFileSync(<span class="code-string">`database/${f}.csv`</span>, <span class="code-string">'utf-8'</span>);
+      this.cache.set(f, Papa.parse(csv, { header: <span class="code-keyword">true</span> }).data);
+    }
+  }
+}
+
+<span class="code-comment">// pages/species/[name].tsx — ISR config</span>
+<span class="code-keyword">export async function</span> getStaticProps({ params }) {
+  <span class="code-keyword">const</span> data = <span class="code-keyword">await</span> cache.getSpecies(params.name);
+  <span class="code-keyword">return</span> { props: { data }, revalidate: <span class="code-number">3600</span> };
+}
+  </div>
+</div>
+
+<!-- Database updates -->
+<div class="panel">
+  <h3>Database Updates (01.2026)</h3>
+  <div class="db-update">
+    <span class="db-badge">UPDATED</span>
+    <span class="db-name">Settlement_age_database_final_01.2026.txt</span>
+    <span class="db-date">Jan 2026</span>
+  </div>
+  <div class="db-update">
+    <span class="db-badge">UPDATED</span>
+    <span class="db-name">Settlement_size_database_final_01.2026.txt</span>
+    <span class="db-date">Jan 2026</span>
+  </div>
+  <div class="db-update">
+    <span class="db-badge">UPDATED</span>
+    <span class="db-name">Vertical_position_database_final_01.2026.txt</span>
+    <span class="db-date">Jan 2026</span>
+  </div>
+</div>
+</body>
+</html>

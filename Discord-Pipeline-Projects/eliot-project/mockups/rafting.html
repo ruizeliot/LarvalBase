@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rafting — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; padding: 20px; }
+  .page-title { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .page-subtitle { font-size: 13px; color: #94a3b8; margin-bottom: 20px; }
+  .species-name { font-style: italic; color: #a78bfa; }
+  .badge-new { background: #166534; color: #4ade80; font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; margin-left: 8px; }
+  .panels { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .panels { grid-template-columns: 1fr; } }
+  .panel { background: #0d1f3c; border: 1px solid #3b2069; border-radius: 8px; padding: 16px; }
+  .panel h3 { font-size: 14px; color: #a78bfa; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+  .data-level { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+  .level-species { background: #166534; color: #4ade80; }
+  .level-genus { background: #854d0e; color: #fbbf24; }
+  /* Frequency barplots */
+  .freq-row { margin-bottom: 14px; }
+  .freq-label { font-size: 12px; font-weight: 600; color: #c4b5fd; margin-bottom: 6px; }
+  .freq-bars { display: flex; flex-direction: column; gap: 3px; }
+  .freq-bar-row { display: flex; align-items: center; gap: 8px; }
+  .freq-bar-name { width: 110px; font-size: 11px; color: #94a3b8; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .freq-bar-track { flex: 1; height: 18px; background: #1a1a3c; border-radius: 3px; overflow: hidden; }
+  .freq-bar-fill { height: 100%; border-radius: 3px; display: flex; align-items: center; padding-left: 6px; font-size: 10px; color: #fff; font-weight: 600; }
+  .freq-bar-count { width: 24px; font-size: 10px; color: #64748b; text-align: right; }
+  /* Qualitative rows */
+  .qual-row { padding: 8px 0; border-bottom: 1px solid #1e2a5f; }
+  .qual-row:last-child { border-bottom: none; }
+  .qual-label { font-size: 11px; color: #64748b; margin-bottom: 2px; }
+  .qual-value { font-size: 13px; color: #e2e8f0; }
+  .qual-value.known { color: #4ade80; font-weight: 600; }
+  .species-list-italic { font-style: italic; color: #94a3b8; font-size: 12px; }
+  /* Dot-strip chart */
+  .chart-title { font-size: 12px; color: #94a3b8; margin-bottom: 8px; }
+  .dot-strip { position: relative; background: #0a0a25; border-radius: 6px; padding: 10px; }
+  .strip-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+  .strip-ref { width: 100px; font-size: 10px; color: #94a3b8; text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .strip-track { flex: 1; height: 20px; position: relative; background: #1a1a3c; border-radius: 3px; }
+  .error-bar { position: absolute; top: 50%; transform: translateY(-50%); height: 2px; background: #c4b5fd; }
+  .error-cap-l, .error-cap-r { position: absolute; top: 50%; width: 1px; height: 10px; background: #c4b5fd; transform: translateY(-50%); }
+  .error-cap-l { left: 0; }
+  .error-cap-r { right: 0; }
+  .dot { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 10px; height: 10px; border-radius: 50%; border: 2px solid #0a0a25; z-index: 2; }
+  .dot-no-bar { opacity: 0.7; }
+  .no-bar-note { font-size: 10px; color: #64748b; margin-top: 4px; font-style: italic; }
+  /* Stats */
+  .stats-row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .stat-card { flex: 1; background: #1a1a3c; border-radius: 6px; padding: 8px 10px; text-align: center; }
+  .stat-card .label { font-size: 10px; color: #64748b; }
+  .stat-card .value { font-size: 16px; font-weight: 600; color: #e2e8f0; }
+  .stat-card .unit { font-size: 10px; color: #94a3b8; }
+  /* Comparison bars */
+  .comp-bars { margin-top: 12px; }
+  .comp-bar-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+  .comp-label { width: 60px; font-size: 10px; color: #64748b; text-align: right; }
+  .comp-track { flex: 1; height: 14px; background: #1a1a3c; border-radius: 3px; overflow: hidden; }
+  .comp-fill { height: 100%; border-radius: 3px; }
+  .comp-val { width: 40px; font-size: 10px; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="page-title">🚢 Rafting — <span class="species-name">Kyphosus vaigiensis</span> <span class="badge-new">NEW</span></div>
+<div class="page-subtitle">Purple accent · 3 panels: qualitative (frequency barplots) + rafter size + duration</div>
+
+<div class="panels">
+  <!-- Panel 1: Qualitative with frequency barplots -->
+  <div class="panel">
+    <h3>Rafting <span class="data-level level-species">Species data</span></h3>
+    <div class="qual-row">
+      <div class="qual-label">Rafting</div>
+      <div class="qual-value known">Known</div>
+    </div>
+
+    <div class="freq-row" style="margin-top: 12px;">
+      <div class="freq-label">Flotsam type</div>
+      <div class="freq-bars">
+        <div class="freq-bar-row">
+          <span class="freq-bar-name">FAD</span>
+          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:65%;background:#a78bfa">8</div></div>
+          <span class="freq-bar-count">8</span>
+        </div>
+        <div class="freq-bar-row">
+          <span class="freq-bar-name">Other object</span>
+          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:40%;background:#a78bfa">5</div></div>
+          <span class="freq-bar-count">5</span>
+        </div>
+        <div class="freq-bar-row">
+          <span class="freq-bar-name">Gelat. zooplankton</span>
+          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:16%;background:#a78bfa">2</div></div>
+          <span class="freq-bar-count">2</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="freq-row">
+      <div class="freq-label">Stage</div>
+      <div class="freq-bars">
+        <div class="freq-bar-row">
+          <span class="freq-bar-name">Juvenile</span>
+          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:70%;background:#c084fc">9</div></div>
+          <span class="freq-bar-count">9</span>
+        </div>
+        <div class="freq-bar-row">
+          <span class="freq-bar-name">Post-flexion</span>
+          <div class="freq-bar-track"><div class="freq-bar-fill" style="width:30%;background:#c084fc">4</div></div>
+          <span class="freq-bar-count">4</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="qual-row">
+      <div class="qual-label">Known rafters in this genus</div>
+      <div class="species-list-italic">Kyphosus cinerascens, Kyphosus bigibbus</div>
+    </div>
+    <div class="qual-row">
+      <div class="qual-label">Known rafters in this family</div>
+      <div class="species-list-italic">Girella punctata, Hermosilla azurea</div>
+    </div>
+  </div>
+
+  <!-- Panel 2: Rafter Size -->
+  <div class="panel">
+    <h3>Rafters Size</h3>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Mean</div><div class="value">45.2</div><div class="unit">mm SL</div></div>
+      <div class="stat-card"><div class="label">Range</div><div class="value">22–85</div><div class="unit">mm SL</div></div>
+      <div class="stat-card"><div class="label">Records</div><div class="value">6</div><div class="unit">refs</div></div>
+    </div>
+    <div class="chart-title">Size by reference (mm SL) — with error bars (±1 SD)</div>
+    <div class="dot-strip">
+      <div class="strip-row">
+        <span class="strip-ref">Castro 2002</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:20%;width:35%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:38%;background:#a78bfa;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Luiz 2009</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:30%;width:40%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:50%;background:#c084fc;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Thiel 2003</span>
+        <div class="strip-track">
+          <div class="dot dot-no-bar" style="left:55%;background:#e9d5ff;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Kingsford 1992</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:15%;width:30%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:30%;background:#7c3aed;"></div>
+        </div>
+      </div>
+      <div class="no-bar-note">Points without bars = single observation</div>
+    </div>
+    <div class="comp-bars">
+      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill" style="width:53%;background:#a78bfa"></div></div><span class="comp-val">45.2 mm</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill" style="width:48%;background:#c084fc"></div></div><span class="comp-val">40.8 mm</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill" style="width:38%;background:#e9d5ff"></div></div><span class="comp-val">32.1 mm</span></div>
+    </div>
+  </div>
+
+  <!-- Panel 3: Rafting Duration -->
+  <div class="panel">
+    <h3>Rafting Duration</h3>
+    <div class="stats-row">
+      <div class="stat-card"><div class="label">Mean</div><div class="value">35</div><div class="unit">days</div></div>
+      <div class="stat-card"><div class="label">Range</div><div class="value">15–60</div><div class="unit">days</div></div>
+      <div class="stat-card"><div class="label">Records</div><div class="value">4</div><div class="unit">refs</div></div>
+    </div>
+    <div class="chart-title">Duration by reference (days) — with error bars (±1 SD)</div>
+    <div class="dot-strip">
+      <div class="strip-row">
+        <span class="strip-ref">Castro 2002</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:22%;width:30%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:37%;background:#a78bfa;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Luiz 2009</span>
+        <div class="strip-track">
+          <div class="error-bar" style="left:35%;width:35%;"><div class="error-cap-l"></div><div class="error-cap-r"></div></div>
+          <div class="dot" style="left:52%;background:#c084fc;"></div>
+        </div>
+      </div>
+      <div class="strip-row">
+        <span class="strip-ref">Thiel 2003</span>
+        <div class="strip-track">
+          <div class="dot dot-no-bar" style="left:25%;background:#e9d5ff;"></div>
+        </div>
+      </div>
+      <div class="no-bar-note">Points without bars = single observation</div>
+    </div>
+    <div class="comp-bars">
+      <div class="comp-bar-row"><span class="comp-label">Species</span><div class="comp-track"><div class="comp-fill" style="width:58%;background:#a78bfa"></div></div><span class="comp-val">35 d</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Genus</span><div class="comp-track"><div class="comp-fill" style="width:50%;background:#c084fc"></div></div><span class="comp-val">30 d</span></div>
+      <div class="comp-bar-row"><span class="comp-label">Family</span><div class="comp-track"><div class="comp-fill" style="width:40%;background:#e9d5ff"></div></div><span class="comp-val">24 d</span></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Homepage — LarvalBase V2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a1628; color: #e2e8f0; }
+  .header { background: #0d1f3c; padding: 20px 24px; border-bottom: 1px solid #1e3a5f; }
+  .header h1 { font-size: 20px; color: #60a5fa; margin-bottom: 4px; }
+  .header p { font-size: 12px; color: #94a3b8; }
+  .main { display: flex; min-height: calc(100vh - 80px); }
+  /* Left sidebar */
+  .sidebar { width: 280px; min-width: 280px; background: #0d1f3c; border-right: 1px solid #1e3a5f; padding: 12px; overflow-y: auto; }
+  .sidebar h3 { font-size: 13px; color: #60a5fa; margin: 12px 0 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .search-input { width: 100%; padding: 8px 10px; background: #1a2d4a; border: 1px solid #2d4a6f; border-radius: 6px; color: #e2e8f0; font-size: 13px; margin-bottom: 10px; }
+  .search-input::placeholder { color: #64748b; }
+  .filter-section { margin-bottom: 12px; }
+  .filter-title { font-size: 12px; font-weight: 600; color: #94a3b8; padding: 6px 0; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .filter-title::before { content: '▸'; font-size: 10px; color: #64748b; }
+  .filter-title.open::before { content: '▾'; }
+  .filter-options { padding-left: 8px; display: none; }
+  .filter-title.open + .filter-options { display: block; }
+  .filter-options label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #94a3b8; padding: 3px 0; cursor: pointer; }
+  .filter-options input[type="checkbox"] { accent-color: #60a5fa; }
+  .species-list { margin-top: 8px; }
+  .species-item { padding: 6px 8px; font-size: 12px; color: #94a3b8; border-radius: 4px; cursor: pointer; font-style: italic; }
+  .species-item:hover { background: #1a2d4a; color: #e2e8f0; }
+  .btn-export { width: 100%; padding: 8px; background: #1e3a5f; border: 1px solid #2d4a6f; border-radius: 6px; color: #60a5fa; font-size: 12px; cursor: pointer; margin-top: 8px; }
+  .btn-export:hover { background: #2d4a6f; }
+  /* Content area */
+  .content { flex: 1; padding: 20px; overflow-y: auto; }
+  .section-title { font-size: 16px; font-weight: 600; color: #e2e8f0; margin-bottom: 16px; }
+  /* Barplots */
+  .barplot-container { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .barplot-container h4 { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 8px; gap: 8px; }
+  .bar-label { width: 120px; font-size: 12px; color: #94a3b8; text-align: right; }
+  .bar-track { flex: 1; height: 24px; display: flex; border-radius: 4px; overflow: hidden; }
+  .bar-seg { height: 100%; border-right: 2px solid #fff; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: #fff; }
+  .bar-seg:last-child { border-right: none; }
+  .bar-count { width: 40px; font-size: 11px; color: #64748b; text-align: right; }
+  .legend { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #94a3b8; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; }
+  /* Pub year chart */
+  .pub-chart { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  .pub-chart h4 { font-size: 13px; color: #94a3b8; margin-bottom: 10px; }
+  .year-bars { display: flex; align-items: flex-end; gap: 3px; height: 120px; padding-top: 10px; }
+  .year-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+  .year-bar { width: 100%; border-radius: 2px 2px 0 0; min-height: 2px; }
+  .year-label { font-size: 9px; color: #64748b; margin-top: 4px; transform: rotate(-45deg); }
+  /* Photo grid */
+  .photo-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 16px; }
+  .photo-card { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 6px; overflow: hidden; cursor: pointer; transition: transform 0.15s; }
+  .photo-card:hover { transform: scale(1.03); border-color: #60a5fa; }
+  .photo-thumb { width: 100%; height: 80px; background: #1a2d4a; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+  .photo-info { padding: 6px 8px; }
+  .photo-info .family { font-size: 11px; font-weight: 600; color: #60a5fa; }
+  .photo-info .order { font-size: 10px; color: #64748b; }
+  /* Modal */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 100; align-items: center; justify-content: center; }
+  .modal-overlay.active { display: flex; }
+  .modal { background: #0d1f3c; border: 1px solid #1e3a5f; border-radius: 12px; padding: 24px; max-width: 600px; width: 90%; }
+  .modal h3 { font-size: 16px; color: #60a5fa; margin-bottom: 12px; }
+  .modal-close { float: right; background: none; border: none; color: #94a3b8; font-size: 20px; cursor: pointer; }
+  .modal-species { font-size: 12px; color: #94a3b8; font-style: italic; padding: 4px 0; }
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>LarvalBase: Global pelagic dispersal traits databases for early-life stages of marine fishes</h1>
+  <p>Ruiz et al. (2026) — 2,847 species · 15,230 records · 412 families</p>
+</div>
+<div class="main">
+  <div class="sidebar">
+    <input class="search-input" placeholder="🔍 Search all species..." />
+    <h3>Filter by Trait</h3>
+    <div class="filter-section">
+      <div class="filter-title open" onclick="this.classList.toggle('open')">Egg Traits</div>
+      <div class="filter-options">
+        <label><input type="checkbox" /> Egg location</label>
+        <label><input type="checkbox" /> Egg shape</label>
+        <label><input type="checkbox" /> Oil globule</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title" onclick="this.classList.toggle('open')">Age-at-Length</div>
+      <div class="filter-options">
+        <label><input type="checkbox" /> Raw data</label>
+        <label><input type="checkbox" /> Growth model</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title" onclick="this.classList.toggle('open')">Settlement map</div>
+      <div class="filter-options">
+        <label><input type="checkbox" /> Settlement size location</label>
+        <label><input type="checkbox" /> Settlement age location</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title" onclick="this.classList.toggle('open')">Swimming Ability</div>
+      <div class="filter-options">
+        <label><input type="checkbox" /> Critical speed</label>
+        <label><input type="checkbox" /> In situ speed</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title" onclick="this.classList.toggle('open')">Pelagic Juvenile</div>
+      <div class="filter-options">
+        <label><input type="checkbox" /> Known</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title" onclick="this.classList.toggle('open')">Rafting</div>
+      <div class="filter-options">
+        <label><input type="checkbox" /> Known</label>
+      </div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title" onclick="this.classList.toggle('open')">Picture</div>
+      <div class="filter-options">
+        <label><input type="checkbox" checked /> All</label>
+        <label><input type="checkbox" /> Ruiz</label>
+        <label><input type="checkbox" /> Leis</label>
+        <label><input type="checkbox" /> Moser</label>
+        <label><input type="checkbox" /> Baldwin</label>
+        <label><input type="checkbox" /> Johnson</label>
+      </div>
+    </div>
+    <h3>Available Species</h3>
+    <div class="species-list">
+      <div class="species-item">Acanthurus triostegus</div>
+      <div class="species-item">Chaetodon lunulatus</div>
+      <div class="species-item">Chromis viridis</div>
+      <div class="species-item">Dascyllus aruanus</div>
+      <div class="species-item">Epinephelus merra</div>
+      <div class="species-item">Lutjanus kasmira</div>
+      <div class="species-item">Myripristis berndti</div>
+      <div class="species-item">Naso unicornis</div>
+      <div class="species-item">Pomacentrus pavo</div>
+      <div class="species-item">Siganus argenteus</div>
+      <div class="species-item">Stegastes nigricans</div>
+      <div class="species-item">Thalassoma hardwicke</div>
+    </div>
+    <input class="search-input" placeholder="🔍 Search filtered species..." style="margin-top: 10px;" />
+    <button class="btn-export">📥 Export Species List</button>
+  </div>
+  <div class="content">
+    <div class="section-title">Database Coverage</div>
+    <div class="barplot-container">
+      <h4>Records / Species / Genus / Family / Order counts per trait</h4>
+      <div class="bar-row">
+        <span class="bar-label">Egg traits</span>
+        <div class="bar-track">
+          <div class="bar-seg" style="width:35%;background:#F8766D">1,240</div>
+          <div class="bar-seg" style="width:25%;background:#A3A500">890</div>
+          <div class="bar-seg" style="width:20%;background:#00BF7D">412</div>
+          <div class="bar-seg" style="width:12%;background:#00B0F6">186</div>
+          <div class="bar-seg" style="width:8%;background:#E76BF3">42</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Growth curves</span>
+        <div class="bar-track">
+          <div class="bar-seg" style="width:30%;background:#F8766D">980</div>
+          <div class="bar-seg" style="width:22%;background:#A3A500">720</div>
+          <div class="bar-seg" style="width:22%;background:#00BF7D">350</div>
+          <div class="bar-seg" style="width:15%;background:#00B0F6">155</div>
+          <div class="bar-seg" style="width:11%;background:#E76BF3">38</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Settlement</span>
+        <div class="bar-track">
+          <div class="bar-seg" style="width:28%;background:#F8766D">850</div>
+          <div class="bar-seg" style="width:24%;background:#A3A500">680</div>
+          <div class="bar-seg" style="width:20%;background:#00BF7D">320</div>
+          <div class="bar-seg" style="width:16%;background:#00B0F6">140</div>
+          <div class="bar-seg" style="width:12%;background:#E76BF3">35</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Swimming</span>
+        <div class="bar-track">
+          <div class="bar-seg" style="width:20%;background:#F8766D">420</div>
+          <div class="bar-seg" style="width:18%;background:#A3A500">310</div>
+          <div class="bar-seg" style="width:22%;background:#00BF7D">180</div>
+          <div class="bar-seg" style="width:22%;background:#00B0F6">95</div>
+          <div class="bar-seg" style="width:18%;background:#E76BF3">28</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Pelagic juv.</span>
+        <div class="bar-track">
+          <div class="bar-seg" style="width:18%;background:#F8766D">280</div>
+          <div class="bar-seg" style="width:20%;background:#A3A500">195</div>
+          <div class="bar-seg" style="width:24%;background:#00BF7D">120</div>
+          <div class="bar-seg" style="width:22%;background:#00B0F6">68</div>
+          <div class="bar-seg" style="width:16%;background:#E76BF3">22</div>
+        </div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">Rafting</span>
+        <div class="bar-track">
+          <div class="bar-seg" style="width:15%;background:#F8766D">150</div>
+          <div class="bar-seg" style="width:18%;background:#A3A500">110</div>
+          <div class="bar-seg" style="width:25%;background:#00BF7D">85</div>
+          <div class="bar-seg" style="width:24%;background:#00B0F6">52</div>
+          <div class="bar-seg" style="width:18%;background:#E76BF3">18</div>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:#F8766D"></div> Records</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#A3A500"></div> Species</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00BF7D"></div> Genus</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#00B0F6"></div> Family</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#E76BF3"></div> Order</div>
+      </div>
+    </div>
+
+    <div class="pub-chart">
+      <h4>Publications by Year & Data Source</h4>
+      <div class="year-bars">
+        <div class="year-col"><div class="year-bar" style="height:15%;background:#60a5fa"></div><span class="year-label">2000</span></div>
+        <div class="year-col"><div class="year-bar" style="height:18%;background:#60a5fa"></div><span class="year-label">2002</span></div>
+        <div class="year-col"><div class="year-bar" style="height:22%;background:#60a5fa"></div><span class="year-label">2004</span></div>
+        <div class="year-col"><div class="year-bar" style="height:30%;background:#60a5fa"></div><span class="year-label">2006</span></div>
+        <div class="year-col"><div class="year-bar" style="height:35%;background:#a78bfa"></div><span class="year-label">2008</span></div>
+        <div class="year-col"><div class="year-bar" style="height:42%;background:#a78bfa"></div><span class="year-label">2010</span></div>
+        <div class="year-col"><div class="year-bar" style="height:55%;background:#a78bfa"></div><span class="year-label">2012</span></div>
+        <div class="year-col"><div class="year-bar" style="height:48%;background:#f59e0b"></div><span class="year-label">2014</span></div>
+        <div class="year-col"><div class="year-bar" style="height:62%;background:#f59e0b"></div><span class="year-label">2016</span></div>
+        <div class="year-col"><div class="year-bar" style="height:75%;background:#f59e0b"></div><span class="year-label">2018</span></div>
+        <div class="year-col"><div class="year-bar" style="height:88%;background:#4ade80"></div><span class="year-label">2020</span></div>
+        <div class="year-col"><div class="year-bar" style="height:95%;background:#4ade80"></div><span class="year-label">2022</span></div>
+        <div class="year-col"><div class="year-bar" style="height:100%;background:#4ade80"></div><span class="year-label">2024</span></div>
+        <div class="year-col"><div class="year-bar" style="height:70%;background:#4ade80"></div><span class="year-label">2026</span></div>
+      </div>
+      <div class="legend" style="margin-top:12px">
+        <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div> Literature</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div> FishBase</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div> Field studies</div>
+        <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div> Ruiz et al.</div>
+      </div>
+    </div>
+
+    <div class="section-title">Photo Gallery — 1 per family (sorted by order)</div>
+    <div class="photo-grid">
+      <div class="photo-card" onclick="document.getElementById('modal').classList.add('active')">
+        <div class="photo-thumb" style="background:#1a3550">🐠</div>
+        <div class="photo-info"><div class="family">Acanthuridae</div><div class="order">Acanthuriformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#1a3520">🐡</div>
+        <div class="photo-info"><div class="family">Chaetodontidae</div><div class="order">Acanthuriformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#351a50">🐟</div>
+        <div class="photo-info"><div class="family">Pomacentridae</div><div class="order">Ovalentaria</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#35301a">🐠</div>
+        <div class="photo-info"><div class="family">Labridae</div><div class="order">Labriformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#1a2535">🐡</div>
+        <div class="photo-info"><div class="family">Serranidae</div><div class="order">Perciformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#351a20">🐟</div>
+        <div class="photo-info"><div class="family">Lutjanidae</div><div class="order">Lutjaniformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#20351a">🐠</div>
+        <div class="photo-info"><div class="family">Holocentridae</div><div class="order">Holocentriformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#1a3535">🐡</div>
+        <div class="photo-info"><div class="family">Siganidae</div><div class="order">Acanthuriformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#351a35">🐟</div>
+        <div class="photo-info"><div class="family">Scaridae</div><div class="order">Labriformes</div></div>
+      </div>
+      <div class="photo-card">
+        <div class="photo-thumb" style="background:#2a2a1a">🐠</div>
+        <div class="photo-info"><div class="family">Gobiidae</div><div class="order">Gobiiformes</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Drill-down modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <button class="modal-close" onclick="document.getElementById('modal').classList.remove('active')">&times;</button>
+    <h3>Acanthuridae — Species in database</h3>
+    <div class="modal-species">Acanthurus triostegus — 42 records</div>
+    <div class="modal-species">Acanthurus lineatus — 28 records</div>
+    <div class="modal-species">Acanthurus nigrofuscus — 15 records</div>
+    <div class="modal-species">Ctenochaetus striatus — 31 records</div>
+    <div class="modal-species">Naso unicornis — 19 records</div>
+    <div class="modal-species">Zebrasoma scopas — 8 records</div>
+  </div>
+</div>
+</body>
+</html>
