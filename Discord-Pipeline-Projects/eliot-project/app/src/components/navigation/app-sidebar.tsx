@@ -20,6 +20,62 @@ import { useSpeciesData } from "@/hooks/use-species-data";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFilteredSpecies } from "@/hooks/use-filtered-species";
 import { Input } from "@/components/ui/input";
+import type { TaxonomyNodeJSON } from "@/lib/types/taxonomy.types";
+
+/**
+ * Build a TaxonomyNodeJSON tree from a flat species list.
+ * Used to display a filtered taxonomy when trait/search filters are active.
+ */
+function buildTaxonomyFromSpecies(
+  speciesList: { scientificName: string; order: string; family: string; genus: string }[]
+): TaxonomyNodeJSON {
+  const root: TaxonomyNodeJSON = {
+    name: 'All Species',
+    level: 'root',
+    children: [],
+    speciesCount: speciesList.length,
+  };
+
+  // Build hierarchy: order -> family -> genus -> species
+  const orderMap = new Map<string, TaxonomyNodeJSON>();
+
+  for (const sp of speciesList) {
+    // Get or create order
+    let orderNode = orderMap.get(sp.order);
+    if (!orderNode) {
+      orderNode = { name: sp.order, level: 'order', children: [], speciesCount: 0 };
+      orderMap.set(sp.order, orderNode);
+      root.children.push(orderNode);
+    }
+    orderNode.speciesCount++;
+
+    // Get or create family under order
+    let familyNode = orderNode.children.find((c) => c.name === sp.family);
+    if (!familyNode) {
+      familyNode = { name: sp.family, level: 'family', children: [], speciesCount: 0 };
+      orderNode.children.push(familyNode);
+    }
+    familyNode.speciesCount++;
+
+    // Get or create genus under family
+    let genusNode = familyNode.children.find((c) => c.name === sp.genus);
+    if (!genusNode) {
+      genusNode = { name: sp.genus, level: 'genus', children: [], speciesCount: 0 };
+      familyNode.children.push(genusNode);
+    }
+    genusNode.speciesCount++;
+
+    // Add species leaf
+    genusNode.children.push({
+      name: sp.scientificName,
+      level: 'species',
+      children: [],
+      speciesCount: 1,
+    });
+  }
+
+  return root;
+}
 
 interface AppSidebarProps {
   onSelectSpecies?: (species: { id: string; scientificName: string }) => void;
@@ -71,6 +127,17 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
       return scientificMatch || commonMatch;
     });
   }, [filteredSpecies, debouncedFilteredSearch]);
+
+  // Build filtered taxonomy tree from displayed species
+  const filteredTaxonomy = useMemo((): TaxonomyNodeJSON | null => {
+    if (!taxonomy) return null;
+    // If no filters are active, use the full taxonomy
+    if (selectedTraits.size === 0 && !debouncedSearch.trim() && !debouncedFilteredSearch.trim()) {
+      return taxonomy;
+    }
+    // Build taxonomy from filtered species
+    return buildTaxonomyFromSpecies(displayedSpecies);
+  }, [taxonomy, displayedSpecies, selectedTraits, debouncedSearch, debouncedFilteredSearch]);
 
   // Handlers
   const handleTraitToggle = useCallback((trait: string) => {
@@ -154,7 +221,7 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
             <SidebarGroupLabel>Available Species</SidebarGroupLabel>
             <SidebarGroupContent>
               <TaxonomyTree
-                data={taxonomy}
+                data={filteredTaxonomy}
                 onSelectSpecies={handleSelectFromTree}
                 height={250}
               />
