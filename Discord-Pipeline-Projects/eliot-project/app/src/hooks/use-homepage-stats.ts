@@ -3,21 +3,24 @@
 import { useState, useEffect } from "react";
 import type { TraitBarplotStat } from "@/components/homepage/trait-barplots";
 import type { PublicationDataPoint } from "@/components/homepage/publication-chart";
+import type { FamilyPhotoData } from "@/components/homepage/photo-grid";
 
 interface HomepageStatsState {
   barplotStats: TraitBarplotStat[];
   publicationYears: PublicationDataPoint[];
+  familyPhotos: FamilyPhotoData[];
   isLoading: boolean;
   error: string | null;
 }
 
 /**
- * Fetches homepage statistics for barplots and publication chart from the API.
+ * Fetches homepage statistics for barplots, publication chart, and photo grid.
  */
 export function useHomepageStats(): HomepageStatsState {
   const [state, setState] = useState<HomepageStatsState>({
     barplotStats: [],
     publicationYears: [],
+    familyPhotos: [],
     isLoading: true,
     error: null,
   });
@@ -25,12 +28,23 @@ export function useHomepageStats(): HomepageStatsState {
   useEffect(() => {
     async function fetchStats() {
       try {
-        const res = await fetch("/api/homepage-stats");
-        if (!res.ok) throw new Error("Failed to fetch homepage stats");
-        const data = await res.json();
+        const [statsRes, familiesRes] = await Promise.all([
+          fetch("/api/homepage-stats"),
+          fetch("/api/homepage-stats/families"),
+        ]);
+
+        if (!statsRes.ok) throw new Error("Failed to fetch homepage stats");
+        if (!familiesRes.ok) throw new Error("Failed to fetch family data");
+
+        const [statsData, familiesData] = await Promise.all([
+          statsRes.json(),
+          familiesRes.json(),
+        ]);
+
         setState({
-          barplotStats: data.stats ?? [],
-          publicationYears: data.publicationYears ?? [],
+          barplotStats: statsData.stats ?? [],
+          publicationYears: statsData.publicationYears ?? [],
+          familyPhotos: familiesData.families ?? [],
           isLoading: false,
           error: null,
         });

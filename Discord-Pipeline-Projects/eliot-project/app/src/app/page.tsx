@@ -6,6 +6,7 @@ import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { SpeciesDetail } from "@/components/species-detail/species-detail";
 import { TraitBarplots } from "@/components/homepage/trait-barplots";
 import { PublicationChart } from "@/components/homepage/publication-chart";
+import { PhotoGrid } from "@/components/homepage/photo-grid";
 import { useHomepageStats } from "@/hooks/use-homepage-stats";
 
 interface SelectedSpecies {
@@ -17,7 +18,7 @@ export default function Home() {
   const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(
     null
   );
-  const { barplotStats, publicationYears } = useHomepageStats();
+  const { barplotStats, publicationYears, familyPhotos } = useHomepageStats();
 
   return (
     <MainLayout sidebar={<AppSidebar onSelectSpecies={setSelectedSpecies} />}>
@@ -34,6 +35,14 @@ export default function Home() {
 
           <TraitBarplots stats={barplotStats} />
           <PublicationChart data={publicationYears} />
+          <PhotoGrid
+            families={familyPhotos}
+            onSelectSpecies={(name) => {
+              // Convert species name to selection format
+              const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+              setSelectedSpecies({ id: slug, scientificName: name });
+            }}
+          />
         </div>
       )}
     </MainLayout>
