@@ -43,7 +43,14 @@ function getTraitDisplayName(filename: string): string {
  * Groups by 5-year bins and source category (Origin + Type).
  */
 async function loadPublicationYears(): Promise<{ year: number; source: string; count: number }[]> {
-  const refPath = path.join(process.cwd(), '..', 'reference-data', 'All references and publication dates.txt');
+  // Try project root first (dev), then app dir (VPS)
+  const refFilename = 'All references and publication dates.txt';
+  let refPath = path.join(process.cwd(), '..', 'reference-data', refFilename);
+  try {
+    await fs.access(refPath);
+  } catch {
+    refPath = path.join(process.cwd(), 'reference-data', refFilename);
+  }
 
   try {
     const content = await fs.readFile(refPath, 'utf-8');
