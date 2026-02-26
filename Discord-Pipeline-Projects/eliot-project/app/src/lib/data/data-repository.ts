@@ -16,6 +16,7 @@ import { loadAllLocalCSVs, getLocalFileType } from './local-data';
 import { parseTraitCSV } from './csv-parser';
 import { validateParsedCSV, type SchemaValidationResult } from './schema-validator';
 import { buildDatabaseTraitRegistry, type DatabaseTraitRegistry } from './database-registry';
+import { loadImageRegistry } from './image-registry';
 import { buildTaxonomyTree } from '@/lib/services/taxonomy.service';
 import type { Species, TraitData } from '@/lib/types/species.types';
 import type { TaxonomyNode } from '@/lib/types/taxonomy.types';
@@ -634,6 +635,30 @@ export async function getOrLoadData(): Promise<AllData> {
   console.log(
     `[data-repository] Registry: ${databaseRegistry.speciesDatabases.size} species across ${databaseRegistry.databaseSpecies.size} databases`
   );
+
+  // 2b. Add image-only species (not in any CSV but have photos)
+  try {
+    const imageRegistry = await loadImageRegistry();
+    for (const images of imageRegistry.imagesBySpecies.values()) {
+      if (images.length === 0) continue;
+      const img = images[0];
+      const id = slugify(img.speciesName);
+      if (!species.has(id)) {
+        const nameParts = img.speciesName.split(' ');
+        species.set(id, {
+          id,
+          validName: img.speciesName,
+          commonName: null,
+          order: img.order || 'Unknown',
+          family: img.family || 'Unknown',
+          genus: nameParts[0] || 'Unknown',
+        });
+      }
+    }
+    console.log(`[data-repository] After image merge: ${species.size} total species`);
+  } catch (error) {
+    console.warn('[data-repository] Could not load image registry for species merge:', error);
+  }
 
   // 3. Build taxonomy tree from species list
   const speciesArray = Array.from(species.values());
