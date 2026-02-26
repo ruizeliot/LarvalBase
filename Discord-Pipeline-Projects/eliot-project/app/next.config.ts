@@ -8,10 +8,6 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'recharts'],
   },
   images: {
-    /** Allow local API image routes */
-    remotePatterns: [],
-    /** Default quality for optimized images */
-    quality: 75,
     /** Serve smaller thumbnails for grids */
     deviceSizes: [640, 750, 828, 1080, 1200],
     imageSizes: [64, 96, 128, 192, 256],
