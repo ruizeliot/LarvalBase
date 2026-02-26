@@ -432,20 +432,11 @@ function extractLocationsFromRows(
     const validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
     if (!validName) continue;
 
-    // Check for valid latitude and longitude
-    const latitude = row.LATITUDE;
-    const longitude = row.LONGITUDE;
+    // Extract numeric coordinates (handles both number and string types from PapaParse)
+    const latitude = extractNumeric(row.LATITUDE);
+    const longitude = extractNumeric(row.LONGITUDE);
 
-    if (
-      latitude === undefined ||
-      longitude === undefined ||
-      latitude === null ||
-      longitude === null ||
-      typeof latitude !== 'number' ||
-      typeof longitude !== 'number' ||
-      isNaN(latitude) ||
-      isNaN(longitude)
-    ) {
+    if (latitude === null || longitude === null) {
       continue;
     }
 
