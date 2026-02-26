@@ -72,4 +72,23 @@ describe('US-1.4: Database Updates (01.2026)', () => {
     expect(lines.length).toBeGreaterThan(100);
     expect(lines[0]).toContain('VALID_NAME');
   });
+
+  it('Lizard Island coordinates should use correct positive longitude (~145.4)', async () => {
+    // Lizard Island is in Queensland, Australia: lat ~-14.664, lon ~145.448
+    // Old data had wrong negative longitude -145.5 (Pacific Ocean)
+    const files = ['settlement_age_database.csv', 'settlement_size_database.csv'];
+
+    for (const file of files) {
+      const content = await fs.readFile(path.join(DATA_DIR, file), 'utf-8');
+      const lines = content.split('\n');
+
+      for (const line of lines) {
+        // Only check lines that mention Lizard Island AND have coordinate data (not NA)
+        if (line.includes('"Lizard Island"') && !line.includes('@NA@NA@')) {
+          // Should NOT have the old wrong negative longitude
+          expect(line, `${file}: Lizard Island still has wrong longitude -145.5`).not.toContain('-145.5');
+        }
+      }
+    }
+  });
 });
