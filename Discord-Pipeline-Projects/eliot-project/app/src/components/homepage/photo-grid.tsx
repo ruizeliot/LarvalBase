@@ -59,7 +59,7 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
             onClick={() => onSelectFamily?.(fam.family)}
           >
             {/* Image with letterbox/pillarbox (contain + black bg) */}
-            <div className="relative w-full h-20 bg-black flex items-center justify-center text-2xl">
+            <div className="relative w-full h-32 bg-black flex items-center justify-center text-2xl">
               {fam.imageUrl ? (
                 <img
                   src={fam.imageUrl}
@@ -71,24 +71,24 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
               ) : (
                 '🐟'
               )}
-              {fam.hasFamilyIcon && (
-                <Image
-                  src={`/family-icons/${fam.family}.svg`}
-                  alt=""
-                  width={18}
-                  height={18}
-                  className="absolute bottom-1 right-1 shrink-0 drop-shadow-md"
-                  style={{ filter: 'invert(1) brightness(0.8)', opacity: 0.7 }}
-                />
-              )}
             </div>
-            <div className="p-1.5">
+            <div className="p-1.5 relative">
               <div className="text-xs font-semibold text-primary truncate">
                 {fam.family}
               </div>
               <div className="text-[10px] text-muted-foreground truncate">
                 {fam.order} {fam.imageCount ? `(${fam.imageCount} img)` : ''}
               </div>
+              {fam.hasFamilyIcon && (
+                <Image
+                  src={`/family-icons/${fam.family}.svg`}
+                  alt=""
+                  width={36}
+                  height={36}
+                  className="absolute bottom-1 right-1 opacity-30"
+                  style={{ filter: 'invert(1) brightness(0.8)' }}
+                />
+              )}
             </div>
           </div>
         ))}
