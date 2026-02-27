@@ -57,7 +57,7 @@ function FamilySilhouette({ family, className = '' }: { family: string; classNam
       width={16}
       height={16}
       className={`shrink-0 object-contain ${className}`}
-      style={{ filter: 'invert(1) brightness(0.8)' }}
+      style={{ filter: 'brightness(0) invert(1)' }}
       onError={() => setErr(true)}
     />
   );

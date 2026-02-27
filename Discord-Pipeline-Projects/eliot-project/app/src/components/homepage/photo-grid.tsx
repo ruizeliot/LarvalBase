@@ -86,7 +86,7 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
                   alt=""
                   width={36}
                   height={36}
-                  className="absolute bottom-1 right-1 opacity-30"
+                  className="absolute bottom-1 right-1 opacity-70"
                   style={{ filter: 'brightness(0) invert(1)' }}
                 />
               )}
