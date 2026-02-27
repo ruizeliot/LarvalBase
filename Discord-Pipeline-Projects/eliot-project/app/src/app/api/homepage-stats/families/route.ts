@@ -16,12 +16,16 @@ export async function GET() {
       loadImageRegistry(),
     ]);
 
-    // Build family -> best image map from image registry
+    // Build family -> best image map and image count from image registry
     // Priority: certain blackwater > certain any > uncertain any
     const familyImageMap = new Map<string, string>();
+    const familyImageCount = new Map<string, number>();
     for (const images of imageRegistry.imagesBySpecies.values()) {
       for (const img of images) {
         if (!img.family) continue;
+        // Count all images per family
+        familyImageCount.set(img.family, (familyImageCount.get(img.family) ?? 0) + 1);
+
         const existing = familyImageMap.get(img.family);
         // Build URL for this image
         const imageUrl = `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`;
@@ -72,26 +76,22 @@ export async function GET() {
       });
     }
 
-    // Sort families by order (orders with most families first), then family name alphabetically
+    // Sort families by most images first (left→right, top→bottom)
     const familiesWithImages = Array.from(familyMap.values())
       .filter((f) => familyImageMap.has(f.family));
 
-    // Count families per order for sorting
-    const familiesPerOrder = new Map<string, number>();
-    for (const f of familiesWithImages) {
-      familiesPerOrder.set(f.order, (familiesPerOrder.get(f.order) ?? 0) + 1);
-    }
-
     const families = familiesWithImages
       .sort((a, b) => {
-        const aCount = familiesPerOrder.get(a.order) ?? 0;
-        const bCount = familiesPerOrder.get(b.order) ?? 0;
-        // Orders with most families first, then alphabetical family name
-        return (bCount - aCount) || a.order.localeCompare(b.order) || a.family.localeCompare(b.family);
+        const aCount = familyImageCount.get(a.family) ?? 0;
+        const bCount = familyImageCount.get(b.family) ?? 0;
+        // Most images first, then alphabetical family name
+        return (bCount - aCount) || a.family.localeCompare(b.family);
       })
       .map((f) => ({
         ...f,
         imageUrl: familyImageMap.get(f.family)!,
+        imageCount: familyImageCount.get(f.family) ?? 0,
+        hasFamilyIcon: imageRegistry.familiesWithIcons.has(f.family),
       }));
 
     return NextResponse.json(

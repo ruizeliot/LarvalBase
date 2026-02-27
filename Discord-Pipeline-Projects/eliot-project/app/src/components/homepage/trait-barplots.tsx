@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 /**
  * Horizontal barplots showing record/species/genus/family/order counts per trait.
  * Uses GROUPED (side-by-side) bars per Figure 6 reference, NOT stacked.
@@ -27,6 +29,29 @@ const SEGMENTS = [
   { key: 'order' as const, label: 'Order', color: '#E76BF3' },
 ];
 
+/**
+ * Map trait display names to their section SVG icon filenames.
+ */
+const TRAIT_ICON_MAP: Record<string, string> = {
+  'Age-at-length data': 'Age-at-Length.svg',
+  'Egg traits': 'Egg & Incubation.svg',
+  'Incubation': 'Egg & Incubation.svg',
+  'First feeding size': 'Hatching & Pre-flexion Stage.svg',
+  'Hatching size': 'Hatching & Pre-flexion Stage.svg',
+  'First feeding age': 'Hatching & Pre-flexion Stage.svg',
+  'Flexion size': 'Flexion Stage.svg',
+  'Flexion age': 'Flexion Stage.svg',
+  'Metamorphosis size': 'Metamorphosis.svg',
+  'Metamorphosis age': 'Metamorphosis.svg',
+  'Settlement size': 'Settlement.svg',
+  'Settlement age': 'Settlement.svg',
+  'Pelagic juvenile': 'Pelagic Juvenile.svg',
+  'Rafting': 'Rafting.svg',
+  'In situ swimming': 'Active Behaviors.svg',
+  'Critical swimming': 'Active Behaviors.svg',
+  'Vertical position': 'Active Behaviors.svg',
+};
+
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US');
 }
@@ -45,11 +70,24 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
         Taxa per trait (grouped bars)
       </h3>
 
-      {stats.map((stat) => (
+      {stats.map((stat) => {
+        const iconFile = TRAIT_ICON_MAP[stat.traitName];
+        return (
         <div key={stat.traitName} className="flex items-start gap-2">
-          <span className="w-32 text-xs text-muted-foreground text-right shrink-0 truncate pt-0.5">
-            {stat.traitName}
-          </span>
+          <div className="w-36 flex items-center gap-1.5 shrink-0 justify-end pt-0.5">
+            {iconFile && (
+              <Image
+                src={`/icons/sections/${iconFile}`}
+                alt=""
+                width={16}
+                height={16}
+                className="shrink-0 opacity-70"
+              />
+            )}
+            <span className="text-xs text-muted-foreground text-right truncate">
+              {stat.traitName}
+            </span>
+          </div>
           <div className="flex-1 space-y-0.5">
             {SEGMENTS.map((seg) => {
               const value = stat[seg.key];
@@ -72,7 +110,8 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
 
       {/* Legend */}
       <div className="flex gap-3 flex-wrap mt-2">

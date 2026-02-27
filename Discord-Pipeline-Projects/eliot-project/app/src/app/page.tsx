@@ -67,10 +67,10 @@ export default function Home() {
           </div>
 
           <Suspense fallback={<HomepageSkeleton />}>
-            <TraitBarplots stats={barplotStats} />
+            <PublicationChart data={publicationYears} />
           </Suspense>
           <Suspense fallback={<HomepageSkeleton />}>
-            <PublicationChart data={publicationYears} />
+            <TraitBarplots stats={barplotStats} />
           </Suspense>
           <Suspense fallback={<HomepageSkeleton />}>
             <PhotoGrid

@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Image from "next/image";
 
 /**
- * Photo grid showing one image per family, sorted by order.
+ * Photo grid showing one image per family, sorted by most images.
  * Click a family card to navigate to a full gallery page.
  * Paginated: shows PAGE_SIZE families initially with "Show more" button.
  */
@@ -14,6 +15,8 @@ export interface FamilyPhotoData {
   family: string;
   order: string;
   imageUrl: string | null;
+  imageCount?: number;
+  hasFamilyIcon?: boolean;
   species: {
     validName: string;
     genus: string;
@@ -70,11 +73,20 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
               )}
             </div>
             <div className="p-1.5">
-              <div className="text-xs font-semibold text-primary truncate">
+              <div className="text-xs font-semibold text-primary truncate flex items-center gap-1">
+                {fam.hasFamilyIcon && (
+                  <Image
+                    src={`/adult_svg_fishbase/${fam.family}.svg`}
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="shrink-0 opacity-60"
+                  />
+                )}
                 {fam.family}
               </div>
               <div className="text-[10px] text-muted-foreground truncate">
-                {fam.order}
+                {fam.order} {fam.imageCount ? `(${fam.imageCount} img)` : ''}
               </div>
             </div>
           </div>

@@ -8,6 +8,45 @@ import Papa from 'papaparse';
 import type { ParseError, ParseResult } from '@/lib/types/csv.types';
 
 /**
+ * Detect and fix leading row-index columns in CSV data.
+ *
+ * Some database files (e.g. Incubation) have a leading numeric row-index column
+ * in data rows but NOT in the header, causing all columns to shift by 1.
+ * This function detects the pattern and adds a dummy header to fix alignment.
+ */
+function fixLeadingRowIndex(csvText: string, delimiter: string): string {
+  const lines = csvText.split('\n');
+  if (lines.length < 3) return csvText;
+
+  const headerCols = lines[0].split(delimiter).length;
+
+  // Check first few data rows for extra column
+  let extraColCount = 0;
+  const checkCount = Math.min(5, lines.length - 1);
+  for (let i = 1; i <= checkCount; i++) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    const dataCols = line.split(delimiter).length;
+    if (dataCols === headerCols + 1) {
+      // Check if first value looks like a row index (quoted or unquoted integer)
+      const firstVal = line.split(delimiter)[0].replace(/"/g, '').trim();
+      if (/^\d+$/.test(firstVal)) {
+        extraColCount++;
+      }
+    }
+  }
+
+  // If most checked rows have the extra leading column, add a dummy header
+  if (extraColCount >= Math.min(3, checkCount)) {
+    console.log(`[csv-parser] Detected leading row-index column, adding ROW_INDEX header`);
+    lines[0] = `"ROW_INDEX"${delimiter}${lines[0]}`;
+    return lines.join('\n');
+  }
+
+  return csvText;
+}
+
+/**
  * Parse a CSV file with semicolon delimiter and error handling.
  *
  * Key behaviors:
@@ -24,6 +63,8 @@ export function parseTraitCSV<T extends Record<string, unknown>>(
   csvText: string,
   filename: string
 ): ParseResult<T> {
+  // Fix leading row-index columns before parsing
+  csvText = fixLeadingRowIndex(csvText, '@');
   const data: T[] = [];
   const errors: ParseError[] = [];
   let rowIndex = 0;
