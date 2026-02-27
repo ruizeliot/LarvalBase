@@ -1,9 +1,8 @@
 /**
- * Tests for US-2.7: Two search bars.
+ * Tests for sidebar search: single search bar at top.
  *
- * Must have:
- * 1. Top search: "Search all species" — searches entire database
- * 2. Bottom search: "Search filtered species" — searches within filtered results
+ * BUG 23 fix: removed the second "filtered species" search bar.
+ * Only one search bar remains (SpeciesSearch at top).
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -56,28 +55,19 @@ vi.mock('@/components/ui/scroll-area', () => ({
   ScrollArea: ({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) => <div {...props}>{children}</div>,
 }));
 
-vi.mock('@/components/ui/input', () => ({
-  Input: ({ placeholder, ...props }: React.InputHTMLAttributes<HTMLInputElement>) => (
-    <input placeholder={placeholder} data-testid="search-input" {...props} />
-  ),
-}));
-
-describe('US-2.7: Two search bars', () => {
-  it('should render a search bar for filtered species', () => {
+describe('Sidebar search bar', () => {
+  it('should render the species search at the top', () => {
     render(<AppSidebar />);
 
-    // Should have an input with "Search filtered species" placeholder
-    const inputs = screen.getAllByTestId('search-input');
-    const filteredSearch = inputs.find(
-      (el) => el.getAttribute('placeholder')?.includes('filtered')
-    );
-    expect(filteredSearch).toBeTruthy();
+    // The SpeciesSearch component should be rendered (single search)
+    expect(screen.getByTestId('species-search')).toBeInTheDocument();
   });
 
-  it('should render the all-species search at the top', () => {
+  it('should NOT render a second filtered search bar', () => {
     render(<AppSidebar />);
 
-    // The SpeciesSearch component should be rendered (top search)
-    expect(screen.getByTestId('species-search')).toBeInTheDocument();
+    // Only one search component should exist — no "search-input" from the old Input mock
+    const inputs = screen.queryAllByTestId('search-input');
+    expect(inputs).toHaveLength(0);
   });
 });
