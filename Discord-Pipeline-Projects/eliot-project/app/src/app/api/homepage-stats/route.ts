@@ -18,7 +18,7 @@ const TRAIT_DISPLAY_NAMES: Record<string, string> = {
   flexion_size: 'Flexion size',
   metamorphosis_age: 'Metamorphosis age',
   metamorphosis_size: 'Metamorphosis size',
-  larval_growth: 'Growth curves',
+  larval_growth: 'Age-at-length data',
   settlement_age: 'Settlement age',
   settlement_size: 'Settlement size',
   critical_swimming: 'Critical swimming',
