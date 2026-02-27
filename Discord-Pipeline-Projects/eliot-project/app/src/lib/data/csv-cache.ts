@@ -120,6 +120,13 @@ class DataCache {
   }
 
   /**
+   * Get all raw CSVs as a Map of filename → content.
+   */
+  getAllRawCSVs(): Map<string, string> {
+    return this.rawCSVs;
+  }
+
+  /**
    * Clear all cached data.
    */
   clear(): void {

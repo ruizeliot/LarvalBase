@@ -10,6 +10,8 @@ import { ReferencesSection } from "./references-section";
 import { RawDataModal } from "./raw-data-modal";
 import { SpeciesGrowthChart } from "./species-growth-chart";
 import { ExportButton } from "@/components/export/export-button";
+import { EggQualitativePanel } from "./egg-qualitative-panel";
+import { useEggQualitative } from "@/hooks/use-egg-qualitative";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -102,6 +104,9 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
 
   // Fetch all raw data for export (no trait type filter)
   const { data: allRawData } = useRawData(speciesId, undefined, true);
+
+  // Fetch qualitative egg data (US-3.1)
+  const { data: eggQualitativeData } = useEggQualitative(speciesId);
 
   // Modal state for raw data display
   const [modalOpen, setModalOpen] = useState(false);
@@ -250,6 +255,12 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                 }}
                 comparisons={comparisons}
               />
+              {/* US-3.1: Insert qualitative egg barplots after Egg & Incubation section */}
+              {group.title === "Egg & Incubation" && eggQualitativeData && (
+                <div className="mt-4">
+                  <EggQualitativePanel data={eggQualitativeData} />
+                </div>
+              )}
               {/* Insert map after Settlement section */}
               {group.title === "Settlement" && (
                 <div className="space-y-4 mt-8">
