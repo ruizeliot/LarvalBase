@@ -73,20 +73,20 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
         const iconFile = TRAIT_ICON_MAP[stat.traitName];
         return (
         <div key={stat.traitName} className="flex items-start gap-2">
-          <div className="w-48 flex items-center gap-2 shrink-0 justify-end pt-0.5">
+          <div className="w-48 flex flex-col items-end shrink-0 pt-0.5">
+            <span className="text-xs text-muted-foreground text-right truncate w-full">
+              {stat.traitName}
+            </span>
             {iconFile && (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={`/icons/sections/${iconFile}`}
                 alt=""
-                width={28}
-                height={28}
-                className="shrink-0 opacity-70"
+                width={36}
+                height={36}
+                className="shrink-0 opacity-70 mt-0.5"
               />
             )}
-            <span className="text-xs text-muted-foreground text-right truncate">
-              {stat.traitName}
-            </span>
           </div>
           <div className="flex-1 space-y-0.5">
             {SEGMENTS.map((seg) => {
