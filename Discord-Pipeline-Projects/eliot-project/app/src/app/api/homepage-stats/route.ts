@@ -43,17 +43,33 @@ function getTraitDisplayName(filename: string): string {
  * Groups by 5-year bins and source category (Origin + Type).
  */
 async function loadPublicationYears(): Promise<{ year: number; source: string; count: number }[]> {
-  // Try project root first (dev), then app dir (VPS)
+  // Try multiple paths: parent (dev), cwd (VPS), and data dir
   const refFilename = 'All references and publication dates.txt';
-  let refPath = path.join(process.cwd(), '..', 'reference-data', refFilename);
-  try {
-    await fs.access(refPath);
-  } catch {
-    refPath = path.join(process.cwd(), 'reference-data', refFilename);
+  const candidatePaths = [
+    path.join(process.cwd(), '..', 'reference-data', refFilename),
+    path.join(process.cwd(), 'reference-data', refFilename),
+    path.join(process.cwd(), 'data', refFilename),
+  ];
+
+  let refPath: string | null = null;
+  for (const candidate of candidatePaths) {
+    try {
+      await fs.access(candidate);
+      refPath = candidate;
+      break;
+    } catch {
+      // Try next path
+    }
+  }
+
+  if (!refPath) {
+    console.warn('[homepage-stats] Reference data file not found. Tried:', candidatePaths);
+    return [];
   }
 
   try {
     const content = await fs.readFile(refPath, 'utf-8');
+    console.log(`[homepage-stats] Loaded reference data from ${refPath} (${content.length} bytes)`);
 
     // Parse the @ delimited reference data
     interface RefRow {
@@ -72,37 +88,45 @@ async function loadPublicationYears(): Promise<{ year: number; source: string; c
       quoteChar: '"',
     });
 
+    console.log(`[homepage-stats] Parsed ${parseResult.data.length} reference rows`);
+
     // Count unique references per 5-year bin and source category
     // Source categories match Figure 2: Original reference + Cited reference, split by Origin
     const binCounts = new Map<string, Set<string>>();
 
     for (const row of parseResult.data) {
-      const origin = row.ORIGIN === 'NA' || !row.ORIGIN ? 'Unrecorded' : row.ORIGIN;
+      // Trim and clean origin value
+      const rawOrigin = typeof row.ORIGIN === 'string' ? row.ORIGIN.trim() : '';
+      const origin = rawOrigin === 'NA' || rawOrigin === '' ? 'Unrecorded' : rawOrigin;
 
       // Process original references (REFERENCE)
-      if (row.REFERENCE_DATE && row.REFERENCE_DATE !== 'NA') {
-        const year = parseInt(row.REFERENCE_DATE, 10);
+      const refDate = typeof row.REFERENCE_DATE === 'string' ? row.REFERENCE_DATE.trim() : '';
+      if (refDate && refDate !== 'NA') {
+        const year = parseInt(refDate, 10);
         if (!isNaN(year) && year >= 1800 && year <= 2030) {
           const bin = Math.floor(year / 5) * 5;
           const source = `Original\n${origin}`;
           const key = `${bin}|${source}`;
           if (!binCounts.has(key)) binCounts.set(key, new Set());
-          if (row.REFERENCE_UNIQUE && row.REFERENCE_UNIQUE !== 'NA') {
-            binCounts.get(key)!.add(row.REFERENCE_UNIQUE);
+          const refUnique = typeof row.REFERENCE_UNIQUE === 'string' ? row.REFERENCE_UNIQUE.trim() : '';
+          if (refUnique && refUnique !== 'NA') {
+            binCounts.get(key)!.add(refUnique);
           }
         }
       }
 
       // Process cited references (EXT_REF)
-      if (row.EXT_REF_DATE && row.EXT_REF_DATE !== 'NA') {
-        const year = parseInt(row.EXT_REF_DATE, 10);
+      const extRefDate = typeof row.EXT_REF_DATE === 'string' ? row.EXT_REF_DATE.trim() : '';
+      if (extRefDate && extRefDate !== 'NA') {
+        const year = parseInt(extRefDate, 10);
         if (!isNaN(year) && year >= 1800 && year <= 2030) {
           const bin = Math.floor(year / 5) * 5;
           const source = `Cited\n${origin}`;
           const key = `${bin}|${source}`;
           if (!binCounts.has(key)) binCounts.set(key, new Set());
-          if (row.EXT_REF_UNIQUE && row.EXT_REF_UNIQUE !== 'NA') {
-            binCounts.get(key)!.add(row.EXT_REF_UNIQUE);
+          const extRefUnique = typeof row.EXT_REF_UNIQUE === 'string' ? row.EXT_REF_UNIQUE.trim() : '';
+          if (extRefUnique && extRefUnique !== 'NA') {
+            binCounts.get(key)!.add(extRefUnique);
           }
         }
       }
@@ -121,9 +145,10 @@ async function loadPublicationYears(): Promise<{ year: number; source: string; c
     }
 
     result.sort((a, b) => a.year - b.year || a.source.localeCompare(b.source));
+    console.log(`[homepage-stats] Publication data: ${result.length} bins`);
     return result;
   } catch (error) {
-    console.warn('[homepage-stats] Could not load reference data:', error);
+    console.error('[homepage-stats] Error loading/parsing reference data:', error);
     return [];
   }
 }
