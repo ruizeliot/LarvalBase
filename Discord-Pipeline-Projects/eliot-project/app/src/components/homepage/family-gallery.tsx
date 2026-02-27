@@ -118,7 +118,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
           width={32}
           height={22}
           className="object-contain shrink-0"
-          style={{ filter: 'invert(1) brightness(0.8)' }}
+          style={{ filter: 'brightness(0) invert(1)' }}
           unoptimized
         />
         {family} — Photo Gallery
