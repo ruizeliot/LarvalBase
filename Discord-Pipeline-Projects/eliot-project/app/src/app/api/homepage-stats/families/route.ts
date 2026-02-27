@@ -72,10 +72,23 @@ export async function GET() {
       });
     }
 
-    // Sort families by order, then family name; exclude families without images
-    const families = Array.from(familyMap.values())
-      .filter((f) => familyImageMap.has(f.family))
-      .sort((a, b) => a.order.localeCompare(b.order) || a.family.localeCompare(b.family))
+    // Sort families by order (orders with most families first), then family name alphabetically
+    const familiesWithImages = Array.from(familyMap.values())
+      .filter((f) => familyImageMap.has(f.family));
+
+    // Count families per order for sorting
+    const familiesPerOrder = new Map<string, number>();
+    for (const f of familiesWithImages) {
+      familiesPerOrder.set(f.order, (familiesPerOrder.get(f.order) ?? 0) + 1);
+    }
+
+    const families = familiesWithImages
+      .sort((a, b) => {
+        const aCount = familiesPerOrder.get(a.order) ?? 0;
+        const bCount = familiesPerOrder.get(b.order) ?? 0;
+        // Orders with most families first, then alphabetical family name
+        return (bCount - aCount) || a.order.localeCompare(b.order) || a.family.localeCompare(b.family);
+      })
       .map((f) => ({
         ...f,
         imageUrl: familyImageMap.get(f.family)!,
