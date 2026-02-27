@@ -225,6 +225,31 @@ function extractMetadata(row: Record<string, unknown>): TraitData['metadata'] {
     externalRef: row.EXT_REF as string | null ?? null,
     lengthType: row.LENGTH_TYPE as string | null ?? row.SIZE_TYPE as string | null ?? null,
     sampleSize: extractNumeric(row.N) ?? extractNumeric(row.SAMPLE_SIZE),
+    // US-3.3: Min/Max/Conf values (populated per-database in extractTraitsFromRows)
+    minValue: null,
+    maxValue: null,
+    confValue: null,
+    confType: null,
+  };
+}
+
+/**
+ * Create metadata with min/max/conf values attached.
+ */
+function metadataWithMinMaxConf(
+  base: TraitData['metadata'],
+  row: Record<string, unknown>,
+  minCol: string,
+  maxCol: string,
+  confCol?: string,
+  confTypeCol?: string,
+): TraitData['metadata'] {
+  return {
+    ...base,
+    minValue: extractNumeric(row[minCol]),
+    maxValue: extractNumeric(row[maxCol]),
+    confValue: confCol ? extractNumeric(row[confCol]) : null,
+    confType: confTypeCol ? (row[confTypeCol] as string | null ?? null) : null,
   };
 }
 
@@ -270,40 +295,49 @@ function extractTraitsFromRows(
 
     // Settlement Age Database
     if (filename.includes('settlement_age')) {
-      addTrait(traits, 'settlement_age', r(row).SET_AGE_DPH_MEAN, 'days', source, doi, metadata);
+      const setAgeMeta = metadataWithMinMaxConf(metadata, r(row), 'SET_AGE_DPH_MIN', 'SET_AGE_DPH_MAX', 'SET_AGE_DPH_CONF', 'SET_AGE_DPH_CONF_TYPE');
+      addTrait(traits, 'settlement_age', r(row).SET_AGE_DPH_MEAN, 'days', source, doi, setAgeMeta);
       addTrait(traits, 'settlement_age_min', r(row).SET_AGE_DPH_MIN, 'days', source, doi, metadata);
       addTrait(traits, 'settlement_age_max', r(row).SET_AGE_DPH_MAX, 'days', source, doi, metadata);
     }
     // Settlement Size Database
     else if (filename.includes('settlement_size')) {
-      addTrait(traits, 'settlement_size', r(row).SET_SIZE_MEAN, 'mm', source, doi, metadata);
+      const setSizeMeta = metadataWithMinMaxConf(metadata, r(row), 'SET_SIZE_MIN', 'SET_SIZE_MAX', 'SET_SIZE_CONF', 'SET_SIZE_CONF_TYPE');
+      addTrait(traits, 'settlement_size', r(row).SET_SIZE_MEAN, 'mm', source, doi, setSizeMeta);
       addTrait(traits, 'settlement_size_min', r(row).SET_SIZE_MIN, 'mm', source, doi, metadata);
       addTrait(traits, 'settlement_size_max', r(row).SET_SIZE_MAX, 'mm', source, doi, metadata);
     }
     // Egg Database
     else if (filename.includes('egg_database')) {
-      addTrait(traits, 'egg_diameter', r(row).EGG_L_MEAN, 'mm', source, doi, metadata);
+      const eggMeta = metadataWithMinMaxConf(metadata, r(row), 'EGG_L_MIN', 'EGG_L_MAX', 'EGG_DIAMETER_CONF', 'EGG_DIAMETER_CONF_TYPE');
+      addTrait(traits, 'egg_diameter', r(row).EGG_L_MEAN, 'mm', source, doi, eggMeta);
       addTrait(traits, 'egg_diameter_min', r(row).EGG_L_MIN, 'mm', source, doi, metadata);
       addTrait(traits, 'egg_diameter_max', r(row).EGG_L_MAX, 'mm', source, doi, metadata);
-      addTrait(traits, 'yolk_diameter', r(row).YOLK_SIZE_MEAN, 'mm', source, doi, metadata);
-      addTrait(traits, 'oil_globule_size', r(row).OIL_GLOBULE_SIZE_MEAN, 'mm', source, doi, metadata);
-      addTrait(traits, 'egg_volume', r(row).EGG_VOLUME_MEAN, 'mm³', source, doi, metadata);
+      const yolkMeta = metadataWithMinMaxConf(metadata, r(row), 'YOLK_SIZE_MIN', 'YOLK_SIZE_MAX');
+      addTrait(traits, 'yolk_diameter', r(row).YOLK_SIZE_MEAN, 'mm', source, doi, yolkMeta);
+      const ogMeta = metadataWithMinMaxConf(metadata, r(row), 'OIL_GLOBULE_SIZE_MIN', 'OIL_GLOBULE_SIZE_MAX');
+      addTrait(traits, 'oil_globule_size', r(row).OIL_GLOBULE_SIZE_MEAN, 'mm', source, doi, ogMeta);
+      const eggVolMeta = metadataWithMinMaxConf(metadata, r(row), 'EGG_VOLUME_MIN', 'EGG_VOLUME_MAX');
+      addTrait(traits, 'egg_volume', r(row).EGG_VOLUME_MEAN, 'mm³', source, doi, eggVolMeta);
     }
     // Hatching Size Database
     else if (filename.includes('hatching_size')) {
-      addTrait(traits, 'hatching_size', r(row).HATCHING_SIZE_MEAN, 'mm', source, doi, metadata);
+      const hatchMeta = metadataWithMinMaxConf(metadata, r(row), 'HATCHING_SIZE_MIN', 'HATCHING_SIZE_MAX', 'HATCHING_SIZE_CONF', 'HATCHING_SIZE_CONF_TYPE');
+      addTrait(traits, 'hatching_size', r(row).HATCHING_SIZE_MEAN, 'mm', source, doi, hatchMeta);
       addTrait(traits, 'hatching_size_min', r(row).HATCHING_SIZE_MIN, 'mm', source, doi, metadata);
       addTrait(traits, 'hatching_size_max', r(row).HATCHING_SIZE_MAX, 'mm', source, doi, metadata);
     }
     // Incubation Database
     else if (filename.includes('incubation')) {
-      addTrait(traits, 'incubation_duration', r(row).INCUBATION_GESTATION_HOUR_MEAN, 'hours', source, doi, metadata);
+      const incMeta = metadataWithMinMaxConf(metadata, r(row), 'INCUBATION_GESTATION_HOUR_MIN', 'INCUBATION_GESTATION_HOUR_MAX');
+      addTrait(traits, 'incubation_duration', r(row).INCUBATION_GESTATION_HOUR_MEAN, 'hours', source, doi, incMeta);
       addTrait(traits, 'incubation_duration_min', r(row).INCUBATION_GESTATION_HOUR_MIN, 'hours', source, doi, metadata);
       addTrait(traits, 'incubation_duration_max', r(row).INCUBATION_GESTATION_HOUR_MAX, 'hours', source, doi, metadata);
     }
     // First Feeding Age Database
     else if (filename.includes('first_feeding_age')) {
-      addTrait(traits, 'first_feeding_age', r(row).FIRST_FEEDING_DPH_MEAN, 'days', source, doi, metadata);
+      const ffaMeta = metadataWithMinMaxConf(metadata, r(row), 'FIRST_FEEDING_DPH_MIN', 'FIRST_FEEDING_DPH_MAX');
+      addTrait(traits, 'first_feeding_age', r(row).FIRST_FEEDING_DPH_MEAN, 'days', source, doi, ffaMeta);
       addTrait(traits, 'first_feeding_age_min', r(row).FIRST_FEEDING_DPH_MIN, 'days', source, doi, metadata);
       addTrait(traits, 'first_feeding_age_max', r(row).FIRST_FEEDING_DPH_MAX, 'days', source, doi, metadata);
       addTrait(traits, 'yolk_absorption_age', r(row).YOLK_ABSORPTION_DPH_MEAN, 'days', source, doi, metadata);
@@ -315,51 +349,59 @@ function extractTraitsFromRows(
     }
     // Flexion Age Database
     else if (filename.includes('flexion_age')) {
-      addTrait(traits, 'flexion_age', r(row).FLEXION_AGE_DPH_MEAN, 'days', source, doi, metadata);
+      const flexAgeMeta = metadataWithMinMaxConf(metadata, r(row), 'FLEXION_AGE_DPH_MIN', 'FLEXION_AGE_DPH_MAX');
+      addTrait(traits, 'flexion_age', r(row).FLEXION_AGE_DPH_MEAN, 'days', source, doi, flexAgeMeta);
       addTrait(traits, 'flexion_age_min', r(row).FLEXION_AGE_DPH_MIN, 'days', source, doi, metadata);
       addTrait(traits, 'flexion_age_max', r(row).FLEXION_AGE_DPH_MAX, 'days', source, doi, metadata);
     }
     // Flexion Size Database
     else if (filename.includes('flexion_size')) {
-      addTrait(traits, 'flexion_size', r(row).FLEXION_SIZE_MEAN, 'mm', source, doi, metadata);
+      const flexSizeMeta = metadataWithMinMaxConf(metadata, r(row), 'FLEXION_SIZE_MIN', 'FLEXION_SIZE_MAX');
+      addTrait(traits, 'flexion_size', r(row).FLEXION_SIZE_MEAN, 'mm', source, doi, flexSizeMeta);
       addTrait(traits, 'flexion_size_min', r(row).FLEXION_SIZE_MIN, 'mm', source, doi, metadata);
       addTrait(traits, 'flexion_size_max', r(row).FLEXION_SIZE_MAX, 'mm', source, doi, metadata);
     }
     // Metamorphosis Age Database
     else if (filename.includes('metamorphosis_age')) {
-      addTrait(traits, 'metamorphosis_age', r(row).MET_AGE_DPH_MEAN, 'days', source, doi, metadata);
+      const metAgeMeta = metadataWithMinMaxConf(metadata, r(row), 'MET_AGE_DPH_MIN', 'MET_AGE_DPH_MAX');
+      addTrait(traits, 'metamorphosis_age', r(row).MET_AGE_DPH_MEAN, 'days', source, doi, metAgeMeta);
       addTrait(traits, 'metamorphosis_age_min', r(row).MET_AGE_DPH_MIN, 'days', source, doi, metadata);
       addTrait(traits, 'metamorphosis_age_max', r(row).MET_AGE_DPH_MAX, 'days', source, doi, metadata);
     }
     // Metamorphosis Size Database
     else if (filename.includes('metamorphosis_size')) {
-      addTrait(traits, 'metamorphosis_size', r(row).MET_SIZE_MEAN, 'mm', source, doi, metadata);
+      const metSizeMeta = metadataWithMinMaxConf(metadata, r(row), 'MET_SIZE_MIN', 'MET_SIZE_MAX');
+      addTrait(traits, 'metamorphosis_size', r(row).MET_SIZE_MEAN, 'mm', source, doi, metSizeMeta);
       addTrait(traits, 'metamorphosis_size_min', r(row).MET_SIZE_MIN, 'mm', source, doi, metadata);
       addTrait(traits, 'metamorphosis_size_max', r(row).MET_SIZE_MAX, 'mm', source, doi, metadata);
     }
     // Critical Swimming Speed Database
     else if (filename.includes('critical_swimming')) {
-      addTrait(traits, 'critical_swimming_speed', r(row).UCRIT_ABS_MEAN, 'cm/s', source, doi, metadata);
+      const ucritMeta = metadataWithMinMaxConf(metadata, r(row), 'UCRIT_ABS_MIN', 'UCRIT_ABS_MAX');
+      addTrait(traits, 'critical_swimming_speed', r(row).UCRIT_ABS_MEAN, 'cm/s', source, doi, ucritMeta);
       addTrait(traits, 'critical_swimming_speed_min', r(row).UCRIT_ABS_MIN, 'cm/s', source, doi, metadata);
       addTrait(traits, 'critical_swimming_speed_max', r(row).UCRIT_ABS_MAX, 'cm/s', source, doi, metadata);
       addTrait(traits, 'critical_swimming_speed_rel', r(row).UCRIT_REL_MEAN, 'BL/s', source, doi, metadata);
     }
     // In Situ Swimming Speed Database
     else if (filename.includes('in_situ_swimming')) {
-      addTrait(traits, 'in_situ_swimming_speed', r(row).ISS_ABS_MEAN, 'cm/s', source, doi, metadata);
+      const issMeta = metadataWithMinMaxConf(metadata, r(row), 'ISS_ABS_MIN', 'ISS_ABS_MAX');
+      addTrait(traits, 'in_situ_swimming_speed', r(row).ISS_ABS_MEAN, 'cm/s', source, doi, issMeta);
       addTrait(traits, 'in_situ_swimming_speed_min', r(row).ISS_ABS_MIN, 'cm/s', source, doi, metadata);
       addTrait(traits, 'in_situ_swimming_speed_max', r(row).ISS_ABS_MAX, 'cm/s', source, doi, metadata);
       addTrait(traits, 'in_situ_swimming_speed_rel', r(row).ISS_REL_MEAN, 'BL/s', source, doi, metadata);
     }
     // Vertical Position Database
     else if (filename.includes('vertical_position')) {
-      addTrait(traits, 'vertical_distribution', r(row).WEIGHTED_MEAN_DEPTH_CAPTURE, 'm', source, doi, metadata);
+      const vertMeta = metadataWithMinMaxConf(metadata, r(row), 'MIN_DEPTH_CAPTURE', 'MAX_DEPTH_CAPTURE');
+      addTrait(traits, 'vertical_distribution', r(row).WEIGHTED_MEAN_DEPTH_CAPTURE, 'm', source, doi, vertMeta);
       addTrait(traits, 'vertical_distribution_min', r(row).MIN_DEPTH_CAPTURE, 'm', source, doi, metadata);
       addTrait(traits, 'vertical_distribution_max', r(row).MAX_DEPTH_CAPTURE, 'm', source, doi, metadata);
     }
     // Rafting Database
     else if (filename.includes('rafting')) {
-      addTrait(traits, 'rafting_size', r(row).RAFTING_SIZE_MEAN, 'mm', source, doi, metadata);
+      const raftMeta = metadataWithMinMaxConf(metadata, r(row), 'RAFTING_SIZE_MIN', 'RAFTING_SIZE_MAX');
+      addTrait(traits, 'rafting_size', r(row).RAFTING_SIZE_MEAN, 'mm', source, doi, raftMeta);
       addTrait(traits, 'rafting_size_min', r(row).RAFTING_SIZE_MIN, 'mm', source, doi, metadata);
       addTrait(traits, 'rafting_size_max', r(row).RAFTING_SIZE_MAX, 'mm', source, doi, metadata);
       // Store rafting behavior as a flag (has data = 1)
