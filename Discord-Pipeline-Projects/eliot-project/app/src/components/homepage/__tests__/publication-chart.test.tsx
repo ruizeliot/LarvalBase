@@ -107,13 +107,15 @@ describe('US-2.3: Publication year & origin chart', () => {
     }
   });
 
-  it('should render bar containers with non-zero height for bins with data', () => {
+  it('should render bar containers for all 5-year bins including empty ones', () => {
     const { container } = render(<PublicationChart data={mockDataLegacy} />);
     const barContainers = container.querySelectorAll('[data-testid="pub-chart-bar"]');
-    expect(barContainers.length).toBe(3); // 3 year bins
-    for (const bar of barContainers) {
-      const height = (bar as HTMLElement).style.height;
-      expect(parseFloat(height)).toBeGreaterThan(0);
-    }
+    // 2000, 2005, 2010, 2015, 2020 = 5 bins (empty bins filled in)
+    expect(barContainers.length).toBe(5);
+    // Bins with data (2000, 2010, 2020) should have non-zero height
+    const heights = Array.from(barContainers).map(bar => parseFloat((bar as HTMLElement).style.height));
+    expect(heights[0]).toBeGreaterThan(0); // 2000
+    expect(heights[2]).toBeGreaterThan(0); // 2010
+    expect(heights[4]).toBeGreaterThan(0); // 2020
   });
 });

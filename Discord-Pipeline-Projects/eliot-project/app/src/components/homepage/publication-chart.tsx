@@ -102,7 +102,15 @@ export function PublicationChart({ data }: PublicationChartProps) {
   if (data.length === 0) return null;
 
   const { byYear, allSources } = chartData;
-  const years = Array.from(byYear.keys()).sort((a, b) => a - b);
+  // Build complete sequence of 5-year bins between min and max so empty bins are shown
+  const rawYears = Array.from(byYear.keys()).sort((a, b) => a - b);
+  const years: number[] = [];
+  if (rawYears.length > 0) {
+    for (let y = rawYears[0]; y <= rawYears[rawYears.length - 1]; y += 5) {
+      years.push(y);
+      if (!byYear.has(y)) byYear.set(y, new Map());
+    }
+  }
   const maxCount = Math.max(
     0,
     ...years.map((y) => {
@@ -166,7 +174,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
                   );
                 })}
               </div>
-              <span className="text-[8px] text-muted-foreground mt-1">
+              <span className="text-[11px] text-muted-foreground mt-1">
                 {year}
               </span>
               {/* Tooltip on hover */}
