@@ -11,13 +11,13 @@ export function MainLayout({ sidebar, children }: MainLayoutProps) {
   return (
     <SidebarProvider
       style={{
-        "--sidebar-width": "340px",
-        "--sidebar-width-mobile": "340px",
+        "--sidebar-width": "380px",
+        "--sidebar-width-mobile": "380px",
       } as React.CSSProperties}
     >
       {sidebar}
       <SidebarInset>
-        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 max-w-full">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-6 max-w-full min-w-0">
           {children}
         </main>
       </SidebarInset>
