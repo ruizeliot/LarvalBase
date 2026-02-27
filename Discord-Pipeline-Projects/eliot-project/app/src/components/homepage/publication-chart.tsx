@@ -1,15 +1,21 @@
 "use client";
 
+import { useState, useMemo } from "react";
+
 /**
  * Publication year & origin bar chart.
  * Shows stacked bars per 5-year bin, colored by source category.
  * Matches Figure 2 from the R reference (template_publi_year.R).
+ *
+ * Data is grouped by VARIABLE × ORIGIN × TYPE × YEAR_BIN.
+ * Unique references counted per variable first, then summed for "All dispersal traits".
  */
 
 export interface PublicationDataPoint {
   year: number;
   source: string;
   count: number;
+  variable?: string;
 }
 
 interface PublicationChartProps {
@@ -39,22 +45,66 @@ function formatSourceLabel(source: string): string {
   return source.replace('\n', ' - ');
 }
 
+/** Order sources for consistent stacking */
+const SOURCE_ORDER = [
+  'Original\nReared', 'Cited\nReared',
+  'Original\nWild', 'Cited\nWild',
+  'Original\nUnrecorded', 'Cited\nUnrecorded',
+];
+
+const ALL_TRAITS_LABEL = 'All dispersal traits';
+
 export function PublicationChart({ data }: PublicationChartProps) {
+  const hasVariable = data.length > 0 && data[0].variable != null;
+
+  // Extract unique variables
+  const variables = useMemo(() => {
+    if (!hasVariable) return [];
+    const vars = new Set<string>();
+    for (const d of data) {
+      if (d.variable) vars.add(d.variable);
+    }
+    return Array.from(vars).sort();
+  }, [data, hasVariable]);
+
+  const [selectedVariable, setSelectedVariable] = useState(ALL_TRAITS_LABEL);
+
+  // Compute chart data based on selected variable
+  const chartData = useMemo(() => {
+    if (data.length === 0) return { byYear: new Map<number, Map<string, number>>(), allSources: new Set<string>() };
+
+    const byYear = new Map<number, Map<string, number>>();
+    const allSources = new Set<string>();
+
+    if (!hasVariable || selectedVariable === ALL_TRAITS_LABEL) {
+      // Aggregate: sum per-variable counts across variables per (source, yearBin)
+      // This matches the R "All dispersal traits" logic
+      for (const d of data) {
+        allSources.add(d.source);
+        if (!byYear.has(d.year)) byYear.set(d.year, new Map());
+        const yearMap = byYear.get(d.year)!;
+        yearMap.set(d.source, (yearMap.get(d.source) ?? 0) + d.count);
+      }
+    } else {
+      // Filter to selected variable only
+      for (const d of data) {
+        if (d.variable !== selectedVariable) continue;
+        allSources.add(d.source);
+        if (!byYear.has(d.year)) byYear.set(d.year, new Map());
+        const yearMap = byYear.get(d.year)!;
+        yearMap.set(d.source, (yearMap.get(d.source) ?? 0) + d.count);
+      }
+    }
+
+    return { byYear, allSources };
+  }, [data, hasVariable, selectedVariable]);
+
   if (data.length === 0) return null;
 
-  // Group by year (5-year bin)
-  const byYear = new Map<number, Map<string, number>>();
-  const allSources = new Set<string>();
-
-  for (const d of data) {
-    allSources.add(d.source);
-    if (!byYear.has(d.year)) byYear.set(d.year, new Map());
-    const yearMap = byYear.get(d.year)!;
-    yearMap.set(d.source, (yearMap.get(d.source) ?? 0) + d.count);
-  }
-
+  const { byYear, allSources } = chartData;
   const years = Array.from(byYear.keys()).sort((a, b) => a - b);
   const maxCount = Math.max(
+    0,
     ...years.map((y) => {
       let total = 0;
       for (const count of byYear.get(y)!.values()) total += count;
@@ -62,19 +112,28 @@ export function PublicationChart({ data }: PublicationChartProps) {
     })
   );
 
-  // Order sources for consistent stacking
-  const sourceOrder = [
-    'Original\nReared', 'Cited\nReared',
-    'Original\nWild', 'Cited\nWild',
-    'Original\nUnrecorded', 'Cited\nUnrecorded',
-  ];
-  const orderedSources = sourceOrder.filter((s) => allSources.has(s));
+  const orderedSources = SOURCE_ORDER.filter((s) => allSources.has(s));
 
   return (
     <div data-testid="pub-chart" className="rounded-lg border bg-card p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-muted-foreground">
-        Number of references per 5-year interval
-      </h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-muted-foreground">
+          Number of references per 5-year interval
+        </h3>
+        {hasVariable && variables.length > 0 && (
+          <select
+            data-testid="pub-chart-variable-select"
+            value={selectedVariable}
+            onChange={(e) => setSelectedVariable(e.target.value)}
+            className="text-xs border rounded px-2 py-1 bg-background text-foreground max-w-[200px] truncate"
+          >
+            <option value={ALL_TRAITS_LABEL}>{ALL_TRAITS_LABEL}</option>
+            {variables.map((v) => (
+              <option key={v} value={v}>{v}</option>
+            ))}
+          </select>
+        )}
+      </div>
 
       {/* Stacked bars by 5-year bins */}
       <div className="flex items-end gap-[2px] h-40 pt-2">

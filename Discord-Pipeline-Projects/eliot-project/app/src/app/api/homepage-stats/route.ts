@@ -42,7 +42,7 @@ function getTraitDisplayName(filename: string): string {
  * Load publication year data from the reference data file.
  * Groups by 5-year bins and source category (Origin + Type).
  */
-async function loadPublicationYears(): Promise<{ year: number; source: string; count: number }[]> {
+async function loadPublicationYears(): Promise<{ year: number; source: string; count: number; variable: string }[]> {
   // Try multiple paths: parent (dev), cwd (VPS), and data dir
   const refFilename = 'All references and publication dates.txt';
   const candidatePaths = [
@@ -90,11 +90,15 @@ async function loadPublicationYears(): Promise<{ year: number; source: string; c
 
     console.log(`[homepage-stats] Parsed ${parseResult.data.length} reference rows`);
 
-    // Count unique references per 5-year bin and source category
-    // Source categories match Figure 2: Original reference + Cited reference, split by Origin
+    // Count unique references per VARIABLE × ORIGIN × TYPE × YEAR_BIN
+    // This matches the R logic: deduplicate references within each variable,
+    // then the frontend sums across variables for the "All dispersal traits" view.
     const binCounts = new Map<string, Set<string>>();
 
     for (const row of parseResult.data) {
+      const variable = typeof row.VARIABLE === 'string' ? row.VARIABLE.trim() : '';
+      if (!variable || variable === 'NA') continue;
+
       // Trim and clean origin value
       const rawOrigin = typeof row.ORIGIN === 'string' ? row.ORIGIN.trim() : '';
       const origin = rawOrigin === 'NA' || rawOrigin === '' ? 'Unrecorded' : rawOrigin;
@@ -106,7 +110,7 @@ async function loadPublicationYears(): Promise<{ year: number; source: string; c
         if (!isNaN(year) && year >= 1800 && year <= 2030) {
           const bin = Math.floor(year / 5) * 5;
           const source = `Original\n${origin}`;
-          const key = `${bin}|${source}`;
+          const key = `${variable}|${bin}|${source}`;
           if (!binCounts.has(key)) binCounts.set(key, new Set());
           const refUnique = typeof row.REFERENCE_UNIQUE === 'string' ? row.REFERENCE_UNIQUE.trim() : '';
           if (refUnique && refUnique !== 'NA') {
@@ -122,7 +126,7 @@ async function loadPublicationYears(): Promise<{ year: number; source: string; c
         if (!isNaN(year) && year >= 1800 && year <= 2030) {
           const bin = Math.floor(year / 5) * 5;
           const source = `Cited\n${origin}`;
-          const key = `${bin}|${source}`;
+          const key = `${variable}|${bin}|${source}`;
           if (!binCounts.has(key)) binCounts.set(key, new Set());
           const extRefUnique = typeof row.EXT_REF_UNIQUE === 'string' ? row.EXT_REF_UNIQUE.trim() : '';
           if (extRefUnique && extRefUnique !== 'NA') {
@@ -132,20 +136,24 @@ async function loadPublicationYears(): Promise<{ year: number; source: string; c
       }
     }
 
-    // Convert to output format
-    const result: { year: number; source: string; count: number }[] = [];
+    // Convert to output format: one entry per VARIABLE × YEAR_BIN × SOURCE
+    const result: { year: number; source: string; count: number; variable: string }[] = [];
     for (const [key, refs] of binCounts) {
       if (refs.size === 0) continue;
-      const [yearStr, source] = key.split('|');
+      const parts = key.split('|');
+      const variable = parts[0];
+      const yearStr = parts[1];
+      const source = parts[2];
       result.push({
         year: parseInt(yearStr, 10),
         source,
         count: refs.size,
+        variable,
       });
     }
 
-    result.sort((a, b) => a.year - b.year || a.source.localeCompare(b.source));
-    console.log(`[homepage-stats] Publication data: ${result.length} bins`);
+    result.sort((a, b) => a.year - b.year || a.variable.localeCompare(b.variable) || a.source.localeCompare(b.source));
+    console.log(`[homepage-stats] Publication data: ${result.length} bins across ${new Set(result.map(r => r.variable)).size} variables`);
     return result;
   } catch (error) {
     console.error('[homepage-stats] Error loading/parsing reference data:', error);
