@@ -80,11 +80,12 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
             {iconFile && (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={`/icons/sections/${iconFile}`}
+                src={`/icons/sections/${encodeURIComponent(iconFile)}`}
                 alt=""
-                width={36}
-                height={36}
-                className="shrink-0 opacity-70 mt-0.5"
+                width={48}
+                height={48}
+                className="shrink-0 mt-0.5"
+                style={{ filter: 'brightness(0) invert(1)', opacity: 0.85 }}
               />
             )}
           </div>
