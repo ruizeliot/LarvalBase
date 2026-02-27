@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import { Tree, NodeRendererProps } from "react-arborist";
-import { ChevronRight, ChevronDown, Globe, Layers } from "lucide-react";
+import { ChevronRight, ChevronDown } from "lucide-react";
 import type { TaxonomyNodeJSON } from "@/lib/types/taxonomy.types";
 import { cleanOrderName } from "@/lib/utils/clean-order-name";
+import { TaxonomyLevelIcon } from "./taxonomy-level-icon";
 
 interface TaxonomyTreeProps {
   data: TaxonomyNodeJSON | null;
@@ -110,14 +111,11 @@ function TaxonomyNode({
         <span className="w-4" />
       )}
 
-      {/* Taxonomic level icon — family silhouette for family/genus/species */}
-      {data.familyName && (data.level === 'family' || data.level === 'genus' || data.level === 'species') ? (
-        <FamilySilhouette family={data.familyName} />
-      ) : data.level === 'order' ? (
-        <Layers className="h-4 w-4 shrink-0 text-purple-400" />
-      ) : (
-        <Globe className="h-4 w-4 shrink-0 text-muted-foreground" />
-      )}
+      {/* US-3.2: SVG icons per taxonomic level */}
+      <TaxonomyLevelIcon
+        level={data.level as 'root' | 'order' | 'family' | 'genus' | 'species'}
+        familyName={data.familyName}
+      />
 
       {/* Name */}
       <span className={`truncate flex-1 ${isLeaf ? "italic" : ""}`}>
