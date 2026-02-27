@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 
 /**
  * Horizontal barplots showing record/species/genus/family/order counts per trait.
@@ -74,13 +73,14 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
         const iconFile = TRAIT_ICON_MAP[stat.traitName];
         return (
         <div key={stat.traitName} className="flex items-start gap-2">
-          <div className="w-36 flex items-center gap-1.5 shrink-0 justify-end pt-0.5">
+          <div className="w-48 flex items-center gap-2 shrink-0 justify-end pt-0.5">
             {iconFile && (
-              <Image
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
                 src={`/icons/sections/${iconFile}`}
                 alt=""
-                width={16}
-                height={16}
+                width={28}
+                height={28}
                 className="shrink-0 opacity-70"
               />
             )}

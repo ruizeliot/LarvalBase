@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Tree, NodeRendererProps } from "react-arborist";
-import { ChevronRight, ChevronDown, Fish, Globe, Layers, Users, Tag } from "lucide-react";
+import { ChevronRight, ChevronDown, Globe, Layers } from "lucide-react";
 import type { TaxonomyNodeJSON } from "@/lib/types/taxonomy.types";
 
 interface TaxonomyTreeProps {
@@ -15,24 +16,50 @@ interface ArboristNode {
   name: string;
   level: string;
   speciesCount: number;
+  familyName?: string;
   children?: ArboristNode[];
 }
 
 /**
  * Transform TaxonomyNodeJSON to react-arborist format.
- * Recursively converts children array.
+ * Recursively converts children array, propagating familyName down.
  */
-function transformToArboristData(node: TaxonomyNodeJSON): ArboristNode {
+function transformToArboristData(node: TaxonomyNodeJSON, parentFamilyName?: string): ArboristNode {
+  const familyName = node.level === 'family' ? node.name : parentFamilyName;
   return {
     id: `${node.level}-${node.name}`,
     name: node.name,
     level: node.level,
     speciesCount: node.speciesCount,
+    familyName,
     children:
       node.children.length > 0
-        ? node.children.map(transformToArboristData)
+        ? node.children.map((child) => transformToArboristData(child, familyName))
         : undefined,
   };
+}
+
+/**
+ * Tiny family silhouette icon for the sidebar tree.
+ * Falls back to a colored dot if the SVG fails to load.
+ */
+function FamilySilhouette({ family, className = '' }: { family: string; className?: string }) {
+  const [err, setErr] = useState(false);
+  if (err) {
+    return <span className={`inline-block w-4 h-4 rounded-full bg-amber-400/40 shrink-0 ${className}`} />;
+  }
+  return (
+    /* eslint-disable-next-line @next/next/no-img-element */
+    <img
+      src={`/family-icons/${family}.svg`}
+      alt=""
+      width={16}
+      height={16}
+      className={`shrink-0 object-contain ${className}`}
+      style={{ filter: 'invert(1) brightness(0.8)' }}
+      onError={() => setErr(true)}
+    />
+  );
 }
 
 /**
@@ -82,13 +109,9 @@ function TaxonomyNode({
         <span className="w-4" />
       )}
 
-      {/* Taxonomic level icon */}
-      {data.level === 'species' ? (
-        <Fish className="h-4 w-4 shrink-0 text-blue-400" />
-      ) : data.level === 'genus' ? (
-        <Tag className="h-4 w-4 shrink-0 text-emerald-400" />
-      ) : data.level === 'family' ? (
-        <Users className="h-4 w-4 shrink-0 text-amber-400" />
+      {/* Taxonomic level icon — family silhouette for family/genus/species */}
+      {data.familyName && (data.level === 'family' || data.level === 'genus' || data.level === 'species') ? (
+        <FamilySilhouette family={data.familyName} />
       ) : data.level === 'order' ? (
         <Layers className="h-4 w-4 shrink-0 text-purple-400" />
       ) : (
