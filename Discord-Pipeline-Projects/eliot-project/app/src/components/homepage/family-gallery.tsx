@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
+import Image from "next/image";
 
 interface GalleryImage {
   imageUrl: string;
@@ -110,7 +111,18 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
         <ArrowLeft className="h-4 w-4" /> Back to homepage
       </button>
 
-      <h2 className="text-xl font-bold text-primary">{family} — Photo Gallery</h2>
+      <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+        <Image
+          src={`/family-icons/${family}.svg`}
+          alt={`${family} silhouette`}
+          width={32}
+          height={22}
+          className="object-contain shrink-0"
+          style={{ filter: 'invert(1) brightness(0.8)' }}
+          unoptimized
+        />
+        {family} — Photo Gallery
+      </h2>
 
       {sections.length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>

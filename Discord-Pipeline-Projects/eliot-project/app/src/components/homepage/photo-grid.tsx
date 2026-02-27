@@ -76,12 +76,12 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
               <div className="text-xs font-semibold text-primary truncate flex items-center gap-1">
                 {fam.hasFamilyIcon && (
                   <Image
-                    src={`/adult_svg_fishbase/${fam.family}.svg`}
+                    src={`/family-icons/${fam.family}.svg`}
                     alt=""
                     width={14}
                     height={14}
                     className="shrink-0"
-                    style={{ filter: 'brightness(0) invert(1)', opacity: 0.85 }}
+                    style={{ filter: 'invert(1) brightness(0.8)', opacity: 0.85 }}
                   />
                 )}
                 {fam.family}

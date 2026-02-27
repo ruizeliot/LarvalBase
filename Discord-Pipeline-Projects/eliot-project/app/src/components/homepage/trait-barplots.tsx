@@ -85,7 +85,7 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
                 width={48}
                 height={48}
                 className="shrink-0 mt-0.5"
-                style={{ filter: 'brightness(0) invert(1)', opacity: 0.85 }}
+                style={{ opacity: 0.85 }}
               />
             )}
           </div>

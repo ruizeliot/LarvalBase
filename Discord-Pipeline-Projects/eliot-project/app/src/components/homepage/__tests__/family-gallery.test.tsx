@@ -137,9 +137,10 @@ describe('BUG 2: FamilyGallery component', () => {
       expect(screen.getByTestId('family-gallery')).toBeInTheDocument();
     });
 
-    // Click an image
+    // Click a gallery image (skip the header family icon)
     const images = screen.getAllByRole('img');
-    fireEvent.click(images[0].closest('.cursor-pointer')!);
+    const galleryImage = images.find(img => img.closest('.cursor-pointer'));
+    fireEvent.click(galleryImage!.closest('.cursor-pointer')!);
 
     // Lightbox should show with counter
     await waitFor(() => {
