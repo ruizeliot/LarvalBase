@@ -136,7 +136,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
       </div>
 
       {/* Stacked bars by 5-year bins */}
-      <div className="flex items-end gap-[2px] h-40 pt-2">
+      <div className="flex gap-[2px] h-40 pt-2">
         {years.map((year) => {
           const yearData = byYear.get(year)!;
           let total = 0;
@@ -146,6 +146,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
           return (
             <div key={year} className="flex-1 flex flex-col items-center justify-end group relative">
               <div
+                data-testid="pub-chart-bar"
                 className="w-full flex flex-col-reverse rounded-t-sm overflow-hidden"
                 style={{ height: `${heightPct}%`, minHeight: total > 0 ? '2px' : '0px' }}
               >
@@ -156,6 +157,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
                   return (
                     <div
                       key={source}
+                      data-testid="pub-chart-bar-segment"
                       style={{
                         height: `${segPct}%`,
                         backgroundColor: getSourceColor(source),

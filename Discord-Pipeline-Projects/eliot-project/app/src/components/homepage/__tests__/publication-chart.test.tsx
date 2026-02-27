@@ -93,4 +93,27 @@ describe('US-2.3: Publication year & origin chart', () => {
     expect(screen.getByText('2010')).toBeInTheDocument();
     expect(screen.queryByText('2020')).toBeNull();
   });
+
+  it('should render bar segments with non-zero height styles', () => {
+    const { container } = render(<PublicationChart data={mockDataLegacy} />);
+    // Each bar column should contain colored segments with positive height
+    const barSegments = container.querySelectorAll('[data-testid="pub-chart-bar-segment"]');
+    expect(barSegments.length).toBeGreaterThan(0);
+    for (const seg of barSegments) {
+      const height = (seg as HTMLElement).style.height;
+      // Height should be a non-zero percentage
+      expect(height).toMatch(/^\d+(\.\d+)?%$/);
+      expect(parseFloat(height)).toBeGreaterThan(0);
+    }
+  });
+
+  it('should render bar containers with non-zero height for bins with data', () => {
+    const { container } = render(<PublicationChart data={mockDataLegacy} />);
+    const barContainers = container.querySelectorAll('[data-testid="pub-chart-bar"]');
+    expect(barContainers.length).toBe(3); // 3 year bins
+    for (const bar of barContainers) {
+      const height = (bar as HTMLElement).style.height;
+      expect(parseFloat(height)).toBeGreaterThan(0);
+    }
+  });
 });
