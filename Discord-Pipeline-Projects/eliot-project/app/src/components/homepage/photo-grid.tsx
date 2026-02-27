@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import Image from "next/image";
+import { cleanOrderName } from "@/lib/utils/clean-order-name";
 
 /**
  * Photo grid showing one image per family, sorted by most images.
@@ -77,7 +78,7 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
                 {fam.family}
               </div>
               <div className="text-[10px] text-muted-foreground truncate">
-                {fam.order} {fam.imageCount ? `(${fam.imageCount} img)` : ''}
+                {cleanOrderName(fam.order)} {fam.imageCount ? `(${fam.imageCount} img)` : ''}
               </div>
               {fam.hasFamilyIcon && (
                 <Image

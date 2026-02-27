@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Tree, NodeRendererProps } from "react-arborist";
 import { ChevronRight, ChevronDown, Globe, Layers } from "lucide-react";
 import type { TaxonomyNodeJSON } from "@/lib/types/taxonomy.types";
+import { cleanOrderName } from "@/lib/utils/clean-order-name";
 
 interface TaxonomyTreeProps {
   data: TaxonomyNodeJSON | null;
@@ -120,7 +121,7 @@ function TaxonomyNode({
 
       {/* Name */}
       <span className={`truncate flex-1 ${isLeaf ? "italic" : ""}`}>
-        {data.name}
+        {data.level === 'order' ? cleanOrderName(data.name) : data.name}
       </span>
 
       {/* Species count badge (for non-leaf nodes) */}

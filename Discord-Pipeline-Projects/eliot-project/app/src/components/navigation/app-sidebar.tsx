@@ -73,6 +73,12 @@ function buildTaxonomyFromSpecies(
     });
   }
 
+  // Sort orders alphabetically, and families within each order
+  root.children.sort((a, b) => a.name.localeCompare(b.name));
+  for (const orderNode of root.children) {
+    orderNode.children.sort((a, b) => a.name.localeCompare(b.name));
+  }
+
   return root;
 }
 
