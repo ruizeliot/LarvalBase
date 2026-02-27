@@ -19,7 +19,6 @@ import { SpeciesCount } from "./species-count";
 import { useSpeciesData } from "@/hooks/use-species-data";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { useFilteredSpecies } from "@/hooks/use-filtered-species";
-import { Input } from "@/components/ui/input";
 import type { TaxonomyNodeJSON } from "@/lib/types/taxonomy.types";
 
 /**
@@ -104,12 +103,11 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
 
   // Filter state
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredSearchTerm, setFilteredSearchTerm] = useState("");
   const [selectedTraits, setSelectedTraits] = useState<Set<string>>(new Set());
   const debouncedSearch = useDebouncedValue(searchTerm, 200);
-  const debouncedFilteredSearch = useDebouncedValue(filteredSearchTerm, 200);
 
   // Filter species using the dedicated hook (for tree/count display)
+  // Single search bar searches within filtered results when filters are active
   const filteredSpecies = useFilteredSpecies({
     species,
     searchTerm: debouncedSearch,
@@ -117,27 +115,16 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
     traitsBySpecies,
   });
 
-  // Apply second search bar (searches within filtered results)
-  const displayedSpecies = useMemo(() => {
-    if (!debouncedFilteredSearch.trim()) return filteredSpecies;
-    const lower = debouncedFilteredSearch.toLowerCase();
-    return filteredSpecies.filter((sp) => {
-      const scientificMatch = sp.scientificName.toLowerCase().includes(lower);
-      const commonMatch = sp.commonName?.toLowerCase().includes(lower);
-      return scientificMatch || commonMatch;
-    });
-  }, [filteredSpecies, debouncedFilteredSearch]);
-
-  // Build filtered taxonomy tree from displayed species
+  // Build filtered taxonomy tree from filtered species
   const filteredTaxonomy = useMemo((): TaxonomyNodeJSON | null => {
     if (!taxonomy) return null;
     // If no filters are active, use the full taxonomy
-    if (selectedTraits.size === 0 && !debouncedSearch.trim() && !debouncedFilteredSearch.trim()) {
+    if (selectedTraits.size === 0 && !debouncedSearch.trim()) {
       return taxonomy;
     }
     // Build taxonomy from filtered species
-    return buildTaxonomyFromSpecies(displayedSpecies);
-  }, [taxonomy, displayedSpecies, selectedTraits, debouncedSearch, debouncedFilteredSearch]);
+    return buildTaxonomyFromSpecies(filteredSpecies);
+  }, [taxonomy, filteredSpecies, selectedTraits, debouncedSearch]);
 
   // Handlers
   const handleTraitToggle = useCallback((trait: string) => {
@@ -245,15 +232,9 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
         </ScrollArea>
       </SidebarContent>
 
-      {/* Filtered search, species count and export at bottom */}
+      {/* Species count at bottom */}
       <SidebarFooter className="p-2 space-y-2 border-t">
-        <Input
-          placeholder="Search filtered species..."
-          value={filteredSearchTerm}
-          onChange={(e) => setFilteredSearchTerm(e.target.value)}
-          className="h-8 text-xs"
-        />
-        <SpeciesCount total={species.length} filtered={displayedSpecies.length} />
+        <SpeciesCount total={species.length} filtered={filteredSpecies.length} />
       </SidebarFooter>
     </Sidebar>
   );
