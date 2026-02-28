@@ -53,6 +53,7 @@ export interface QualitativeRecordRow {
   details?: string;
   externalRef: string;
   mainReference: string;
+  link: string;
 }
 
 /**
@@ -206,18 +207,18 @@ function RecordLink({
 }
 
 /**
- * Render a reference cell as a clickable link if it's a DOI or URL.
+ * Render the main reference: REFERENCE text hyperlinked to LINK URL.
  */
-function ReferenceLink({ value }: { value: string }) {
-  if (!value || value === '-') return <span>{value}</span>;
-  if (value.startsWith('http://') || value.startsWith('https://')) {
-    return <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{value}</a>;
+function MainReferenceCell({ text, link }: { text: string; link: string }) {
+  if (!text || text === '-') return <span>{text || '-'}</span>;
+  if (link) {
+    return (
+      <a href={link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+        {text}
+      </a>
+    );
   }
-  // Check if it looks like a DOI (e.g., 10.xxxx/...)
-  if (/^10\.\d{4,}\//.test(value)) {
-    return <a href={`https://doi.org/${value}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{value}</a>;
-  }
-  return <span>{value}</span>;
+  return <span>{text}</span>;
 }
 
 /**
@@ -268,8 +269,8 @@ function RecordTableModal({
                 <TableHead className="text-xs">Species</TableHead>
                 <TableHead className="text-xs">Value</TableHead>
                 {showDetails && <TableHead className="text-xs">Details</TableHead>}
-                <TableHead className="text-xs">External reference</TableHead>
                 <TableHead className="text-xs">Main reference</TableHead>
+                <TableHead className="text-xs">External reference</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -278,8 +279,8 @@ function RecordTableModal({
                   <TableCell className="text-xs"><SpeciesLink name={row.species} /></TableCell>
                   <TableCell className="text-xs">{row.value}</TableCell>
                   {showDetails && <TableCell className="text-xs">{row.details || '-'}</TableCell>}
-                  <TableCell className="text-xs"><ReferenceLink value={row.externalRef} /></TableCell>
-                  <TableCell className="text-xs"><ReferenceLink value={row.mainReference} /></TableCell>
+                  <TableCell className="text-xs"><MainReferenceCell text={row.mainReference} link={row.link} /></TableCell>
+                  <TableCell className="text-xs">{row.externalRef}</TableCell>
                 </TableRow>
               ))}
             </TableBody>

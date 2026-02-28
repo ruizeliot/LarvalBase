@@ -146,6 +146,7 @@ export interface QualitativeRecordRow {
   details?: string;
   externalRef: string;
   mainReference: string;
+  link: string;
 }
 
 /**
@@ -175,8 +176,9 @@ function extractRecordRows(
     const record: QualitativeRecordRow = {
       species: String(row['VALID_NAME'] ?? row['Valid_name'] ?? '').trim(),
       value: String(val).trim(),
-      externalRef: String(row['EXT_REF'] ?? row['Ext_ref'] ?? row['LINK'] ?? row['LINK (DOI)'] ?? '').trim() || '-',
+      externalRef: String(row['EXT_REF'] ?? row['Ext_ref'] ?? '').trim() || '-',
       mainReference: String(row['REFERENCE'] ?? row['Reference'] ?? '').trim() || '-',
+      link: String(row['LINK'] ?? row['LINK (DOI)'] ?? '').trim(),
     };
     // Include EGG_DETAILS for EGG_LOCATION rows
     if (column === 'EGG_LOCATION') {
