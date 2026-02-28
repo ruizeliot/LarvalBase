@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGrowthData } from "@/hooks/use-growth-data";
 import type { GrowthCurve, RawGrowthPoint, LineStyleType } from "@/lib/types/growth.types";
-import { parseXRange } from "@/lib/types/growth.types";
+import { parseXRange, temperatureToSpectralColor } from "@/lib/types/growth.types";
 
 interface SpeciesGrowthChartProps {
   speciesId: string;
@@ -203,6 +203,46 @@ function buildScatterData(rawPoints: RawGrowthPoint[]): Array<{ x: number; y: nu
 }
 
 /**
+ * A group of raw data points belonging to the same reference.
+ */
+export interface RawPointGroup {
+  reference: string;
+  points: RawGrowthPoint[];
+  color: string;
+  hasModel: boolean;
+  avgTemp: number | null;
+}
+
+/**
+ * Group raw points by reference. Assign Spectral color based on average temperature.
+ * Mark whether the reference has a fitted model curve.
+ */
+export function groupRawPointsByReference(
+  rawPoints: RawGrowthPoint[],
+  curves: GrowthCurve[]
+): RawPointGroup[] {
+  const curveRefs = new Set(curves.map(c => c.model.reference).filter(Boolean));
+  const groups = new Map<string, RawGrowthPoint[]>();
+
+  for (const p of rawPoints) {
+    const ref = p.reference || 'Unknown';
+    const existing = groups.get(ref) || [];
+    existing.push(p);
+    groups.set(ref, existing);
+  }
+
+  return Array.from(groups.entries()).map(([reference, points]) => {
+    // Compute average temperature for color
+    const temps = points.map(p => p.tempMean).filter((t): t is number => t !== null);
+    const avgTemp = temps.length > 0 ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
+    const color = temperatureToSpectralColor(avgTemp);
+    const hasModel = curveRefs.has(reference);
+
+    return { reference, points, color, hasModel, avgTemp };
+  });
+}
+
+/**
  * Species growth chart component.
  * Displays growth curves with colors and raw data points as scatter.
  */
@@ -215,6 +255,7 @@ export function SpeciesGrowthChart({
   // Build chart data from curves
   const chartData = useMemo(() => buildChartData(curves, rawPoints), [curves, rawPoints]);
   const scatterData = useMemo(() => buildScatterData(rawPoints), [rawPoints]);
+  const scatterGroups = useMemo(() => groupRawPointsByReference(rawPoints, curves), [rawPoints, curves]);
 
   // Determine axis labels from first curve or raw points
   const xAxisLabel = useMemo(() => {
@@ -322,16 +363,19 @@ export function SpeciesGrowthChart({
               />
               <Tooltip content={<GrowthTooltip />} />
               
-              {/* Raw data points as scatter */}
-              {rawPoints.length > 0 && (
+              {/* Raw data points as scatter — grouped by reference, colored by temperature */}
+              {scatterGroups.map((group) => (
                 <Scatter
-                  name="Observed data"
-                  data={scatterData}
-                  fill="#6b7280"
+                  key={`scatter-${group.reference}`}
+                  name={group.reference}
+                  data={group.points.map(p => ({ x: p.age, y: p.length }))}
+                  fill={group.hasModel ? group.color : "none"}
+                  stroke={group.color}
+                  strokeWidth={group.hasModel ? 0 : 1.5}
                   shape="circle"
                   legendType="circle"
                 />
-              )}
+              ))}
 
               {/* Growth model curves */}
               {curves.map((curve) => (
@@ -380,12 +424,19 @@ export function SpeciesGrowthChart({
                 <GrowthLegendItem key={curve.id} curve={curve} />
               ))}
             </div>
-            {rawPoints.length > 0 && (
-              <div className="flex items-center gap-2 text-xs mt-2 text-muted-foreground">
-                <div className="w-3 h-3 rounded-full bg-gray-500" />
-                <span>Gray points = observed age-at-length data</span>
+            {scatterGroups.filter(g => !g.hasModel).map((group) => (
+              <div key={`legend-scatter-${group.reference}`} className="flex items-start gap-2 text-xs py-1">
+                <svg width="24" height="12" className="flex-shrink-0 mt-1">
+                  <circle cx="12" cy="6" r="4" fill="none" stroke={group.color} strokeWidth="1.5" />
+                </svg>
+                <div className="min-w-0">
+                  <span className="text-foreground block">{group.reference} — <em>no fitted model</em></span>
+                  <span className="text-muted-foreground text-[10px]">
+                    {group.avgTemp !== null ? `T = ${group.avgTemp.toFixed(0)}°C · ` : ''}Scatter points only
+                  </span>
+                </div>
               </div>
-            )}
+            ))}
           </div>
         )}
       </CardContent>
