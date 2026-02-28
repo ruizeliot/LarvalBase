@@ -161,11 +161,9 @@ function FrequencyBarplot({
               {entry.count > 0 && (
                 <div
                   data-testid="freq-bar-fill"
-                  className="h-full rounded flex items-center pl-1.5 text-[10px] font-semibold text-white"
+                  className="h-full rounded"
                   style={{ width: `${widthPct}%`, backgroundColor: color, minWidth: '20px' }}
-                >
-                  {entry.count}
-                </div>
+                />
               )}
             </div>
             <span className="w-8 text-[10px] text-muted-foreground text-right">
