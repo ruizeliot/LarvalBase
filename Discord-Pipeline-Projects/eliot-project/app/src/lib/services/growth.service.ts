@@ -168,17 +168,25 @@ export async function loadRawGrowthData(): Promise<Map<string, RawGrowthPoint[]>
 
       const age = parseNum(row['AGE']);
       const length = parseNum(row['LENGTH']);
-      
-      if (age === null || length === null) continue;
+      const weight = parseNum(row['WEIGHT']);
+
+      // Accept rows where age exists AND at least one of length/weight has data
+      if (age === null || (length === null && weight === null)) continue;
 
       const speciesId = slugify(speciesName);
       const point: RawGrowthPoint = {
         age,
         length,
         lengthType: row['LENGTH_TYPE'] || 'SL',
-        weight: parseNum(row['WEIGHT']),
+        weight,
         weightType: row['WEIGHT_TYPE'] || null,
         tempMean: parseNum(row['TEMPERATURE_MEAN']),
+        tempMin: parseNum(row['TEMPERATURE_MIN']),
+        tempMax: parseNum(row['TEMPERATURE_MAX']),
+        origin: row['ORIGIN'] || null,
+        method: row['METHOD'] || null,
+        remarks: row['REMARKS'] || null,
+        extRef: row['EXT_REF'] || null,
         reference: row['REFERENCE'] || null,
         link: row['LINK'] || null,
       };
@@ -314,25 +322,45 @@ function computeTempRange(curves: GrowthCurve[], rawPoints: RawGrowthPoint[]): {
   }
   for (const p of rawPoints) {
     if (p.tempMean !== null) temps.push(p.tempMean);
+    if (p.tempMin !== null) temps.push(p.tempMin);
+    if (p.tempMax !== null) temps.push(p.tempMax);
   }
   if (temps.length === 0) return null;
   return { min: Math.min(...temps), max: Math.max(...temps) };
 }
 
 /**
+ * Check if a growth model Y_TYPE represents weight (DW or WW).
+ */
+function isWeightModel(yType: string): boolean {
+  const upper = yType.toUpperCase();
+  return upper === 'DW' || upper === 'WW';
+}
+
+/**
  * Get complete growth data for a species (curves + raw points + temp range).
+ * Separates curves into length and weight groups.
  */
 export async function getGrowthDataForSpecies(
   speciesId: string
-): Promise<{ curves: GrowthCurve[]; rawPoints: RawGrowthPoint[]; tempRange: { min: number; max: number } | null }> {
-  const [curves, rawPoints] = await Promise.all([
+): Promise<{
+  curves: GrowthCurve[];
+  weightCurves: GrowthCurve[];
+  rawPoints: RawGrowthPoint[];
+  tempRange: { min: number; max: number } | null;
+}> {
+  const [allCurves, rawPoints] = await Promise.all([
     getGrowthCurvesForSpecies(speciesId),
     getRawGrowthPointsForSpecies(speciesId),
   ]);
 
-  const tempRange = computeTempRange(curves, rawPoints);
+  // Separate curves into length and weight
+  const curves = allCurves.filter(c => !isWeightModel(c.model.yType));
+  const weightCurves = allCurves.filter(c => isWeightModel(c.model.yType));
 
-  return { curves, rawPoints, tempRange };
+  const tempRange = computeTempRange(allCurves, rawPoints);
+
+  return { curves, weightCurves, rawPoints, tempRange };
 }
 
 /**
@@ -378,19 +406,27 @@ const MODEL_COLUMN_NAMES: Record<string, string> = {
 
 /**
  * Get raw age-length data for export (formatted with clean headers).
+ * Column order: Species, Age, Length, Length type, Weight, Weight type,
+ * Mean temp, Min. temp, Max. temp, Origin, Method, Main reference, Link, Remarks, External references
  */
 export async function getRawGrowthExportData(speciesId: string): Promise<Array<Record<string, unknown>>> {
   const points = await getRawGrowthPointsForSpecies(speciesId);
   return points.map(p => ({
     'Species': '', // filled by caller
     'Age': p.age,
-    'Length': p.length,
+    'Length': p.length ?? '',
     'Length type': p.lengthType,
     'Weight': p.weight ?? '',
     'Weight type': p.weightType ?? '',
     'Mean temp.': p.tempMean ?? '',
-    'Reference': p.reference ?? '',
+    'Min. temp.': p.tempMin ?? '',
+    'Max. temp.': p.tempMax ?? '',
+    'Origin': p.origin ?? '',
+    'Method': p.method ?? '',
+    'Main reference': p.reference ?? '',
     'Link': p.link ?? '',
+    'Remarks': p.remarks ?? '',
+    'External references': p.extRef ?? '',
   }));
 }
 

@@ -18,16 +18,17 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { curves, rawPoints, tempRange } = await getGrowthDataForSpecies(id);
-    console.log(`[growth API] speciesId=${id}, curves=${curves.length} (points: ${curves.map(c => c.points.length).join(',')}), rawPoints=${rawPoints.length}`);
+    const { curves, weightCurves, rawPoints, tempRange } = await getGrowthDataForSpecies(id);
+    const allCurves = [...curves, ...weightCurves];
+    console.log(`[growth API] speciesId=${id}, lengthCurves=${curves.length}, weightCurves=${weightCurves.length}, rawPoints=${rawPoints.length}`);
 
     // Get taxonomy info for axis cap fallback
     let speciesName = '';
     let genus = '';
     const family = '';
 
-    if (curves.length > 0) {
-      const model = curves[0].model;
+    if (allCurves.length > 0) {
+      const model = allCurves[0].model;
       speciesName = model.speciesName;
       genus = model.speciesName.split(' ')[0] || '';
     } else {
@@ -56,8 +57,10 @@ export async function GET(
     return NextResponse.json({
       speciesId: id,
       curves,
+      weightCurves,
       rawPoints,
       curveCount: curves.length,
+      weightCurveCount: weightCurves.length,
       rawPointCount: rawPoints.length,
       axisCaps,
       tempRange,

@@ -402,7 +402,7 @@ function GrowthChartPanel({
                   key={`scatter-${group.reference}`}
                   name={group.reference}
                   dataKey="y"
-                  data={group.points.map(p => ({ x: p.age, y: p.length }))}
+                  data={group.points.filter(p => p.length !== null).map(p => ({ x: p.age, y: p.length! }))}
                   fill={group.hasModel ? group.color : "none"}
                   stroke={group.color}
                   strokeWidth={group.hasModel ? 0 : 1.5}
@@ -447,13 +447,13 @@ export function SpeciesGrowthChart({
   speciesId,
   speciesName,
 }: SpeciesGrowthChartProps) {
-  const { curves, rawPoints, axisCaps, tempRange, rawExport, modelExport, isLoading, error } = useGrowthData(speciesId);
+  const { curves, weightCurves, rawPoints, axisCaps, tempRange, rawExport, modelExport, isLoading, error } = useGrowthData(speciesId);
 
   // Dynamic temp range for this species
   const tempMin = tempRange?.min ?? 18;
   const tempMax = tempRange?.max ?? 32;
 
-  // Re-color curves using dynamic temp range
+  // Re-color length curves using dynamic temp range
   const recoloredCurves = useMemo(() => {
     return curves.map(curve => ({
       ...curve,
@@ -463,33 +463,55 @@ export function SpeciesGrowthChart({
     }));
   }, [curves, tempMin, tempMax]);
 
-  // Group scatter points with dynamic coloring
-  const scatterGroups = useMemo(
-    () => groupRawPointsByReference(rawPoints, recoloredCurves, tempMin, tempMax),
-    [rawPoints, recoloredCurves, tempMin, tempMax]
+  // Re-color weight curves using dynamic temp range
+  const recoloredWeightCurves = useMemo(() => {
+    return weightCurves.map(curve => ({
+      ...curve,
+      color: curve.model.tempMean !== null
+        ? temperatureToSpectralColorDynamic(curve.model.tempMean, tempMin, tempMax)
+        : curve.color,
+    }));
+  }, [weightCurves, tempMin, tempMax]);
+
+  // All curves combined for ref index mapping and legend
+  const allRecoloredCurves = useMemo(
+    () => [...recoloredCurves, ...recoloredWeightCurves],
+    [recoloredCurves, recoloredWeightCurves]
   );
 
-  // Build stable ref → index map
+  // Filter raw points: length-only for length chart
+  const lengthRawPoints = useMemo(
+    () => rawPoints.filter(p => p.length !== null && p.length !== undefined),
+    [rawPoints]
+  );
+
+  // Group scatter points with dynamic coloring (for length chart)
+  const scatterGroups = useMemo(
+    () => groupRawPointsByReference(lengthRawPoints, allRecoloredCurves, tempMin, tempMax),
+    [lengthRawPoints, allRecoloredCurves, tempMin, tempMax]
+  );
+
+  // Build stable ref → index map from ALL curves + raw refs
   const refIndexMap = useMemo(() => {
     const rawRefs = Array.from(new Set(rawPoints.map(p => p.reference || 'Unknown')));
-    return buildRefIndexMap(recoloredCurves, rawRefs);
-  }, [recoloredCurves, rawPoints]);
+    return buildRefIndexMap(allRecoloredCurves, rawRefs);
+  }, [allRecoloredCurves, rawPoints]);
 
-  // Check if weight data exists
+  // Check if weight data exists (raw points with weight OR weight curves)
   const weightPoints = useMemo(
     () => rawPoints.filter(p => p.weight !== null && p.weight !== undefined),
     [rawPoints]
   );
-  const hasWeight = weightPoints.length > 0;
+  const hasWeight = weightPoints.length > 0 || recoloredWeightCurves.length > 0;
 
-  // Sort curves by temperature for legend
+  // Sort all curves by temperature for legend (length + weight)
   const sortedCurves = useMemo(() => {
-    return [...recoloredCurves].sort((a, b) => {
+    return [...allRecoloredCurves].sort((a, b) => {
       const ta = a.model.tempMean ?? Infinity;
       const tb = b.model.tempMean ?? Infinity;
       return ta - tb;
     });
-  }, [recoloredCurves]);
+  }, [allRecoloredCurves]);
 
   // Sort scatter groups by temperature for legend
   const sortedScatterGroups = useMemo(() => {
@@ -502,41 +524,42 @@ export function SpeciesGrowthChart({
 
   // Axis labels
   const xAxisLabel = useMemo(() => {
-    if (curves.length > 0) {
-      const unit = curves[0].model.xUnit;
+    const allCurvesList = [...curves, ...weightCurves];
+    if (allCurvesList.length > 0) {
+      const unit = allCurvesList[0].model.xUnit;
       return unit === "hph" ? "Age (hours post hatch)" : "Age (days post hatch)";
     }
     return "Age (days post hatch)";
-  }, [curves]);
+  }, [curves, weightCurves]);
 
   const yAxisLabel = useMemo(() => {
     if (curves.length > 0) {
       const { yType, yUnit } = curves[0].model;
       return `${yType} (${yUnit})`;
     }
-    if (rawPoints.length > 0) {
-      return `Length (${rawPoints[0].lengthType})`;
+    if (lengthRawPoints.length > 0) {
+      return `Length (${lengthRawPoints[0].lengthType})`;
     }
     return "Length (mm)";
-  }, [curves, rawPoints]);
+  }, [curves, lengthRawPoints]);
 
   // Weight axis label
   const weightYLabel = useMemo(() => {
+    if (recoloredWeightCurves.length > 0) {
+      const { yType, yUnit } = recoloredWeightCurves[0].model;
+      return `${yType} (${yUnit})`;
+    }
     const wp = weightPoints[0];
     if (wp?.weightType) return `Weight (${wp.weightType})`;
     return "Weight (mg)";
-  }, [weightPoints]);
+  }, [recoloredWeightCurves, weightPoints]);
 
-  // Weight scatter groups (reuse same reference grouping but with weight values)
+  // Weight scatter groups — group weight raw points by reference
   const weightScatterGroups: RawPointGroup[] = useMemo(() => {
     if (!hasWeight) return [];
-    return scatterGroups
-      .map(g => ({
-        ...g,
-        points: g.points.filter(p => p.weight !== null && p.weight !== undefined),
-      }))
+    return groupRawPointsByReference(weightPoints, allRecoloredCurves, tempMin, tempMax)
       .filter(g => g.points.length > 0);
-  }, [scatterGroups, hasWeight]);
+  }, [hasWeight, weightPoints, allRecoloredCurves, tempMin, tempMax]);
 
   // Loading state
   if (isLoading) {
@@ -566,7 +589,7 @@ export function SpeciesGrowthChart({
   }
 
   // No data state
-  if (curves.length === 0 && rawPoints.length === 0) {
+  if (curves.length === 0 && weightCurves.length === 0 && rawPoints.length === 0) {
     return null;
   }
 
@@ -575,12 +598,12 @@ export function SpeciesGrowthChart({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg">Age-at-Length</CardTitle>
+            <CardTitle className="text-lg">Growth Data</CardTitle>
             <p className="text-sm text-muted-foreground">
-              {curves.length > 0 && (
-                <span>{curves.length} growth model{curves.length > 1 ? "s" : ""}</span>
+              {allRecoloredCurves.length > 0 && (
+                <span>{allRecoloredCurves.length} growth model{allRecoloredCurves.length > 1 ? "s" : ""}</span>
               )}
-              {curves.length > 0 && rawPoints.length > 0 && <span> • </span>}
+              {allRecoloredCurves.length > 0 && rawPoints.length > 0 && <span> • </span>}
               {rawPoints.length > 0 && (
                 <span>{rawPoints.length} data point{rawPoints.length > 1 ? "s" : ""}</span>
               )}
@@ -618,23 +641,27 @@ export function SpeciesGrowthChart({
       <CardContent className="space-y-4">
         {/* Charts: side by side if weight data available */}
         <div className={hasWeight ? "grid grid-cols-1 lg:grid-cols-2 gap-4" : ""}>
-          <GrowthChartPanel
-            curves={recoloredCurves}
-            scatterGroups={scatterGroups}
-            xAxisLabel={xAxisLabel}
-            yAxisLabel={yAxisLabel}
-            axisCaps={axisCaps}
-            refIndexMap={refIndexMap}
-            tempMin={tempMin}
-            tempMax={tempMax}
-            title="Length"
-          />
+          {/* Length chart — only show if there's length data */}
+          {(recoloredCurves.length > 0 || lengthRawPoints.length > 0) && (
+            <GrowthChartPanel
+              curves={recoloredCurves}
+              scatterGroups={scatterGroups}
+              xAxisLabel={xAxisLabel}
+              yAxisLabel={yAxisLabel}
+              axisCaps={axisCaps}
+              refIndexMap={refIndexMap}
+              tempMin={tempMin}
+              tempMax={tempMax}
+              title="Length"
+            />
+          )}
+          {/* Weight chart — show if weight data or weight curves exist */}
           {hasWeight && (
             <GrowthChartPanel
-              curves={[]}
+              curves={recoloredWeightCurves}
               scatterGroups={weightScatterGroups.map(g => ({
                 ...g,
-                // Override points to use weight as y
+                // Override points to use weight as y value
                 points: g.points.map(p => ({ ...p, age: p.age, length: p.weight! })),
               }))}
               xAxisLabel={xAxisLabel}

@@ -95,8 +95,8 @@ export interface GrowthCurve {
 export interface RawGrowthPoint {
   /** Age value */
   age: number;
-  /** Length value */
-  length: number;
+  /** Length value (null for weight-only rows) */
+  length: number | null;
   /** Length type (SL, TL, etc.) */
   lengthType: string;
   /** Weight value (may be null if no weight data) */
@@ -105,6 +105,18 @@ export interface RawGrowthPoint {
   weightType: string | null;
   /** Temperature mean */
   tempMean: number | null;
+  /** Temperature minimum */
+  tempMin: number | null;
+  /** Temperature maximum */
+  tempMax: number | null;
+  /** Sample origin (Wild/Reared) */
+  origin: string | null;
+  /** Measurement method */
+  method: string | null;
+  /** Remarks/notes */
+  remarks: string | null;
+  /** External reference identifier */
+  extRef: string | null;
   /** Reference citation */
   reference: string | null;
   /** DOI or URL link */
