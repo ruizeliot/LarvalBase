@@ -129,8 +129,8 @@ export function getLineStyleForModelType(modelType: string): LineStyleType {
  * Parse X_RANGE string like "0 to 33" or "0 to 200".
  */
 export function parseXRange(xRange: string | null): ParsedXRange | null {
-  if (!xRange) return null;
-  
+  if (!xRange || xRange === 'NA') return null;
+
   const match = xRange.match(/(\d+(?:\.\d+)?)\s*to\s*(\d+(?:\.\d+)?)/i);
   if (!match) return null;
   

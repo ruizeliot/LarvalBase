@@ -14,6 +14,7 @@ export async function GET(
   try {
     const { id } = await params;
     const { curves, rawPoints } = await getGrowthDataForSpecies(id);
+    console.log(`[growth API] speciesId=${id}, curves=${curves.length} (points: ${curves.map(c => c.points.length).join(',')}), rawPoints=${rawPoints.length}`);
 
     // Get taxonomy info for axis cap fallback
     let speciesName = '';

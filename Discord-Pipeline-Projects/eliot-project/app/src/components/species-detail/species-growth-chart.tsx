@@ -155,36 +155,35 @@ export function GrowthLegendItem({ curve }: { curve: GrowthCurve }) {
 function buildChartData(
   curves: GrowthCurve[],
   rawPoints: RawGrowthPoint[]
-): Array<Record<string, number | undefined>> {
+): Array<Record<string, number | null>> {
+  // Build data per-curve: each curve gets its own sorted array of {x, y}
+  // Then merge into a unified chart data array with explicit null for missing values
+  // (Recharts v3 connectNulls only bridges null, NOT undefined)
+
   // Collect all unique X values from curves
   const xValues = new Set<number>();
   curves.forEach((curve) => {
     curve.points.forEach((p) => xValues.add(p.x));
   });
-  
-  // Add raw points X values
-  rawPoints.forEach((p) => xValues.add(p.age));
 
   // Sort X values
   const sortedX = Array.from(xValues).sort((a, b) => a - b);
 
-  // Build data points
-  return sortedX.map((x) => {
-    const point: Record<string, number | undefined> = { x };
-    
-    // Add curve values
-    curves.forEach((curve) => {
-      const matchingPoint = curve.points.find((p) => Math.abs(p.x - x) < 0.01);
-      if (matchingPoint) {
-        point[curve.id] = matchingPoint.y;
-      }
-    });
+  // Build lookup maps for each curve (x → y) for O(1) access
+  const curveMaps = curves.map((curve) => {
+    const map = new Map<number, number>();
+    curve.points.forEach((p) => map.set(p.x, p.y));
+    return { id: curve.id, map };
+  });
 
-    // Add raw point if exists at this X
-    const rawPoint = rawPoints.find((p) => Math.abs(p.age - x) < 0.01);
-    if (rawPoint) {
-      point.rawLength = rawPoint.length;
-    }
+  // Build data points with explicit null for missing values
+  return sortedX.map((x) => {
+    const point: Record<string, number | null> = { x };
+
+    // Set every curve's value — null when this x doesn't belong to the curve
+    curveMaps.forEach(({ id, map }) => {
+      point[id] = map.get(x) ?? null;
+    });
 
     return point;
   });
@@ -254,7 +253,6 @@ export function SpeciesGrowthChart({
 
   // Build chart data from curves
   const chartData = useMemo(() => buildChartData(curves, rawPoints), [curves, rawPoints]);
-  const scatterData = useMemo(() => buildScatterData(rawPoints), [rawPoints]);
   const scatterGroups = useMemo(() => groupRawPointsByReference(rawPoints, curves), [rawPoints, curves]);
 
   // Determine axis labels from first curve or raw points
@@ -371,6 +369,7 @@ export function SpeciesGrowthChart({
                 <Scatter
                   key={`scatter-${group.reference}`}
                   name={group.reference}
+                  dataKey="y"
                   data={group.points.map(p => ({ x: p.age, y: p.length }))}
                   fill={group.hasModel ? group.color : "none"}
                   stroke={group.color}

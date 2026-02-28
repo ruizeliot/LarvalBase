@@ -28,8 +28,8 @@ let rawGrowthDataCache: Map<string, RawGrowthPoint[]> | null = null;
 function slugify(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/(^-|-$)/g, '');
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '');
 }
 
 /**
