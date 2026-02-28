@@ -228,7 +228,7 @@ function SpeciesLink({ name }: { name: string }) {
   if (!name) return <span>-</span>;
   const slug = name.toLowerCase().replace(/\s+/g, '-');
   return (
-    <a href={`/?species=${slug}`} className="text-primary hover:underline italic">
+    <a href={`/species/${slug}`} className="text-primary hover:underline italic">
       {name}
     </a>
   );
