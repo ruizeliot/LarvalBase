@@ -250,7 +250,7 @@ export function SpeciesGrowthChart({
   speciesId,
   speciesName,
 }: SpeciesGrowthChartProps) {
-  const { curves, rawPoints, isLoading, error } = useGrowthData(speciesId);
+  const { curves, rawPoints, axisCaps, isLoading, error } = useGrowthData(speciesId);
 
   // Build chart data from curves
   const chartData = useMemo(() => buildChartData(curves, rawPoints), [curves, rawPoints]);
@@ -322,6 +322,9 @@ export function SpeciesGrowthChart({
             <span>{rawPoints.length} data point{rawPoints.length > 1 ? "s" : ""}</span>
           )}
           <span> for <em>{speciesName}</em></span>
+          {axisCaps?.level && (
+            <span> · Axis capped at {axisCaps.level}-level max</span>
+          )}
         </p>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -336,7 +339,7 @@ export function SpeciesGrowthChart({
               <XAxis
                 dataKey="x"
                 type="number"
-                domain={['auto', 'auto']}
+                domain={[0, axisCaps?.xMax ?? 'auto']}
                 label={{
                   value: xAxisLabel,
                   position: "bottom",
@@ -349,7 +352,7 @@ export function SpeciesGrowthChart({
               />
               <YAxis
                 type="number"
-                domain={['auto', 'auto']}
+                domain={[0, axisCaps?.yMax ?? 'auto']}
                 label={{
                   value: yAxisLabel,
                   angle: -90,
