@@ -356,11 +356,24 @@ export function SpeciesGrowthChart({
           </ResponsiveContainer>
         </div>
 
+        {/* Temperature color scale */}
+        <div data-testid="temp-gradient" className="flex items-center gap-2 mt-2">
+          <span className="text-[10px] text-muted-foreground">18°C</span>
+          <div
+            className="h-3 flex-1 max-w-[200px] rounded-md"
+            style={{
+              background: 'linear-gradient(to right, #4575b4, #91bfdb, #fee08b, #fc8d59, #d73027)',
+            }}
+          />
+          <span className="text-[10px] text-muted-foreground">32°C</span>
+          <span className="text-[10px] text-muted-foreground ml-1">Spectral color scale by temperature</span>
+        </div>
+
         {/* Legend with temperatures */}
         {curves.length > 0 && (
           <div className="border-t pt-4">
             <p className="text-xs font-medium text-muted-foreground mb-2">
-              Growth models (with temperature):
+              Growth Equations by Reference:
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
               {curves.map((curve) => (
