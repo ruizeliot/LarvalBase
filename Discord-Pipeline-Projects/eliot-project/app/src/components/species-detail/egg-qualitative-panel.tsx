@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
@@ -228,9 +229,9 @@ function SpeciesLink({ name }: { name: string }) {
   if (!name) return <span>-</span>;
   const slug = name.toLowerCase().replace(/\s+/g, '-');
   return (
-    <a href={`/species/${slug}`} className="text-primary hover:underline italic">
+    <Link href={`/species/${slug}`} className="text-primary hover:underline italic">
       {name}
-    </a>
+    </Link>
   );
 }
 
