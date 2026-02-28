@@ -4,7 +4,12 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getGrowthDataForSpecies, loadGrowthModels } from '@/lib/services/growth.service';
+import {
+  getGrowthDataForSpecies,
+  loadGrowthModels,
+  getRawGrowthExportData,
+  getGrowthModelExportData,
+} from '@/lib/services/growth.service';
 import { getAxisCapsForSpecies } from '@/lib/services/axis-caps.service';
 
 export async function GET(
@@ -13,21 +18,19 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
-    const { curves, rawPoints } = await getGrowthDataForSpecies(id);
+    const { curves, rawPoints, tempRange } = await getGrowthDataForSpecies(id);
     console.log(`[growth API] speciesId=${id}, curves=${curves.length} (points: ${curves.map(c => c.points.length).join(',')}), rawPoints=${rawPoints.length}`);
 
     // Get taxonomy info for axis cap fallback
     let speciesName = '';
     let genus = '';
-    let family = '';
+    const family = '';
 
     if (curves.length > 0) {
       const model = curves[0].model;
       speciesName = model.speciesName;
-      // Extract genus from species name (first word)
       genus = model.speciesName.split(' ')[0] || '';
     } else {
-      // Try to find taxonomy from growth models database
       const allModels = await loadGrowthModels();
       const match = allModels.find(m => m.speciesId === id);
       if (match) {
@@ -39,6 +42,17 @@ export async function GET(
     // Fetch axis caps with species → genus → family fallback
     const axisCaps = await getAxisCapsForSpecies(speciesName, genus, family);
 
+    // Export data
+    const [rawExport, modelExport] = await Promise.all([
+      getRawGrowthExportData(id),
+      getGrowthModelExportData(id),
+    ]);
+
+    // Fill species name in raw export rows
+    for (const row of rawExport) {
+      row['Species'] = speciesName;
+    }
+
     return NextResponse.json({
       speciesId: id,
       curves,
@@ -46,6 +60,9 @@ export async function GET(
       curveCount: curves.length,
       rawPointCount: rawPoints.length,
       axisCaps,
+      tempRange,
+      rawExport,
+      modelExport,
     });
   } catch (error) {
     console.error('Error fetching growth data:', error);

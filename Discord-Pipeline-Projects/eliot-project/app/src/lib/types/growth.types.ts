@@ -99,11 +99,42 @@ export interface RawGrowthPoint {
   length: number;
   /** Length type (SL, TL, etc.) */
   lengthType: string;
+  /** Weight value (may be null if no weight data) */
+  weight: number | null;
+  /** Weight type (DW, WW, etc.) */
+  weightType: string | null;
   /** Temperature mean */
   tempMean: number | null;
   /** Reference citation */
   reference: string | null;
+  /** DOI or URL link */
+  link: string | null;
 }
+
+/**
+ * Point shape types for scatter plots — each reference gets a different shape.
+ */
+export type PointShapeType = 'circle' | 'square' | 'triangle' | 'diamond' | 'star' | 'cross' | 'wye';
+
+/**
+ * Ordered list of point shapes to cycle through per reference.
+ */
+export const POINT_SHAPES: PointShapeType[] = [
+  'circle', 'square', 'triangle', 'diamond', 'star', 'cross', 'wye',
+];
+
+/**
+ * Line dash patterns to cycle through per reference.
+ */
+export const REFERENCE_LINE_STYLES: string[] = [
+  '0',        // solid
+  '8 4',      // dashed
+  '2 2',      // dotted
+  '8 4 2 4',  // dash-dot
+  '12 4',     // long dash
+  '4 4',      // short dash
+  '8 2 2 2 2 2', // dash-dot-dot
+];
 
 /**
  * Map MODEL_TYPE to line style.
@@ -213,6 +244,37 @@ export function temperatureToSpectralColor(temp: number | null): string {
   }
 
   // Fallback to last stop
+  const last = SPECTRAL_COLORS[SPECTRAL_COLORS.length - 1];
+  return rgbToHex(last.color[0], last.color[1], last.color[2]);
+}
+
+/**
+ * Map temperature to Spectral color using a DYNAMIC min/max range.
+ * This adapts the full color gradient to the species' own temperature range.
+ */
+export function temperatureToSpectralColorDynamic(
+  temp: number | null,
+  rangeMin: number,
+  rangeMax: number,
+): string {
+  if (temp === null) return '#6b7280';
+  if (rangeMin >= rangeMax) return temperatureToSpectralColor(temp);
+
+  // Clamp to range
+  const clamped = Math.max(rangeMin, Math.min(rangeMax, temp));
+  const t = (clamped - rangeMin) / (rangeMax - rangeMin);
+
+  // Find the two stops to interpolate between
+  for (let i = 0; i < SPECTRAL_COLORS.length - 1; i++) {
+    const stop1 = SPECTRAL_COLORS[i];
+    const stop2 = SPECTRAL_COLORS[i + 1];
+    if (t >= stop1.t && t <= stop2.t) {
+      const localT = (t - stop1.t) / (stop2.t - stop1.t);
+      const [r, g, b] = lerpColor(stop1.color, stop2.color, localT);
+      return rgbToHex(r, g, b);
+    }
+  }
+
   const last = SPECTRAL_COLORS[SPECTRAL_COLORS.length - 1];
   return rgbToHex(last.color[0], last.color[1], last.color[2]);
 }

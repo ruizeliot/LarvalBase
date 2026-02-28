@@ -11,6 +11,11 @@ export interface AxisCaps {
   level: 'species' | 'genus' | 'family' | null;
 }
 
+export interface TempRange {
+  min: number;
+  max: number;
+}
+
 interface GrowthDataResponse {
   speciesId: string;
   curves: GrowthCurve[];
@@ -18,12 +23,18 @@ interface GrowthDataResponse {
   curveCount: number;
   rawPointCount: number;
   axisCaps?: AxisCaps;
+  tempRange?: TempRange | null;
+  rawExport?: Array<Record<string, unknown>>;
+  modelExport?: Array<Record<string, unknown>>;
 }
 
 interface UseGrowthDataResult {
   curves: GrowthCurve[];
   rawPoints: RawGrowthPoint[];
   axisCaps: AxisCaps | null;
+  tempRange: TempRange | null;
+  rawExport: Array<Record<string, unknown>>;
+  modelExport: Array<Record<string, unknown>>;
   isLoading: boolean;
   error: string | null;
 }
@@ -32,6 +43,9 @@ export function useGrowthData(speciesId: string): UseGrowthDataResult {
   const [curves, setCurves] = useState<GrowthCurve[]>([]);
   const [rawPoints, setRawPoints] = useState<RawGrowthPoint[]>([]);
   const [axisCaps, setAxisCaps] = useState<AxisCaps | null>(null);
+  const [tempRange, setTempRange] = useState<TempRange | null>(null);
+  const [rawExport, setRawExport] = useState<Array<Record<string, unknown>>>([]);
+  const [modelExport, setModelExport] = useState<Array<Record<string, unknown>>>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,6 +74,9 @@ export function useGrowthData(speciesId: string): UseGrowthDataResult {
           setCurves(data.curves);
           setRawPoints(data.rawPoints);
           setAxisCaps(data.axisCaps || null);
+          setTempRange(data.tempRange || null);
+          setRawExport(data.rawExport || []);
+          setModelExport(data.modelExport || []);
         }
       } catch (err) {
         if (!cancelled) {
@@ -67,6 +84,9 @@ export function useGrowthData(speciesId: string): UseGrowthDataResult {
           setCurves([]);
           setRawPoints([]);
           setAxisCaps(null);
+          setTempRange(null);
+          setRawExport([]);
+          setModelExport([]);
         }
       } finally {
         if (!cancelled) {
@@ -82,5 +102,5 @@ export function useGrowthData(speciesId: string): UseGrowthDataResult {
     };
   }, [speciesId]);
 
-  return { curves, rawPoints, axisCaps, isLoading, error };
+  return { curves, rawPoints, axisCaps, tempRange, rawExport, modelExport, isLoading, error };
 }

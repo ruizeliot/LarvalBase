@@ -1,12 +1,5 @@
 /**
- * Tests for US-4.4: Data points without modelled curve colored by reference + temperature.
- *
- * Must:
- * 1. Raw points grouped by reference
- * 2. Each reference group gets Spectral color based on temperature
- * 3. References without a fitted model show as open circles (stroke only)
- * 4. References with a model show filled circles matching model color
- * 5. Legend entry for scatter-only references shows "no fitted model"
+ * Tests for scatter points: grouped by reference, colored by temperature, shapes assigned.
  */
 import { describe, it, expect } from 'vitest';
 import { groupRawPointsByReference } from '../species-growth-chart';
@@ -17,13 +10,16 @@ function makeRawPoint(overrides: Partial<RawGrowthPoint> = {}): RawGrowthPoint {
     age: 10,
     length: 5,
     lengthType: 'SL',
+    weight: null,
+    weightType: null,
     tempMean: 25,
     reference: 'Ruiz 2024',
+    link: null,
     ...overrides,
   };
 }
 
-describe('US-4.4: Scatter points colored by reference + temperature', () => {
+describe('Scatter points grouped by reference + temperature', () => {
   it('should group raw points by reference', () => {
     const points: RawGrowthPoint[] = [
       makeRawPoint({ reference: 'Ref A', age: 5, length: 3 }),
@@ -31,23 +27,22 @@ describe('US-4.4: Scatter points colored by reference + temperature', () => {
       makeRawPoint({ reference: 'Ref B', age: 7, length: 4 }),
     ];
 
-    const groups = groupRawPointsByReference(points, []);
+    const groups = groupRawPointsByReference(points, [], 18, 32);
     expect(groups).toHaveLength(2);
     expect(groups.find(g => g.reference === 'Ref A')?.points).toHaveLength(2);
     expect(groups.find(g => g.reference === 'Ref B')?.points).toHaveLength(1);
   });
 
-  it('should assign Spectral color based on average temperature of group', () => {
+  it('should assign Spectral color based on average temperature', () => {
     const points: RawGrowthPoint[] = [
       makeRawPoint({ reference: 'Hot Ref', tempMean: 30 }),
       makeRawPoint({ reference: 'Cold Ref', tempMean: 19 }),
     ];
 
-    const groups = groupRawPointsByReference(points, []);
+    const groups = groupRawPointsByReference(points, [], 19, 30);
     const hotGroup = groups.find(g => g.reference === 'Hot Ref');
     const coldGroup = groups.find(g => g.reference === 'Cold Ref');
 
-    // Hot should be reddish, cold should be bluish
     const hotR = parseInt(hotGroup!.color.slice(1, 3), 16);
     const coldB = parseInt(coldGroup!.color.slice(5, 7), 16);
     expect(hotR).toBeGreaterThan(150);
@@ -59,7 +54,7 @@ describe('US-4.4: Scatter points colored by reference + temperature', () => {
       makeRawPoint({ reference: 'No Model Ref', tempMean: 25 }),
     ];
 
-    const groups = groupRawPointsByReference(points, []);
+    const groups = groupRawPointsByReference(points, [], 18, 32);
     expect(groups[0].hasModel).toBe(false);
   });
 
@@ -97,7 +92,7 @@ describe('US-4.4: Scatter points colored by reference + temperature', () => {
       },
     ];
 
-    const groups = groupRawPointsByReference(points, curves);
+    const groups = groupRawPointsByReference(points, curves, 18, 32);
     expect(groups[0].hasModel).toBe(true);
   });
 
@@ -106,7 +101,7 @@ describe('US-4.4: Scatter points colored by reference + temperature', () => {
       makeRawPoint({ reference: null }),
     ];
 
-    const groups = groupRawPointsByReference(points, []);
+    const groups = groupRawPointsByReference(points, [], 18, 32);
     expect(groups[0].reference).toBe('Unknown');
   });
 
@@ -115,7 +110,20 @@ describe('US-4.4: Scatter points colored by reference + temperature', () => {
       makeRawPoint({ reference: 'No Temp Ref', tempMean: null }),
     ];
 
-    const groups = groupRawPointsByReference(points, []);
+    const groups = groupRawPointsByReference(points, [], 18, 32);
     expect(groups[0].color).toBe('#6b7280');
+  });
+
+  it('should assign different shapes per reference', () => {
+    const points: RawGrowthPoint[] = [
+      makeRawPoint({ reference: 'Ref A' }),
+      makeRawPoint({ reference: 'Ref B' }),
+      makeRawPoint({ reference: 'Ref C' }),
+    ];
+
+    const groups = groupRawPointsByReference(points, [], 18, 32);
+    const shapes = groups.map(g => g.shape);
+    // All shapes should be different
+    expect(new Set(shapes).size).toBe(3);
   });
 });

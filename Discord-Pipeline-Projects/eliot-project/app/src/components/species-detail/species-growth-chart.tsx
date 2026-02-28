@@ -11,11 +11,14 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Download } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useGrowthData } from "@/hooks/use-growth-data";
-import type { GrowthCurve, RawGrowthPoint, LineStyleType } from "@/lib/types/growth.types";
-import { parseXRange, temperatureToSpectralColor } from "@/lib/types/growth.types";
+import type { GrowthCurve, RawGrowthPoint, PointShapeType } from "@/lib/types/growth.types";
+import { parseXRange, temperatureToSpectralColorDynamic, POINT_SHAPES, REFERENCE_LINE_STYLES } from "@/lib/types/growth.types";
+import { downloadCSV } from "@/lib/export/csv-utils";
 
 interface SpeciesGrowthChartProps {
   speciesId: string;
@@ -23,31 +26,20 @@ interface SpeciesGrowthChartProps {
 }
 
 /**
- * Map line style to SVG stroke-dasharray.
+ * Map reference index to SVG stroke-dasharray.
  */
-function getStrokeDasharray(lineStyle: LineStyleType): string {
-  switch (lineStyle) {
-    case "solid":
-      return "0";
-    case "dashed":
-      return "8 4";
-    case "dotted":
-      return "2 2";
-    case "dash-dot":
-      return "8 4 2 4";
-    default:
-      return "0";
-  }
+function getRefDasharray(refIndex: number): string {
+  return REFERENCE_LINE_STYLES[refIndex % REFERENCE_LINE_STYLES.length];
 }
 
 /**
- * Format temperature string.
+ * Format temperature string with °C on same line.
  */
 function formatTemperature(curve: GrowthCurve): string {
   const { model } = curve;
   if (model.tempMean !== null) {
     if (model.tempMin !== null && model.tempMax !== null) {
-      return `${model.tempMean.toFixed(1)}°C (${model.tempMin.toFixed(1)}-${model.tempMax.toFixed(1)})`;
+      return `${model.tempMean.toFixed(1)}°C (${model.tempMin.toFixed(1)}–${model.tempMax.toFixed(1)})`;
     }
     return `${model.tempMean.toFixed(1)}°C`;
   }
@@ -55,20 +47,7 @@ function formatTemperature(curve: GrowthCurve): string {
 }
 
 /**
- * Format reference for legend/tooltip.
- */
-function formatReference(curve: GrowthCurve): string {
-  const { model } = curve;
-  const ref = model.reference || "Unknown";
-  if (ref.length > 35) {
-    return ref.substring(0, 32) + "...";
-  }
-  return ref;
-}
-
-/**
  * Custom tooltip for growth chart.
- * Shows "Age: {value}" header and "Size: {value}" for each entry.
  */
 export function GrowthTooltip({
   active,
@@ -101,48 +80,59 @@ export function GrowthTooltip({
 }
 
 /**
- * Format age-at-length range from xRange string.
+ * Legend item with equation and °C on the same line.
+ * Reference names are clickable hyperlinks when LINK is available.
  */
-function formatAgeAtLength(model: GrowthCurve['model']): string | null {
-  const range = parseXRange(model.xRange);
-  if (!range) return null;
-  const unit = model.xUnit === 'hph' ? 'hph' : 'dph';
-  return `Age-at-length: ${range.min} – ${range.max} ${unit}`;
-}
-
-/**
- * Legend item with temperature info, equation, and age-at-length range.
- */
-export function GrowthLegendItem({ curve }: { curve: GrowthCurve }) {
-  const { model, color, lineStyle } = curve;
-  const dashArray = getStrokeDasharray(lineStyle);
+export function GrowthLegendItem({
+  curve,
+  refIndex,
+  shape,
+}: {
+  curve: GrowthCurve;
+  refIndex: number;
+  shape: PointShapeType;
+}) {
+  const { model, color } = curve;
+  const dashArray = getRefDasharray(refIndex);
   const temp = formatTemperature(curve);
-  const ageRange = formatAgeAtLength(model);
+  const refName = model.reference || "Unknown";
 
   return (
     <div className="flex items-start gap-2 text-xs py-1">
-      <svg width="24" height="12" className="flex-shrink-0 mt-1">
-        <line
-          x1="0"
-          y1="6"
-          x2="24"
-          y2="6"
-          stroke={color}
-          strokeWidth={2}
-          strokeDasharray={dashArray === "0" ? undefined : dashArray}
-        />
-      </svg>
+      <div className="flex flex-col items-center flex-shrink-0 mt-1 gap-0.5">
+        <svg width="24" height="12">
+          <line
+            x1="0"
+            y1="6"
+            x2="24"
+            y2="6"
+            stroke={color}
+            strokeWidth={2}
+            strokeDasharray={dashArray === "0" ? undefined : dashArray}
+          />
+        </svg>
+        <svg width="12" height="12">
+          <ShapeSVG shape={shape} cx={6} cy={6} r={4} fill={color} stroke={color} />
+        </svg>
+      </div>
       <div className="min-w-0">
-        <span className="text-foreground block" title={model.reference || ""}>
-          {model.reference || "Unknown"}
-        </span>
-        {model.equation && (
-          <span data-testid="legend-equation" className="font-mono text-muted-foreground text-[11px] block">
-            {model.equation}
+        {model.link ? (
+          <a
+            href={model.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:text-blue-400 hover:underline block"
+            title={refName}
+          >
+            {refName}
+          </a>
+        ) : (
+          <span className="text-foreground block" title={refName}>
+            {refName}
           </span>
         )}
         <span className="text-muted-foreground text-[10px]">
-          {temp}{ageRange ? ` · ${ageRange}` : ''}
+          {model.equation ? `${model.equation} · ` : ''}{temp}
         </span>
       </div>
     </div>
@@ -150,55 +140,90 @@ export function GrowthLegendItem({ curve }: { curve: GrowthCurve }) {
 }
 
 /**
- * Merge all curve points into chart data format.
+ * Render an SVG shape element for scatter point shapes.
  */
-function buildChartData(
-  curves: GrowthCurve[],
-  rawPoints: RawGrowthPoint[]
-): Array<Record<string, number | null>> {
-  // Build data per-curve: each curve gets its own sorted array of {x, y}
-  // Then merge into a unified chart data array with explicit null for missing values
-  // (Recharts v3 connectNulls only bridges null, NOT undefined)
-
-  // Collect all unique X values from curves
-  const xValues = new Set<number>();
-  curves.forEach((curve) => {
-    curve.points.forEach((p) => xValues.add(p.x));
-  });
-
-  // Sort X values
-  const sortedX = Array.from(xValues).sort((a, b) => a - b);
-
-  // Build lookup maps for each curve (x → y) for O(1) access
-  const curveMaps = curves.map((curve) => {
-    const map = new Map<number, number>();
-    curve.points.forEach((p) => map.set(p.x, p.y));
-    return { id: curve.id, map };
-  });
-
-  // Build data points with explicit null for missing values
-  return sortedX.map((x) => {
-    const point: Record<string, number | null> = { x };
-
-    // Set every curve's value — null when this x doesn't belong to the curve
-    curveMaps.forEach(({ id, map }) => {
-      point[id] = map.get(x) ?? null;
-    });
-
-    return point;
-  });
+function ShapeSVG({
+  shape,
+  cx,
+  cy,
+  r,
+  fill,
+  stroke,
+}: {
+  shape: PointShapeType;
+  cx: number;
+  cy: number;
+  r: number;
+  fill: string;
+  stroke: string;
+}) {
+  switch (shape) {
+    case 'circle':
+      return <circle cx={cx} cy={cy} r={r} fill={fill} stroke={stroke} strokeWidth={1} />;
+    case 'square':
+      return <rect x={cx - r} y={cy - r} width={r * 2} height={r * 2} fill={fill} stroke={stroke} strokeWidth={1} />;
+    case 'triangle':
+      return (
+        <polygon
+          points={`${cx},${cy - r} ${cx - r},${cy + r} ${cx + r},${cy + r}`}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={1}
+        />
+      );
+    case 'diamond':
+      return (
+        <polygon
+          points={`${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`}
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={1}
+        />
+      );
+    case 'star': {
+      const inner = r * 0.4;
+      const pts = [];
+      for (let i = 0; i < 5; i++) {
+        const outerAngle = (Math.PI / 2) + (2 * Math.PI * i / 5);
+        pts.push(`${cx + r * Math.cos(outerAngle)},${cy - r * Math.sin(outerAngle)}`);
+        const innerAngle = outerAngle + Math.PI / 5;
+        pts.push(`${cx + inner * Math.cos(innerAngle)},${cy - inner * Math.sin(innerAngle)}`);
+      }
+      return <polygon points={pts.join(' ')} fill={fill} stroke={stroke} strokeWidth={1} />;
+    }
+    case 'cross':
+      return (
+        <g>
+          <line x1={cx - r} y1={cy} x2={cx + r} y2={cy} stroke={stroke} strokeWidth={2} />
+          <line x1={cx} y1={cy - r} x2={cx} y2={cy + r} stroke={stroke} strokeWidth={2} />
+        </g>
+      );
+    case 'wye':
+      return (
+        <g>
+          <line x1={cx} y1={cy} x2={cx} y2={cy + r} stroke={stroke} strokeWidth={2} />
+          <line x1={cx} y1={cy} x2={cx - r * 0.87} y2={cy - r * 0.5} stroke={stroke} strokeWidth={2} />
+          <line x1={cx} y1={cy} x2={cx + r * 0.87} y2={cy - r * 0.5} stroke={stroke} strokeWidth={2} />
+        </g>
+      );
+    default:
+      return <circle cx={cx} cy={cy} r={r} fill={fill} stroke={stroke} strokeWidth={1} />;
+  }
 }
 
 /**
- * Build separate scatter data for raw points.
+ * Custom scatter shape renderer for Recharts.
  */
-function buildScatterData(rawPoints: RawGrowthPoint[]): Array<{ x: number; y: number; temp: number | null; ref: string | null }> {
-  return rawPoints.map((p) => ({
-    x: p.age,
-    y: p.length,
-    temp: p.tempMean,
-    ref: p.reference,
-  }));
+function makeScatterShape(shape: PointShapeType, fillColor: string, hasModel: boolean) {
+  return function ScatterShape(props: { cx?: number; cy?: number }) {
+    const { cx = 0, cy = 0 } = props;
+    const fill = hasModel ? fillColor : 'none';
+    return (
+      <svg>
+        <ShapeSVG shape={shape} cx={cx} cy={cy} r={4} fill={fill} stroke={fillColor} />
+      </svg>
+    );
+  };
 }
 
 /**
@@ -210,15 +235,18 @@ export interface RawPointGroup {
   color: string;
   hasModel: boolean;
   avgTemp: number | null;
+  shape: PointShapeType;
+  link: string | null;
 }
 
 /**
- * Group raw points by reference. Assign Spectral color based on average temperature.
- * Mark whether the reference has a fitted model curve.
+ * Group raw points by reference. Assign color based on dynamic temp range.
  */
 export function groupRawPointsByReference(
   rawPoints: RawGrowthPoint[],
-  curves: GrowthCurve[]
+  curves: GrowthCurve[],
+  tempMin: number,
+  tempMax: number,
 ): RawPointGroup[] {
   const curveRefs = new Set(curves.map(c => c.model.reference).filter(Boolean));
   const groups = new Map<string, RawGrowthPoint[]>();
@@ -230,32 +258,249 @@ export function groupRawPointsByReference(
     groups.set(ref, existing);
   }
 
+  // Build a stable reference → index map for shapes
+  const allRefs = Array.from(new Set([
+    ...curves.map(c => c.model.reference || 'Unknown'),
+    ...groups.keys(),
+  ]));
+
   return Array.from(groups.entries()).map(([reference, points]) => {
-    // Compute average temperature for color
     const temps = points.map(p => p.tempMean).filter((t): t is number => t !== null);
     const avgTemp = temps.length > 0 ? temps.reduce((a, b) => a + b, 0) / temps.length : null;
-    const color = temperatureToSpectralColor(avgTemp);
+    const color = temperatureToSpectralColorDynamic(avgTemp, tempMin, tempMax);
     const hasModel = curveRefs.has(reference);
+    const refIdx = allRefs.indexOf(reference);
+    const shape = POINT_SHAPES[refIdx % POINT_SHAPES.length];
+    const link = points[0]?.link || null;
 
-    return { reference, points, color, hasModel, avgTemp };
+    return { reference, points, color, hasModel, avgTemp, shape, link };
   });
 }
 
 /**
+ * Build a stable reference → index mapping from all sources.
+ */
+function buildRefIndexMap(curves: GrowthCurve[], rawRefs: string[]): Map<string, number> {
+  const allRefs: string[] = [];
+  const seen = new Set<string>();
+  for (const c of curves) {
+    const ref = c.model.reference || 'Unknown';
+    if (!seen.has(ref)) {
+      allRefs.push(ref);
+      seen.add(ref);
+    }
+  }
+  for (const ref of rawRefs) {
+    if (!seen.has(ref)) {
+      allRefs.push(ref);
+      seen.add(ref);
+    }
+  }
+  return new Map(allRefs.map((ref, i) => [ref, i]));
+}
+
+/**
+ * Merge all curve points into chart data format.
+ */
+function buildChartData(
+  curves: GrowthCurve[],
+): Array<Record<string, number | null>> {
+  const xValues = new Set<number>();
+  curves.forEach((curve) => {
+    curve.points.forEach((p) => xValues.add(p.x));
+  });
+
+  const sortedX = Array.from(xValues).sort((a, b) => a - b);
+
+  const curveMaps = curves.map((curve) => {
+    const map = new Map<number, number>();
+    curve.points.forEach((p) => map.set(p.x, p.y));
+    return { id: curve.id, map };
+  });
+
+  return sortedX.map((x) => {
+    const point: Record<string, number | null> = { x };
+    curveMaps.forEach(({ id, map }) => {
+      point[id] = map.get(x) ?? null;
+    });
+    return point;
+  });
+}
+
+/**
+ * Single growth chart (length or weight).
+ */
+function GrowthChartPanel({
+  curves,
+  scatterGroups,
+  xAxisLabel,
+  yAxisLabel,
+  axisCaps,
+  refIndexMap,
+  tempMin,
+  tempMax,
+  title,
+}: {
+  curves: GrowthCurve[];
+  scatterGroups: RawPointGroup[];
+  xAxisLabel: string;
+  yAxisLabel: string;
+  axisCaps: { xMax: number | null; yMax: number | null } | null;
+  refIndexMap: Map<string, number>;
+  tempMin: number;
+  tempMax: number;
+  title: string;
+}) {
+  const chartData = useMemo(() => buildChartData(curves), [curves]);
+
+  return (
+    <div>
+      <p className="text-xs font-medium text-muted-foreground mb-1">{title}</p>
+      <div className="h-[350px] w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={chartData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+            <XAxis
+              dataKey="x"
+              type="number"
+              domain={[0, axisCaps?.xMax ?? 'auto']}
+              label={{
+                value: xAxisLabel,
+                position: "bottom",
+                offset: 0,
+                className: "fill-muted-foreground text-xs",
+              }}
+              tick={{ fontSize: 11 }}
+              tickFormatter={(v) => v.toFixed(0)}
+              className="text-muted-foreground"
+            />
+            <YAxis
+              type="number"
+              domain={[0, axisCaps?.yMax ?? 'auto']}
+              label={{
+                value: yAxisLabel,
+                angle: -90,
+                position: "insideLeft",
+                offset: 10,
+                className: "fill-muted-foreground text-xs",
+              }}
+              tick={{ fontSize: 11 }}
+              tickFormatter={(v) => v.toFixed(1)}
+              className="text-muted-foreground"
+            />
+            <Tooltip content={<GrowthTooltip />} />
+
+            {/* Raw data points as scatter — grouped by reference with unique shapes */}
+            {scatterGroups.map((group) => {
+              const refIdx = refIndexMap.get(group.reference) ?? 0;
+              const shape = POINT_SHAPES[refIdx % POINT_SHAPES.length];
+              return (
+                <Scatter
+                  key={`scatter-${group.reference}`}
+                  name={group.reference}
+                  dataKey="y"
+                  data={group.points.map(p => ({ x: p.age, y: p.length }))}
+                  fill={group.hasModel ? group.color : "none"}
+                  stroke={group.color}
+                  strokeWidth={group.hasModel ? 0 : 1.5}
+                  shape={makeScatterShape(shape, group.color, group.hasModel)}
+                  legendType="none"
+                />
+              );
+            })}
+
+            {/* Growth model curves — line style by reference */}
+            {curves.map((curve) => {
+              const ref = curve.model.reference || 'Unknown';
+              const refIdx = refIndexMap.get(ref) ?? 0;
+              const dash = getRefDasharray(refIdx);
+              return (
+                <Line
+                  key={curve.id}
+                  type="monotone"
+                  dataKey={curve.id}
+                  name={ref.length > 35 ? ref.substring(0, 32) + '...' : ref}
+                  stroke={curve.color}
+                  strokeWidth={2}
+                  strokeDasharray={dash === "0" ? undefined : dash}
+                  dot={false}
+                  activeDot={{ r: 4, strokeWidth: 0 }}
+                  connectNulls
+                />
+              );
+            })}
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Species growth chart component.
- * Displays growth curves with colors and raw data points as scatter.
+ * Displays growth curves with colors, shapes by reference, and optional weight plot.
  */
 export function SpeciesGrowthChart({
   speciesId,
   speciesName,
 }: SpeciesGrowthChartProps) {
-  const { curves, rawPoints, axisCaps, isLoading, error } = useGrowthData(speciesId);
+  const { curves, rawPoints, axisCaps, tempRange, rawExport, modelExport, isLoading, error } = useGrowthData(speciesId);
 
-  // Build chart data from curves
-  const chartData = useMemo(() => buildChartData(curves, rawPoints), [curves, rawPoints]);
-  const scatterGroups = useMemo(() => groupRawPointsByReference(rawPoints, curves), [rawPoints, curves]);
+  // Dynamic temp range for this species
+  const tempMin = tempRange?.min ?? 18;
+  const tempMax = tempRange?.max ?? 32;
 
-  // Determine axis labels from first curve or raw points
+  // Re-color curves using dynamic temp range
+  const recoloredCurves = useMemo(() => {
+    return curves.map(curve => ({
+      ...curve,
+      color: curve.model.tempMean !== null
+        ? temperatureToSpectralColorDynamic(curve.model.tempMean, tempMin, tempMax)
+        : curve.color,
+    }));
+  }, [curves, tempMin, tempMax]);
+
+  // Group scatter points with dynamic coloring
+  const scatterGroups = useMemo(
+    () => groupRawPointsByReference(rawPoints, recoloredCurves, tempMin, tempMax),
+    [rawPoints, recoloredCurves, tempMin, tempMax]
+  );
+
+  // Build stable ref → index map
+  const refIndexMap = useMemo(() => {
+    const rawRefs = Array.from(new Set(rawPoints.map(p => p.reference || 'Unknown')));
+    return buildRefIndexMap(recoloredCurves, rawRefs);
+  }, [recoloredCurves, rawPoints]);
+
+  // Check if weight data exists
+  const weightPoints = useMemo(
+    () => rawPoints.filter(p => p.weight !== null && p.weight !== undefined),
+    [rawPoints]
+  );
+  const hasWeight = weightPoints.length > 0;
+
+  // Sort curves by temperature for legend
+  const sortedCurves = useMemo(() => {
+    return [...recoloredCurves].sort((a, b) => {
+      const ta = a.model.tempMean ?? Infinity;
+      const tb = b.model.tempMean ?? Infinity;
+      return ta - tb;
+    });
+  }, [recoloredCurves]);
+
+  // Sort scatter groups by temperature for legend
+  const sortedScatterGroups = useMemo(() => {
+    return [...scatterGroups].sort((a, b) => {
+      const ta = a.avgTemp ?? Infinity;
+      const tb = b.avgTemp ?? Infinity;
+      return ta - tb;
+    });
+  }, [scatterGroups]);
+
+  // Axis labels
   const xAxisLabel = useMemo(() => {
     if (curves.length > 0) {
       const unit = curves[0].model.xUnit;
@@ -274,6 +519,24 @@ export function SpeciesGrowthChart({
     }
     return "Length (mm)";
   }, [curves, rawPoints]);
+
+  // Weight axis label
+  const weightYLabel = useMemo(() => {
+    const wp = weightPoints[0];
+    if (wp?.weightType) return `Weight (${wp.weightType})`;
+    return "Weight (mg)";
+  }, [weightPoints]);
+
+  // Weight scatter groups (reuse same reference grouping but with weight values)
+  const weightScatterGroups: RawPointGroup[] = useMemo(() => {
+    if (!hasWeight) return [];
+    return scatterGroups
+      .map(g => ({
+        ...g,
+        points: g.points.filter(p => p.weight !== null && p.weight !== undefined),
+      }))
+      .filter(g => g.points.length > 0);
+  }, [scatterGroups, hasWeight]);
 
   // Loading state
   if (isLoading) {
@@ -302,7 +565,7 @@ export function SpeciesGrowthChart({
     );
   }
 
-  // No data state - don't render if no curves AND no raw points
+  // No data state
   if (curves.length === 0 && rawPoints.length === 0) {
     return null;
   }
@@ -310,137 +573,145 @@ export function SpeciesGrowthChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Age-at-Length</CardTitle>
-        <p className="text-sm text-muted-foreground">
-          {curves.length > 0 && (
-            <span>{curves.length} growth model{curves.length > 1 ? "s" : ""}</span>
-          )}
-          {curves.length > 0 && rawPoints.length > 0 && <span> • </span>}
-          {rawPoints.length > 0 && (
-            <span>{rawPoints.length} data point{rawPoints.length > 1 ? "s" : ""}</span>
-          )}
-          <span> for <em>{speciesName}</em></span>
-          {axisCaps?.level && (
-            <span> · Axis capped at {axisCaps.level}-level max</span>
-          )}
-        </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle className="text-lg">Age-at-Length</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              {curves.length > 0 && (
+                <span>{curves.length} growth model{curves.length > 1 ? "s" : ""}</span>
+              )}
+              {curves.length > 0 && rawPoints.length > 0 && <span> • </span>}
+              {rawPoints.length > 0 && (
+                <span>{rawPoints.length} data point{rawPoints.length > 1 ? "s" : ""}</span>
+              )}
+              <span> for <em>{speciesName}</em></span>
+              {axisCaps?.level && (
+                <span> · Axis capped at {axisCaps.level}-level max</span>
+              )}
+            </p>
+          </div>
+          {/* Export buttons */}
+          <div className="flex gap-2 flex-shrink-0">
+            {rawExport.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadCSV(rawExport, `${speciesName.replace(/\s+/g, '_')}_age-length-data`)}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Age-length data
+              </Button>
+            )}
+            {modelExport.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadCSV(modelExport, `${speciesName.replace(/\s+/g, '_')}_growth-models`)}
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Growth models
+              </Button>
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Chart */}
-        <div className="h-[350px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <ComposedChart
-              data={chartData}
-              margin={{ top: 5, right: 30, left: 20, bottom: 25 }}
-            >
-              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-              <XAxis
-                dataKey="x"
-                type="number"
-                domain={[0, axisCaps?.xMax ?? 'auto']}
-                label={{
-                  value: xAxisLabel,
-                  position: "bottom",
-                  offset: 0,
-                  className: "fill-muted-foreground text-xs",
-                }}
-                tick={{ fontSize: 11 }}
-                tickFormatter={(v) => v.toFixed(0)}
-                className="text-muted-foreground"
-              />
-              <YAxis
-                type="number"
-                domain={[0, axisCaps?.yMax ?? 'auto']}
-                label={{
-                  value: yAxisLabel,
-                  angle: -90,
-                  position: "insideLeft",
-                  offset: 10,
-                  className: "fill-muted-foreground text-xs",
-                }}
-                tick={{ fontSize: 11 }}
-                tickFormatter={(v) => v.toFixed(1)}
-                className="text-muted-foreground"
-              />
-              <Tooltip content={<GrowthTooltip />} />
-              
-              {/* Raw data points as scatter — grouped by reference, colored by temperature */}
-              {scatterGroups.map((group) => (
-                <Scatter
-                  key={`scatter-${group.reference}`}
-                  name={group.reference}
-                  dataKey="y"
-                  data={group.points.map(p => ({ x: p.age, y: p.length }))}
-                  fill={group.hasModel ? group.color : "none"}
-                  stroke={group.color}
-                  strokeWidth={group.hasModel ? 0 : 1.5}
-                  shape="circle"
-                  legendType="circle"
-                />
-              ))}
-
-              {/* Growth model curves */}
-              {curves.map((curve) => (
-                <Line
-                  key={curve.id}
-                  type="monotone"
-                  dataKey={curve.id}
-                  name={formatReference(curve)}
-                  stroke={curve.color}
-                  strokeWidth={2}
-                  strokeDasharray={
-                    getStrokeDasharray(curve.lineStyle) === "0"
-                      ? undefined
-                      : getStrokeDasharray(curve.lineStyle)
-                  }
-                  dot={false}
-                  activeDot={{ r: 4, strokeWidth: 0 }}
-                  connectNulls
-                />
-              ))}
-            </ComposedChart>
-          </ResponsiveContainer>
+        {/* Charts: side by side if weight data available */}
+        <div className={hasWeight ? "grid grid-cols-1 lg:grid-cols-2 gap-4" : ""}>
+          <GrowthChartPanel
+            curves={recoloredCurves}
+            scatterGroups={scatterGroups}
+            xAxisLabel={xAxisLabel}
+            yAxisLabel={yAxisLabel}
+            axisCaps={axisCaps}
+            refIndexMap={refIndexMap}
+            tempMin={tempMin}
+            tempMax={tempMax}
+            title="Length"
+          />
+          {hasWeight && (
+            <GrowthChartPanel
+              curves={[]}
+              scatterGroups={weightScatterGroups.map(g => ({
+                ...g,
+                // Override points to use weight as y
+                points: g.points.map(p => ({ ...p, age: p.age, length: p.weight! })),
+              }))}
+              xAxisLabel={xAxisLabel}
+              yAxisLabel={weightYLabel}
+              axisCaps={null}
+              refIndexMap={refIndexMap}
+              tempMin={tempMin}
+              tempMax={tempMax}
+              title="Weight"
+            />
+          )}
         </div>
 
-        {/* Temperature color scale */}
+        {/* Dynamic temperature color scale */}
         <div data-testid="temp-gradient" className="flex items-center gap-2 mt-2">
-          <span className="text-[10px] text-muted-foreground">18°C</span>
+          <span className="text-[10px] text-muted-foreground">{tempMin.toFixed(0)}°C</span>
           <div
             className="h-3 flex-1 max-w-[200px] rounded-md"
             style={{
               background: 'linear-gradient(to right, #4575b4, #91bfdb, #fee08b, #fc8d59, #d73027)',
             }}
           />
-          <span className="text-[10px] text-muted-foreground">32°C</span>
+          <span className="text-[10px] text-muted-foreground">{tempMax.toFixed(0)}°C</span>
           <span className="text-[10px] text-muted-foreground ml-1">Spectral color scale by temperature</span>
         </div>
 
-        {/* Legend with temperatures */}
-        {curves.length > 0 && (
-          <div className="border-t pt-4">
-            <p className="text-xs font-medium text-muted-foreground mb-2">
-              Growth Equations by Reference:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
-              {curves.map((curve) => (
-                <GrowthLegendItem key={curve.id} curve={curve} />
-              ))}
-            </div>
-            {scatterGroups.filter(g => !g.hasModel).map((group) => (
-              <div key={`legend-scatter-${group.reference}`} className="flex items-start gap-2 text-xs py-1">
-                <svg width="24" height="12" className="flex-shrink-0 mt-1">
-                  <circle cx="12" cy="6" r="4" fill="none" stroke={group.color} strokeWidth="1.5" />
-                </svg>
-                <div className="min-w-0">
-                  <span className="text-foreground block">{group.reference} — <em>no fitted model</em></span>
-                  <span className="text-muted-foreground text-[10px]">
-                    {group.avgTemp !== null ? `T = ${group.avgTemp.toFixed(0)}°C · ` : ''}Scatter points only
-                  </span>
+        {/* Legend — sorted by temperature, no age-at-length mention */}
+        <div className="border-t pt-4">
+          <p className="text-xs font-medium text-muted-foreground mb-2">
+            References:
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
+            {/* Curves with models */}
+            {sortedCurves.map((curve) => {
+              const ref = curve.model.reference || 'Unknown';
+              const refIdx = refIndexMap.get(ref) ?? 0;
+              const shape = POINT_SHAPES[refIdx % POINT_SHAPES.length];
+              return (
+                <GrowthLegendItem
+                  key={curve.id}
+                  curve={curve}
+                  refIndex={refIdx}
+                  shape={shape}
+                />
+              );
+            })}
+            {/* Scatter-only references */}
+            {sortedScatterGroups.filter(g => !g.hasModel).map((group) => {
+              const refIdx = refIndexMap.get(group.reference) ?? 0;
+              const shape = POINT_SHAPES[refIdx % POINT_SHAPES.length];
+              return (
+                <div key={`legend-scatter-${group.reference}`} className="flex items-start gap-2 text-xs py-1">
+                  <svg width="24" height="16" className="flex-shrink-0 mt-1">
+                    <ShapeSVG shape={shape} cx={12} cy={8} r={5} fill="none" stroke={group.color} />
+                  </svg>
+                  <div className="min-w-0">
+                    {group.link ? (
+                      <a
+                        href={group.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-400 hover:underline block"
+                      >
+                        {group.reference} — <em>no fitted model</em>
+                      </a>
+                    ) : (
+                      <span className="text-foreground block">{group.reference} — <em>no fitted model</em></span>
+                    )}
+                    <span className="text-muted-foreground text-[10px]">
+                      {group.avgTemp !== null ? `${group.avgTemp.toFixed(1)}°C · ` : ''}Scatter points only
+                    </span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -1,15 +1,10 @@
 /**
- * Tests for US-4.1: Growth curve equations in legend with age-at-length info.
- *
- * Must:
- * 1. Show growth curve equation in monospace font in the legend
- * 2. Show age-at-length range (from xRange) per reference
- * 3. Continue showing reference name and temperature
+ * Tests for growth curve legend: equation, temperature, reference hyperlinks, shape icons.
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { GrowthLegendItem } from '../species-growth-chart';
-import type { GrowthCurve } from '@/lib/types/growth.types';
+import type { GrowthCurve, PointShapeType } from '@/lib/types/growth.types';
 
 function makeCurve(overrides: Partial<GrowthCurve['model']> = {}): GrowthCurve {
   return {
@@ -42,59 +37,60 @@ function makeCurve(overrides: Partial<GrowthCurve['model']> = {}): GrowthCurve {
   };
 }
 
-describe('US-4.1: Growth curve equations in legend', () => {
-  it('should display the equation text in the legend', () => {
+describe('Growth legend: equations + temperature + references', () => {
+  it('should display equation and °C on the same info line', () => {
     const curve = makeCurve();
-    render(<GrowthLegendItem curve={curve} />);
+    render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
-    expect(screen.getByText('L(t) = 28.5 × (1 − e^(−0.065 × (t − 2.1)))')).toBeInTheDocument();
+    // Equation and temperature should be on the same span
+    const infoLine = screen.getByText(/L\(t\).*28\.0°C/);
+    expect(infoLine).toBeInTheDocument();
   });
 
-  it('should display equation in monospace font style', () => {
+  it('should display reference name', () => {
     const curve = makeCurve();
-    const { container } = render(<GrowthLegendItem curve={curve} />);
-
-    const eqEl = container.querySelector('[data-testid="legend-equation"]');
-    expect(eqEl).toBeInTheDocument();
-    expect(eqEl?.className).toMatch(/font-mono/);
-  });
-
-  it('should display age-at-length range from xRange', () => {
-    const curve = makeCurve();
-    render(<GrowthLegendItem curve={curve} />);
-
-    // Should show "Age-at-length: 0 – 55 dph"
-    expect(screen.getByText(/Age-at-length.*0.*55.*dph/)).toBeInTheDocument();
-  });
-
-  it('should still display reference name', () => {
-    const curve = makeCurve();
-    render(<GrowthLegendItem curve={curve} />);
+    render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
     expect(screen.getByText('Ruiz et al. 2024')).toBeInTheDocument();
   });
 
-  it('should still display temperature info', () => {
+  it('should display temperature info', () => {
     const curve = makeCurve();
-    render(<GrowthLegendItem curve={curve} />);
+    render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
     expect(screen.getByText(/28\.0°C/)).toBeInTheDocument();
   });
 
-  it('should handle null equation gracefully', () => {
-    const curve = makeCurve({ equation: null });
-    render(<GrowthLegendItem curve={curve} />);
+  it('should NOT display age-at-length info in the legend', () => {
+    const curve = makeCurve();
+    render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
-    // Should still render without equation
-    expect(screen.getByText('Ruiz et al. 2024')).toBeInTheDocument();
-    expect(screen.queryByTestId('legend-equation')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Age-at-length/)).not.toBeInTheDocument();
   });
 
-  it('should handle missing xRange gracefully', () => {
-    const curve = makeCurve({ xRange: '' });
-    render(<GrowthLegendItem curve={curve} />);
+  it('should handle null equation gracefully', () => {
+    const curve = makeCurve({ equation: null });
+    render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
-    // No age-at-length line when xRange is empty
-    expect(screen.queryByText(/Age-at-length/)).not.toBeInTheDocument();
+    expect(screen.getByText('Ruiz et al. 2024')).toBeInTheDocument();
+  });
+
+  it('should render reference as hyperlink when link is provided', () => {
+    const curve = makeCurve({ link: 'https://doi.org/10.1234/test' });
+    const { container } = render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
+
+    const link = container.querySelector('a[href="https://doi.org/10.1234/test"]');
+    expect(link).toBeInTheDocument();
+    expect(link?.textContent).toBe('Ruiz et al. 2024');
+    expect(link?.getAttribute('target')).toBe('_blank');
+  });
+
+  it('should render reference as plain text when no link', () => {
+    const curve = makeCurve({ link: null });
+    const { container } = render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
+
+    const link = container.querySelector('a');
+    expect(link).toBeNull();
+    expect(screen.getByText('Ruiz et al. 2024')).toBeInTheDocument();
   });
 });

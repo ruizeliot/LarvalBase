@@ -176,8 +176,11 @@ export async function loadRawGrowthData(): Promise<Map<string, RawGrowthPoint[]>
         age,
         length,
         lengthType: row['LENGTH_TYPE'] || 'SL',
+        weight: parseNum(row['WEIGHT']),
+        weightType: row['WEIGHT_TYPE'] || null,
         tempMean: parseNum(row['TEMPERATURE_MEAN']),
         reference: row['REFERENCE'] || null,
+        link: row['LINK'] || null,
       };
 
       const existing = dataBySpecies.get(speciesId) || [];
@@ -300,15 +303,120 @@ export async function getGrowthCurvesForSpecies(
 }
 
 /**
- * Get complete growth data for a species (curves + raw points).
+ * Compute the temperature range (min, max) for a species from all data sources.
+ */
+function computeTempRange(curves: GrowthCurve[], rawPoints: RawGrowthPoint[]): { min: number; max: number } | null {
+  const temps: number[] = [];
+  for (const c of curves) {
+    if (c.model.tempMean !== null) temps.push(c.model.tempMean);
+    if (c.model.tempMin !== null) temps.push(c.model.tempMin);
+    if (c.model.tempMax !== null) temps.push(c.model.tempMax);
+  }
+  for (const p of rawPoints) {
+    if (p.tempMean !== null) temps.push(p.tempMean);
+  }
+  if (temps.length === 0) return null;
+  return { min: Math.min(...temps), max: Math.max(...temps) };
+}
+
+/**
+ * Get complete growth data for a species (curves + raw points + temp range).
  */
 export async function getGrowthDataForSpecies(
   speciesId: string
-): Promise<{ curves: GrowthCurve[]; rawPoints: RawGrowthPoint[] }> {
+): Promise<{ curves: GrowthCurve[]; rawPoints: RawGrowthPoint[]; tempRange: { min: number; max: number } | null }> {
   const [curves, rawPoints] = await Promise.all([
     getGrowthCurvesForSpecies(speciesId),
     getRawGrowthPointsForSpecies(speciesId),
   ]);
-  
-  return { curves, rawPoints };
+
+  const tempRange = computeTempRange(curves, rawPoints);
+
+  return { curves, rawPoints, tempRange };
+}
+
+/**
+ * Column name mappings for clean export headers.
+ */
+const RAW_DATA_COLUMN_NAMES: Record<string, string> = {
+  VALID_NAME: 'Species',
+  AGE: 'Age',
+  LENGTH: 'Length',
+  WEIGHT: 'Weight',
+  LENGTH_TYPE: 'Length type',
+  WEIGHT_TYPE: 'Weight type',
+  TEMPERATURE_MEAN: 'Mean temp.',
+  TEMPERATURE_MIN: 'Min temp.',
+  TEMPERATURE_MAX: 'Max temp.',
+  REFERENCE: 'Reference',
+  LINK: 'Link',
+  ORIGIN: 'Origin',
+  METHOD: 'Method',
+  REMARKS: 'Remarks',
+};
+
+const MODEL_COLUMN_NAMES: Record<string, string> = {
+  VALID_NAME: 'Species',
+  X_RANGE: 'Age range',
+  X_UNIT: 'Age unit',
+  Y_TYPE: 'Size type',
+  Y_UNIT: 'Size unit',
+  MODEL_TYPE: 'Model type',
+  MODEL_R2: 'R²',
+  EQUATION: 'Equation',
+  PARAMETER_1: 'Param 1',
+  PARAMETER_2: 'Param 2',
+  PARAMETER_3: 'Param 3',
+  PARAMETER_4: 'Param 4',
+  TEMPERATURE_MEAN: 'Mean temp.',
+  TEMPERATURE_MIN: 'Min temp.',
+  TEMPERATURE_MAX: 'Max temp.',
+  REFERENCE: 'Reference',
+  LINK: 'Link',
+  REMARKS: 'Remarks',
+};
+
+/**
+ * Get raw age-length data for export (formatted with clean headers).
+ */
+export async function getRawGrowthExportData(speciesId: string): Promise<Array<Record<string, unknown>>> {
+  const points = await getRawGrowthPointsForSpecies(speciesId);
+  return points.map(p => ({
+    'Species': '', // filled by caller
+    'Age': p.age,
+    'Length': p.length,
+    'Length type': p.lengthType,
+    'Weight': p.weight ?? '',
+    'Weight type': p.weightType ?? '',
+    'Mean temp.': p.tempMean ?? '',
+    'Reference': p.reference ?? '',
+    'Link': p.link ?? '',
+  }));
+}
+
+/**
+ * Get growth model parameters for export (formatted with clean headers).
+ */
+export async function getGrowthModelExportData(speciesId: string): Promise<Array<Record<string, unknown>>> {
+  const models = await getGrowthModelsForSpecies(speciesId);
+  return models.map(m => ({
+    'Species': m.speciesName,
+    'Age range': m.xRange,
+    'Age unit': m.xUnit,
+    'Size type': m.yType,
+    'Size unit': m.yUnit,
+    'Model type': m.modelType,
+    'R²': m.modelR2 ?? '',
+    'Equation': m.equation ?? '',
+    'Param 1': m.param1 ?? '',
+    'Param 2': m.param2 ?? '',
+    'Param 3': m.param3 ?? '',
+    'Param 4': m.param4 ?? '',
+    'Mean temp.': m.tempMean ?? '',
+    'Min temp.': m.tempMin ?? '',
+    'Max temp.': m.tempMax ?? '',
+    'Reference': m.reference ?? '',
+    'Link': m.link ?? '',
+    'Remarks': m.remarks ?? '',
+  }));
 }
