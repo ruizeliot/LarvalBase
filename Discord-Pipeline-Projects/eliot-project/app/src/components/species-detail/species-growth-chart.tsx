@@ -68,8 +68,9 @@ function formatReference(curve: GrowthCurve): string {
 
 /**
  * Custom tooltip for growth chart.
+ * Shows "Age: {value}" header and "Size: {value}" for each entry.
  */
-function GrowthTooltip({
+export function GrowthTooltip({
   active,
   payload,
   label,
@@ -91,8 +92,8 @@ function GrowthTooltip({
             className="w-3 h-3 rounded-sm flex-shrink-0"
             style={{ backgroundColor: entry.color }}
           />
-          <span className="text-muted-foreground truncate">{entry.name}:</span>
-          <span className="font-medium">{typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}</span>
+          <span className="text-muted-foreground truncate">{entry.name}</span>
+          <span className="font-medium">Size: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}</span>
         </div>
       ))}
     </div>
