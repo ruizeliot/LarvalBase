@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { formatTraitName } from "@/lib/constants/trait-groups";
 import { DISPLAY_GROUPS, TRAIT_UNITS } from "./species-detail-config";
+import { getSectionIcon } from "@/lib/constants/section-icons";
 import type { ComparisonStats } from "@/lib/types/species.types";
 
 /**
@@ -245,6 +246,12 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
         <div className="space-y-8">
           {traitGroups.map((group, index) => (
             <div key={group.title}>
+              {/* US-3.1: Insert qualitative egg barplots BEFORE Egg & Incubation quantitative traits */}
+              {group.title === "Egg & Incubation" && eggQualitativeData && (
+                <div className="mb-4">
+                  <EggQualitativePanel data={eggQualitativeData} />
+                </div>
+              )}
               <TraitGroup
                 title={group.title}
                 stage={group.stage}
@@ -255,16 +262,25 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                 }}
                 comparisons={comparisons}
               />
-              {/* US-3.1: Insert qualitative egg barplots after Egg & Incubation section */}
-              {group.title === "Egg & Incubation" && eggQualitativeData && (
-                <div className="mt-4">
-                  <EggQualitativePanel data={eggQualitativeData} />
-                </div>
-              )}
               {/* Insert map after Settlement section */}
               {group.title === "Settlement" && (
                 <div className="space-y-4 mt-8">
-                  <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="flex items-center justify-center rounded-full shrink-0"
+                      style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                      title="Settlement-stage sampling locations"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getSectionIcon("Settlement-stage sampling locations")}
+                        alt="Settlement-stage sampling locations icon"
+                        width={29}
+                        height={29}
+                      />
+                    </div>
+                    <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
+                  </div>
                   <CollectionMap locations={locations} />
                 </div>
               )}

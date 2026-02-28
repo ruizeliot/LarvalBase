@@ -14,27 +14,26 @@
  * Paths are relative to public/ directory (used by Next.js Image).
  */
 export const SECTION_ICONS: Record<string, string> = {
-  // Existing sections — mapped to stage SVGs
-  'Egg & Incubation': '/stages/egg.svg',
-  'Hatching & Pre-flexion Stage': '/stages/yolk-sac.svg',
-  'Hatching & Early Development': '/stages/yolk-sac.svg', // Legacy name alias
-  'Flexion Stage': '/stages/flexion.svg',
-  'Metamorphosis': '/stages/metamorphosis.svg',
-  'Settlement': '/stages/settlement.svg',
+  // Section SVGs from researcher (in /icons/sections/)
+  'Egg & Incubation': '/icons/sections/Egg %26 Incubation.svg',
+  'Hatching & Pre-flexion Stage': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'Hatching & Early Development': '/icons/sections/Hatching %26 Pre-flexion Stage.svg', // Legacy alias
+  'Flexion Stage': '/icons/sections/Flexion Stage.svg',
+  'Metamorphosis': '/icons/sections/Metamorphosis.svg',
+  'Settlement': '/icons/sections/Settlement.svg',
+  'Settlement-stage sampling locations': '/icons/sections/Settlement-stage sampling locations.svg',
 
-  // Existing sections — swimming/behavior
+  // Sections with dedicated SVGs
+  'Active Behaviors': '/icons/sections/Active Behaviors.svg',
+  'Pelagic Juvenile': '/icons/sections/Pelagic Juvenile.svg',
+  'Rafting': '/icons/sections/Rafting.svg',
+  'Age-at-Length': '/icons/sections/Age-at-Length.svg',
+  'References': '/icons/sections/References.svg',
+
+  // Sections without dedicated SVGs — keep stage fallbacks
   'Swimming Ability': '/stages/post-flexion.svg',
   'Behavior & Ecology': '/stages/juvenile.svg',
-
-  // New V2 sections (PRD)
-  'Active Behaviors': '/stages/post-flexion.svg',
-  'Pelagic Juvenile': '/stages/juvenile.svg',
-  'Rafting': '/stages/settlement.svg',
-
-  // Growth curves
   'Growth Curves': '/stages/flexion.svg',
-
-  // Homepage sections
   'Homepage': '/stages/egg.svg',
   'Photo Grid': '/stages/first-feeding.svg',
 };

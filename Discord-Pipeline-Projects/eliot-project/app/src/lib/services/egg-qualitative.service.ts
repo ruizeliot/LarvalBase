@@ -6,7 +6,12 @@
  */
 
 import { getOrLoadData } from '@/lib/data/data-repository';
-import type { FrequencyEntry, EggQualitativeData } from '@/components/species-detail/egg-qualitative-panel';
+import type {
+  FrequencyEntry,
+  EggQualitativeData,
+  QualitativeTraitData,
+  QualitativeReference,
+} from '@/components/species-detail/egg-qualitative-panel';
 
 /** Qualitative columns to extract from egg database rows. */
 const QUALITATIVE_COLUMNS = ['EGG_LOCATION', 'EGG_DETAILS', 'EGG_SHAPE', 'NB_OIL_GLOBULE'] as const;
@@ -34,7 +39,6 @@ function computeFrequencies(values: (string | number | null | undefined)[]): Fre
 
 /**
  * Extract qualitative egg data rows from the raw CSV cache.
- * Returns rows grouped by species, genus, and family.
  */
 async function getEggDatabaseRows(): Promise<Record<string, unknown>[]> {
   const { getDataCache } = await import('@/lib/data/csv-cache');
@@ -55,11 +59,45 @@ async function getEggDatabaseRows(): Promise<Record<string, unknown>[]> {
 }
 
 /**
- * Build frequency data for qualitative traits from matching rows.
+ * Extract unique references from rows for a given qualitative column.
  */
-function buildTraitFrequencies(
+function extractReferences(
+  rows: Record<string, unknown>[],
+  column: string
+): QualitativeReference[] {
+  const refMap = new Map<string, QualitativeReference>();
+
+  for (const row of rows) {
+    const val = row[column] as string | null;
+    if (!val || !String(val).trim() || val === 'NA' || val === 'N/A') continue;
+
+    // Try to find reference column (varies across databases)
+    const source = String(
+      row['REFERENCE'] ?? row['Reference'] ?? row['SOURCE'] ?? row['Source'] ?? ''
+    ).trim();
+    const doi = String(row['DOI'] ?? row['Doi'] ?? '').trim() || null;
+    const species = String(row['VALID_NAME'] ?? row['Valid_name'] ?? '').trim() || undefined;
+
+    if (source) {
+      const key = source + (doi || '');
+      if (!refMap.has(key)) {
+        refMap.set(key, { source, doi: doi || null, species });
+      }
+    }
+  }
+
+  return Array.from(refMap.values()).sort((a, b) => a.source.localeCompare(b.source));
+}
+
+/**
+ * Build frequency data and references for qualitative traits from matching rows.
+ */
+function buildTraitFrequenciesWithDetails(
   rows: Record<string, unknown>[]
-): EggQualitativeData['traits'] {
+): {
+  traits: EggQualitativeData['traits'];
+  traitDetails: NonNullable<EggQualitativeData['traitDetails']>;
+} {
   const traits: EggQualitativeData['traits'] = {
     EGG_LOCATION: [],
     EGG_DETAILS: [],
@@ -67,12 +105,29 @@ function buildTraitFrequencies(
     NB_OIL_GLOBULE: [],
   };
 
+  const traitDetails: NonNullable<EggQualitativeData['traitDetails']> = {};
+
   for (const col of QUALITATIVE_COLUMNS) {
     const values = rows.map((r) => r[col] as string | null);
-    traits[col] = computeFrequencies(values);
+    const frequencies = computeFrequencies(values);
+    traits[col] = frequencies;
+
+    // Count non-null/NA records for this trait
+    const validRows = rows.filter((r) => {
+      const v = r[col] as string | null;
+      return v !== null && v !== undefined && String(v).trim() !== '' && v !== 'NA' && v !== 'N/A';
+    });
+
+    const references = extractReferences(rows, col);
+
+    traitDetails[col] = {
+      frequencies,
+      totalRecords: validRows.length,
+      references,
+    };
   }
 
-  return traits;
+  return { traits, traitDetails };
 }
 
 /**
@@ -106,12 +161,13 @@ export async function getEggQualitativeData(
     }
   );
 
-  const speciesTraits = buildTraitFrequencies(speciesRows);
-  if (hasAnyData(speciesTraits)) {
+  const speciesResult = buildTraitFrequenciesWithDetails(speciesRows);
+  if (hasAnyData(speciesResult.traits)) {
     return {
       level: 'species',
       levelName: species.validName,
-      traits: speciesTraits,
+      traits: speciesResult.traits,
+      traitDetails: speciesResult.traitDetails,
     };
   }
 
@@ -123,12 +179,13 @@ export async function getEggQualitativeData(
     }
   );
 
-  const genusTraits = buildTraitFrequencies(genusRows);
-  if (hasAnyData(genusTraits)) {
+  const genusResult = buildTraitFrequenciesWithDetails(genusRows);
+  if (hasAnyData(genusResult.traits)) {
     return {
       level: 'genus',
       levelName: species.genus,
-      traits: genusTraits,
+      traits: genusResult.traits,
+      traitDetails: genusResult.traitDetails,
     };
   }
 
@@ -140,12 +197,13 @@ export async function getEggQualitativeData(
     }
   );
 
-  const familyTraits = buildTraitFrequencies(familyRows);
-  if (hasAnyData(familyTraits)) {
+  const familyResult = buildTraitFrequenciesWithDetails(familyRows);
+  if (hasAnyData(familyResult.traits)) {
     return {
       level: 'family',
       levelName: species.family,
-      traits: familyTraits,
+      traits: familyResult.traits,
+      traitDetails: familyResult.traitDetails,
     };
   }
 

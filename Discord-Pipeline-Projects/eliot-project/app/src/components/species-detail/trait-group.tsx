@@ -1,9 +1,8 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import Image from "next/image";
 import { TraitCard } from "./trait-card";
-import { StageIcon, type LarvalStage } from "./stage-icon";
+import type { LarvalStage } from "./stage-icon";
 import { ExportButton } from "@/components/export/export-button";
 import { getSectionIcon } from "@/lib/constants/section-icons";
 import { useRawData } from "@/hooks/use-raw-data";
@@ -130,22 +129,19 @@ export function TraitGroup({
       {/* Header with section icon and export button */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {stage ? (
-            <StageIcon stage={stage} size={48} />
-          ) : (
-            <div
-              className="flex items-center justify-center rounded-full"
-              style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
-              title={title}
-            >
-              <Image
-                src={getSectionIcon(title)}
-                alt={`${title} icon`}
-                width={29}
-                height={29}
-              />
-            </div>
-          )}
+          <div
+            className="flex items-center justify-center rounded-full shrink-0"
+            style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+            title={title}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={getSectionIcon(title)}
+              alt={`${title} icon`}
+              width={29}
+              height={29}
+            />
+          </div>
           <h2 className="text-lg font-semibold">{title}</h2>
         </div>
         {speciesId && (
