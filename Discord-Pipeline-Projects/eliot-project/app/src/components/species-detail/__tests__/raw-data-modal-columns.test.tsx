@@ -100,6 +100,16 @@ describe('US-3.3: Raw data modal shows MIN/MAX/CONF columns', () => {
     expect(screen.getByText('Conf')).toBeInTheDocument();
   });
 
+  it('should display Main reference column header', () => {
+    renderWithProviders(<RawDataModal {...baseProps} />);
+    expect(screen.getByText('Main reference')).toBeInTheDocument();
+  });
+
+  it('should display External reference column header', () => {
+    renderWithProviders(<RawDataModal {...baseProps} />);
+    expect(screen.getByText('External reference')).toBeInTheDocument();
+  });
+
   it('should show min/max values when available', () => {
     renderWithProviders(<RawDataModal {...baseProps} />);
     // First row has min=0.65, max=0.80

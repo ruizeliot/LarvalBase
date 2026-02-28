@@ -37,19 +37,13 @@ interface RawDataModalProps {
 }
 
 /**
- * Format a reference cell with clickable DOI link.
+ * Format a reference cell: REFERENCE text hyperlinked to LINK URL.
  */
-function ReferenceCell({ source, doi }: { source: string | null; doi: string | null }) {
-  const linkUrl = doi
-    ? doi.startsWith("http")
-      ? doi
-      : `https://doi.org/${doi.replace(/^doi:/, "")}`
-    : null;
-
-  if (linkUrl) {
+function ReferenceCell({ source, link }: { source: string | null; link: string | null }) {
+  if (link) {
     return (
       <a
-        href={linkUrl}
+        href={link}
         target="_blank"
         rel="noopener noreferrer"
         className="text-primary hover:underline text-xs"
@@ -101,7 +95,8 @@ const COLUMNS = [
   { key: "gear", label: "Gear", description: "Sampling gear used" },
   { key: "location", label: "Location", description: "Geographic location" },
   { key: "sampleSize", label: "N", description: "Sample size" },
-  { key: "reference", label: "Reference", description: "Data source citation" },
+  { key: "reference", label: "Main reference", description: "Data source citation (click to open link)" },
+  { key: "externalRef", label: "External reference", description: "External reference identifier" },
 ];
 
 /**
@@ -260,9 +255,13 @@ export function RawDataModal({
                       <TableCell className="text-xs">
                         {row.metadata?.sampleSize ?? "-"}
                       </TableCell>
-                      {/* Reference */}
+                      {/* Main reference */}
                       <TableCell className="max-w-[200px]">
-                        <ReferenceCell source={row.source} doi={row.doi} />
+                        <ReferenceCell source={row.source} link={row.doi} />
+                      </TableCell>
+                      {/* External reference */}
+                      <TableCell className="text-xs max-w-[150px] truncate" title={row.metadata?.externalRef || undefined}>
+                        {row.metadata?.externalRef || "-"}
                       </TableCell>
                     </TableRow>
                   ))}
