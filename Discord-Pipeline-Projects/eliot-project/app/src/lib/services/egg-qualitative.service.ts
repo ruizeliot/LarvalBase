@@ -138,7 +138,51 @@ function hasAnyData(traits: EggQualitativeData['traits']): boolean {
 }
 
 /**
+ * Record row for the qualitative records table.
+ */
+export interface QualitativeRecordRow {
+  species: string;
+  value: string;
+  externalRef: string;
+  mainReference: string;
+}
+
+/**
+ * Record counts and rows at each taxonomy level for a qualitative trait.
+ */
+export interface LevelRecords {
+  speciesCount: number;
+  genusCount: number;
+  familyCount: number;
+  speciesRows: QualitativeRecordRow[];
+  genusRows: QualitativeRecordRow[];
+  familyRows: QualitativeRecordRow[];
+}
+
+/**
+ * Extract record rows for a qualitative column from matching CSV rows.
+ */
+function extractRecordRows(
+  rows: Record<string, unknown>[],
+  column: string
+): QualitativeRecordRow[] {
+  const result: QualitativeRecordRow[] = [];
+  for (const row of rows) {
+    const val = row[column] as string | null;
+    if (!val || !String(val).trim() || val === 'NA' || val === 'N/A') continue;
+    result.push({
+      species: String(row['VALID_NAME'] ?? row['Valid_name'] ?? '').trim(),
+      value: String(val).trim(),
+      externalRef: String(row['EXT_REF'] ?? row['Ext_ref'] ?? '').trim() || '-',
+      mainReference: String(row['REFERENCE'] ?? row['Reference'] ?? '').trim() || '-',
+    });
+  }
+  return result;
+}
+
+/**
  * Get qualitative egg data for a species with genus → family fallback cascade.
+ * Also returns record counts and rows at ALL 3 levels for each trait.
  *
  * @param speciesId - Species ID (slug form)
  * @returns EggQualitativeData with cascade level info, or null if no data at any level
@@ -153,14 +197,37 @@ export async function getEggQualitativeData(
   const rows = await getEggDatabaseRows();
   if (rows.length === 0) return null;
 
-  // Try species level
-  const speciesRows = rows.filter(
-    (r) => {
-      const name = (r.VALID_NAME ?? r.Valid_name ?? '') as string;
-      return name === species.validName;
-    }
-  );
+  // Get rows at each level
+  const speciesRows = rows.filter((r) => {
+    const name = (r.VALID_NAME ?? r.Valid_name ?? '') as string;
+    return name === species.validName;
+  });
+  const genusRows = rows.filter((r) => {
+    const genus = (r.GENUS ?? r.Genus ?? '') as string;
+    return genus === species.genus;
+  });
+  const familyRows = rows.filter((r) => {
+    const family = (r.FAMILY ?? r.Family ?? '') as string;
+    return family === species.family;
+  });
 
+  // Build level records per trait
+  const levelRecords: Record<string, LevelRecords> = {};
+  for (const col of QUALITATIVE_COLUMNS) {
+    const spRows = extractRecordRows(speciesRows, col);
+    const gnRows = extractRecordRows(genusRows, col);
+    const fmRows = extractRecordRows(familyRows, col);
+    levelRecords[col] = {
+      speciesCount: spRows.length,
+      genusCount: gnRows.length,
+      familyCount: fmRows.length,
+      speciesRows: spRows,
+      genusRows: gnRows,
+      familyRows: fmRows,
+    };
+  }
+
+  // Determine display level (cascade: species → genus → family)
   const speciesResult = buildTraitFrequenciesWithDetails(speciesRows);
   if (hasAnyData(speciesResult.traits)) {
     return {
@@ -168,16 +235,9 @@ export async function getEggQualitativeData(
       levelName: species.validName,
       traits: speciesResult.traits,
       traitDetails: speciesResult.traitDetails,
+      levelRecords,
     };
   }
-
-  // Try genus level
-  const genusRows = rows.filter(
-    (r) => {
-      const genus = (r.GENUS ?? r.Genus ?? '') as string;
-      return genus === species.genus;
-    }
-  );
 
   const genusResult = buildTraitFrequenciesWithDetails(genusRows);
   if (hasAnyData(genusResult.traits)) {
@@ -186,16 +246,9 @@ export async function getEggQualitativeData(
       levelName: species.genus,
       traits: genusResult.traits,
       traitDetails: genusResult.traitDetails,
+      levelRecords,
     };
   }
-
-  // Try family level
-  const familyRows = rows.filter(
-    (r) => {
-      const family = (r.FAMILY ?? r.Family ?? '') as string;
-      return family === species.family;
-    }
-  );
 
   const familyResult = buildTraitFrequenciesWithDetails(familyRows);
   if (hasAnyData(familyResult.traits)) {
@@ -204,6 +257,7 @@ export async function getEggQualitativeData(
       levelName: species.family,
       traits: familyResult.traits,
       traitDetails: familyResult.traitDetails,
+      levelRecords,
     };
   }
 

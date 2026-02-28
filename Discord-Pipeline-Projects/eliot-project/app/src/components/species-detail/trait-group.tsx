@@ -7,6 +7,7 @@ import { ExportButton } from "@/components/export/export-button";
 import { getSectionIcon } from "@/lib/constants/section-icons";
 import { useRawData } from "@/hooks/use-raw-data";
 import type { ComparisonStats, FamilyBarChartData, FamilyBarChartEntry } from "@/lib/types/species.types";
+import { EggQualitativePanel, type EggQualitativeData } from "./egg-qualitative-panel";
 
 /**
  * Trait data for a single trait in the group.
@@ -44,6 +45,8 @@ export interface TraitGroupProps {
   onRecordsClick?: (traitKey: string, traitName: string) => void;
   /** Map of trait type to comparison stats */
   comparisons?: Map<string, ComparisonStats>;
+  /** Optional qualitative egg data to render inside Egg & Incubation section */
+  eggQualitativeData?: EggQualitativeData | null;
 }
 
 /**
@@ -61,6 +64,7 @@ export function TraitGroup({
   speciesId,
   onRecordsClick,
   comparisons,
+  eggQualitativeData,
 }: TraitGroupProps) {
   // Get trait keys for this group (for filtering raw data)
   const traitKeys = useMemo(() => traits.map((t) => t.traitKey), [traits]);
@@ -154,6 +158,11 @@ export function TraitGroup({
           />
         )}
       </div>
+
+      {/* Qualitative egg barplots (inside Egg & Incubation section, above numeric traits) */}
+      {eggQualitativeData && (
+        <EggQualitativePanel data={eggQualitativeData} />
+      )}
 
       {/* Responsive grid of trait cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -2,7 +2,21 @@
 
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /**
  * A single frequency bar entry.
@@ -31,6 +45,28 @@ export interface QualitativeTraitData {
 }
 
 /**
+ * Record row for the qualitative records table.
+ */
+export interface QualitativeRecordRow {
+  species: string;
+  value: string;
+  externalRef: string;
+  mainReference: string;
+}
+
+/**
+ * Record counts and rows at each taxonomy level for a qualitative trait.
+ */
+export interface LevelRecords {
+  speciesCount: number;
+  genusCount: number;
+  familyCount: number;
+  speciesRows: QualitativeRecordRow[];
+  genusRows: QualitativeRecordRow[];
+  familyRows: QualitativeRecordRow[];
+}
+
+/**
  * Qualitative egg trait data with data level cascade information.
  */
 export interface EggQualitativeData {
@@ -52,6 +88,8 @@ export interface EggQualitativeData {
     EGG_SHAPE?: QualitativeTraitData;
     NB_OIL_GLOBULE?: QualitativeTraitData;
   };
+  /** Record counts and rows at each taxonomy level per trait */
+  levelRecords?: Record<string, LevelRecords>;
 }
 
 interface EggQualitativePanelProps {
@@ -74,29 +112,9 @@ const TRAIT_COLORS: Record<string, string> = {
   NB_OIL_GLOBULE: '#f59e0b',
 };
 
-/** Badge styles per data level. */
-const LEVEL_STYLES: Record<string, { bg: string; text: string; label: string }> = {
-  species: { bg: 'bg-green-900/40', text: 'text-green-400', label: 'Species data' },
-  genus: { bg: 'bg-yellow-900/40', text: 'text-yellow-400', label: 'Genus data' },
-  family: { bg: 'bg-red-900/40', text: 'text-red-400', label: 'Family data' },
-};
-
-/**
- * DataLevelBadge shows green/yellow/red indicator for data cascade level.
- */
-function DataLevelBadge({ level, levelName }: { level: 'species' | 'genus' | 'family'; levelName: string }) {
-  const style = LEVEL_STYLES[level];
-  return (
-    <span
-      className={`text-xs px-2 py-0.5 rounded-full font-semibold ${style.bg} ${style.text}`}
-    >
-      {style.label}{level !== 'species' ? ` (${levelName})` : ''}
-    </span>
-  );
-}
-
 /**
  * FrequencyBarplot renders horizontal bars for a single qualitative trait.
+ * Y-axis labels use auto-width to prevent truncation.
  */
 function FrequencyBarplot({
   entries,
@@ -115,11 +133,12 @@ function FrequencyBarplot({
         return (
           <div key={entry.value} className="flex items-center gap-2">
             <span
-              className={`w-28 text-xs text-right truncate shrink-0 ${
+              className={`min-w-[5rem] max-w-[12rem] text-xs text-right shrink-0 ${
                 isUnknown
                   ? "italic text-muted-foreground/60"
                   : "font-semibold text-foreground"
               }`}
+              title={entry.value}
             >
               {entry.value}
             </span>
@@ -145,52 +164,136 @@ function FrequencyBarplot({
 }
 
 /**
- * Collapsible references section for a qualitative trait.
+ * Clickable record count link. Grey and non-clickable if count is 0.
  */
-function ReferencesDetail({ details }: { details: QualitativeTraitData }) {
-  const [expanded, setExpanded] = useState(false);
+function RecordLink({
+  count,
+  label,
+  onClick,
+}: {
+  count: number;
+  label: string;
+  onClick: () => void;
+}) {
+  if (count === 0) {
+    return (
+      <span className="text-[10px] text-muted-foreground/50">
+        {count} {label}
+      </span>
+    );
+  }
+  return (
+    <button
+      onClick={onClick}
+      className="text-[10px] text-primary hover:underline"
+    >
+      {count} {label}
+    </button>
+  );
+}
 
-  if (details.totalRecords === 0 && details.references.length === 0) return null;
+/**
+ * Modal showing qualitative record rows in a table.
+ */
+function RecordTableModal({
+  open,
+  onOpenChange,
+  title,
+  rows,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  title: string;
+  rows: QualitativeRecordRow[];
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>
+            {rows.length} record{rows.length !== 1 ? 's' : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Species</TableHead>
+                <TableHead className="text-xs">Value</TableHead>
+                <TableHead className="text-xs">External reference</TableHead>
+                <TableHead className="text-xs">Main reference</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((row, i) => (
+                <TableRow key={i}>
+                  <TableCell className="text-xs italic">{row.species}</TableCell>
+                  <TableCell className="text-xs">{row.value}</TableCell>
+                  <TableCell className="text-xs">{row.externalRef}</TableCell>
+                  <TableCell className="text-xs">{row.mainReference}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Three-level record links (species / genus / family) for a qualitative trait.
+ */
+function LevelRecordLinks({
+  traitKey,
+  traitLabel,
+  levelRecords,
+}: {
+  traitKey: string;
+  traitLabel: string;
+  levelRecords?: LevelRecords;
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('');
+  const [modalRows, setModalRows] = useState<QualitativeRecordRow[]>([]);
+
+  if (!levelRecords) return null;
+
+  const openModal = (level: string, rows: QualitativeRecordRow[]) => {
+    setModalTitle(`${traitLabel} - ${level} records`);
+    setModalRows(rows);
+    setModalOpen(true);
+  };
 
   return (
-    <div className="mt-1">
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="text-[10px] text-primary hover:underline flex items-center gap-0.5"
-      >
-        {details.totalRecords} record{details.totalRecords !== 1 ? 's' : ''}
-        {details.references.length > 0 && ` from ${details.references.length} ref${details.references.length !== 1 ? 's' : ''}`}
-        {expanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-      </button>
-      {expanded && details.references.length > 0 && (
-        <div className="mt-1 space-y-0.5 max-h-[120px] overflow-auto">
-          {details.references.map((ref, i) => {
-            const linkUrl = ref.doi
-              ? ref.doi.startsWith("http")
-                ? ref.doi
-                : `https://doi.org/${ref.doi.replace(/^doi:/, "")}`
-              : null;
-            return (
-              <div key={i} className="text-[10px] text-muted-foreground">
-                {linkUrl ? (
-                  <a
-                    href={linkUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary hover:underline"
-                  >
-                    {ref.source}
-                  </a>
-                ) : (
-                  <span>{ref.source || "Unknown source"}</span>
-                )}
-                {ref.species && <span className="italic ml-1">({ref.species})</span>}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
+    <>
+      <div className="flex items-center gap-2 flex-wrap mt-1">
+        <RecordLink
+          count={levelRecords.speciesCount}
+          label="species records"
+          onClick={() => openModal('Species', levelRecords.speciesRows)}
+        />
+        <span className="text-muted-foreground/30">|</span>
+        <RecordLink
+          count={levelRecords.genusCount}
+          label="genus records"
+          onClick={() => openModal('Genus', levelRecords.genusRows)}
+        />
+        <span className="text-muted-foreground/30">|</span>
+        <RecordLink
+          count={levelRecords.familyCount}
+          label="family records"
+          onClick={() => openModal('Family', levelRecords.familyRows)}
+        />
+      </div>
+      <RecordTableModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        title={modalTitle}
+        rows={modalRows}
+      />
+    </>
   );
 }
 
@@ -201,31 +304,27 @@ function QualitativeTraitCard({
   traitKey,
   entries,
   color,
-  level,
-  levelName,
-  details,
+  levelRecords,
 }: {
   traitKey: string;
   entries: FrequencyEntry[];
   color: string;
-  level: 'species' | 'genus' | 'family';
-  levelName: string;
-  details?: QualitativeTraitData;
+  levelRecords?: LevelRecords;
 }) {
-  // Always show all 4 categories - add "Unknown" if no data
   const displayEntries = entries.length > 0 ? entries : [{ value: "Unknown", count: 0 }];
 
   return (
     <Card className="bg-card">
       <CardContent className="p-4 space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <span className="text-xs font-medium uppercase text-muted-foreground">
-            {TRAIT_LABELS[traitKey]}
-          </span>
-          <DataLevelBadge level={level} levelName={levelName} />
-        </div>
+        <span className="text-xs font-medium uppercase text-muted-foreground">
+          {TRAIT_LABELS[traitKey]}
+        </span>
         <FrequencyBarplot entries={displayEntries} color={color} />
-        {details && <ReferencesDetail details={details} />}
+        <LevelRecordLinks
+          traitKey={traitKey}
+          traitLabel={TRAIT_LABELS[traitKey]}
+          levelRecords={levelRecords}
+        />
       </CardContent>
     </Card>
   );
@@ -234,11 +333,9 @@ function QualitativeTraitCard({
 /**
  * EggQualitativePanel displays qualitative egg traits as frequency barplots.
  *
- * Implements US-3.1: 4 barplots (EGG_LOCATION, EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE)
- * with species → genus → family data cascade and level indicator badge.
- *
  * Each trait is rendered as an individual card matching TraitCard sizing.
  * All 4 traits are always shown — "Unknown" category added when no data exists.
+ * Shows 3 clickable links per trait: species/genus/family record counts.
  */
 export function EggQualitativePanel({ data }: EggQualitativePanelProps) {
   const traitKeys = ['EGG_LOCATION', 'EGG_DETAILS', 'EGG_SHAPE', 'NB_OIL_GLOBULE'] as const;
@@ -251,9 +348,7 @@ export function EggQualitativePanel({ data }: EggQualitativePanelProps) {
           traitKey={key}
           entries={data.traits[key] || []}
           color={TRAIT_COLORS[key]}
-          level={data.level}
-          levelName={data.levelName}
-          details={data.traitDetails?.[key]}
+          levelRecords={data.levelRecords?.[key]}
         />
       ))}
     </div>

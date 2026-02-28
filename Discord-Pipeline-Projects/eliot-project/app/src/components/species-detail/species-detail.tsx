@@ -246,12 +246,6 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
         <div className="space-y-8">
           {traitGroups.map((group, index) => (
             <div key={group.title}>
-              {/* US-3.1: Insert qualitative egg barplots BEFORE Egg & Incubation quantitative traits */}
-              {group.title === "Egg & Incubation" && eggQualitativeData && (
-                <div className="mb-4">
-                  <EggQualitativePanel data={eggQualitativeData} />
-                </div>
-              )}
               <TraitGroup
                 title={group.title}
                 stage={group.stage}
@@ -261,6 +255,7 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                   handleRecordsClick(traitKey, traitName);
                 }}
                 comparisons={comparisons}
+                eggQualitativeData={group.title === "Egg & Incubation" ? eggQualitativeData : undefined}
               />
               {/* Insert map after Settlement section */}
               {group.title === "Settlement" && (

@@ -22,28 +22,20 @@ vi.mock('@/hooks/use-species-data', () => ({
       level: 'root',
       children: [
         {
-          name: 'O1', level: 'order', speciesCount: 2, children: [
+          name: 'F1', level: 'family', speciesCount: 2, children: [
             {
-              name: 'F1', level: 'family', speciesCount: 2, children: [
-                {
-                  name: 'G1', level: 'genus', speciesCount: 2, children: [
-                    { name: 'Species A', level: 'species', speciesCount: 1, children: [] },
-                    { name: 'Species B', level: 'species', speciesCount: 1, children: [] },
-                  ]
-                }
+              name: 'G1', level: 'genus', speciesCount: 2, children: [
+                { name: 'Species A', level: 'species', speciesCount: 1, children: [] },
+                { name: 'Species B', level: 'species', speciesCount: 1, children: [] },
               ]
             }
           ]
         },
         {
-          name: 'O2', level: 'order', speciesCount: 1, children: [
+          name: 'F2', level: 'family', speciesCount: 1, children: [
             {
-              name: 'F2', level: 'family', speciesCount: 1, children: [
-                {
-                  name: 'G2', level: 'genus', speciesCount: 1, children: [
-                    { name: 'Species C', level: 'species', speciesCount: 1, children: [] },
-                  ]
-                }
+              name: 'G2', level: 'genus', speciesCount: 1, children: [
+                { name: 'Species C', level: 'species', speciesCount: 1, children: [] },
               ]
             }
           ]
@@ -133,10 +125,10 @@ describe('BUG 4: Taxonomy tree filters with trait selection', () => {
     // Click the egg_diameter trait toggle
     fireEvent.click(screen.getByTestId('toggle-egg'));
 
-    // Now the tree should only show species with egg_diameter (sp-a, sp-b in O1/F1/G1)
+    // Now the tree should only show species with egg_diameter (sp-a, sp-b in F1/G1)
     const data = capturedTreeData as { speciesCount: number; children: { name: string }[] };
     expect(data.speciesCount).toBe(2);
-    expect(data.children).toHaveLength(1); // Only O1 should remain
-    expect(data.children[0].name).toBe('O1');
+    expect(data.children).toHaveLength(1); // Only F1 should remain
+    expect(data.children[0].name).toBe('F1');
   });
 });

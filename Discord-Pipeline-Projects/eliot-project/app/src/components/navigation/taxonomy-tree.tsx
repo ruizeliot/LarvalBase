@@ -111,11 +111,15 @@ function TaxonomyNode({
         <span className="w-4" />
       )}
 
-      {/* US-3.2: SVG icons per taxonomic level */}
-      <TaxonomyLevelIcon
-        level={data.level as 'root' | 'order' | 'family' | 'genus' | 'species'}
-        familyName={data.familyName}
-      />
+      {/* Family silhouette SVG for family nodes, Lucide icons for other levels */}
+      {data.level === 'family' ? (
+        <FamilySilhouette family={data.name} />
+      ) : (
+        <TaxonomyLevelIcon
+          level={data.level as 'root' | 'order' | 'family' | 'genus' | 'species'}
+          familyName={data.familyName}
+        />
+      )}
 
       {/* Name */}
       <span className={`truncate flex-1 ${isLeaf ? "italic" : ""}`}>

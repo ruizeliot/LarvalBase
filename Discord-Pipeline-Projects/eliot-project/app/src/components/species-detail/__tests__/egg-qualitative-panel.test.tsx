@@ -69,21 +69,23 @@ describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
     expect(screen.getByText('Elliptical')).toBeInTheDocument();
   });
 
-  it('should show species-level data indicator (green)', () => {
+  it('should render cards for species-level data', () => {
     render(<EggQualitativePanel data={speciesLevelData} />);
 
-    const badges = screen.getAllByText('Species data');
-    expect(badges.length).toBe(4); // One per trait card
+    // All 4 trait labels should be shown
+    expect(screen.getByText('Egg location')).toBeInTheDocument();
+    expect(screen.getByText('Egg shape')).toBeInTheDocument();
   });
 
-  it('should show genus-level data indicator (yellow) for fallback', () => {
+  it('should render cards for genus-level fallback data', () => {
     render(<EggQualitativePanel data={genusLevelData} />);
 
-    const badges = screen.getAllByText(/Genus data/);
-    expect(badges.length).toBe(4);
+    // Should show data for traits that have entries
+    expect(screen.getByText('Demersal')).toBeInTheDocument();
+    expect(screen.getByText('Elliptical')).toBeInTheDocument();
   });
 
-  it('should show family-level data indicator (red) for fallback', () => {
+  it('should render cards for family-level fallback data', () => {
     const familyData = {
       level: 'family' as const,
       levelName: 'Pomacentridae',
@@ -96,8 +98,7 @@ describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
     };
     render(<EggQualitativePanel data={familyData} />);
 
-    const badges = screen.getAllByText(/Family data/);
-    expect(badges.length).toBe(4);
+    expect(screen.getByText('Demersal')).toBeInTheDocument();
   });
 
   it('should show "Unknown" for traits with no data', () => {

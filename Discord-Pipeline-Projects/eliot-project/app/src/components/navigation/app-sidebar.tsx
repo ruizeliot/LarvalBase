@@ -35,24 +35,16 @@ function buildTaxonomyFromSpecies(
     speciesCount: speciesList.length,
   };
 
-  // Build hierarchy: order -> family -> genus -> species
-  const orderMap = new Map<string, TaxonomyNodeJSON>();
+  // Build hierarchy: family -> genus -> species (no order level)
+  const familyMap = new Map<string, TaxonomyNodeJSON>();
 
   for (const sp of speciesList) {
-    // Get or create order
-    let orderNode = orderMap.get(sp.order);
-    if (!orderNode) {
-      orderNode = { name: sp.order, level: 'order', children: [], speciesCount: 0 };
-      orderMap.set(sp.order, orderNode);
-      root.children.push(orderNode);
-    }
-    orderNode.speciesCount++;
-
-    // Get or create family under order
-    let familyNode = orderNode.children.find((c) => c.name === sp.family);
+    // Get or create family directly under root
+    let familyNode = familyMap.get(sp.family);
     if (!familyNode) {
       familyNode = { name: sp.family, level: 'family', children: [], speciesCount: 0 };
-      orderNode.children.push(familyNode);
+      familyMap.set(sp.family, familyNode);
+      root.children.push(familyNode);
     }
     familyNode.speciesCount++;
 
@@ -73,11 +65,11 @@ function buildTaxonomyFromSpecies(
     });
   }
 
-  // Sort orders alphabetically, and families within each order
-  root.children.sort((a, b) => a.name.localeCompare(b.name));
-  for (const orderNode of root.children) {
-    orderNode.children.sort((a, b) => a.name.localeCompare(b.name));
-  }
+  // Sort families by decreasing species count, then alphabetically
+  root.children.sort((a, b) => {
+    const diff = b.speciesCount - a.speciesCount;
+    return diff !== 0 ? diff : a.name.localeCompare(b.name);
+  });
 
   return root;
 }
