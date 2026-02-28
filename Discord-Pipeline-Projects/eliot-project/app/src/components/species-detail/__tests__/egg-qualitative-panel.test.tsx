@@ -3,11 +3,11 @@
  * with species/genus/family fallback.
  *
  * Must:
- * 1. Display 4 frequency barplots: EGG_LOCATION, EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE
+ * 1. Display 3 frequency barplots: EGG_LOCATION (with EGG_DETAILS inline), EGG_SHAPE, NB_OIL_GLOBULE
  * 2. Show value frequencies as horizontal bars
  * 3. Cascade: species data → genus fallback → family fallback
- * 4. Show data level indicator (green=species, yellow=genus, red=family)
- * 5. Always show all 4 traits (with "Unknown" when no data)
+ * 4. Always show all 3 traits (with "Unknown" when no data)
+ * 5. EGG_DETAILS shown as "Details: val1, val2" inside EGG_LOCATION card
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -52,13 +52,20 @@ const genusLevelData = {
 };
 
 describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
-  it('should render all 4 trait labels', () => {
+  it('should render all 3 trait labels (EGG_DETAILS merged into EGG_LOCATION)', () => {
     render(<EggQualitativePanel data={speciesLevelData} />);
 
     expect(screen.getByText('Egg location')).toBeInTheDocument();
-    expect(screen.getByText('Egg location details')).toBeInTheDocument();
     expect(screen.getByText('Egg shape')).toBeInTheDocument();
     expect(screen.getByText('Number of oil globules')).toBeInTheDocument();
+  });
+
+  it('should show EGG_DETAILS as inline text inside EGG_LOCATION card', () => {
+    render(<EggQualitativePanel data={speciesLevelData} />);
+
+    // Details text should appear as comma-separated values
+    expect(screen.getByText('Details:')).toBeInTheDocument();
+    expect(screen.getByText('Attached, Guarded')).toBeInTheDocument();
   });
 
   it('should display frequency bars with value names and counts', () => {
@@ -72,7 +79,6 @@ describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
   it('should render cards for species-level data', () => {
     render(<EggQualitativePanel data={speciesLevelData} />);
 
-    // All 4 trait labels should be shown
     expect(screen.getByText('Egg location')).toBeInTheDocument();
     expect(screen.getByText('Egg shape')).toBeInTheDocument();
   });
@@ -80,7 +86,6 @@ describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
   it('should render cards for genus-level fallback data', () => {
     render(<EggQualitativePanel data={genusLevelData} />);
 
-    // Should show data for traits that have entries
     expect(screen.getByText('Demersal')).toBeInTheDocument();
     expect(screen.getByText('Elliptical')).toBeInTheDocument();
   });
@@ -114,20 +119,19 @@ describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
     };
     const { container } = render(<EggQualitativePanel data={emptyData} />);
 
-    // Panel should always render
     expect(container.querySelector('[data-testid="egg-qualitative-panel"]')).toBeInTheDocument();
 
-    // Should show "Unknown" for all 4 traits
+    // Should show "Unknown" for 3 traits (EGG_DETAILS is not a separate card)
     const unknowns = screen.getAllByText('Unknown');
-    expect(unknowns.length).toBe(4);
+    expect(unknowns.length).toBe(3);
   });
 
   it('should show "Unknown" for individual empty traits while showing data for others', () => {
     render(<EggQualitativePanel data={genusLevelData} />);
 
-    // EGG_DETAILS and NB_OIL_GLOBULE are empty - should show Unknown
+    // NB_OIL_GLOBULE is empty - should show Unknown (only 1 now since EGG_DETAILS is not a card)
     const unknowns = screen.getAllByText('Unknown');
-    expect(unknowns.length).toBe(2);
+    expect(unknowns.length).toBe(1);
 
     // Others should still have real data
     expect(screen.getByText('Demersal')).toBeInTheDocument();

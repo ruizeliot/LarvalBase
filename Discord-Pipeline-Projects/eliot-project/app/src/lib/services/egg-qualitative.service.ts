@@ -143,6 +143,7 @@ function hasAnyData(traits: EggQualitativeData['traits']): boolean {
 export interface QualitativeRecordRow {
   species: string;
   value: string;
+  details?: string;
   externalRef: string;
   mainReference: string;
 }
@@ -161,6 +162,7 @@ export interface LevelRecords {
 
 /**
  * Extract record rows for a qualitative column from matching CSV rows.
+ * For EGG_LOCATION, also includes EGG_DETAILS as a 'details' field.
  */
 function extractRecordRows(
   rows: Record<string, unknown>[],
@@ -170,12 +172,20 @@ function extractRecordRows(
   for (const row of rows) {
     const val = row[column] as string | null;
     if (!val || !String(val).trim() || val === 'NA' || val === 'N/A') continue;
-    result.push({
+    const record: QualitativeRecordRow = {
       species: String(row['VALID_NAME'] ?? row['Valid_name'] ?? '').trim(),
       value: String(val).trim(),
-      externalRef: String(row['EXT_REF'] ?? row['Ext_ref'] ?? '').trim() || '-',
+      externalRef: String(row['EXT_REF'] ?? row['Ext_ref'] ?? row['LINK'] ?? row['LINK (DOI)'] ?? '').trim() || '-',
       mainReference: String(row['REFERENCE'] ?? row['Reference'] ?? '').trim() || '-',
-    });
+    };
+    // Include EGG_DETAILS for EGG_LOCATION rows
+    if (column === 'EGG_LOCATION') {
+      const details = row['EGG_DETAILS'] as string | null;
+      if (details && String(details).trim() && details !== 'NA' && details !== 'N/A') {
+        record.details = String(details).trim();
+      }
+    }
+    result.push(record);
   }
   return result;
 }

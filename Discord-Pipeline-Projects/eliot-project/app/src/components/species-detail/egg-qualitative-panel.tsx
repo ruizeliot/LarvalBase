@@ -50,6 +50,7 @@ export interface QualitativeTraitData {
 export interface QualitativeRecordRow {
   species: string;
   value: string;
+  details?: string;
   externalRef: string;
   mainReference: string;
 }
@@ -99,7 +100,6 @@ interface EggQualitativePanelProps {
 /** Human-readable labels for each qualitative trait. */
 const TRAIT_LABELS: Record<string, string> = {
   EGG_LOCATION: 'Egg location',
-  EGG_DETAILS: 'Egg location details',
   EGG_SHAPE: 'Egg shape',
   NB_OIL_GLOBULE: 'Number of oil globules',
 };
@@ -107,23 +107,35 @@ const TRAIT_LABELS: Record<string, string> = {
 /** Colors for each trait's bars. */
 const TRAIT_COLORS: Record<string, string> = {
   EGG_LOCATION: '#60a5fa',
-  EGG_DETAILS: '#a78bfa',
   EGG_SHAPE: '#4ade80',
   NB_OIL_GLOBULE: '#f59e0b',
 };
 
 /**
+ * Estimate the pixel width of a text string at ~12px font size (text-xs).
+ * Uses approximate character widths for a sans-serif font.
+ */
+function estimateTextWidth(text: string): number {
+  // Average ~6.5px per character at 12px font-size for sans-serif
+  return Math.ceil(text.length * 6.5);
+}
+
+/**
  * FrequencyBarplot renders horizontal bars for a single qualitative trait.
- * Y-axis labels use auto-width to prevent truncation.
+ * Y-axis labels use a fixed width for alignment across barplots.
  */
 function FrequencyBarplot({
   entries,
   color,
+  labelWidth,
 }: {
   entries: FrequencyEntry[];
   color: string;
+  /** Fixed label width in pixels for consistent alignment across all barplots */
+  labelWidth?: number;
 }) {
   const maxCount = Math.max(...entries.map((e) => e.count), 1);
+  const fixedWidth = labelWidth ? `${labelWidth}px` : undefined;
 
   return (
     <div className="flex flex-col gap-1">
@@ -133,11 +145,12 @@ function FrequencyBarplot({
         return (
           <div key={entry.value} className="flex items-center gap-2">
             <span
-              className={`min-w-[5rem] max-w-[12rem] text-xs text-right shrink-0 ${
+              className={`text-xs text-right shrink-0 truncate ${
                 isUnknown
                   ? "italic text-muted-foreground/60"
                   : "font-semibold text-foreground"
               }`}
+              style={{ width: fixedWidth, minWidth: '5rem', maxWidth: '12rem' }}
               title={entry.value}
             >
               {entry.value}
@@ -193,6 +206,34 @@ function RecordLink({
 }
 
 /**
+ * Render a reference cell as a clickable link if it's a DOI or URL.
+ */
+function ReferenceLink({ value }: { value: string }) {
+  if (!value || value === '-') return <span>{value}</span>;
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return <a href={value} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{value}</a>;
+  }
+  // Check if it looks like a DOI (e.g., 10.xxxx/...)
+  if (/^10\.\d{4,}\//.test(value)) {
+    return <a href={`https://doi.org/${value}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{value}</a>;
+  }
+  return <span>{value}</span>;
+}
+
+/**
+ * Render a species name as a clickable link to the species page.
+ */
+function SpeciesLink({ name }: { name: string }) {
+  if (!name) return <span>-</span>;
+  const slug = name.toLowerCase().replace(/\s+/g, '-');
+  return (
+    <a href={`/?species=${slug}`} className="text-primary hover:underline italic">
+      {name}
+    </a>
+  );
+}
+
+/**
  * Modal showing qualitative record rows in a table.
  */
 function RecordTableModal({
@@ -200,19 +241,24 @@ function RecordTableModal({
   onOpenChange,
   title,
   rows,
+  showDetails = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   rows: QualitativeRecordRow[];
+  showDetails?: boolean;
 }) {
+  // Sort rows alphabetically by species name
+  const sortedRows = [...rows].sort((a, b) => a.species.localeCompare(b.species));
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>
-            {rows.length} record{rows.length !== 1 ? 's' : ''}
+            {sortedRows.length} record{sortedRows.length !== 1 ? 's' : ''}
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-auto">
@@ -221,17 +267,19 @@ function RecordTableModal({
               <TableRow>
                 <TableHead className="text-xs">Species</TableHead>
                 <TableHead className="text-xs">Value</TableHead>
+                {showDetails && <TableHead className="text-xs">Details</TableHead>}
                 <TableHead className="text-xs">External reference</TableHead>
                 <TableHead className="text-xs">Main reference</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((row, i) => (
+              {sortedRows.map((row, i) => (
                 <TableRow key={i}>
-                  <TableCell className="text-xs italic">{row.species}</TableCell>
+                  <TableCell className="text-xs"><SpeciesLink name={row.species} /></TableCell>
                   <TableCell className="text-xs">{row.value}</TableCell>
-                  <TableCell className="text-xs">{row.externalRef}</TableCell>
-                  <TableCell className="text-xs">{row.mainReference}</TableCell>
+                  {showDetails && <TableCell className="text-xs">{row.details || '-'}</TableCell>}
+                  <TableCell className="text-xs"><ReferenceLink value={row.externalRef} /></TableCell>
+                  <TableCell className="text-xs"><ReferenceLink value={row.mainReference} /></TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -249,10 +297,12 @@ function LevelRecordLinks({
   traitKey,
   traitLabel,
   levelRecords,
+  showDetails = false,
 }: {
   traitKey: string;
   traitLabel: string;
   levelRecords?: LevelRecords;
+  showDetails?: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('');
@@ -292,6 +342,7 @@ function LevelRecordLinks({
         onOpenChange={setModalOpen}
         title={modalTitle}
         rows={modalRows}
+        showDetails={showDetails}
       />
     </>
   );
@@ -305,13 +356,18 @@ function QualitativeTraitCard({
   entries,
   color,
   levelRecords,
+  detailsText,
+  labelWidth,
 }: {
   traitKey: string;
   entries: FrequencyEntry[];
   color: string;
   levelRecords?: LevelRecords;
+  detailsText?: string;
+  labelWidth?: number;
 }) {
   const displayEntries = entries.length > 0 ? entries : [{ value: "Unknown", count: 0 }];
+  const isEggLocation = traitKey === 'EGG_LOCATION';
 
   return (
     <Card className="bg-card">
@@ -319,12 +375,18 @@ function QualitativeTraitCard({
         <span className="text-xs font-medium uppercase text-muted-foreground">
           {TRAIT_LABELS[traitKey]}
         </span>
-        <FrequencyBarplot entries={displayEntries} color={color} />
+        <FrequencyBarplot entries={displayEntries} color={color} labelWidth={labelWidth} />
         <LevelRecordLinks
           traitKey={traitKey}
           traitLabel={TRAIT_LABELS[traitKey]}
           levelRecords={levelRecords}
+          showDetails={isEggLocation}
         />
+        {isEggLocation && detailsText && (
+          <p className="text-xs text-muted-foreground mt-1">
+            <span className="font-medium text-foreground">Details:</span> {detailsText}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
@@ -338,7 +400,27 @@ function QualitativeTraitCard({
  * Shows 3 clickable links per trait: species/genus/family record counts.
  */
 export function EggQualitativePanel({ data }: EggQualitativePanelProps) {
-  const traitKeys = ['EGG_LOCATION', 'EGG_DETAILS', 'EGG_SHAPE', 'NB_OIL_GLOBULE'] as const;
+  // EGG_DETAILS is shown inside EGG_LOCATION card, not as a separate panel
+  const traitKeys = ['EGG_LOCATION', 'EGG_SHAPE', 'NB_OIL_GLOBULE'] as const;
+
+  // Build comma-separated details text from EGG_DETAILS frequencies
+  const detailsEntries = data.traits.EGG_DETAILS || [];
+  const detailsText = detailsEntries
+    .filter((e) => e.value !== 'Unknown')
+    .map((e) => e.value)
+    .join(', ');
+
+  // Compute consistent label width across all barplots
+  const allLabels: string[] = [];
+  for (const key of traitKeys) {
+    const entries = data.traits[key] || [];
+    for (const e of entries) {
+      allLabels.push(e.value);
+    }
+  }
+  const maxLabelWidth = allLabels.length > 0
+    ? Math.min(192, Math.max(80, Math.max(...allLabels.map(estimateTextWidth)) + 8))
+    : 80;
 
   return (
     <div data-testid="egg-qualitative-panel" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -349,6 +431,8 @@ export function EggQualitativePanel({ data }: EggQualitativePanelProps) {
           entries={data.traits[key] || []}
           color={TRAIT_COLORS[key]}
           levelRecords={data.levelRecords?.[key]}
+          detailsText={key === 'EGG_LOCATION' ? detailsText : undefined}
+          labelWidth={maxLabelWidth}
         />
       ))}
     </div>

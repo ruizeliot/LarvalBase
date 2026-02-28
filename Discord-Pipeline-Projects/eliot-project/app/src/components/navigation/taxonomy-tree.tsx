@@ -111,9 +111,11 @@ function TaxonomyNode({
         <span className="w-4" />
       )}
 
-      {/* Family silhouette SVG for family nodes, Lucide icons for other levels */}
+      {/* Family silhouette SVG for family/genus/species nodes, Lucide icons for root/order */}
       {data.level === 'family' ? (
         <FamilySilhouette family={data.name} />
+      ) : (data.level === 'genus' || data.level === 'species') && data.familyName ? (
+        <FamilySilhouette family={data.familyName} className={data.level === 'species' ? 'opacity-70' : ''} />
       ) : (
         <TaxonomyLevelIcon
           level={data.level as 'root' | 'order' | 'family' | 'genus' | 'species'}
