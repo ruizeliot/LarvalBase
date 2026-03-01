@@ -107,6 +107,22 @@ describe('Scatter-only legend: only ref name blue, "no fitted model" muted', () 
     expect(refElement.textContent).not.toContain('no fitted model');
   });
 
+  it('individual scatter legend entries should NOT contain "Scatter points only"', () => {
+    const { container } = render(
+      <ScatterOnlyLegendItem
+        reference="Smith et al. 2024"
+        link={null}
+        color="#d73027"
+        shape="circle"
+        avgTemp={25}
+        lengthType="SL"
+      />
+    );
+
+    // The text "Scatter points only" should NOT appear in individual legend items
+    expect(container.textContent).not.toContain('Scatter points only');
+  });
+
   it('should display LENGTH_TYPE in scatter-only legend when available', () => {
     render(
       <ScatterOnlyLegendItem
