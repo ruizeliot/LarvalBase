@@ -122,7 +122,7 @@ export function SpeciesImageGallery({ images, speciesName }: SpeciesImageGallery
 
     return (
       <>
-        <div className="w-full">
+        <div className="w-full max-h-[60vh]">
           <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted">
             <SpeciesImageWithFallback
               image={image}
