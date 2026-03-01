@@ -3,6 +3,7 @@
  *
  * US-6.1: Qualitative panel showing known/unknown status, keywords,
  * and related species in genus/family.
+ * US-6.2/6.3: Numeric panels with TraitCard-style layout.
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -13,6 +14,8 @@ import {
 
 // --- US-6.1 test data ---
 
+const emptyStats = { mean: null, sd: null, min: null, max: null, n: 0 };
+
 const knownSpeciesData: PelagicJuvenileData = {
   level: 'species',
   levelName: 'Chromis viridis',
@@ -22,6 +25,8 @@ const knownSpeciesData: PelagicJuvenileData = {
   familySpecies: ['Dascyllus aruanus', 'Pomacentrus pavo'],
   sizeRecords: [],
   durationRecords: [],
+  sizeStats: emptyStats,
+  durationStats: emptyStats,
   comparisonStats: null,
 };
 
@@ -34,6 +39,8 @@ const unknownSpeciesData: PelagicJuvenileData = {
   familySpecies: ['Gobius paganellus'],
   sizeRecords: [],
   durationRecords: [],
+  sizeStats: emptyStats,
+  durationStats: emptyStats,
   comparisonStats: null,
 };
 
@@ -46,6 +53,8 @@ const noDataResult: PelagicJuvenileData = {
   familySpecies: [],
   sizeRecords: [],
   durationRecords: [],
+  sizeStats: emptyStats,
+  durationStats: emptyStats,
   comparisonStats: null,
 };
 
@@ -122,11 +131,20 @@ const dataWithSize: PelagicJuvenileData = {
     { mean: 13.2, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis' },
   ],
   durationRecords: [],
+  sizeStats: {
+    // mean of [12.4, 11.0, 13.2] = 12.2, sd ≈ 1.11
+    mean: 12.2,
+    sd: 1.11,
+    min: 9.5,
+    max: 14.6,
+    n: 3,
+  },
+  durationStats: emptyStats,
   comparisonStats: {
     size: {
-      species: { mean: 12.4, n: 3 },
-      genus: { mean: 11.0, n: 8 },
-      family: { mean: 9.6, n: 25 },
+      species: { mean: 12.4, n: 3, speciesCount: 1 },
+      genus: { mean: 11.0, n: 8, speciesCount: 5 },
+      family: { mean: 9.6, n: 25, speciesCount: 14 },
     },
     duration: { species: null, genus: null, family: null },
   },
@@ -162,28 +180,39 @@ describe('US-6.2: Dot-strip chart for pelagic juvenile size', () => {
     expect(dots.length).toBe(3);
   });
 
-  it('should show summary stats (mean, range, records count)', () => {
-    render(<PelagicJuvenilePanel data={dataWithSize} />);
-    // Mean/Range/Records labels exist (may be multiple from both panels)
-    expect(screen.getAllByText('Mean').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Range').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('Records').length).toBeGreaterThanOrEqual(1);
-    // 3 refs shown
-    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
-  });
-
-  it('should show comparison bars for species/genus/family', () => {
+  it('should show mean ± SD in TraitCard format', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
-    const compBars = container.querySelector('[data-testid="comparison-bars"]');
-    expect(compBars).toBeInTheDocument();
-    expect(screen.getByText('Species')).toBeInTheDocument();
-    expect(screen.getByText('Genus')).toBeInTheDocument();
-    expect(screen.getByText('Family')).toBeInTheDocument();
+    const traitValue = container.querySelector('[data-testid="trait-value"]');
+    expect(traitValue).toBeInTheDocument();
+    // Should show "12.20 ± 1.11"
+    expect(traitValue!.textContent).toContain('12.20');
+    expect(traitValue!.textContent).toContain('±');
+    expect(traitValue!.textContent).toContain('1.11');
   });
 
-  it('should display "No size data available" when no size records', () => {
+  it('should show range and N records link', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
+    // Range
+    expect(screen.getByText(/Range:/)).toBeInTheDocument();
+    // N records link
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    expect(recordsLink).toBeInTheDocument();
+    expect(recordsLink!.textContent).toContain('3 records');
+  });
+
+  it('should show genus and family comparison text with n_sp', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
+    const compText = container.querySelector('[data-testid="comparison-text"]');
+    expect(compText).toBeInTheDocument();
+    expect(screen.getByText('Genus average:')).toBeInTheDocument();
+    expect(screen.getByText('Family average:')).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 5/)).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 14/)).toBeInTheDocument();
+  });
+
+  it('should display "No pelagic juvenile size data available" when no size records', () => {
     render(<PelagicJuvenilePanel data={knownSpeciesData} />);
-    expect(screen.getByText('No size data available')).toBeInTheDocument();
+    expect(screen.getByText(/no pelagic juvenile size data available/i)).toBeInTheDocument();
   });
 });
 
@@ -203,12 +232,21 @@ const dataWithDuration: PelagicJuvenileData = {
     { mean: 22.0, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis' },
     { mean: 15.0, errorLow: 13.5, errorHigh: 16.5, reference: 'Wellington 1992', link: null, species: 'Chromis viridis', n: 6 },
   ],
+  sizeStats: emptyStats,
+  durationStats: {
+    // mean of [18.5, 16.2, 22.0, 15.0] = 17.925, sd ≈ 3.06
+    mean: 17.93,
+    sd: 3.06,
+    min: 12.0,
+    max: 23.0,
+    n: 4,
+  },
   comparisonStats: {
     size: { species: null, genus: null, family: null },
     duration: {
-      species: { mean: 18.5, n: 4 },
-      genus: { mean: 16.2, n: 12 },
-      family: { mean: 14.0, n: 40 },
+      species: { mean: 18.5, n: 4, speciesCount: 1 },
+      genus: { mean: 16.2, n: 12, speciesCount: 8 },
+      family: { mean: 14.0, n: 40, speciesCount: 22 },
     },
   },
 };
@@ -216,6 +254,7 @@ const dataWithDuration: PelagicJuvenileData = {
 const dataWithBoth: PelagicJuvenileData = {
   ...dataWithSize,
   durationRecords: dataWithDuration.durationRecords,
+  durationStats: dataWithDuration.durationStats,
   comparisonStats: {
     size: dataWithSize.comparisonStats!.size,
     duration: dataWithDuration.comparisonStats!.duration,
@@ -247,15 +286,26 @@ describe('US-6.3: Dot-strip chart for pelagic juvenile duration', () => {
     expect(errorBars.length).toBe(3);
   });
 
-  it('should show duration comparison bars', () => {
+  it('should show mean ± SD for duration in TraitCard format', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
-    const compBars = container.querySelectorAll('[data-testid="comparison-bars"]');
-    expect(compBars.length).toBeGreaterThanOrEqual(1);
+    const traitValues = container.querySelectorAll('[data-testid="trait-value"]');
+    // Duration panel trait value should contain the mean and SD
+    const durationValue = Array.from(traitValues).find(el => el.textContent?.includes('17.93'));
+    expect(durationValue).toBeTruthy();
+    expect(durationValue!.textContent).toContain('±');
   });
 
-  it('should display "No duration data available" when no duration records', () => {
+  it('should show duration comparison text with n_sp', () => {
+    render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    expect(screen.getByText('Genus average:')).toBeInTheDocument();
+    expect(screen.getByText('Family average:')).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 8/)).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 22/)).toBeInTheDocument();
+  });
+
+  it('should display "No pelagic juvenile duration data available" when no duration records', () => {
     render(<PelagicJuvenilePanel data={knownSpeciesData} />);
-    expect(screen.getByText('No duration data available')).toBeInTheDocument();
+    expect(screen.getByText(/no pelagic juvenile duration data available/i)).toBeInTheDocument();
   });
 
   it('should render both size and duration charts when both have data', () => {
@@ -264,8 +314,17 @@ describe('US-6.3: Dot-strip chart for pelagic juvenile duration', () => {
     expect(charts.length).toBe(2); // one for size, one for duration
   });
 
-  it('should show unit "days" in duration summary stats', () => {
+  it('should show unit "days" in duration panel', () => {
     render(<PelagicJuvenilePanel data={dataWithDuration} />);
     expect(screen.getAllByText('days').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should show clickable N records link for raw data table', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
+    // At least one records link (duration panel)
+    expect(recordsLinks.length).toBeGreaterThanOrEqual(1);
+    const durationLink = Array.from(recordsLinks).find(el => el.textContent?.includes('4 records'));
+    expect(durationLink).toBeTruthy();
   });
 });

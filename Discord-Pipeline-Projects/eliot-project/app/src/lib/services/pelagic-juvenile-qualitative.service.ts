@@ -6,7 +6,7 @@
  */
 
 import { getOrLoadData } from '@/lib/data/data-repository';
-import type { PelagicJuvenileData, DotStripRecord, ComparisonLevel } from '@/components/species-detail/pelagic-juvenile-panel';
+import type { PelagicJuvenileData, PelagicJuvenileStats, DotStripRecord, ComparisonLevel } from '@/components/species-detail/pelagic-juvenile-panel';
 
 /**
  * Get pelagic juvenile database rows from raw CSV cache.
@@ -130,7 +130,31 @@ function buildDotStripRecords(
 }
 
 /**
+ * Compute summary statistics (mean, SD, min, max, n) from dot-strip records.
+ */
+function computeRecordStats(records: DotStripRecord[]): PelagicJuvenileStats {
+  if (records.length === 0) {
+    return { mean: null, sd: null, min: null, max: null, n: 0 };
+  }
+
+  const means = records.map(r => r.mean);
+  const n = means.length;
+  const mean = means.reduce((a, b) => a + b, 0) / n;
+  const sd = n >= 2
+    ? Math.sqrt(means.reduce((sum, v) => sum + (v - mean) ** 2, 0) / (n - 1))
+    : null;
+
+  const allLows = records.map(r => r.errorLow ?? r.mean);
+  const allHighs = records.map(r => r.errorHigh ?? r.mean);
+  const min = Math.min(...allLows, ...means);
+  const max = Math.max(...allHighs, ...means);
+
+  return { mean, sd, min, max, n };
+}
+
+/**
  * Compute comparison stats (mean across all records at each taxonomic level).
+ * Includes speciesCount for n_sp display.
  */
 function computeComparisonStats(
   speciesRows: Record<string, unknown>[],
@@ -140,13 +164,18 @@ function computeComparisonStats(
 ): { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null } {
   const computeLevel = (rows: Record<string, unknown>[]): ComparisonLevel | null => {
     const values: number[] = [];
+    const speciesSet = new Set<string>();
     for (const row of rows) {
       const v = parseNum(row[meanCol]);
-      if (v !== null) values.push(v);
+      if (v !== null) {
+        values.push(v);
+        const name = String(row['VALID_NAME'] ?? '').trim();
+        if (name) speciesSet.add(name);
+      }
     }
     if (values.length === 0) return null;
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    return { mean, n: values.length };
+    return { mean, n: values.length, speciesCount: speciesSet.size };
   };
 
   return {
@@ -169,6 +198,8 @@ export async function getPelagicJuvenileData(
   const species = allData.species.get(speciesId);
   if (!species) return null;
 
+  const emptyStats: PelagicJuvenileStats = { mean: null, sd: null, min: null, max: null, n: 0 };
+
   const rows = await getPelagicJuvenileRows();
   if (rows.length === 0) {
     return {
@@ -180,6 +211,8 @@ export async function getPelagicJuvenileData(
       familySpecies: [],
       sizeRecords: [],
       durationRecords: [],
+      sizeStats: emptyStats,
+      durationStats: emptyStats,
       comparisonStats: null,
     };
   }
@@ -249,6 +282,8 @@ export async function getPelagicJuvenileData(
     familySpecies,
     sizeRecords,
     durationRecords,
+    sizeStats: computeRecordStats(sizeRecords),
+    durationStats: computeRecordStats(durationRecords),
     comparisonStats: {
       size: sizeComparisons,
       duration: durationComparisons,

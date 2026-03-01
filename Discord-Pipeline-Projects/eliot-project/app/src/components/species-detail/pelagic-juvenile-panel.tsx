@@ -1,7 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 /**
  * A single dot-strip record (one data point per reference).
@@ -17,11 +33,23 @@ export interface DotStripRecord {
 }
 
 /**
+ * Summary statistics for a trait (matches TraitCard pattern).
+ */
+export interface PelagicJuvenileStats {
+  mean: number | null;
+  sd: number | null;
+  min: number | null;
+  max: number | null;
+  n: number;
+}
+
+/**
  * Comparison stats at one taxonomic level.
  */
 export interface ComparisonLevel {
   mean: number;
   n: number;
+  speciesCount: number;
 }
 
 /**
@@ -36,6 +64,8 @@ export interface PelagicJuvenileData {
   familySpecies: string[];
   sizeRecords: DotStripRecord[];
   durationRecords: DotStripRecord[];
+  sizeStats: PelagicJuvenileStats;
+  durationStats: PelagicJuvenileStats;
   comparisonStats: {
     size: {
       species: ComparisonLevel | null;
@@ -142,15 +172,195 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
 }
 
 /**
- * Summary stat card (mean, range, records count).
+ * Dialog showing raw records for a pelagic juvenile trait in a detailed table.
  */
-function StatCard({ label, value, unit }: { label: string; value: string; unit: string }) {
+function RecordsDialog({
+  open,
+  onOpenChange,
+  records,
+  label,
+  unit,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  records: DotStripRecord[];
+  label: string;
+  unit: string;
+}) {
   return (
-    <div className="bg-muted/50 rounded-md p-2 text-center flex-1">
-      <div className="text-[10px] text-muted-foreground">{label}</div>
-      <div className="text-base font-semibold">{value}</div>
-      <div className="text-[10px] text-muted-foreground">{unit}</div>
-    </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>{label} - Raw Data</DialogTitle>
+          <DialogDescription>
+            {records.length} record{records.length !== 1 ? 's' : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto">
+          {records.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">No records found.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Species</TableHead>
+                  <TableHead className="text-xs">Mean ({unit})</TableHead>
+                  <TableHead className="text-xs">Min ({unit})</TableHead>
+                  <TableHead className="text-xs">Max ({unit})</TableHead>
+                  <TableHead className="text-xs">N</TableHead>
+                  <TableHead className="text-xs">Reference</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.map((r, i) => (
+                  <TableRow key={`${r.reference}-${i}`}>
+                    <TableCell className="text-xs italic">{r.species || '-'}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.mean.toFixed(2)}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.errorLow?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.errorHigh?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-xs">{r.n ?? '-'}</TableCell>
+                    <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
+                      {r.link ? (
+                        <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          {r.reference}
+                        </a>
+                      ) : (
+                        r.reference
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Numeric trait panel matching the TraitCard layout used by other sections.
+ * Displays: mean ± SD, range, N records link, genus/family comparisons, and dot-strip chart.
+ */
+function NumericTraitPanel({
+  label,
+  stats,
+  unit,
+  records,
+  comparisons,
+  dotStripTitle,
+}: {
+  label: string;
+  stats: PelagicJuvenileStats;
+  unit: string;
+  records: DotStripRecord[];
+  comparisons: { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null } | null;
+  dotStripTitle: string;
+}) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const hasData = stats.mean !== null;
+  const showRange = stats.min !== null && stats.max !== null && stats.min !== stats.max;
+
+  if (records.length === 0 && !comparisons) {
+    return (
+      <Card className="bg-card">
+        <CardContent className="p-4">
+          <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+            {label}
+          </div>
+          <p className="text-sm text-muted-foreground italic mt-2">No {label.toLowerCase()} data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-card">
+      <CardContent className="p-4">
+        {/* Label */}
+        <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+          {label}
+        </div>
+
+        {/* Value: mean ± SD */}
+        <div className="mt-2">
+          {hasData ? (
+            <>
+              <span className="text-2xl font-bold font-mono" data-testid="trait-value">
+                {stats.mean!.toFixed(2)}
+                {stats.sd !== null && (
+                  <span className="text-lg font-normal">
+                    {" \u00B1 "}
+                    {stats.sd.toFixed(2)}
+                  </span>
+                )}
+              </span>
+              <div className="text-sm text-muted-foreground mt-1">{unit}</div>
+            </>
+          ) : (
+            <span className="text-lg text-muted-foreground italic">No known values</span>
+          )}
+        </div>
+
+        {/* Range and Records row */}
+        <div className="mt-3 pt-3 border-t flex items-center justify-between text-sm">
+          <div className="text-muted-foreground">
+            {showRange ? (
+              <>Range: {stats.min!.toFixed(1)} - {stats.max!.toFixed(1)}</>
+            ) : (
+              <span>&nbsp;</span>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className="text-primary hover:underline"
+            data-testid="records-link"
+          >
+            {stats.n} record{stats.n !== 1 ? 's' : ''}
+          </button>
+        </div>
+
+        {/* Genus/Family comparison text (same format as TraitCard) */}
+        {comparisons && (comparisons.genus || comparisons.family) && (
+          <div className="mt-3 pt-3 border-t space-y-1" data-testid="comparison-text">
+            {comparisons.genus && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Genus average:</span>
+                <span className="font-mono">
+                  {comparisons.genus.mean.toFixed(2)} {unit} (n_sp = {comparisons.genus.speciesCount})
+                </span>
+              </div>
+            )}
+            {comparisons.family && (
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Family average:</span>
+                <span className="font-mono">
+                  {comparisons.family.mean.toFixed(2)} {unit} (n_sp = {comparisons.family.speciesCount})
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dot-strip chart */}
+        {records.length > 0 && (
+          <div className="mt-4 pt-4 border-t">
+            <DotStripChart records={records} unit={unit} title={dotStripTitle} />
+          </div>
+        )}
+      </CardContent>
+
+      {/* Raw data table dialog */}
+      <RecordsDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        records={records}
+        label={label}
+        unit={unit}
+      />
+    </Card>
   );
 }
 
@@ -250,180 +460,33 @@ function DotStripChart({
 }
 
 /**
- * Comparison bars showing species/genus/family averages.
- */
-function ComparisonBars({
-  stats,
-  unit,
-}: {
-  stats: { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null };
-  unit: string;
-}) {
-  const levels = [
-    { key: 'Species', data: stats.species, color: '#60a5fa' },
-    { key: 'Genus', data: stats.genus, color: '#a78bfa' },
-    { key: 'Family', data: stats.family, color: '#f59e0b' },
-  ];
-
-  const maxMean = Math.max(...levels.map((l) => l.data?.mean ?? 0));
-  if (maxMean === 0) return null;
-
-  return (
-    <div className="mt-3 space-y-1.5" data-testid="comparison-bars">
-      {levels.map((level) => {
-        if (!level.data) return null;
-        const widthPct = (level.data.mean / maxMean) * 100;
-        return (
-          <div key={level.key} className="flex items-center gap-2">
-            <span className="text-[10px] text-muted-foreground text-right" style={{ width: '50px' }}>
-              {level.key}
-            </span>
-            <div className="flex-1 h-3.5 bg-muted/50 rounded overflow-hidden">
-              <div
-                className="h-full rounded"
-                style={{ width: `${widthPct}%`, backgroundColor: level.color }}
-              />
-            </div>
-            <span className="text-[10px] text-muted-foreground" style={{ width: '50px' }}>
-              {level.data.mean.toFixed(1)} {unit}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/**
- * Size panel with summary stats, dot-strip chart, and comparison bars.
- */
-function SizePanel({ data }: { data: PelagicJuvenileData }) {
-  const records = data.sizeRecords;
-  if (records.length === 0 && !data.comparisonStats?.size) {
-    return (
-      <Card className="bg-card">
-        <CardContent className="p-4">
-          <span className="text-xs font-medium uppercase text-muted-foreground">
-            Pelagic Juvenile Size
-          </span>
-          <p className="text-sm text-muted-foreground italic mt-2">No size data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Compute summary stats
-  const means = records.map((r) => r.mean);
-  const allMins = records.map((r) => r.errorLow ?? r.mean);
-  const allMaxs = records.map((r) => r.errorHigh ?? r.mean);
-  const overallMean = means.length > 0 ? means.reduce((a, b) => a + b, 0) / means.length : 0;
-  const overallMin = Math.min(...allMins, ...means);
-  const overallMax = Math.max(...allMaxs, ...means);
-
-  return (
-    <Card className="bg-card">
-      <CardContent className="p-4 space-y-3">
-        <span className="text-xs font-medium uppercase text-muted-foreground">
-          Pelagic Juvenile Size
-        </span>
-
-        {/* Summary stats */}
-        <div className="flex gap-2">
-          <StatCard label="Mean" value={overallMean.toFixed(1)} unit="mm" />
-          <StatCard
-            label="Range"
-            value={`${overallMin.toFixed(1)}–${overallMax.toFixed(1)}`}
-            unit="mm"
-          />
-          <StatCard label="Records" value={String(records.length)} unit="refs" />
-        </div>
-
-        {/* Dot-strip chart */}
-        <DotStripChart
-          records={records}
-          unit="mm"
-          title="Size by reference (mm) — with error bars (±1 SD)"
-        />
-
-        {/* Comparison bars */}
-        {data.comparisonStats?.size && (
-          <ComparisonBars stats={data.comparisonStats.size} unit="mm" />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/**
- * Duration panel with summary stats, dot-strip chart, and comparison bars.
- */
-function DurationPanel({ data }: { data: PelagicJuvenileData }) {
-  const records = data.durationRecords;
-  if (records.length === 0 && !data.comparisonStats?.duration) {
-    return (
-      <Card className="bg-card">
-        <CardContent className="p-4">
-          <span className="text-xs font-medium uppercase text-muted-foreground">
-            Pelagic Juvenile Duration
-          </span>
-          <p className="text-sm text-muted-foreground italic mt-2">No duration data available</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const means = records.map((r) => r.mean);
-  const allMins = records.map((r) => r.errorLow ?? r.mean);
-  const allMaxs = records.map((r) => r.errorHigh ?? r.mean);
-  const overallMean = means.length > 0 ? means.reduce((a, b) => a + b, 0) / means.length : 0;
-  const overallMin = Math.min(...allMins, ...means);
-  const overallMax = Math.max(...allMaxs, ...means);
-
-  return (
-    <Card className="bg-card">
-      <CardContent className="p-4 space-y-3">
-        <span className="text-xs font-medium uppercase text-muted-foreground">
-          Pelagic Juvenile Duration
-        </span>
-
-        <div className="flex gap-2">
-          <StatCard label="Mean" value={overallMean.toFixed(1)} unit="days" />
-          <StatCard
-            label="Range"
-            value={`${overallMin.toFixed(1)}–${overallMax.toFixed(1)}`}
-            unit="days"
-          />
-          <StatCard label="Records" value={String(records.length)} unit="refs" />
-        </div>
-
-        <DotStripChart
-          records={records}
-          unit="days"
-          title="Duration by reference (days) — with error bars (±1 SD)"
-        />
-
-        {data.comparisonStats?.duration && (
-          <ComparisonBars stats={data.comparisonStats.duration} unit="d" />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-/**
  * PelagicJuvenilePanel renders the complete Pelagic Juvenile section.
  *
- * 3-panel layout:
+ * 3-panel layout matching TraitCard pattern:
  * 1. Qualitative info (known/unknown, keywords, related species)
- * 2. Dot-strip chart for size with error bars and comparison bars
- * 3. Dot-strip chart for duration with error bars and comparison bars
+ * 2. Size: mean ± SD, range, N records link, genus/family comparisons, dot-strip chart
+ * 3. Duration: same layout as size panel
  */
 export function PelagicJuvenilePanel({ data }: PelagicJuvenilePanelProps) {
   return (
     <div data-testid="pelagic-juvenile-panel" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <QualitativeCard data={data} />
-      <SizePanel data={data} />
-      <DurationPanel data={data} />
+      <NumericTraitPanel
+        label="Pelagic Juvenile Size"
+        stats={data.sizeStats}
+        unit="mm"
+        records={data.sizeRecords}
+        comparisons={data.comparisonStats?.size ?? null}
+        dotStripTitle="Size by reference (mm) — with error bars (±1 SD)"
+      />
+      <NumericTraitPanel
+        label="Pelagic Juvenile Duration"
+        stats={data.durationStats}
+        unit="days"
+        records={data.durationRecords}
+        comparisons={data.comparisonStats?.duration ?? null}
+        dotStripTitle="Duration by reference (days) — with error bars (±1 SD)"
+      />
     </div>
   );
 }
