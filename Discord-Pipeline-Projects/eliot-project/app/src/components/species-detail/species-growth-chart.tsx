@@ -127,7 +127,7 @@ export function GrowthLegendItem({
             {refName}
           </a>
         ) : (
-          <span className="text-foreground block" title={refName}>
+          <span className="text-blue-500 block" title={refName}>
             {refName}
           </span>
         )}
@@ -756,7 +756,7 @@ export function SpeciesGrowthChart({
                         {group.reference} — <em>no fitted model</em>
                       </a>
                     ) : (
-                      <span className="text-foreground block">{group.reference} — <em>no fitted model</em></span>
+                      <span className="text-blue-500 block">{group.reference} — <em>no fitted model</em></span>
                     )}
                     <span className="text-muted-foreground text-[10px]">
                       {group.avgTemp !== null ? `${group.avgTemp.toFixed(1)}°C · ` : ''}Scatter points only
