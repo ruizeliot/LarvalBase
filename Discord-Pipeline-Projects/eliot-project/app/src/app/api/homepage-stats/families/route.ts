@@ -8,13 +8,35 @@ import { buildImageUrl } from '@/lib/utils/encode-image-path';
 
 /**
  * Count images per family from a metadata file.
+ *
+ * Handles the row-number column offset: fam_ids and gen_ids metadata files
+ * have a leading row-number column in data rows but NO header for it.
+ * Without detection, Papa Parse misaligns all columns (FAMILY gets ORDER).
  */
 async function countImagesFromMetadata(
   filePath: string
 ): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
+    let content = await fs.readFile(filePath, 'utf-8');
+
+    // Detect row-number column offset: if first data row has more fields
+    // than the header, prepend an empty header for the row-number column.
+    const lines = content.split('\n');
+    if (lines.length >= 2) {
+      const headerFields = lines[0].split('@').length;
+      for (let i = 1; i < Math.min(lines.length, 5); i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const dataFields = line.split('@').length;
+        if (dataFields === headerFields + 1) {
+          lines[0] = '""@' + lines[0];
+          content = lines.join('\n');
+        }
+        break;
+      }
+    }
+
     Papa.parse(content, {
       delimiter: '@',
       header: true,
