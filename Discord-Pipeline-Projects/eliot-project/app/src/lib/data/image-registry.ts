@@ -86,9 +86,13 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
     },
   });
 
-  // Sort each species' images by priority (ascending = highest priority first)
+  // Sort each species' images by priority (ascending = highest priority first),
+  // then certain (uncertain=false) before uncertain (uncertain=true)
   for (const [species, images] of imagesBySpecies) {
-    images.sort((a, b) => a.priority - b.priority);
+    images.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return (a.uncertain ? 1 : 0) - (b.uncertain ? 1 : 0);
+    });
     imagesBySpecies.set(species, images);
   }
 

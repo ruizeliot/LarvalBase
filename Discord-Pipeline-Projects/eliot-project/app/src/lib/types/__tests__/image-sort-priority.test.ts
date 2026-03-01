@@ -72,4 +72,28 @@ describe('US-5.1: Image sort priority', () => {
       getAuthorPriority('Fisher et al. 2022')
     );
   });
+
+  it('should sort certain images before uncertain at same priority level', () => {
+    const images = [
+      { priority: 1, uncertain: true, author: 'Blackwater' },
+      { priority: 1, uncertain: false, author: 'Blackwater' },
+      { priority: 5, uncertain: false, author: 'CRIOBE' },
+      { priority: 5, uncertain: true, author: 'CRIOBE' },
+    ];
+
+    // Sort by priority first, then certain (false) before uncertain (true)
+    images.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      return (a.uncertain ? 1 : 0) - (b.uncertain ? 1 : 0);
+    });
+
+    // First should be certain Blackwater
+    expect(images[0]).toEqual(expect.objectContaining({ priority: 1, uncertain: false }));
+    // Second should be uncertain Blackwater
+    expect(images[1]).toEqual(expect.objectContaining({ priority: 1, uncertain: true }));
+    // Third should be certain CRIOBE
+    expect(images[2]).toEqual(expect.objectContaining({ priority: 5, uncertain: false }));
+    // Fourth should be uncertain CRIOBE
+    expect(images[3]).toEqual(expect.objectContaining({ priority: 5, uncertain: true }));
+  });
 });
