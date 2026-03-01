@@ -12,6 +12,8 @@ import { SpeciesGrowthChart } from "./species-growth-chart";
 import { ExportButton } from "@/components/export/export-button";
 import { EggQualitativePanel } from "./egg-qualitative-panel";
 import { useEggQualitative } from "@/hooks/use-egg-qualitative";
+import { PelagicJuvenilePanel } from "./pelagic-juvenile-panel";
+import { usePelagicJuvenile } from "@/hooks/use-pelagic-juvenile";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -108,6 +110,9 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
 
   // Fetch qualitative egg data (US-3.1)
   const { data: eggQualitativeData } = useEggQualitative(speciesId);
+
+  // Fetch pelagic juvenile data (Epic 6)
+  const { data: pelagicJuvenileData } = usePelagicJuvenile(speciesId);
 
   // Modal state for raw data display
   const [modalOpen, setModalOpen] = useState(false);
@@ -259,25 +264,50 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
               />
               {/* Insert map after Settlement section */}
               {group.title === "Settlement" && (
-                <div className="space-y-4 mt-8">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className="flex items-center justify-center rounded-full shrink-0"
-                      style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
-                      title="Settlement-stage sampling locations"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getSectionIcon("Settlement-stage sampling locations")}
-                        alt="Settlement-stage sampling locations icon"
-                        width={29}
-                        height={29}
-                      />
+                <>
+                  <div className="space-y-4 mt-8">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="flex items-center justify-center rounded-full shrink-0"
+                        style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                        title="Settlement-stage sampling locations"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={getSectionIcon("Settlement-stage sampling locations")}
+                          alt="Settlement-stage sampling locations icon"
+                          width={29}
+                          height={29}
+                        />
+                      </div>
+                      <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
                     </div>
-                    <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
+                    <CollectionMap locations={locations} />
                   </div>
-                  <CollectionMap locations={locations} />
-                </div>
+
+                  {/* Pelagic Juvenile section (Epic 6) — after Settlement, before Swimming */}
+                  {pelagicJuvenileData && (
+                    <div className="space-y-4 mt-8">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex items-center justify-center rounded-full shrink-0"
+                          style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                          title="Pelagic Juvenile"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getSectionIcon("Pelagic Juvenile")}
+                            alt="Pelagic Juvenile icon"
+                            width={29}
+                            height={29}
+                          />
+                        </div>
+                        <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
+                      </div>
+                      <PelagicJuvenilePanel data={pelagicJuvenileData} />
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ))}
