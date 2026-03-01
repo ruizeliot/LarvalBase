@@ -126,17 +126,7 @@ export async function GET(
 
     const sections: GallerySection[] = [];
 
-    // 1. Family-level IDs first
-    if (familyImages.length > 0) {
-      familyImages.sort((a, b) => a.author.localeCompare(b.author));
-      sections.push({
-        genus: `${family} — Family-level identifications`,
-        images: familyImages,
-        sectionType: 'family',
-      });
-    }
-
-    // 2. Genus-level IDs grouped by genus
+    // 1. Genus-level IDs on top, grouped by genus
     const genusByName = new Map<string, GalleryImage[]>();
     for (const img of genusImages) {
       const genusName = img.genus || 'Unknown';
@@ -153,7 +143,7 @@ export async function GET(
       });
     }
 
-    // 3. Species-level IDs: filter certain/uncertain, group by genus then species
+    // 2. Species-level IDs: filter certain/uncertain, group by genus then species
     const speciesCertainMap = new Map<string, GalleryImage[]>();
     const speciesUncertainMap = new Map<string, GalleryImage[]>();
     for (const img of speciesImages) {
@@ -201,6 +191,16 @@ export async function GET(
         genus: genusName,
         images: allGenusSpeciesImages,
         sectionType: 'species',
+      });
+    }
+
+    // 3. Family-level IDs last
+    if (familyImages.length > 0) {
+      familyImages.sort((a, b) => a.author.localeCompare(b.author));
+      sections.push({
+        genus: `${family} — Family-level identifications`,
+        images: familyImages,
+        sectionType: 'family',
       });
     }
 

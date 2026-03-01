@@ -130,14 +130,15 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
 
       {/* Image sections: family → genus → species */}
       {sections.map((section, sectionIdx) => {
-        const colorClass = section.sectionType === 'family'
-          ? 'text-amber-400'
+        // Color-coded section titles: species=#00BA38, genus=#619CFF, family=#F8766D
+        const colorStyle = section.sectionType === 'species'
+          ? { color: '#00BA38' }
           : section.sectionType === 'genus'
-            ? 'text-emerald-400'
-            : 'text-muted-foreground';
+            ? { color: '#619CFF' }
+            : { color: '#F8766D' };
         return (
         <div key={section.genus} className="space-y-2">
-          <h3 className={`text-sm font-semibold italic ${colorClass}`}>
+          <h3 className="text-sm font-semibold italic" style={colorStyle}>
             {section.genus}
           </h3>
           <div className="grid grid-cols-5 gap-2">
@@ -156,19 +157,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
                     className="w-full h-full object-contain"
                   />
                 </div>
-                {img.species && (
-                  <div className="p-1">
-                    <button
-                      className="text-xs text-primary italic hover:underline truncate block w-full text-left"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectSpecies?.(img.species!);
-                      }}
-                    >
-                      {img.species}
-                    </button>
-                  </div>
-                )}
               </div>
             ))}
           </div>
@@ -216,6 +204,18 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
             <div className="mt-2 text-white text-center">
               {allImages[lightboxIndex].species && (
                 <p className="italic">{allImages[lightboxIndex].species}</p>
+              )}
+              {allImages[lightboxIndex].species && (
+                <button
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline mt-0.5"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setLightboxIndex(null);
+                    onSelectSpecies?.(allImages[lightboxIndex].species!);
+                  }}
+                >
+                  See dispersive traits →
+                </button>
               )}
               <p className="text-sm text-white/60">
                 {allImages[lightboxIndex].author}

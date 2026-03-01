@@ -101,16 +101,47 @@ describe('BUG 2: FamilyGallery component', () => {
     });
   });
 
-  it('should render genus sections with images', async () => {
+  it('should render genus sections with images (no names below pictures)', async () => {
     render(
       <FamilyGallery family="Acanthuridae" onBack={vi.fn()} onSelectSpecies={vi.fn()} />
     );
 
     await waitFor(() => {
       expect(screen.getByText('Acanthurus')).toBeInTheDocument();
-      // Should show species names as clickable links
-      expect(screen.getByText('Acanthurus triostegus')).toBeInTheDocument();
-      expect(screen.getByText('Acanthurus olivaceus')).toBeInTheDocument();
+    });
+
+    // Species names should NOT appear as buttons below thumbnails
+    const buttons = screen.queryAllByRole('button');
+    const speciesButtons = buttons.filter(
+      (btn) => btn.textContent === 'Acanthurus triostegus' || btn.textContent === 'Acanthurus olivaceus'
+    );
+    expect(speciesButtons).toHaveLength(0);
+  });
+
+  it('should use color-coded section titles (species=#00BA38, genus=#619CFF, family=#F8766D)', async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({
+        family: 'Acanthuridae',
+        sections: [
+          { genus: 'Acanthurus sp. — Genus-level', images: [{ imageUrl: '/api/images/g/1.jpg', species: null, genus: 'Acanthurus', author: 'BW', uncertain: false, level: 'genus' }], sectionType: 'genus' },
+          { genus: 'Acanthurus', images: [{ imageUrl: '/api/images/s/1.jpg', species: 'Acanthurus triostegus', genus: 'Acanthurus', author: 'BW', uncertain: false, level: 'species' }], sectionType: 'species' },
+          { genus: 'Acanthuridae — Family-level', images: [{ imageUrl: '/api/images/f/1.jpg', species: null, genus: null, author: 'BW', uncertain: false, level: 'family' }], sectionType: 'family' },
+        ],
+      }),
+    });
+
+    render(
+      <FamilyGallery family="Acanthuridae" onBack={vi.fn()} onSelectSpecies={vi.fn()} />
+    );
+
+    await waitFor(() => {
+      const genusHeader = screen.getByText('Acanthurus sp. — Genus-level');
+      expect(genusHeader).toHaveStyle({ color: '#619CFF' });
+      const speciesHeader = screen.getByText('Acanthurus');
+      expect(speciesHeader).toHaveStyle({ color: '#00BA38' });
+      const familyHeader = screen.getByText('Acanthuridae — Family-level');
+      expect(familyHeader).toHaveStyle({ color: '#F8766D' });
     });
   });
 
@@ -148,17 +179,27 @@ describe('BUG 2: FamilyGallery component', () => {
     });
   });
 
-  it('should call onSelectSpecies when species name is clicked', async () => {
+  it('should show "See dispersive traits" link in lightbox that calls onSelectSpecies', async () => {
     const onSelectSpecies = vi.fn();
     render(
       <FamilyGallery family="Acanthuridae" onBack={vi.fn()} onSelectSpecies={onSelectSpecies} />
     );
 
     await waitFor(() => {
-      expect(screen.getByText('Acanthurus triostegus')).toBeInTheDocument();
+      expect(screen.getByTestId('family-gallery')).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText('Acanthurus triostegus'));
+    // Open lightbox by clicking an image card
+    const images = screen.getAllByRole('img');
+    const galleryImage = images.find(img => img.closest('.cursor-pointer'));
+    fireEvent.click(galleryImage!.closest('.cursor-pointer')!);
+
+    // Lightbox should show "See dispersive traits" link
+    await waitFor(() => {
+      expect(screen.getByText(/see dispersive traits/i)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByText(/see dispersive traits/i));
     expect(onSelectSpecies).toHaveBeenCalledWith('Acanthurus triostegus');
   });
 });
