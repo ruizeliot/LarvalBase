@@ -106,4 +106,20 @@ describe('Scatter-only legend: only ref name blue, "no fitted model" muted', () 
     expect(refElement.className).toContain('text-blue');
     expect(refElement.textContent).not.toContain('no fitted model');
   });
+
+  it('should display LENGTH_TYPE in scatter-only legend when available', () => {
+    render(
+      <ScatterOnlyLegendItem
+        reference="Smith et al. 2024"
+        link={null}
+        color="#d73027"
+        shape="circle"
+        avgTemp={25}
+        lengthType="SL"
+      />
+    );
+
+    // Should show "SL · 25.0°C" in metadata line
+    expect(screen.getByText(/SL/)).toBeInTheDocument();
+  });
 });
