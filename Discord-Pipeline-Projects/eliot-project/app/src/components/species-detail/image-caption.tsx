@@ -28,8 +28,10 @@ export function ImageCaption({ author, displayAuthor, uncertain, sourceDescripti
 
   return (
     <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground mt-2">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center">
         <span>Photo: {displayAuthor}</span>
+      </div>
+      <div>
         {uncertain ? (
           <span
             className="text-red-500 font-medium"

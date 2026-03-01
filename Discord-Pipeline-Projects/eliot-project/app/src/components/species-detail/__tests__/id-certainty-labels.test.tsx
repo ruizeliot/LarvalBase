@@ -15,7 +15,7 @@ describe('Species ID certainty labels', () => {
         author="Blackwater"
         displayAuthor="Frank Baensch"
         uncertain={false}
-        sourceDescription="Blackwater — Species ID confirmed"
+        sourceDescription="Blackwater"
       />
     );
 
@@ -37,5 +37,23 @@ describe('Species ID certainty labels', () => {
     const label = screen.getByText('(Unsure ID)');
     expect(label).toBeDefined();
     expect(label.className).toContain('text-red');
+  });
+
+  it('should render certainty label below the Photo author line', () => {
+    const { container } = render(
+      <ImageCaption
+        author="Blackwater"
+        displayAuthor="Frank Baensch"
+        uncertain={false}
+        sourceDescription="Blackwater"
+      />
+    );
+
+    // The caption should be a flex column — Photo author on one line, certainty below
+    const photoLine = screen.getByText(/Photo: Frank Baensch/);
+    const certaintyLabel = screen.getByText('(Sure ID)');
+
+    // They should be in separate parent elements (not siblings in same flex row)
+    expect(photoLine.parentElement).not.toBe(certaintyLabel.parentElement);
   });
 });
