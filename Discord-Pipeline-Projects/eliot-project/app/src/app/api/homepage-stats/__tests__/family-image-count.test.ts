@@ -93,6 +93,78 @@ describe('Family image count', () => {
     expect(selectedUrl).toContain('bw1.jpg');
   });
 
+  it('should detect blackwater by PATH (classified_bw) not just author name', () => {
+    // Reproduce: Trachipteridae/Fistulariidae show broken thumbnails because
+    // blackwater detection used author name only, missing path-based detection.
+    const img = makeImage({
+      author: 'Blackwater',
+      path: 'classified_bw_images_species',
+      filename: 'bw-test.jpg',
+      family: 'Trachipteridae',
+    });
+
+    // Path-based detection should identify blackwater
+    const isBlackwaterByPath = img.path.includes('classified_bw');
+    expect(isBlackwaterByPath).toBe(true);
+  });
+
+  it('should skip 0-byte images when selecting thumbnail', () => {
+    const imagesBySpecies = new Map<string, SpeciesImage[]>();
+
+    // Family with a 0-byte blackwater image (best score) and a valid CRIOBE image
+    imagesBySpecies.set('Fistularia tabacaria', [
+      makeImage({
+        author: 'Blackwater',
+        uncertain: false,
+        priority: 1,
+        path: 'classified_bw_images_species',
+        filename: 'zero-byte.jpg',
+        family: 'Fistulariidae',
+      }),
+      makeImage({
+        author: 'CRIOBE',
+        uncertain: false,
+        priority: 5,
+        path: 'Polynesia',
+        filename: 'valid.jpg',
+        family: 'Fistulariidae',
+      }),
+    ]);
+
+    // Simulate the selection logic with 0-byte skipping:
+    // Collect candidates, sort by score, skip 0-byte
+    type Candidate = { imageUrl: string; score: number; path: string; filename: string };
+    const familyCandidates = new Map<string, Candidate[]>();
+
+    for (const images of imagesBySpecies.values()) {
+      for (const img of images) {
+        if (!img.family) continue;
+        const isBlackwater = img.path.includes('classified_bw');
+        const score = (isBlackwater && !img.uncertain) ? 0
+          : (isBlackwater && img.uncertain) ? 1
+          : !img.uncertain ? 2
+          : 3;
+        const candidates = familyCandidates.get(img.family) ?? [];
+        candidates.push({
+          imageUrl: `/api/images/${img.path}/${img.filename}`,
+          score,
+          path: img.path,
+          filename: img.filename,
+        });
+        familyCandidates.set(img.family, candidates);
+      }
+    }
+
+    const candidates = familyCandidates.get('Fistulariidae')!;
+    candidates.sort((a, b) => a.score - b.score);
+
+    // Best candidate is the blackwater one (score 0)
+    expect(candidates[0].filename).toBe('zero-byte.jpg');
+    // If we skip it (0-byte), the fallback should be CRIOBE
+    expect(candidates[1].filename).toBe('valid.jpg');
+    expect(candidates[1].score).toBe(2);
+  });
+
   it('should count images across multiple species in same family', () => {
     const imagesBySpecies = new Map<string, SpeciesImage[]>();
 

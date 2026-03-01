@@ -89,24 +89,64 @@ export async function GET() {
       familyImageCount.set(family, (familyImageCount.get(family) ?? 0) + count);
     }
 
-    // Select best thumbnail per family: certain blackwater > certain any > first available
-    // Images are already sorted by priority+certainty in the registry
-    const familyImageMap = new Map<string, string>();
-    const familyBestScore = new Map<string, number>(); // lower = better
+    // Load set of 0-byte image paths to skip broken thumbnails
+    const zeroBytePaths = new Set<string>();
+    try {
+      const zbContent = await fs.readFile(
+        path.join(process.cwd(), 'zero-byte-images.txt'),
+        'utf-16le'
+      );
+      for (const line of zbContent.split('\n')) {
+        const trimmed = line.replace(/^\uFEFF/, '').trim();
+        if (trimmed) zeroBytePaths.add(trimmed);
+      }
+    } catch {
+      // zero-byte list not available — skip
+    }
+
+    // Collect thumbnail candidates per family, detect blackwater by PATH
+    const familyCandidates = new Map<string, { imageUrl: string; score: number; imgPath: string; filename: string }[]>();
     for (const images of imageRegistry.imagesBySpecies.values()) {
       for (const img of images) {
         if (!img.family) continue;
-        const imageUrl = buildImageUrl(img.path, img.filename);
+        // Detect blackwater by path (classified_bw), not author name
+        const isBlackwater = img.path.includes('classified_bw');
         // Score: 0 = certain BW (best), 1 = uncertain BW, 2 = certain other, 3 = uncertain other
-        const score = (img.author === 'Blackwater' && !img.uncertain) ? 0
-          : (img.author === 'Blackwater' && img.uncertain) ? 1
+        const score = (isBlackwater && !img.uncertain) ? 0
+          : (isBlackwater && img.uncertain) ? 1
           : !img.uncertain ? 2
           : 3;
-        const currentBest = familyBestScore.get(img.family) ?? 999;
-        if (score < currentBest) {
-          familyImageMap.set(img.family, imageUrl);
-          familyBestScore.set(img.family, score);
+        const candidates = familyCandidates.get(img.family) ?? [];
+        candidates.push({
+          imageUrl: buildImageUrl(img.path, img.filename),
+          score,
+          imgPath: img.path,
+          filename: img.filename,
+        });
+        familyCandidates.set(img.family, candidates);
+      }
+    }
+
+    // Select best valid thumbnail per family, skipping 0-byte images
+    const familyImageMap = new Map<string, string>();
+    for (const [family, candidates] of familyCandidates) {
+      candidates.sort((a, b) => a.score - b.score);
+      for (const candidate of candidates) {
+        // Skip 0-byte images (check against known list)
+        const fullRelative = `${candidate.imgPath}/${candidate.filename}`;
+        if (zeroBytePaths.has(fullRelative)) continue;
+        // Also verify file exists for blackwater candidates
+        if (candidate.imgPath.includes('classified_bw')) {
+          try {
+            const filePath = path.join(imagesDir, candidate.imgPath, candidate.filename);
+            const stat = await fs.stat(filePath);
+            if (stat.size === 0) continue;
+          } catch {
+            continue; // file doesn't exist
+          }
         }
+        familyImageMap.set(family, candidate.imageUrl);
+        break;
       }
     }
 
