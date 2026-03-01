@@ -4,6 +4,7 @@ import path from 'path';
 import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
 import { loadImageRegistry } from '@/lib/data/image-registry';
+import { buildImageUrl } from '@/lib/utils/encode-image-path';
 
 /**
  * Count images per family from a metadata file.
@@ -73,7 +74,7 @@ export async function GET() {
     for (const images of imageRegistry.imagesBySpecies.values()) {
       for (const img of images) {
         if (!img.family) continue;
-        const imageUrl = `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`;
+        const imageUrl = buildImageUrl(img.path, img.filename);
         // Score: 0 = certain BW (best), 1 = uncertain BW, 2 = certain other, 3 = uncertain other
         const score = (img.author === 'Blackwater' && !img.uncertain) ? 0
           : (img.author === 'Blackwater' && img.uncertain) ? 1

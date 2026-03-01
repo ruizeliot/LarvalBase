@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
+import { buildImageUrl } from '@/lib/utils/encode-image-path';
 
 interface GalleryImage {
   imageUrl: string;
@@ -50,7 +51,7 @@ async function parseMetadataForFamily(
         if (!imgPath || !fileName) return;
 
         images.push({
-          imageUrl: `/api/images/${encodeURIComponent(imgPath)}/${encodeURIComponent(fileName)}`,
+          imageUrl: buildImageUrl(imgPath, fileName),
           species,
           genus,
           author,
