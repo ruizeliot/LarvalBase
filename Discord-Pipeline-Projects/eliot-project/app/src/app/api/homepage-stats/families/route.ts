@@ -74,10 +74,11 @@ export async function GET() {
       for (const img of images) {
         if (!img.family) continue;
         const imageUrl = `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`;
-        // Score: 0 = certain blackwater (best), 1 = certain other, 2 = uncertain
-        const score = (!img.uncertain && img.author === 'Blackwater') ? 0
-          : !img.uncertain ? 1
-          : 2;
+        // Score: 0 = certain BW (best), 1 = uncertain BW, 2 = certain other, 3 = uncertain other
+        const score = (img.author === 'Blackwater' && !img.uncertain) ? 0
+          : (img.author === 'Blackwater' && img.uncertain) ? 1
+          : !img.uncertain ? 2
+          : 3;
         const currentBest = familyBestScore.get(img.family) ?? 999;
         if (score < currentBest) {
           familyImageMap.set(img.family, imageUrl);

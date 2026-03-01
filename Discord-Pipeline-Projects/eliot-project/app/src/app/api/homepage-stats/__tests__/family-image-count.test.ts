@@ -58,6 +58,41 @@ describe('Family image count', () => {
     expect(counts.get('Testidae')).toBe(5);
   });
 
+  it('should prefer uncertain BW over certain non-BW for thumbnail', () => {
+    const imagesBySpecies = new Map<string, SpeciesImage[]>();
+
+    // Family with uncertain BW and certain CRIOBE — BW should win
+    imagesBySpecies.set('Testus alpha', [
+      makeImage({ author: 'CRIOBE', uncertain: false, priority: 5, filename: 'criobe1.jpg', family: 'Alphaidae' }),
+    ]);
+    imagesBySpecies.set('Testus beta', [
+      makeImage({ author: 'Blackwater', uncertain: true, priority: 1, filename: 'bw1.jpg', family: 'Alphaidae' }),
+    ]);
+
+    // Scoring: BW certain=0, BW uncertain=1, non-BW certain=2, non-BW uncertain=3
+    const familyImageMap = new Map<string, string>();
+    const familyBestScore = new Map<string, number>();
+    for (const images of imagesBySpecies.values()) {
+      for (const img of images) {
+        if (!img.family) continue;
+        const imageUrl = `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`;
+        const score = (img.author === 'Blackwater' && !img.uncertain) ? 0
+          : (img.author === 'Blackwater' && img.uncertain) ? 1
+          : !img.uncertain ? 2
+          : 3;
+        const currentBest = familyBestScore.get(img.family) ?? 999;
+        if (score < currentBest) {
+          familyImageMap.set(img.family, imageUrl);
+          familyBestScore.set(img.family, score);
+        }
+      }
+    }
+
+    // BW uncertain (score=1) should beat CRIOBE certain (score=2)
+    const selectedUrl = familyImageMap.get('Alphaidae')!;
+    expect(selectedUrl).toContain('bw1.jpg');
+  });
+
   it('should count images across multiple species in same family', () => {
     const imagesBySpecies = new Map<string, SpeciesImage[]>();
 
