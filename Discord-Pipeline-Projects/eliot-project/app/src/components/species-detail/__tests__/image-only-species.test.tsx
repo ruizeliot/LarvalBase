@@ -113,6 +113,28 @@ describe('US-5.5: Image-only species pages', () => {
     expect(container.querySelector('img')).not.toBeNull();
   });
 
+  it('should center family icon vertically relative to species name', () => {
+    const { container } = render(
+      <SpeciesHeader
+        speciesId="test-species"
+        scientificName="Test species"
+        commonName={null}
+        family="Testidae"
+        order="Testiformes"
+        recordCount={5}
+        studyCount={2}
+      />
+    );
+
+    // The family icon's parent flex container should NOT use items-start (should be items-center)
+    const familyIcon = container.querySelector('img[src*="family-icons"]');
+    expect(familyIcon).not.toBeNull();
+    const iconParent = familyIcon!.closest('.flex.gap-4');
+    expect(iconParent).not.toBeNull();
+    expect(iconParent!.className).not.toContain('items-start');
+    expect(iconParent!.className).toContain('items-center');
+  });
+
   it('should not show record counts when recordCount is 0', () => {
     render(
       <SpeciesHeader
