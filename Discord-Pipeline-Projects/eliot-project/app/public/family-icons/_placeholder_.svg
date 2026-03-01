@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="72" height="48" viewBox="0 0 72 48" xmlns="http://www.w3.org/2000/svg">
+  <!-- Placeholder for missing family silhouettes -->
+  <!-- Dashed outline rectangle indicating missing icon -->
+  <rect
+    x="4" y="4"
+    width="64" height="40"
+    rx="4" ry="4"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-dasharray="4 4"
+    opacity="0.3"
+  />
+  <!-- Question mark in center -->
+  <text
+    x="36" y="32"
+    font-family="system-ui, sans-serif"
+    font-size="20"
+    text-anchor="middle"
+    fill="currentColor"
+    opacity="0.3"
+  >?</text>
+</svg>
