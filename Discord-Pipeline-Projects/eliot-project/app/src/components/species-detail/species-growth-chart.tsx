@@ -80,6 +80,35 @@ export function GrowthTooltip({
 }
 
 /**
+ * Compute axis caps for the weight chart.
+ * Uses the same xMax from met/set databases but computes yMax from weight data.
+ */
+export function computeWeightAxisCaps(
+  rawPoints: RawGrowthPoint[],
+  weightCurves: GrowthCurve[],
+  xMax: number | null,
+): { xMax: number | null; yMax: number | null } {
+  let yMax = 0;
+
+  // Max from raw weight data
+  for (const p of rawPoints) {
+    if (p.weight !== null && p.weight > yMax) yMax = p.weight;
+  }
+
+  // Max from weight curve points
+  for (const curve of weightCurves) {
+    for (const pt of curve.points) {
+      if (pt.y > yMax) yMax = pt.y;
+    }
+  }
+
+  return {
+    xMax,
+    yMax: yMax > 0 ? yMax * 1.05 : null,
+  };
+}
+
+/**
  * Legend item with equation and °C on the same line.
  * Reference names are clickable hyperlinks when LINK is available.
  */
@@ -650,6 +679,12 @@ export function SpeciesGrowthChart({
     return "Weight (mg)";
   }, [recoloredWeightCurves]);
 
+  // Weight axis caps: share xMax from met/set, compute yMax from weight data
+  const weightAxisCaps = useMemo(() => {
+    if (!hasWeight) return null;
+    return computeWeightAxisCaps(weightPoints, recoloredWeightCurves, axisCaps?.xMax ?? null);
+  }, [hasWeight, weightPoints, recoloredWeightCurves, axisCaps]);
+
   // Weight scatter groups — group weight raw points by reference
   const weightScatterGroups: RawPointGroup[] = useMemo(() => {
     if (!hasWeight) return [];
@@ -762,7 +797,7 @@ export function SpeciesGrowthChart({
               }))}
               xAxisLabel={xAxisLabel}
               yAxisLabel={weightYLabel}
-              axisCaps={null}
+              axisCaps={weightAxisCaps}
               refIndexMap={refIndexMap}
               tempMin={tempMin}
               tempMax={tempMax}
