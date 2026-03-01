@@ -353,6 +353,38 @@ function GrowthChartPanel({
 }) {
   const chartData = useMemo(() => buildChartData(curves), [curves]);
 
+  // Compute explicit axis domains from all data (curves + scatter) to prevent
+  // Recharts from using [0, 0] when chartData is empty (scatter-only case).
+  const xDomain = useMemo((): [number, number | 'auto'] => {
+    if (axisCaps?.xMax) return [0, axisCaps.xMax];
+    let xMax = 0;
+    for (const row of chartData) {
+      if (typeof row.x === 'number' && row.x > xMax) xMax = row.x;
+    }
+    for (const g of scatterGroups) {
+      for (const p of g.points) {
+        if (p.age > xMax) xMax = p.age;
+      }
+    }
+    return xMax > 0 ? [0, xMax * 1.05] : [0, 'auto'];
+  }, [chartData, scatterGroups, axisCaps]);
+
+  const yDomain = useMemo((): [number, number | 'auto'] => {
+    if (axisCaps?.yMax) return [0, axisCaps.yMax];
+    let yMax = 0;
+    for (const row of chartData) {
+      for (const [key, val] of Object.entries(row)) {
+        if (key !== 'x' && typeof val === 'number' && val > yMax) yMax = val;
+      }
+    }
+    for (const g of scatterGroups) {
+      for (const p of g.points) {
+        if (p.length !== null && p.length > yMax) yMax = p.length;
+      }
+    }
+    return yMax > 0 ? [0, yMax * 1.05] : [0, 'auto'];
+  }, [chartData, scatterGroups, axisCaps]);
+
   return (
     <div>
       <p className="text-xs font-medium text-muted-foreground mb-1">{title}</p>
@@ -366,7 +398,7 @@ function GrowthChartPanel({
             <XAxis
               dataKey="x"
               type="number"
-              domain={[0, axisCaps?.xMax ?? 'auto']}
+              domain={xDomain}
               label={{
                 value: xAxisLabel,
                 position: "bottom",
@@ -379,7 +411,7 @@ function GrowthChartPanel({
             />
             <YAxis
               type="number"
-              domain={[0, axisCaps?.yMax ?? 'auto']}
+              domain={yDomain}
               label={{
                 value: yAxisLabel,
                 angle: -90,

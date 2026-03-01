@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   output: undefined, // Default: hybrid SSR+SSG
   experimental: {
     /** Optimize server components for faster TTFB */
-    optimizePackageImports: ['lucide-react', 'recharts'],
+    optimizePackageImports: ['lucide-react'],
   },
   images: {
     /** Serve smaller thumbnails for grids */
