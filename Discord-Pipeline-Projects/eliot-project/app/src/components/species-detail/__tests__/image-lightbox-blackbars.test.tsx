@@ -42,6 +42,7 @@ const mockImage: SpeciesImage = {
   uncertain: false,
   path: 'classified_bw_images_species',
   filename: 'test-image.jpg',
+  sourceDescription: 'Blackwater',
   priority: 1,
   speciesName: 'Chromis viridis',
   family: 'Pomacentridae',
@@ -101,6 +102,26 @@ describe('US-5.2: Lightbox with black bars (letterbox/pillarbox)', () => {
     const dialog = screen.getByTestId('lightbox-dialog');
     expect(dialog.textContent).toContain('Chromis viridis');
     expect(dialog.textContent).toContain('Test Photographer');
+  });
+
+  it('should render species name in italic in the lightbox caption', () => {
+    const { container } = render(
+      <SpeciesImageGallery images={[mockImage]} speciesName="Chromis viridis" />
+    );
+
+    // Open lightbox
+    const clickableArea = container.querySelector('.cursor-pointer');
+    if (clickableArea) {
+      fireEvent.click(clickableArea);
+    }
+
+    // Find the species name element in the lightbox
+    const dialog = screen.getByTestId('lightbox-dialog');
+    const speciesNameEl = Array.from(dialog.querySelectorAll('p')).find(
+      (p) => p.textContent === 'Chromis viridis'
+    );
+    expect(speciesNameEl).toBeDefined();
+    expect(speciesNameEl!.className).toContain('italic');
   });
 
   it('lightbox image container should have black background for letterbox/pillarbox effect', () => {

@@ -292,7 +292,7 @@ function ImageLightbox({
         {/* Caption */}
         <div className="bg-gradient-to-t from-black/80 to-transparent p-4 text-white">
           <div className="text-center">
-            <p className="font-medium">{speciesName}</p>
+            <p className="font-medium italic">{speciesName}</p>
             <p className="text-sm opacity-90">
               Photo: {image.displayAuthor}
               {image.sourceDescription && (
