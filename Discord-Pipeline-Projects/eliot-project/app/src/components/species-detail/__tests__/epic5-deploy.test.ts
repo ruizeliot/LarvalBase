@@ -28,7 +28,7 @@ describe('US-5.6: Deploy verification', () => {
     expect(source).toContain('getSourceDescription');
     expect(source).toContain('Polynesia — CRIOBE field collection');
     expect(source).toContain('Maldives — ADLIFISH survey');
-    expect(source).toContain('Blackwater — Species ID confirmed');
+    expect(source).toContain("'classified_bw_images_species': 'Blackwater'");
   });
 
   it('should have lightbox with pure black background', async () => {
