@@ -219,7 +219,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
               )}
               <p className="text-sm text-white/60">
                 {allImages[lightboxIndex].author}
-                {allImages[lightboxIndex].uncertain && " (uncertain ID)"}
+                {allImages[lightboxIndex].uncertain ? " (Unsure ID)" : " (Sure ID)"}
               </p>
               <p className="text-xs text-white/40">
                 {lightboxIndex + 1} / {allImages.length}

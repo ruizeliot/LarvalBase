@@ -30,12 +30,19 @@ export function ImageCaption({ author, displayAuthor, uncertain, sourceDescripti
     <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground mt-2">
       <div className="flex items-center gap-2">
         <span>Photo: {displayAuthor}</span>
-        {uncertain && (
+        {uncertain ? (
           <span
-            className="text-yellow-500 font-medium"
+            className="text-red-500 font-medium"
             title="Species identification is uncertain"
           >
-            (uncertain ID)
+            (Unsure ID)
+          </span>
+        ) : (
+          <span
+            className="text-green-500 font-medium"
+            title="Species identification is confirmed"
+          >
+            (Sure ID)
           </span>
         )}
       </div>

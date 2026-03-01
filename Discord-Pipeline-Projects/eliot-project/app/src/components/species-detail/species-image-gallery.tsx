@@ -298,8 +298,10 @@ function ImageLightbox({
                 <span className="opacity-75"> · {image.sourceDescription}</span>
               )}
             </p>
-            {image.uncertain && (
-              <p className="text-yellow-400 text-sm">(uncertain identification)</p>
+            {image.uncertain ? (
+              <p className="text-red-400 text-sm">(Unsure ID)</p>
+            ) : (
+              <p className="text-green-400 text-sm">(Sure ID)</p>
             )}
             {images.length > 1 && (
               <p className="text-xs opacity-75 mt-1">
