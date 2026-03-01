@@ -108,9 +108,9 @@ const TRAIT_LABELS: Record<string, string> = {
 
 /** Colors for each trait's bars. */
 const TRAIT_COLORS: Record<string, string> = {
-  EGG_LOCATION: '#60a5fa',
-  EGG_SHAPE: '#4ade80',
-  NB_OIL_GLOBULE: '#f59e0b',
+  EGG_LOCATION: '#00BA38',
+  EGG_SHAPE: '#00BA38',
+  NB_OIL_GLOBULE: '#00BA38',
 };
 
 /**

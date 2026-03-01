@@ -144,4 +144,14 @@ describe('US-3.1: Qualitative egg traits as frequency barplots', () => {
     const bars = container.querySelectorAll('[data-testid="freq-bar-fill"]');
     expect(bars.length).toBeGreaterThan(0);
   });
+
+  it('should use #00BA38 green for all three egg trait bar colors', () => {
+    const { container } = render(<EggQualitativePanel data={speciesLevelData} />);
+
+    const bars = container.querySelectorAll('[data-testid="freq-bar-fill"]');
+    // All bars across all 3 traits should use #00BA38
+    bars.forEach((bar) => {
+      expect((bar as HTMLElement).style.backgroundColor).toBe('rgb(0, 186, 56)');
+    });
+  });
 });
