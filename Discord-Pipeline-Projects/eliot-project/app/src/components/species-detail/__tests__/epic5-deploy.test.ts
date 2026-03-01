@@ -47,11 +47,11 @@ describe('US-5.6: Deploy verification', () => {
     expect(source).toContain('max-h-[60vh]');
   });
 
-  it('should have Image only badge in species header', async () => {
+  it('should NOT have Image only badge in species header (removed per QA)', async () => {
     const source = await fs.readFile(
       path.join(process.cwd(), 'src', 'components', 'species-detail', 'species-header.tsx'),
       'utf-8'
     );
-    expect(source).toContain('Image only');
+    expect(source).not.toContain('Image only');
   });
 });
