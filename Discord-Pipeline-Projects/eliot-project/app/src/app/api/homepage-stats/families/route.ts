@@ -1,6 +1,36 @@
 import { NextResponse } from 'next/server';
+import { promises as fs } from 'fs';
+import path from 'path';
+import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
 import { loadImageRegistry } from '@/lib/data/image-registry';
+
+/**
+ * Count images per family from a metadata file.
+ */
+async function countImagesFromMetadata(
+  filePath: string
+): Promise<Map<string, number>> {
+  const counts = new Map<string, number>();
+  try {
+    const content = await fs.readFile(filePath, 'utf-8');
+    Papa.parse(content, {
+      delimiter: '@',
+      header: true,
+      skipEmptyLines: true,
+      step: (result) => {
+        const row = result.data as Record<string, string>;
+        const family = (row.FAMILY || '').replace(/^"|"$/g, '');
+        if (family) {
+          counts.set(family, (counts.get(family) ?? 0) + 1);
+        }
+      },
+    });
+  } catch {
+    // File not found — skip
+  }
+  return counts;
+}
 
 /**
  * GET /api/homepage-stats/families
@@ -11,43 +41,48 @@ import { loadImageRegistry } from '@/lib/data/image-registry';
  */
 export async function GET() {
   try {
-    const [data, imageRegistry] = await Promise.all([
+    const imagesDir = path.join(process.cwd(), 'images');
+    const [data, imageRegistry, genCounts, famCounts] = await Promise.all([
       getOrLoadData(),
       loadImageRegistry(),
+      countImagesFromMetadata(path.join(imagesDir, 'gen_ids_pics_metadata.txt')),
+      countImagesFromMetadata(path.join(imagesDir, 'fam_ids_pics_metadata.txt')),
     ]);
 
-    // Build family -> best image map and image count from image registry
-    // Priority: certain blackwater > certain any > uncertain any
-    const familyImageMap = new Map<string, string>();
+    // Count ALL species-level images per family (no early break)
     const familyImageCount = new Map<string, number>();
     for (const images of imageRegistry.imagesBySpecies.values()) {
       for (const img of images) {
         if (!img.family) continue;
-        // Count all images per family
         familyImageCount.set(img.family, (familyImageCount.get(img.family) ?? 0) + 1);
-
-        const existing = familyImageMap.get(img.family);
-        // Build URL for this image
-        const imageUrl = `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`;
-
-        if (!existing) {
-          // No image yet for this family — use this one
-          familyImageMap.set(img.family, imageUrl);
-        } else if (!img.uncertain && img.author === 'Blackwater') {
-          // Certain blackwater image — always preferred
-          familyImageMap.set(img.family, imageUrl);
-          break; // Found best possible for this species, but continue loop for other families
-        }
       }
     }
 
-    // Second pass: prefer certain blackwater images specifically
+    // Add genus-level and family-level image counts
+    for (const [family, count] of genCounts) {
+      familyImageCount.set(family, (familyImageCount.get(family) ?? 0) + count);
+    }
+    for (const [family, count] of famCounts) {
+      familyImageCount.set(family, (familyImageCount.get(family) ?? 0) + count);
+    }
+
+    // Select best thumbnail per family: certain blackwater > certain any > first available
+    // Images are already sorted by priority+certainty in the registry
+    const familyImageMap = new Map<string, string>();
+    const familyBestScore = new Map<string, number>(); // lower = better
     for (const images of imageRegistry.imagesBySpecies.values()) {
       for (const img of images) {
-        if (!img.family || img.uncertain || img.author !== 'Blackwater') continue;
-        // Overwrite with certain blackwater if available
-        familyImageMap.set(img.family, `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`);
-        break; // One per species is enough
+        if (!img.family) continue;
+        const imageUrl = `/api/images/${encodeURIComponent(img.path)}/${encodeURIComponent(img.filename)}`;
+        // Score: 0 = certain blackwater (best), 1 = certain other, 2 = uncertain
+        const score = (!img.uncertain && img.author === 'Blackwater') ? 0
+          : !img.uncertain ? 1
+          : 2;
+        const currentBest = familyBestScore.get(img.family) ?? 999;
+        if (score < currentBest) {
+          familyImageMap.set(img.family, imageUrl);
+          familyBestScore.set(img.family, score);
+        }
       }
     }
 
