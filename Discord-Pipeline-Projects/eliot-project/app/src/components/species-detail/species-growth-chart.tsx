@@ -132,7 +132,7 @@ export function GrowthLegendItem({
           </span>
         )}
         <span className="text-muted-foreground text-[10px]">
-          {model.equation ? `${model.equation} · ` : ''}{temp}
+          {model.yType ? `${model.yType} · ` : ''}{model.equation ? `${model.equation} · ` : ''}{temp}
         </span>
       </div>
     </div>
@@ -565,26 +565,22 @@ export function SpeciesGrowthChart({
   }, [curves, weightCurves]);
 
   const yAxisLabel = useMemo(() => {
+    // Show generic axis label — specific type (SL, TL) goes in legend
     if (curves.length > 0) {
-      const { yType, yUnit } = curves[0].model;
-      return `${yType} (${yUnit})`;
-    }
-    if (lengthRawPoints.length > 0) {
-      return `Length (${lengthRawPoints[0].lengthType})`;
+      const { yUnit } = curves[0].model;
+      return `Length (${yUnit})`;
     }
     return "Length (mm)";
-  }, [curves, lengthRawPoints]);
+  }, [curves]);
 
-  // Weight axis label
+  // Weight axis label — generic, specific type (DW, WW) goes in legend
   const weightYLabel = useMemo(() => {
     if (recoloredWeightCurves.length > 0) {
-      const { yType, yUnit } = recoloredWeightCurves[0].model;
-      return `${yType} (${yUnit})`;
+      const { yUnit } = recoloredWeightCurves[0].model;
+      return `Weight (${yUnit})`;
     }
-    const wp = weightPoints[0];
-    if (wp?.weightType) return `Weight (${wp.weightType})`;
     return "Weight (mg)";
-  }, [recoloredWeightCurves, weightPoints]);
+  }, [recoloredWeightCurves]);
 
   // Weight scatter groups — group weight raw points by reference
   const weightScatterGroups: RawPointGroup[] = useMemo(() => {
