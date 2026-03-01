@@ -130,10 +130,11 @@ export function SpeciesImageGallery({ images, speciesName }: SpeciesImageGallery
               onClick={() => openLightbox(0)}
             />
           </div>
-          <ImageCaption 
-            author={image.author} 
+          <ImageCaption
+            author={image.author}
             displayAuthor={image.displayAuthor}
-            uncertain={image.uncertain} 
+            uncertain={image.uncertain}
+            sourceDescription={image.sourceDescription}
           />
         </div>
         <ImageLightbox
@@ -293,8 +294,8 @@ function ImageLightbox({
             <p className="font-medium">{speciesName}</p>
             <p className="text-sm opacity-90">
               Photo: {image.displayAuthor}
-              {image.author !== image.displayAuthor && (
-                <span className="opacity-75"> (via {image.author})</span>
+              {image.sourceDescription && (
+                <span className="opacity-75"> · {image.sourceDescription}</span>
               )}
             </p>
             {image.uncertain && (

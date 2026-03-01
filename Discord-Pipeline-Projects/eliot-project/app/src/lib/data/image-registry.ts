@@ -11,6 +11,7 @@ import Papa from 'papaparse';
 import {
   ImageMetadataSchema,
   getAuthorPriority,
+  getSourceDescription,
   extractBlackwaterPhotographer,
   type ImageRegistry,
   type SpeciesImage,
@@ -65,6 +66,7 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
           uncertain: parsed.UNCERTAIN,
           path: relativePath,
           filename: parsed.FILE_NAME,
+          sourceDescription: getSourceDescription(relativePath),
           priority: getAuthorPriority(parsed.AUTHOR),
           speciesName: parsed.VALID_NAME,
           family: parsed.FAMILY,

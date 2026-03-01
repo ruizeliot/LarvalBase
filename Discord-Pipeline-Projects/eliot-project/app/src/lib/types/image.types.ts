@@ -61,6 +61,8 @@ export interface SpeciesImage {
   path: string;
   /** Image filename */
   filename: string;
+  /** Human-readable source description for captions */
+  sourceDescription: string;
   /** Computed priority (lower = more preferred) */
   priority: number;
   /** Full species name (VALID_NAME) */
@@ -106,4 +108,27 @@ export interface ImageRegistry {
  */
 export function getAuthorPriority(author: string): number {
   return AUTHOR_PRIORITY[author] ?? DEFAULT_PRIORITY;
+}
+
+/**
+ * Map of image directory paths to human-readable source descriptions.
+ * Used for caption display (US-5.3).
+ */
+const PATH_SOURCE_DESCRIPTIONS: Record<string, string> = {
+  'Polynesia': 'Polynesia — CRIOBE field collection',
+  'Maldives': 'Maldives — ADLIFISH survey',
+  'classified_bw_images_species': 'Blackwater — Species ID confirmed',
+  'Madagascar - Reunion': 'Madagascar — Ocea Consult–IHSM',
+  'Guadeloupe': 'Guadeloupe — IchthyoGwada',
+  'Guadeloupe - Amelia': 'Guadeloupe — Amelia Chatagnon',
+  'Vietnam': 'Vietnam — Pham & Durand',
+  'Fisher': 'Fisher et al. 2022',
+};
+
+/**
+ * Get a human-readable source description for an image path.
+ * Falls back to the raw path if no mapping exists.
+ */
+export function getSourceDescription(imagePath: string): string {
+  return PATH_SOURCE_DESCRIPTIONS[imagePath] ?? imagePath;
 }
