@@ -212,6 +212,57 @@ function ShapeSVG({
 }
 
 /**
+ * Legend item for scatter-only references (no fitted model).
+ * Only the reference name is blue/clickable; "no fitted model" is muted.
+ */
+export function ScatterOnlyLegendItem({
+  reference,
+  link,
+  color,
+  shape,
+  avgTemp,
+  lengthType,
+}: {
+  reference: string;
+  link: string | null;
+  color: string;
+  shape: PointShapeType;
+  avgTemp: number | null;
+  lengthType: string | null;
+}) {
+  return (
+    <div className="flex items-start gap-2 text-xs py-1">
+      <svg width="24" height="16" className="flex-shrink-0 mt-1">
+        <ShapeSVG shape={shape} cx={12} cy={8} r={5} fill="none" stroke={color} />
+      </svg>
+      <div className="min-w-0">
+        <div>
+          {link ? (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-500 hover:text-blue-400 hover:underline"
+              title={reference}
+            >
+              {reference}
+            </a>
+          ) : (
+            <span className="text-blue-500" title={reference}>
+              {reference}
+            </span>
+          )}
+          <span className="text-muted-foreground"> — <em>no fitted model</em></span>
+        </div>
+        <span className="text-muted-foreground text-[10px]">
+          {lengthType ? `${lengthType} · ` : ''}{avgTemp !== null ? `${avgTemp.toFixed(1)}°C` : ''}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
  * Custom scatter shape renderer for Recharts.
  */
 function makeScatterShape(shape: PointShapeType, fillColor: string, hasModel: boolean) {
@@ -237,6 +288,7 @@ export interface RawPointGroup {
   avgTemp: number | null;
   shape: PointShapeType;
   link: string | null;
+  lengthType: string | null;
 }
 
 /**
@@ -273,7 +325,23 @@ export function groupRawPointsByReference(
     const shape = POINT_SHAPES[refIdx % POINT_SHAPES.length];
     const link = points[0]?.link || null;
 
-    return { reference, points, color, hasModel, avgTemp, shape, link };
+    // Get most common lengthType from points
+    const ltCounts = new Map<string, number>();
+    for (const p of points) {
+      if (p.lengthType) {
+        ltCounts.set(p.lengthType, (ltCounts.get(p.lengthType) || 0) + 1);
+      }
+    }
+    let lengthType: string | null = null;
+    let maxLtCount = 0;
+    for (const [lt, count] of ltCounts) {
+      if (count > maxLtCount) {
+        lengthType = lt;
+        maxLtCount = count;
+      }
+    }
+
+    return { reference, points, color, hasModel, avgTemp, shape, link, lengthType };
   });
 }
 
@@ -737,32 +805,24 @@ export function SpeciesGrowthChart({
               );
             })}
             {/* Scatter-only references */}
+            {sortedScatterGroups.filter(g => !g.hasModel).length > 0 && (
+              <div className="col-span-full">
+                <p className="text-[10px] text-muted-foreground italic mt-1">Scatter points only (no fitted model)</p>
+              </div>
+            )}
             {sortedScatterGroups.filter(g => !g.hasModel).map((group) => {
               const refIdx = refIndexMap.get(group.reference) ?? 0;
               const shape = POINT_SHAPES[refIdx % POINT_SHAPES.length];
               return (
-                <div key={`legend-scatter-${group.reference}`} className="flex items-start gap-2 text-xs py-1">
-                  <svg width="24" height="16" className="flex-shrink-0 mt-1">
-                    <ShapeSVG shape={shape} cx={12} cy={8} r={5} fill="none" stroke={group.color} />
-                  </svg>
-                  <div className="min-w-0">
-                    {group.link ? (
-                      <a
-                        href={group.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-500 hover:text-blue-400 hover:underline block"
-                      >
-                        {group.reference} — <em>no fitted model</em>
-                      </a>
-                    ) : (
-                      <span className="text-blue-500 block">{group.reference} — <em>no fitted model</em></span>
-                    )}
-                    <span className="text-muted-foreground text-[10px]">
-                      {group.avgTemp !== null ? `${group.avgTemp.toFixed(1)}°C · ` : ''}Scatter points only
-                    </span>
-                  </div>
-                </div>
+                <ScatterOnlyLegendItem
+                  key={`legend-scatter-${group.reference}`}
+                  reference={group.reference}
+                  link={group.link}
+                  color={group.color}
+                  shape={shape}
+                  avgTemp={group.avgTemp}
+                  lengthType={group.lengthType}
+                />
               );
             })}
           </div>
