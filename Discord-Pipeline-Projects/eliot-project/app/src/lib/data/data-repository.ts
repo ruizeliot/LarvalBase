@@ -17,6 +17,7 @@ import { parseTraitCSV } from './csv-parser';
 import { validateParsedCSV, type SchemaValidationResult } from './schema-validator';
 import { buildDatabaseTraitRegistry, type DatabaseTraitRegistry } from './database-registry';
 import { loadImageRegistry } from './image-registry';
+import { isExcludedFamily } from './excluded-families';
 import { buildTaxonomyTree } from '@/lib/services/taxonomy.service';
 import type { Species, TraitData } from '@/lib/types/species.types';
 import type { TaxonomyNode } from '@/lib/types/taxonomy.types';
@@ -157,6 +158,10 @@ function extractSpeciesFromRows(rows: SpeciesRow[]): Map<string, Species> {
     const validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
     if (!validName) continue;
 
+    // Skip excluded families (non-fish taxonomy errors)
+    const family = row.FAMILY ?? row.Family ?? '';
+    if (isExcludedFamily(family)) continue;
+
     const id = slugify(validName);
     if (species.has(id)) continue; // Skip duplicates
 
@@ -286,6 +291,10 @@ function extractTraitsFromRows(
   for (const row of rows) {
     const validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
     if (!validName) continue;
+
+    // Skip excluded families (non-fish taxonomy errors)
+    const rowFamily = (row as Record<string, unknown>).FAMILY as string ?? (row as Record<string, unknown>).Family as string ?? '';
+    if (isExcludedFamily(rowFamily)) continue;
 
     const speciesId = slugify(validName);
     const traits: TraitData[] = [];
@@ -474,6 +483,10 @@ function extractLocationsFromRows(
   for (const row of rows) {
     const validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
     if (!validName) continue;
+
+    // Skip excluded families (non-fish taxonomy errors)
+    const rowFamily = (row as Record<string, unknown>).FAMILY as string ?? (row as Record<string, unknown>).Family as string ?? '';
+    if (isExcludedFamily(rowFamily)) continue;
 
     // Extract numeric coordinates (handles both number and string types from PapaParse)
     const latitude = extractNumeric(row.LATITUDE);
