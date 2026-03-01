@@ -1,0 +1,133 @@
+/**
+ * Tests for US-5.5: Image-only species pages.
+ *
+ * PRD Section 3.4: Create species pages for species with images but no data
+ * records. Badge indicating "Image only" status.
+ */
+import { describe, it, expect, vi } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { SpeciesHeader } from '../species-header';
+
+// Mock useSpeciesImages hook
+const mockImages = [
+  {
+    author: 'Blackwater',
+    displayAuthor: 'Test Photographer',
+    uncertain: false,
+    path: 'classified_bw_images_species',
+    filename: 'test.jpg',
+    sourceDescription: 'Blackwater — Species ID confirmed',
+    priority: 1,
+    speciesName: 'Test species',
+    family: 'Testidae',
+    order: 'Testiformes',
+  },
+];
+
+vi.mock('@/hooks/use-species-images', () => ({
+  useSpeciesImages: () => ({
+    images: mockImages,
+    orderFamily: null,
+    isLoading: false,
+    error: null,
+  }),
+}));
+
+// Mock next/image
+vi.mock('next/image', () => ({
+  default: (props: Record<string, unknown>) => {
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    return <img {...props} />;
+  },
+}));
+
+// Mock UI components
+vi.mock('@/components/ui/carousel', () => ({
+  Carousel: ({ children, ...props }: { children: React.ReactNode }) => <div {...props}>{children}</div>,
+  CarouselContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CarouselItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  CarouselNext: () => <button>Next</button>,
+  CarouselPrevious: () => <button>Previous</button>,
+}));
+
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+    open ? <div>{children}</div> : null,
+  DialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+}));
+
+vi.mock('@/components/ui/skeleton', () => ({
+  Skeleton: ({ className }: { className?: string }) => <div className={className} />,
+}));
+
+describe('US-5.5: Image-only species pages', () => {
+  it('should show "Image only" badge when recordCount is 0', () => {
+    render(
+      <SpeciesHeader
+        speciesId="test-species"
+        scientificName="Test species"
+        commonName={null}
+        family="Testidae"
+        order="Testiformes"
+        recordCount={0}
+        studyCount={0}
+      />
+    );
+
+    // Should show "Image only" badge
+    expect(screen.getByText('Image only')).toBeDefined();
+  });
+
+  it('should NOT show "Image only" badge when recordCount > 0', () => {
+    render(
+      <SpeciesHeader
+        speciesId="test-species"
+        scientificName="Test species"
+        commonName={null}
+        family="Testidae"
+        order="Testiformes"
+        recordCount={5}
+        studyCount={2}
+      />
+    );
+
+    // Should NOT show "Image only" badge
+    expect(screen.queryByText('Image only')).toBeNull();
+  });
+
+  it('should still show the image gallery for image-only species', () => {
+    const { container } = render(
+      <SpeciesHeader
+        speciesId="test-species"
+        scientificName="Test species"
+        commonName={null}
+        family="Testidae"
+        order="Testiformes"
+        recordCount={0}
+        studyCount={0}
+      />
+    );
+
+    // Image gallery should be rendered
+    expect(container.querySelector('img')).not.toBeNull();
+  });
+
+  it('should show the "Image only" badge with amber/yellow styling', () => {
+    render(
+      <SpeciesHeader
+        speciesId="test-species"
+        scientificName="Test species"
+        commonName={null}
+        family="Testidae"
+        order="Testiformes"
+        recordCount={0}
+        studyCount={0}
+      />
+    );
+
+    const badge = screen.getByText('Image only');
+    // Badge should have amber/yellow styling
+    expect(badge.className).toMatch(/amber|yellow/);
+  });
+});
