@@ -22,6 +22,9 @@ interface GallerySection {
 
 /**
  * Parse a metadata file and return images matching the given family.
+ *
+ * Handles the row-number column offset: fam_ids and gen_ids metadata files
+ * have a leading row-number column in data rows but NO header for it.
  */
 async function parseMetadataForFamily(
   filePath: string,
@@ -29,7 +32,25 @@ async function parseMetadataForFamily(
   level: 'species' | 'genus' | 'family'
 ): Promise<GalleryImage[]> {
   try {
-    const content = await fs.readFile(filePath, 'utf-8');
+    let content = await fs.readFile(filePath, 'utf-8');
+
+    // Detect row-number column offset: if first data row has more fields
+    // than the header, prepend an empty header for the row-number column.
+    const lines = content.split('\n');
+    if (lines.length >= 2) {
+      const headerFields = lines[0].split('@').length;
+      for (let i = 1; i < Math.min(lines.length, 5); i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const dataFields = line.split('@').length;
+        if (dataFields === headerFields + 1) {
+          lines[0] = '""@' + lines[0];
+          content = lines.join('\n');
+        }
+        break;
+      }
+    }
+
     const images: GalleryImage[] = [];
 
     Papa.parse(content, {
