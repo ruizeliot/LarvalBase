@@ -1,9 +1,8 @@
 /**
- * Tests for Epic 0 Fix: Reference names in legend must be blue clickable links.
+ * Tests for Epic 0 Fix: Reference names in legend displayed as white text.
  *
- * All reference names should be blue. If a URL exists, they are clickable <a> tags.
- * If no URL, they are still styled blue for visual consistency.
- * Scatter-only legend: only ref name is blue, "no fitted model" is muted.
+ * All reference names should be white (text-white). Links are not functional,
+ * so all references render as plain white text spans (no <a> tags).
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -41,30 +40,30 @@ function makeCurve(overrides: Partial<GrowthCurve['model']> = {}): GrowthCurve {
   };
 }
 
-describe('Growth legend: reference names always blue', () => {
-  it('reference with link should be a blue <a> tag', () => {
+describe('Growth legend: reference names white text (not blue links)', () => {
+  it('reference with link should be white text span (not a link)', () => {
     const curve = makeCurve({ link: 'https://doi.org/10.1234/test' });
     const { container } = render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
+    // Should NOT be an <a> tag — links are disabled
     const link = container.querySelector('a');
-    expect(link).toBeInTheDocument();
-    expect(link?.className).toContain('text-blue');
-    expect(link?.href).toContain('doi.org');
+    expect(link).toBeNull();
+    const refElement = screen.getByText('Smith et al. 2024');
+    expect(refElement.className).toContain('text-white');
   });
 
-  it('reference WITHOUT link should still be blue text', () => {
+  it('reference WITHOUT link should be white text', () => {
     const curve = makeCurve({ link: null });
     const { container } = render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
     const refElement = screen.getByText('Smith et al. 2024');
     expect(refElement).toBeInTheDocument();
-    // Must be blue, not plain foreground color
-    expect(refElement.className).toContain('text-blue');
+    expect(refElement.className).toContain('text-white');
   });
 });
 
 describe('Scatter-only legend: ref name displayed, no "no fitted model" text', () => {
-  it('ref name with link should be an <a> tag, no "no fitted model" text anywhere', () => {
+  it('ref name with link should be white span (not a link), no "no fitted model" text', () => {
     const { container } = render(
       <ScatterOnlyLegendItem
         reference="Jones et al. 2023"
@@ -76,9 +75,11 @@ describe('Scatter-only legend: ref name displayed, no "no fitted model" text', (
       />
     );
 
+    // Should NOT be an <a> tag — links are disabled
     const link = container.querySelector('a');
-    expect(link).toBeInTheDocument();
-    expect(link?.textContent).toBe('Jones et al. 2023');
+    expect(link).toBeNull();
+    const refElement = screen.getByText('Jones et al. 2023');
+    expect(refElement.className).toContain('text-white');
 
     // "no fitted model" should NOT appear anywhere in the legend item
     expect(container.textContent).not.toContain('no fitted model');

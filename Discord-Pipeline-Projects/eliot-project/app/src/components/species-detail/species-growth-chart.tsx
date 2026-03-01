@@ -145,21 +145,9 @@ export function GrowthLegendItem({
         </svg>
       </div>
       <div className="min-w-0">
-        {model.link ? (
-          <a
-            href={model.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-500 hover:text-blue-400 hover:underline block"
-            title={refName}
-          >
-            {refName}
-          </a>
-        ) : (
-          <span className="text-blue-500 block" title={refName}>
-            {refName}
-          </span>
-        )}
+        <span className="text-white block" title={refName}>
+          {refName}
+        </span>
         <span className="text-muted-foreground text-[10px]">
           {model.yType ? `${model.yType} · ` : ''}{model.equation ? `${model.equation} · ` : ''}{temp}
         </span>
@@ -266,21 +254,9 @@ export function ScatterOnlyLegendItem({
       </svg>
       <div className="min-w-0">
         <div>
-          {link ? (
-            <a
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-500 hover:text-blue-400 hover:underline"
-              title={reference}
-            >
-              {reference}
-            </a>
-          ) : (
-            <span className="text-blue-500" title={reference}>
-              {reference}
-            </span>
-          )}
+          <span className="text-white" title={reference}>
+            {reference}
+          </span>
         </div>
         <span className="text-muted-foreground text-[10px]">
           {lengthType ? `${lengthType} · ` : ''}{avgTemp !== null ? `${avgTemp.toFixed(1)}°C` : ''}

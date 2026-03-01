@@ -75,22 +75,24 @@ describe('Growth legend: equations + temperature + references', () => {
     expect(screen.getByText('Ruiz et al. 2024')).toBeInTheDocument();
   });
 
-  it('should render reference as hyperlink when link is provided', () => {
+  it('should render reference as white text (not a link) even when link is provided', () => {
     const curve = makeCurve({ link: 'https://doi.org/10.1234/test' });
     const { container } = render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
-    const link = container.querySelector('a[href="https://doi.org/10.1234/test"]');
-    expect(link).toBeInTheDocument();
-    expect(link?.textContent).toBe('Ruiz et al. 2024');
-    expect(link?.getAttribute('target')).toBe('_blank');
+    // No <a> tags — links disabled, all references are white text
+    const link = container.querySelector('a');
+    expect(link).toBeNull();
+    const ref = screen.getByText('Ruiz et al. 2024');
+    expect(ref.className).toContain('text-white');
   });
 
-  it('should render reference as plain text when no link', () => {
+  it('should render reference as white text when no link', () => {
     const curve = makeCurve({ link: null });
     const { container } = render(<GrowthLegendItem curve={curve} refIndex={0} shape="circle" />);
 
     const link = container.querySelector('a');
     expect(link).toBeNull();
-    expect(screen.getByText('Ruiz et al. 2024')).toBeInTheDocument();
+    const ref = screen.getByText('Ruiz et al. 2024');
+    expect(ref.className).toContain('text-white');
   });
 });
