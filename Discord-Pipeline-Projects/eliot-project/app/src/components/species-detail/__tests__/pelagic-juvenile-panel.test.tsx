@@ -186,3 +186,86 @@ describe('US-6.2: Dot-strip chart for pelagic juvenile size', () => {
     expect(screen.getByText('No size data available')).toBeInTheDocument();
   });
 });
+
+// --- US-6.3 test data ---
+
+const dataWithDuration: PelagicJuvenileData = {
+  level: 'species',
+  levelName: 'Chromis viridis',
+  status: 'Known',
+  keywords: ['post-larva'],
+  genusSpecies: [],
+  familySpecies: [],
+  sizeRecords: [],
+  durationRecords: [
+    { mean: 18.5, errorLow: 14.0, errorHigh: 23.0, reference: 'Ruiz 2024', link: null, species: 'Chromis viridis', n: 4 },
+    { mean: 16.2, errorLow: 12.0, errorHigh: 20.4, reference: 'Leis 2006', link: null, species: 'Chromis viridis', n: 3 },
+    { mean: 22.0, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis' },
+    { mean: 15.0, errorLow: 13.5, errorHigh: 16.5, reference: 'Wellington 1992', link: null, species: 'Chromis viridis', n: 6 },
+  ],
+  comparisonStats: {
+    size: { species: null, genus: null, family: null },
+    duration: {
+      species: { mean: 18.5, n: 4 },
+      genus: { mean: 16.2, n: 12 },
+      family: { mean: 14.0, n: 40 },
+    },
+  },
+};
+
+const dataWithBoth: PelagicJuvenileData = {
+  ...dataWithSize,
+  durationRecords: dataWithDuration.durationRecords,
+  comparisonStats: {
+    size: dataWithSize.comparisonStats!.size,
+    duration: dataWithDuration.comparisonStats!.duration,
+  },
+};
+
+describe('US-6.3: Dot-strip chart for pelagic juvenile duration', () => {
+  it('should render duration panel title', () => {
+    render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    expect(screen.getByText('Pelagic Juvenile Duration')).toBeInTheDocument();
+  });
+
+  it('should render a dot-strip chart for duration', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    const charts = container.querySelectorAll('[data-testid="dot-strip-chart"]');
+    expect(charts.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should render one strip row per duration reference', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    const rows = container.querySelectorAll('[data-testid="strip-row"]');
+    expect(rows.length).toBe(4); // 4 duration records
+  });
+
+  it('should render error bars for duration records with variance', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    const errorBars = container.querySelectorAll('[data-testid="error-bar"]');
+    // 3 out of 4 records have error bars
+    expect(errorBars.length).toBe(3);
+  });
+
+  it('should show duration comparison bars', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    const compBars = container.querySelectorAll('[data-testid="comparison-bars"]');
+    expect(compBars.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should display "No duration data available" when no duration records', () => {
+    render(<PelagicJuvenilePanel data={knownSpeciesData} />);
+    expect(screen.getByText('No duration data available')).toBeInTheDocument();
+  });
+
+  it('should render both size and duration charts when both have data', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithBoth} />);
+    const charts = container.querySelectorAll('[data-testid="dot-strip-chart"]');
+    expect(charts.length).toBe(2); // one for size, one for duration
+  });
+
+  it('should show unit "days" in duration summary stats', () => {
+    render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    expect(screen.getAllByText('days').length).toBeGreaterThanOrEqual(1);
+  });
+});
