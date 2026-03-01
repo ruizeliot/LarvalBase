@@ -281,7 +281,6 @@ export function ScatterOnlyLegendItem({
               {reference}
             </span>
           )}
-          <span className="text-muted-foreground"> — <em>no fitted model</em></span>
         </div>
         <span className="text-muted-foreground text-[10px]">
           {lengthType ? `${lengthType} · ` : ''}{avgTemp !== null ? `${avgTemp.toFixed(1)}°C` : ''}

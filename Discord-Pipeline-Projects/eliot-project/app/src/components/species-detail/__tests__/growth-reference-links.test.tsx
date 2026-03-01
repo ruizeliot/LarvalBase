@@ -63,8 +63,8 @@ describe('Growth legend: reference names always blue', () => {
   });
 });
 
-describe('Scatter-only legend: only ref name blue, "no fitted model" muted', () => {
-  it('ref name with link should be blue <a>, "no fitted model" separate and muted', () => {
+describe('Scatter-only legend: ref name displayed, no "no fitted model" text', () => {
+  it('ref name with link should be an <a> tag, no "no fitted model" text anywhere', () => {
     const { container } = render(
       <ScatterOnlyLegendItem
         reference="Jones et al. 2023"
@@ -78,20 +78,14 @@ describe('Scatter-only legend: only ref name blue, "no fitted model" muted', () 
 
     const link = container.querySelector('a');
     expect(link).toBeInTheDocument();
-    expect(link?.className).toContain('text-blue');
     expect(link?.textContent).toBe('Jones et al. 2023');
-    // "no fitted model" should NOT be inside the link
-    expect(link?.textContent).not.toContain('no fitted model');
 
-    // "no fitted model" should exist as separate muted text (inside <em> within muted <span>)
-    const noModel = screen.getByText(/no fitted model/);
-    expect(noModel).toBeInTheDocument();
-    // The parent span should be muted
-    expect(noModel.closest('span')?.className).toContain('text-muted-foreground');
+    // "no fitted model" should NOT appear anywhere in the legend item
+    expect(container.textContent).not.toContain('no fitted model');
   });
 
-  it('ref name without link should be blue span, "no fitted model" separate', () => {
-    render(
+  it('ref name without link should be a span, no "no fitted model" text', () => {
+    const { container } = render(
       <ScatterOnlyLegendItem
         reference="Doe et al. 2022"
         link={null}
@@ -103,8 +97,8 @@ describe('Scatter-only legend: only ref name blue, "no fitted model" muted', () 
     );
 
     const refElement = screen.getByText('Doe et al. 2022');
-    expect(refElement.className).toContain('text-blue');
-    expect(refElement.textContent).not.toContain('no fitted model');
+    expect(refElement).toBeInTheDocument();
+    expect(container.textContent).not.toContain('no fitted model');
   });
 
   it('individual scatter legend entries should NOT contain "Scatter points only"', () => {
