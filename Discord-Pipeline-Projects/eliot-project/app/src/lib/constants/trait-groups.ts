@@ -84,6 +84,8 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     name: "Pictures",
     traits: [
       "has_images",
+      "has_images_sure",
+      "has_images_unsure",
     ],
   },
 ];
@@ -100,7 +102,9 @@ export function getAllTraits(): string[] {
  * Converts snake_case to Title Case with special cases.
  */
 export function formatTraitName(trait: string): string {
-  if (trait === 'has_images') return 'Available';
+  if (trait === 'has_images') return 'All';
+  if (trait === 'has_images_sure') return 'Sure ID';
+  if (trait === 'has_images_unsure') return 'Unsure ID';
   return trait
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

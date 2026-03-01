@@ -230,3 +230,31 @@ export async function getSpeciesWithImages(): Promise<Set<string>> {
   const registry = await loadImageRegistry();
   return new Set(registry.imagesBySpecies.keys());
 }
+
+/**
+ * Get species names with at least one Sure ID image (uncertain=false).
+ */
+export async function getSpeciesWithSureImages(): Promise<Set<string>> {
+  const registry = await loadImageRegistry();
+  const result = new Set<string>();
+  for (const [species, images] of registry.imagesBySpecies) {
+    if (images.some((img) => !img.uncertain)) {
+      result.add(species);
+    }
+  }
+  return result;
+}
+
+/**
+ * Get species names with at least one Unsure ID image (uncertain=true).
+ */
+export async function getSpeciesWithUnsureImages(): Promise<Set<string>> {
+  const registry = await loadImageRegistry();
+  const result = new Set<string>();
+  for (const [species, images] of registry.imagesBySpecies) {
+    if (images.some((img) => img.uncertain)) {
+      result.add(species);
+    }
+  }
+  return result;
+}

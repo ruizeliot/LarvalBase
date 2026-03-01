@@ -23,6 +23,8 @@ interface ApiSpeciesItem {
   genus: string;
   traits?: TraitData[];
   hasImages?: boolean;
+  hasImagesSure?: boolean;
+  hasImagesUnsure?: boolean;
 }
 
 interface SpeciesDataState {
@@ -84,12 +86,20 @@ export function useSpeciesData(): SpeciesDataState {
             traits.push({ traitType: 'has_images', value: 1, unit: '', source: null, doi: null });
             anyHasImages = true;
           }
+          if (sp.hasImagesSure) {
+            traits.push({ traitType: 'has_images_sure', value: 1, unit: '', source: null, doi: null });
+          }
+          if (sp.hasImagesUnsure) {
+            traits.push({ traitType: 'has_images_unsure', value: 1, unit: '', source: null, doi: null });
+          }
           if (traits.length > 0) {
             traitsBySpecies.set(sp.id, traits);
           }
         }
         if (anyHasImages) {
           traitTypes.add('has_images');
+          traitTypes.add('has_images_sure');
+          traitTypes.add('has_images_unsure');
         }
 
         const allSpecies = speciesData.species as ApiSpeciesItem[];
