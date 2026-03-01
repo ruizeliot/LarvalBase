@@ -51,6 +51,8 @@ export interface GrowthModel {
   tempMax: number | null;
   /** Remarks/notes */
   remarks: string | null;
+  /** External reference identifier */
+  extRef: string | null;
   /** Reference citation */
   reference: string | null;
   /** DOI or URL */

@@ -102,6 +102,7 @@ export async function loadGrowthModels(): Promise<GrowthModel[]> {
         tempMin: parseNum(row['TEMPERATURE_MIN']),
         tempMax: parseNum(row['TEMPERATURE_MAX']),
         remarks: row['REMARKS'] || null,
+        extRef: row['EXT_REF'] || null,
         reference: row['REFERENCE'] || null,
         link: row['LINK'] || null,
       };
@@ -454,5 +455,6 @@ export async function getGrowthModelExportData(speciesId: string): Promise<Array
     'Reference': m.reference ?? '',
     'Link': m.link ?? '',
     'Remarks': m.remarks ?? '',
+    'External references': m.extRef ?? '',
   }));
 }
