@@ -117,7 +117,7 @@ export function getAuthorPriority(author: string): number {
 const PATH_SOURCE_DESCRIPTIONS: Record<string, string> = {
   'Polynesia': 'Polynesia — CRIOBE field collection',
   'Maldives': 'Maldives — ADLIFISH survey',
-  'classified_bw_images_species': 'Blackwater — Species ID confirmed',
+  'classified_bw_images_species': 'Blackwater',
   'Madagascar - Reunion': 'Madagascar — Ocea Consult–IHSM',
   'Guadeloupe': 'Guadeloupe — IchthyoGwada',
   'Guadeloupe - Amelia': 'Guadeloupe — Amelia Chatagnon',

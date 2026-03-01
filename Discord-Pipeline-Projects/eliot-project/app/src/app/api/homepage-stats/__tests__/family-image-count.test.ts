@@ -31,7 +31,7 @@ function makeImage(overrides: Partial<SpeciesImage>): SpeciesImage {
     uncertain: false,
     path: 'classified_bw_images_species',
     filename: 'test.jpg',
-    sourceDescription: 'Blackwater — Species ID confirmed',
+    sourceDescription: 'Blackwater',
     priority: 1,
     speciesName: 'Test species',
     family: 'Testidae',

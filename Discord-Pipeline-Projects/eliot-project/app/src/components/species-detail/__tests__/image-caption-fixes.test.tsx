@@ -4,7 +4,7 @@
  * PRD Section 3.4: Fix missing captions for images from:
  * - images/Polynesia → "CRIOBE field collection"
  * - images/Maldives → "ADLIFISH survey"
- * - classified_bw_images_species → "Blackwater — Species ID confirmed"
+ * - classified_bw_images_species → "Blackwater"
  */
 import { describe, it, expect } from 'vitest';
 import { getSourceDescription } from '@/lib/types/image.types';
@@ -22,7 +22,7 @@ describe('US-5.3: Image caption fixes', () => {
 
   it('should return proper source description for classified_bw_images_species path', () => {
     const desc = getSourceDescription('classified_bw_images_species');
-    expect(desc).toBe('Blackwater — Species ID confirmed');
+    expect(desc).toBe('Blackwater');
   });
 
   it('should return proper source description for Madagascar - Reunion path', () => {
