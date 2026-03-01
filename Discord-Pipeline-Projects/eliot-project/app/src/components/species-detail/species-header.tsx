@@ -73,25 +73,19 @@ export function SpeciesHeader({
           </div>
         </div>
 
-        {/* Stats line */}
-        <div className="flex gap-4 text-sm items-center">
-          {recordCount === 0 ? (
-            <span className="inline-flex items-center gap-1 text-xs font-medium bg-amber-900/50 text-amber-300 px-2 py-0.5 rounded-full">
-              Image only
+        {/* Stats line — only show if species has data records */}
+        {recordCount > 0 && (
+          <div className="flex gap-4 text-sm items-center">
+            <span>
+              <span className="font-mono font-bold">{recordCount}</span> record
+              {recordCount !== 1 ? "s" : ""}
             </span>
-          ) : (
-            <>
-              <span>
-                <span className="font-mono font-bold">{recordCount}</span> record
-                {recordCount !== 1 ? "s" : ""}
-              </span>
-              <span>
-                <span className="font-mono font-bold">{studyCount}</span> stud
-                {studyCount !== 1 ? "ies" : "y"}
-              </span>
-            </>
-          )}
-        </div>
+            <span>
+              <span className="font-mono font-bold">{studyCount}</span> stud
+              {studyCount !== 1 ? "ies" : "y"}
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

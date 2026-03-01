@@ -62,7 +62,7 @@ vi.mock('@/components/ui/skeleton', () => ({
 }));
 
 describe('US-5.5: Image-only species pages', () => {
-  it('should show "Image only" badge when recordCount is 0', () => {
+  it('should NOT show "Image only" badge when recordCount is 0 (badge removed per QA feedback)', () => {
     render(
       <SpeciesHeader
         speciesId="test-species"
@@ -75,11 +75,11 @@ describe('US-5.5: Image-only species pages', () => {
       />
     );
 
-    // Should show "Image only" badge
-    expect(screen.getByText('Image only')).toBeDefined();
+    // Badge was removed — should not appear
+    expect(screen.queryByText('Image only')).toBeNull();
   });
 
-  it('should NOT show "Image only" badge when recordCount > 0', () => {
+  it('should show record/study counts when recordCount > 0', () => {
     render(
       <SpeciesHeader
         speciesId="test-species"
@@ -92,8 +92,8 @@ describe('US-5.5: Image-only species pages', () => {
       />
     );
 
-    // Should NOT show "Image only" badge
-    expect(screen.queryByText('Image only')).toBeNull();
+    expect(screen.getByText('5')).toBeDefined();
+    expect(screen.getByText('2')).toBeDefined();
   });
 
   it('should still show the image gallery for image-only species', () => {
@@ -113,7 +113,7 @@ describe('US-5.5: Image-only species pages', () => {
     expect(container.querySelector('img')).not.toBeNull();
   });
 
-  it('should show the "Image only" badge with amber/yellow styling', () => {
+  it('should not show record counts when recordCount is 0', () => {
     render(
       <SpeciesHeader
         speciesId="test-species"
@@ -126,8 +126,8 @@ describe('US-5.5: Image-only species pages', () => {
       />
     );
 
-    const badge = screen.getByText('Image only');
-    // Badge should have amber/yellow styling
-    expect(badge.className).toMatch(/amber|yellow/);
+    // No record/study counts displayed
+    expect(screen.queryByText(/record/)).toBeNull();
+    expect(screen.queryByText(/stud/)).toBeNull();
   });
 });
