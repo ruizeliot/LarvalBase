@@ -425,7 +425,14 @@ function extractTraitsFromRows(
     }
     // Pelagic Juvenile Database
     else if (filename.includes('pelagic_juvenile')) {
-      addTrait(traits, 'pelagic_juvenile_size', r(row).SET_SIZE_MEAN, 'mm', source, doi, metadata);
+      const pjSizeMeta = metadataWithMinMaxConf(metadata, r(row), 'PELAGIC_JUV_SIZE_MIN', 'PELAGIC_JUV_SIZE_MAX', 'PELAGIC_JUV_SIZE_CONF', 'PELAGIC_JUV_SIZE_CONF_TYPE');
+      addTrait(traits, 'pelagic_juvenile_size', r(row).PELAGIC_JUV_SIZE_MEAN, 'mm', source, doi, pjSizeMeta);
+      const pjDurMeta = metadataWithMinMaxConf(metadata, r(row), 'PELAGIC_JUV_DURATION_MIN', 'PELAGIC_JUV_DURATION_MAX', 'PELAGIC_JUV_DURATION_CONF', 'PELAGIC_JUV_DURATION_CONF_TYPE');
+      addTrait(traits, 'pelagic_juvenile_duration', r(row).PELAGIC_JUV_DURATION_MEAN, 'days', source, doi, pjDurMeta);
+      // If no numeric data, still store a qualitative row for export (KEY_WORD, REFERENCE, etc.)
+      if (extractNumeric(r(row).PELAGIC_JUV_SIZE_MEAN) === null && extractNumeric(r(row).PELAGIC_JUV_DURATION_MEAN) === null) {
+        traits.push({ traitType: 'pelagic_juvenile_size', value: null, unit: 'mm', source, doi, metadata });
+      }
     }
     // Larval Growth Database
     else if (filename.includes('larval_growth')) {

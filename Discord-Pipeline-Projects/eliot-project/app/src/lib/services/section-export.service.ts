@@ -55,6 +55,8 @@ const MEAN_TYPE_COLUMNS: Record<string, string> = {
   critical_swimming_speed_rel: 'UCRIT_REL_MEAN_TYPE',
   in_situ_swimming_speed: 'ISS_ABS_MEAN_TYPE',
   in_situ_swimming_speed_rel: 'ISS_REL_MEAN_TYPE',
+  pelagic_juvenile_size: 'PELAGIC_JUV_SIZE_MEAN_TYPE',
+  pelagic_juvenile_duration: 'PELAGIC_JUV_DURATION_MEAN_TYPE',
 };
 
 /** Columns already represented in the standardized output (excluded from extras). */
