@@ -18,9 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FamilyBarChart } from "./family-bar-chart";
 
 /**
- * A single dot-strip record (one data point per reference).
+ * A single record (one data point per reference).
  */
 export interface DotStripRecord {
   mean: number;
@@ -30,6 +31,12 @@ export interface DotStripRecord {
   link: string | null;
   species: string;
   n?: number;
+  keyword?: string | null;
+  remarks?: string | null;
+  extRef?: string | null;
+  lengthType?: string | null;
+  conf?: number | null;
+  confType?: string | null;
 }
 
 /**
@@ -50,6 +57,24 @@ export interface ComparisonLevel {
   mean: number;
   n: number;
   speciesCount: number;
+}
+
+/**
+ * Single species entry for bar chart comparison.
+ */
+export interface BarChartSpeciesEntry {
+  speciesId: string;
+  speciesName: string;
+  meanValue: number;
+}
+
+/**
+ * Bar chart comparison data at family or genus level.
+ */
+export interface BarChartData {
+  entries: BarChartSpeciesEntry[];
+  comparisonType: 'family' | 'genus';
+  taxonomyName: string;
 }
 
 /**
@@ -78,6 +103,9 @@ export interface PelagicJuvenileData {
       family: ComparisonLevel | null;
     };
   } | null;
+  currentSpeciesId?: string;
+  sizeBarChart?: BarChartData | null;
+  durationBarChart?: BarChartData | null;
 }
 
 interface PelagicJuvenilePanelProps {
@@ -173,6 +201,8 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
 
 /**
  * Dialog showing raw records for a pelagic juvenile trait in a detailed table.
+ * Size table includes: Name, Reference, Remarks, External references, Length type, Confidence interval, Confidence interval type
+ * Duration table includes: Name, Reference, Remarks, External references, Confidence interval, Confidence interval type
  */
 function RecordsDialog({
   open,
@@ -180,12 +210,14 @@ function RecordsDialog({
   records,
   label,
   unit,
+  traitType,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   records: DotStripRecord[];
   label: string;
   unit: string;
+  traitType: 'size' | 'duration';
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -203,22 +235,21 @@ function RecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Species</TableHead>
-                  <TableHead className="text-xs">Mean ({unit})</TableHead>
-                  <TableHead className="text-xs">Min ({unit})</TableHead>
-                  <TableHead className="text-xs">Max ({unit})</TableHead>
-                  <TableHead className="text-xs">N</TableHead>
+                  <TableHead className="text-xs">Name</TableHead>
                   <TableHead className="text-xs">Reference</TableHead>
+                  <TableHead className="text-xs">Remarks</TableHead>
+                  <TableHead className="text-xs">External references</TableHead>
+                  {traitType === 'size' && (
+                    <TableHead className="text-xs">Length type</TableHead>
+                  )}
+                  <TableHead className="text-xs">Confidence interval</TableHead>
+                  <TableHead className="text-xs">Confidence interval type</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {records.map((r, i) => (
                   <TableRow key={`${r.reference}-${i}`}>
-                    <TableCell className="text-xs italic">{r.species || '-'}</TableCell>
-                    <TableCell className="text-xs font-mono">{r.mean.toFixed(2)}</TableCell>
-                    <TableCell className="text-xs font-mono">{r.errorLow?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-xs font-mono">{r.errorHigh?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-xs">{r.n ?? '-'}</TableCell>
+                    <TableCell className="text-xs">{r.keyword || '-'}</TableCell>
                     <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
                       {r.link ? (
                         <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -228,6 +259,13 @@ function RecordsDialog({
                         r.reference
                       )}
                     </TableCell>
+                    <TableCell className="text-xs max-w-[200px]">{r.remarks || '-'}</TableCell>
+                    <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
+                    {traitType === 'size' && (
+                      <TableCell className="text-xs">{r.lengthType || '-'}</TableCell>
+                    )}
+                    <TableCell className="text-xs font-mono">{r.conf?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-xs">{r.confType || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -241,7 +279,7 @@ function RecordsDialog({
 
 /**
  * Numeric trait panel matching the TraitCard layout used by other sections.
- * Displays: mean ± SD, range, N records link, genus/family comparisons, and dot-strip chart.
+ * Displays: mean ± SD, range, N records link, genus/family comparisons, and bar chart.
  */
 function NumericTraitPanel({
   label,
@@ -249,14 +287,18 @@ function NumericTraitPanel({
   unit,
   records,
   comparisons,
-  dotStripTitle,
+  barChartData,
+  currentSpeciesId,
+  traitType,
 }: {
   label: string;
   stats: PelagicJuvenileStats;
   unit: string;
   records: DotStripRecord[];
   comparisons: { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null } | null;
-  dotStripTitle: string;
+  barChartData?: BarChartData | null;
+  currentSpeciesId?: string;
+  traitType: 'size' | 'duration';
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const hasData = stats.mean !== null;
@@ -344,10 +386,17 @@ function NumericTraitPanel({
           </div>
         )}
 
-        {/* Dot-strip chart */}
-        {records.length > 0 && (
+        {/* Family/genus bar chart comparison */}
+        {barChartData && barChartData.entries.length > 1 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
-            <DotStripChart records={records} unit={unit} title={dotStripTitle} />
+            <FamilyBarChart
+              data={barChartData.entries}
+              currentSpeciesId={currentSpeciesId}
+              unit={unit}
+              traitLabel={label}
+              comparisonType={barChartData.comparisonType}
+              taxonomyName={barChartData.taxonomyName}
+            />
           </div>
         )}
       </CardContent>
@@ -359,103 +408,9 @@ function NumericTraitPanel({
         records={records}
         label={label}
         unit={unit}
+        traitType={traitType}
       />
     </Card>
-  );
-}
-
-/**
- * Dot-strip chart showing data points per reference with optional error bars.
- */
-function DotStripChart({
-  records,
-  unit,
-  title,
-}: {
-  records: DotStripRecord[];
-  unit: string;
-  title: string;
-}) {
-  if (records.length === 0) return null;
-
-  // Compute domain (min/max across all records including error bars)
-  let domainMin = Infinity;
-  let domainMax = -Infinity;
-  for (const r of records) {
-    const lo = r.errorLow ?? r.mean;
-    const hi = r.errorHigh ?? r.mean;
-    if (lo < domainMin) domainMin = lo;
-    if (hi > domainMax) domainMax = hi;
-    if (r.mean < domainMin) domainMin = r.mean;
-    if (r.mean > domainMax) domainMax = r.mean;
-  }
-
-  // Add 10% padding
-  const range = domainMax - domainMin || 1;
-  domainMin -= range * 0.1;
-  domainMax += range * 0.1;
-
-  const toPercent = (v: number) => ((v - domainMin) / (domainMax - domainMin)) * 100;
-
-  // Color palette for alternating dot colors
-  const colors = ['#60a5fa', '#a78bfa', '#f59e0b', '#4ade80', '#f472b6', '#38bdf8'];
-
-  return (
-    <div data-testid="dot-strip-chart">
-      <div className="text-xs text-muted-foreground mb-2">{title}</div>
-      <div className="bg-muted/30 rounded-md p-3 space-y-2">
-        {records.map((record, i) => {
-          const hasError = record.errorLow !== null && record.errorHigh !== null;
-          const dotColor = colors[i % colors.length];
-
-          // Shorten reference for display
-          const refLabel = record.reference.length > 25
-            ? record.reference.slice(0, 25) + '…'
-            : record.reference;
-
-          return (
-            <div key={`${record.reference}-${i}`} className="flex items-center gap-2" data-testid="strip-row">
-              <span
-                className="text-[10px] text-muted-foreground text-right shrink-0 truncate"
-                style={{ width: '120px' }}
-                title={record.reference}
-              >
-                {refLabel}
-              </span>
-              <div className="flex-1 h-5 relative bg-muted/50 rounded">
-                {/* Error bar */}
-                {hasError && (
-                  <div
-                    data-testid="error-bar"
-                    className="absolute top-1/2 -translate-y-1/2 h-0.5 bg-muted-foreground/50"
-                    style={{
-                      left: `${toPercent(record.errorLow!)}%`,
-                      width: `${toPercent(record.errorHigh!) - toPercent(record.errorLow!)}%`,
-                    }}
-                  >
-                    {/* Caps */}
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-px h-2.5 bg-muted-foreground/50" />
-                    <div className="absolute right-0 top-1/2 -translate-y-1/2 w-px h-2.5 bg-muted-foreground/50" />
-                  </div>
-                )}
-                {/* Dot */}
-                <div
-                  data-testid="dot-point"
-                  className={`absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full border-2 border-background z-10 ${!hasError ? 'opacity-70' : ''}`}
-                  style={{
-                    left: `${toPercent(record.mean)}%`,
-                    backgroundColor: dotColor,
-                  }}
-                />
-              </div>
-            </div>
-          );
-        })}
-        <div className="text-[10px] text-muted-foreground italic mt-1">
-          Points without bars = single observation / no reported variance
-        </div>
-      </div>
-    </div>
   );
 }
 
@@ -477,7 +432,9 @@ export function PelagicJuvenilePanel({ data }: PelagicJuvenilePanelProps) {
         unit="mm"
         records={data.sizeRecords}
         comparisons={data.comparisonStats?.size ?? null}
-        dotStripTitle="Size by reference (mm) — with error bars (±1 SD)"
+        barChartData={data.sizeBarChart}
+        currentSpeciesId={data.currentSpeciesId}
+        traitType="size"
       />
       <NumericTraitPanel
         label="Pelagic Juvenile Duration"
@@ -485,7 +442,9 @@ export function PelagicJuvenilePanel({ data }: PelagicJuvenilePanelProps) {
         unit="days"
         records={data.durationRecords}
         comparisons={data.comparisonStats?.duration ?? null}
-        dotStripTitle="Duration by reference (days) — with error bars (±1 SD)"
+        barChartData={data.durationBarChart}
+        currentSpeciesId={data.currentSpeciesId}
+        traitType="duration"
       />
     </div>
   );

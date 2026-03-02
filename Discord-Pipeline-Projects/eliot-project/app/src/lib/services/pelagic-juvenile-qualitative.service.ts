@@ -6,7 +6,7 @@
  */
 
 import { getOrLoadData } from '@/lib/data/data-repository';
-import type { PelagicJuvenileData, PelagicJuvenileStats, DotStripRecord, ComparisonLevel } from '@/components/species-detail/pelagic-juvenile-panel';
+import type { PelagicJuvenileData, PelagicJuvenileStats, DotStripRecord, ComparisonLevel, BarChartData, BarChartSpeciesEntry } from '@/components/species-detail/pelagic-juvenile-panel';
 
 /**
  * Get pelagic juvenile database rows from raw CSV cache.
@@ -78,14 +78,15 @@ function extractSpeciesNames(
 }
 
 /**
- * Build dot-strip records (per reference) for size or duration measurements.
+ * Build records (per reference) for size or duration measurements.
  */
 function buildDotStripRecords(
   rows: Record<string, unknown>[],
   meanCol: string,
   minCol: string,
   maxCol: string,
-  confCol: string
+  confCol: string,
+  confTypeCol: string
 ): DotStripRecord[] {
   const records: DotStripRecord[] = [];
 
@@ -100,6 +101,11 @@ function buildDotStripRecords(
     const link = String(row['LINK'] ?? '').trim();
     const species = String(row['VALID_NAME'] ?? '').trim();
     const n = parseNum(row['N']);
+    const keyword = isValid(row['KEY_WORD']) ? String(row['KEY_WORD']).trim() : null;
+    const remarks = isValid(row['REMARKS']) ? String(row['REMARKS']).trim() : null;
+    const extRef = isValid(row['EXT_REF']) ? String(row['EXT_REF']).trim() : null;
+    const lengthType = isValid(row['LENGTH_TYPE']) ? String(row['LENGTH_TYPE']).trim() : null;
+    const confType = isValid(row[confTypeCol]) ? String(row[confTypeCol]).trim() : null;
 
     // Compute error bar bounds:
     // If CONF exists, use mean ± conf as error range
@@ -123,10 +129,59 @@ function buildDotStripRecords(
       link: link || null,
       species,
       n: n !== null ? n : undefined,
+      keyword,
+      remarks,
+      extRef,
+      lengthType,
+      conf,
+      confType,
     });
   }
 
   return records;
+}
+
+/**
+ * Compute per-species means from CSV rows for bar chart display.
+ * Groups rows by VALID_NAME, computes mean of the specified column,
+ * and returns entries sorted for the FamilyBarChart component.
+ */
+function computeBarChartData(
+  rows: Record<string, unknown>[],
+  meanCol: string,
+  taxonomyName: string,
+  comparisonType: 'family' | 'genus'
+): BarChartData | null {
+  // Group by species
+  const speciesMeans = new Map<string, { name: string; values: number[] }>();
+
+  for (const row of rows) {
+    const mean = parseNum(row[meanCol]);
+    if (mean === null) continue;
+    const name = String(row['VALID_NAME'] ?? '').trim();
+    if (!name) continue;
+
+    const existing = speciesMeans.get(name);
+    if (existing) {
+      existing.values.push(mean);
+    } else {
+      speciesMeans.set(name, { name, values: [mean] });
+    }
+  }
+
+  if (speciesMeans.size < 2) return null;
+
+  const entries: BarChartSpeciesEntry[] = [];
+  for (const [, { name, values }] of speciesMeans) {
+    const avg = values.reduce((a, b) => a + b, 0) / values.length;
+    entries.push({
+      speciesId: name.toLowerCase().replace(/\s+/g, '-'),
+      speciesName: name,
+      meanValue: avg,
+    });
+  }
+
+  return { entries, comparisonType, taxonomyName };
 }
 
 /**
@@ -243,23 +298,38 @@ export async function getPelagicJuvenileData(
   );
   const familySpecies = extractSpeciesNames(familySpeciesRows, species.validName);
 
-  // Build dot-strip records for size
+  // Build records for size
   const sizeRecords = buildDotStripRecords(
     speciesRows.length > 0 ? speciesRows : genusRows,
     'PELAGIC_JUV_SIZE_MEAN',
     'PELAGIC_JUV_SIZE_MIN',
     'PELAGIC_JUV_SIZE_MAX',
-    'PELAGIC_JUV_SIZE_CONF'
+    'PELAGIC_JUV_SIZE_CONF',
+    'PELAGIC_JUV_SIZE_CONF_TYPE'
   );
 
-  // Build dot-strip records for duration
+  // Build records for duration
   const durationRecords = buildDotStripRecords(
     speciesRows.length > 0 ? speciesRows : genusRows,
     'PELAGIC_JUV_DURATION_MEAN',
     'PELAGIC_JUV_DURATION_MIN',
     'PELAGIC_JUV_DURATION_MAX',
-    'PELAGIC_JUV_DURATION_CONF'
+    'PELAGIC_JUV_DURATION_CONF',
+    'PELAGIC_JUV_DURATION_CONF_TYPE'
   );
+
+  // Compute bar chart data (family-level, fall back to genus if >10 species)
+  let sizeBarChart = computeBarChartData(familyRows, 'PELAGIC_JUV_SIZE_MEAN', species.family, 'family');
+  if (sizeBarChart && sizeBarChart.entries.length > 10) {
+    const genusChart = computeBarChartData(genusRows, 'PELAGIC_JUV_SIZE_MEAN', species.genus, 'genus');
+    if (genusChart) sizeBarChart = genusChart;
+  }
+
+  let durationBarChart = computeBarChartData(familyRows, 'PELAGIC_JUV_DURATION_MEAN', species.family, 'family');
+  if (durationBarChart && durationBarChart.entries.length > 10) {
+    const genusChart = computeBarChartData(genusRows, 'PELAGIC_JUV_DURATION_MEAN', species.genus, 'genus');
+    if (genusChart) durationBarChart = genusChart;
+  }
 
   // Compute comparison stats for size
   const sizeComparisons = computeComparisonStats(
@@ -288,5 +358,8 @@ export async function getPelagicJuvenileData(
       size: sizeComparisons,
       duration: durationComparisons,
     },
+    currentSpeciesId: speciesId,
+    sizeBarChart,
+    durationBarChart,
   };
 }
