@@ -1,8 +1,8 @@
 /**
  * Test: CSV export uses '@' as column delimiter with all fields quoted.
  */
-import { describe, it, expect } from 'vitest';
-import { generateCSV } from '../csv-utils';
+import { describe, it, expect, vi } from 'vitest';
+import { generateCSV, downloadCSV } from '../csv-utils';
 
 describe('CSV delimiter and quoting', () => {
   it('should use @ as column delimiter with all fields quoted', () => {
@@ -74,5 +74,76 @@ describe('CSV delimiter and quoting', () => {
     const txt = generateCSV(data);
     const lines = txt.split(/\r?\n/);
     expect(lines[1]).toBe('"42"@"3.14"');
+  });
+
+  it('should export Dascyllus aruanus egg data with semicolons in EXT_REF preserved in quotes', () => {
+    // Reproduces BUG 1: semicolons in EXT_REF cause Excel to split the row
+    const data = [
+      {
+        ORDER: 'Ovalentaria incertae sedis',
+        FAMILY: 'Pomacentridae',
+        GENUS: 'Dascyllus',
+        VALID_NAME: 'Dascyllus aruanus',
+        TYPE: 'Egg diameter',
+        MEAN: 0.75,
+        EXT_REF: 'Fishelson 1964; Danilowicz & Brown 1992',
+        REFERENCE: 'Some reference',
+      },
+    ];
+    const txt = generateCSV(data);
+    const lines = txt.split(/\r?\n/);
+
+    // The semicolon must be inside a quoted field — no row splitting
+    expect(lines[1]).toContain('"Fishelson 1964; Danilowicz & Brown 1992"');
+
+    // The data row must have exactly the same number of @ delimiters as the header
+    const headerDelimiters = (lines[0].match(/@/g) || []).length;
+    const dataDelimiters = (lines[1].match(/@/g) || []).length;
+    expect(dataDelimiters).toBe(headerDelimiters);
+
+    // The raw output must NOT contain any unquoted semicolons that could split in Excel
+    // Every semicolon must be between double quotes
+    for (const line of lines) {
+      const parts = line.split(';');
+      // If semicolons exist, they should be inside quoted fields
+      if (parts.length > 1) {
+        // Count open quotes before each semicolon - should always be odd (inside quotes)
+        let pos = 0;
+        for (const ch of line) {
+          if (ch === ';') {
+            const before = line.substring(0, pos);
+            const quoteCount = (before.match(/"/g) || []).length;
+            expect(quoteCount % 2).toBe(1); // odd = inside quotes
+          }
+          pos++;
+        }
+      }
+    }
+  });
+
+  it('downloadCSV should use .txt extension to prevent Excel auto-parsing', () => {
+    // BUG 1: .csv extension causes European Excel to auto-parse with ; delimiter
+    // .txt extension forces Import Wizard where user chooses delimiter
+    // Mock DOM APIs
+    const mockLink = {
+      href: '',
+      download: '',
+      style: { display: '' },
+      click: vi.fn(),
+    };
+    const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
+    const appendChildSpy = vi.spyOn(document.body, 'appendChild').mockReturnValue(mockLink as any);
+    const removeChildSpy = vi.spyOn(document.body, 'removeChild').mockReturnValue(mockLink as any);
+    vi.spyOn(URL, 'createObjectURL').mockReturnValue('blob:test');
+    vi.spyOn(URL, 'revokeObjectURL').mockReturnValue(undefined);
+
+    downloadCSV([{ A: '1' }], 'test-export');
+
+    // File extension must be .txt, not .csv
+    expect(mockLink.download).toBe('test-export.txt');
+
+    createElementSpy.mockRestore();
+    appendChildSpy.mockRestore();
+    removeChildSpy.mockRestore();
   });
 });

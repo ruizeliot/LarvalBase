@@ -64,13 +64,16 @@ export function downloadCSV(
 
   // Create Blob with UTF-8 BOM for Excel compatibility
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
+  // Use text/plain MIME type and .txt extension to prevent Excel from
+  // auto-parsing with locale-specific delimiters (e.g. ';' in European locales).
+  // This forces Excel to use the Text Import Wizard where the user picks '@'.
+  const blob = new Blob([BOM + csv], { type: "text/plain;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
   // Create and trigger download link
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${filename}.csv`;
+  link.download = `${filename}.txt`;
   link.style.display = "none";
 
   document.body.appendChild(link);
