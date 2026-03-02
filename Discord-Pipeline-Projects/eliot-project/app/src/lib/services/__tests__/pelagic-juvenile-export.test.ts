@@ -32,10 +32,39 @@ describe('Pelagic juvenile export', () => {
 
     expect(rows).not.toBeNull();
     expect(rows!.length).toBeGreaterThan(0);
+  });
 
-    // Check TYPE column values
-    const types = [...new Set(rows!.map(r => r.TYPE))];
-    expect(types).toContain('Pelagic juvenile size');
+  it('should use original database column order for pelagic juvenile export', async () => {
+    const { getSectionExportData } = await import('../section-export.service');
+    const { getOrLoadData } = await import('@/lib/data/data-repository');
+    const data = await getOrLoadData();
+
+    let testSpeciesId: string | null = null;
+    for (const [speciesId, traits] of data.traitsBySpecies) {
+      if (traits.some(t => t.traitType === 'pelagic_juvenile_size')) {
+        testSpeciesId = speciesId;
+        break;
+      }
+    }
+    expect(testSpeciesId).not.toBeNull();
+
+    const rows = await getSectionExportData(
+      testSpeciesId!,
+      ['pelagic_juvenile_size', 'pelagic_juvenile_duration'],
+      'species'
+    );
+
+    expect(rows).not.toBeNull();
+    const cols = Object.keys(rows![0]);
+
+    // Should NOT have normalized MEAN/MIN/MAX/CONF columns
+    expect(cols).not.toContain('MEAN');
+    expect(cols).not.toContain('TYPE');
+
+    // Should have original database columns
+    expect(cols).toContain('PELAGIC_JUV_SIZE_MEAN');
+    expect(cols).toContain('ORDER');
+    expect(cols).toContain('FAMILY');
   });
 
   it('Gadus morhua should have pelagic juvenile export data', async () => {
