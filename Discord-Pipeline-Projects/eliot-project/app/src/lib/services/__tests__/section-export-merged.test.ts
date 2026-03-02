@@ -78,7 +78,7 @@ describe('Merged section export with TYPE column', () => {
     }
   });
 
-  it('Merged export should NOT have Link or ROW_INDEX columns', async () => {
+  it('Merged export should NOT have ROW_INDEX column but SHOULD have LINK', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
@@ -101,7 +101,7 @@ describe('Merged section export with TYPE column', () => {
 
     expect(rows).not.toBeNull();
     for (const row of rows!) {
-      expect(row).not.toHaveProperty('LINK');
+      expect(row).toHaveProperty('LINK');
       expect(row).not.toHaveProperty('ROW_INDEX');
     }
   });

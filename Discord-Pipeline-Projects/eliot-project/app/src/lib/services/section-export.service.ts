@@ -81,14 +81,22 @@ const TAXONOMY_ORDER = ['ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'A
 
 /**
  * Standard measurement + metadata columns in preferred order.
+ * MEAN_TYPE, CONF_TYPE, UNIT placed immediately after MEAN/MIN/MAX/CONF.
+ * TEMPERATURE_MEAN_TYPE, TEMPERATURE_CONF_TYPE placed immediately after TEMPERATURE columns.
+ * Does NOT include tail columns (REMARKS, EXT_REF, REFERENCE, LINK) — those always come last.
  */
 const STANDARD_ORDER = [
   'TYPE', 'MEAN', 'MIN', 'MAX', 'CONF', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT',
   'ORIGIN', 'N', 'LENGTH_TYPE',
-  'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX',
+  'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
+  'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
   'METHOD', 'GEAR', 'LOCATION',
-  'REFERENCE', 'EXT_REF', 'REMARKS',
 ];
+
+/**
+ * Columns that ALWAYS come last in the export, in this exact order.
+ */
+const TAIL_COLUMNS = ['REMARKS', 'EXT_REF', 'REFERENCE', 'LINK'];
 
 /**
  * Check if a rawFields column should be included as an "extra info" column.
@@ -141,12 +149,22 @@ function buildMergedRow(
       ?? rawFields.REARING_TEMPERATURE_MAX
       ?? rawFields.TEMPERATURE_MAX
       ?? 'NA',
+    TEMPERATURE_CONF: rawFields.TEMPERATURE_CONF
+      ?? rawFields.REARING_TEMPERATURE_CONF
+      ?? 'NA',
+    TEMPERATURE_MEAN_TYPE: rawFields.TEMPERATURE_MEAN_TYPE
+      ?? rawFields.REARING_TEMPERATURE_MEAN_TYPE
+      ?? 'NA',
+    TEMPERATURE_CONF_TYPE: rawFields.TEMPERATURE_CONF_TYPE
+      ?? rawFields.REARING_TEMPERATURE_CONF_TYPE
+      ?? 'NA',
     METHOD: trait.metadata?.method || rawFields.METHOD || 'NA',
     GEAR: trait.metadata?.gear || rawFields.GEAR || 'NA',
     LOCATION: trait.metadata?.location || rawFields.LOCATION || 'NA',
-    REFERENCE: trait.source || rawFields.REFERENCE || 'NA',
-    EXT_REF: trait.metadata?.externalRef || rawFields.EXT_REF || 'NA',
     REMARKS: trait.metadata?.remarks || rawFields.REMARKS || 'NA',
+    EXT_REF: trait.metadata?.externalRef || rawFields.EXT_REF || 'NA',
+    REFERENCE: trait.source || rawFields.REFERENCE || 'NA',
+    LINK: rawFields.LINK || 'NA',
   };
 
   // Add extra info columns from rawFields (trait-specific columns like MET_DEFINITION, STAGE, etc.)
@@ -161,7 +179,7 @@ function buildMergedRow(
 
 /**
  * Normalize rows: ensure all rows have the same columns, filling 'NA' for missing ones.
- * Orders columns: taxonomy → standard → extra info (alphabetical).
+ * Orders columns: taxonomy → TYPE → standard measurement → extra info (alphabetical) → tail (REMARKS, EXT_REF, REFERENCE, LINK).
  */
 function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
   if (rows.length === 0) return [];
@@ -174,7 +192,10 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
     }
   }
 
-  // Build ordered column list: taxonomy → standard → extras (alphabetical)
+  // Set of tail columns for exclusion from standard/extras
+  const tailSet = new Set(TAIL_COLUMNS);
+
+  // Build ordered column list: taxonomy → standard → extras (alphabetical) → tail
   const orderedColumns: string[] = [];
   const added = new Set<string>();
 
@@ -190,9 +211,17 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
       added.add(col);
     }
   }
-  // Extra columns sorted alphabetically
-  const extras = [...allColumns].filter(c => !added.has(c)).sort();
+  // Extra columns sorted alphabetically (excluding tail columns)
+  const extras = [...allColumns].filter(c => !added.has(c) && !tailSet.has(c)).sort();
   orderedColumns.push(...extras);
+
+  // Tail columns always last, in fixed order
+  for (const col of TAIL_COLUMNS) {
+    if (allColumns.has(col)) {
+      orderedColumns.push(col);
+      added.add(col);
+    }
+  }
 
   // Normalize each row
   return rows.map(row => {
