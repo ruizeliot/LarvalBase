@@ -109,13 +109,14 @@ const ALL_FIXED_COLS = new Set([
 const TAIL_COLUMNS = ['REMARKS', 'EXT_REF', 'REFERENCE', 'LINK'];
 
 /**
- * Check if a rawFields column should be included as an "extra info" column.
- * Returns false only for taxonomy and standard metadata columns.
- * All database-specific columns (including measurement columns like YOLK_SIZE_MEAN,
- * OIL_GLOBULE_SIZE_MEAN) are included to ensure no source data is lost.
+ * Check if a rawFields column should be included as a qualitative "extra info" column.
+ * Returns false for taxonomy columns, standard metadata columns, and measurement columns.
+ * Only qualitative columns (EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE, etc.) are included.
  */
 function isExtraInfoColumn(col: string): boolean {
   if (STANDARD_COLUMNS.has(col)) return false;
+  // Exclude raw measurement columns — their values are in MEAN/MIN/MAX/CONF
+  if (MEASUREMENT_COL_REGEX.test(col)) return false;
   return true;
 }
 
@@ -196,10 +197,9 @@ function buildMergedRow(
  * 2. TYPE + qualitative extras (non-measurement columns, alphabetical)
  * 3. MEAN/MIN/MAX/CONF
  * 4. MEAN_TYPE/CONF_TYPE/UNIT
- * 5. Raw measurement extras (columns matching measurement pattern, alphabetical)
- * 6. TEMPERATURE group
- * 7. Other columns (ORIGIN, N, LENGTH_TYPE, METHOD, GEAR, LOCATION)
- * 8. REMARKS/EXT_REF/REFERENCE/LINK (always last)
+ * 5. TEMPERATURE group
+ * 6. Other columns (ORIGIN, N, LENGTH_TYPE, METHOD, GEAR, LOCATION)
+ * 7. REMARKS/EXT_REF/REFERENCE/LINK (always last)
  */
 function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
   if (rows.length === 0) return [];
@@ -234,17 +234,14 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // 2. TYPE + qualitative extras (non-measurement columns, alphabetical)
   addCol('TYPE');
 
-  // Classify remaining extras into qualitative vs raw-measurement
+  // Collect qualitative extras (non-measurement, non-fixed columns)
   const qualitativeExtras: string[] = [];
-  const rawMeasurementExtras: string[] = [];
 
   for (const col of [...allColumns].sort()) {
     if (added.has(col) || tailSet.has(col) || taxonomySet.has(col) || ALL_FIXED_COLS.has(col)) continue;
-    if (MEASUREMENT_COL_REGEX.test(col)) {
-      rawMeasurementExtras.push(col);
-    } else {
-      qualitativeExtras.push(col);
-    }
+    // Skip raw measurement columns — their values are in MEAN/MIN/MAX/CONF
+    if (MEASUREMENT_COL_REGEX.test(col)) continue;
+    qualitativeExtras.push(col);
   }
 
   // Qualitative extras before measurements
@@ -255,9 +252,6 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
 
   // 4. MEAN_TYPE/CONF_TYPE/UNIT
   addCols(META_TYPE_COLS);
-
-  // 5. Raw measurement extras (YOLK_SIZE_MEAN, OIL_GLOBULE_SIZE_MEAN, etc.)
-  for (const col of rawMeasurementExtras) addCol(col);
 
   // 6. Temperature group
   addCols(TEMPERATURE_COLS);

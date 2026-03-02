@@ -6,10 +6,9 @@
  * 2. TYPE + qualitative columns (EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE, etc.)
  * 3. MEAN/MIN/MAX/CONF
  * 4. MEAN_TYPE/CONF_TYPE/UNIT
- * 5. Raw measurement extras (YOLK_SIZE_MEAN, OIL_GLOBULE_SIZE_MEAN, etc.)
- * 6. TEMPERATURE group
- * 7. Other columns (ORIGIN, N, METHOD, GEAR, LOCATION, etc.)
- * 8. REMARKS/EXT_REF/REFERENCE/LINK always LAST
+ * 5. TEMPERATURE group
+ * 6. Other columns (ORIGIN, N, METHOD, GEAR, LOCATION, etc.)
+ * 7. REMARKS/EXT_REF/REFERENCE/LINK always LAST
  */
 import { describe, it, expect } from 'vitest';
 
