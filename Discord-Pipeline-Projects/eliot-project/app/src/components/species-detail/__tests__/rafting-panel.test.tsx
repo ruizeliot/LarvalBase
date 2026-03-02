@@ -168,3 +168,77 @@ describe('US-7.1: Rafting qualitative panel', () => {
     expect(refLink).toHaveAttribute('target', '_blank');
   });
 });
+
+// --- US-7.2 test data ---
+
+const dataWithFrequencies: RaftingData = {
+  ...knownSpeciesData,
+  flotsamFrequencies: [
+    { value: 'FAD', count: 8 },
+    { value: 'algae/plant', count: 5 },
+    { value: 'plastic', count: 3 },
+  ],
+  stageFrequencies: [
+    { value: 'J', count: 9 },
+    { value: 'A', count: 4 },
+    { value: 'L', count: 2 },
+  ],
+};
+
+describe('US-7.2: Frequency barplots for qualitative rafting traits', () => {
+  it('should render flotsam frequency barplot when data exists', () => {
+    const { container } = render(<RaftingPanel data={dataWithFrequencies} />);
+    expect(container.querySelector('[data-testid="flotsam-barplot"]')).toBeInTheDocument();
+  });
+
+  it('should render stage frequency barplot when data exists', () => {
+    const { container } = render(<RaftingPanel data={dataWithFrequencies} />);
+    expect(container.querySelector('[data-testid="stage-barplot"]')).toBeInTheDocument();
+  });
+
+  it('should display flotsam frequency values with counts', () => {
+    render(<RaftingPanel data={dataWithFrequencies} />);
+    expect(screen.getByText('FAD')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
+    expect(screen.getByText('5')).toBeInTheDocument();
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
+  it('should display stage frequency values with counts', () => {
+    render(<RaftingPanel data={dataWithFrequencies} />);
+    expect(screen.getByText('9')).toBeInTheDocument();
+    expect(screen.getByText('4')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+  });
+
+  it('should render frequency bar fills', () => {
+    const { container } = render(<RaftingPanel data={dataWithFrequencies} />);
+    const bars = container.querySelectorAll('[data-testid="freq-bar-fill"]');
+    // 3 flotsam bars + 3 stage bars = 6
+    expect(bars.length).toBe(6);
+  });
+
+  it('should not render barplots when no frequency data exists', () => {
+    const { container } = render(<RaftingPanel data={knownSpeciesData} />);
+    expect(container.querySelector('[data-testid="flotsam-barplot"]')).not.toBeInTheDocument();
+    expect(container.querySelector('[data-testid="stage-barplot"]')).not.toBeInTheDocument();
+  });
+
+  it('should handle species/genus/family fallback for frequency data', () => {
+    const genusData: RaftingData = {
+      ...knownSpeciesData,
+      level: 'genus',
+      levelName: 'Kyphosus',
+      flotsamFrequencies: [
+        { value: 'algae/plant', count: 12 },
+      ],
+      stageFrequencies: [
+        { value: 'J', count: 15 },
+      ],
+    };
+    const { container } = render(<RaftingPanel data={genusData} />);
+    expect(container.querySelector('[data-testid="flotsam-barplot"]')).toBeInTheDocument();
+    expect(screen.getByText('12')).toBeInTheDocument();
+    expect(screen.getByText('15')).toBeInTheDocument();
+  });
+});
