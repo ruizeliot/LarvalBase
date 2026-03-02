@@ -10,6 +10,42 @@
 import { describe, it, expect } from 'vitest';
 
 describe('Export column order', () => {
+  it('TYPE should come right after taxonomy, extras before MEAN', async () => {
+    const { getSectionExportData } = await import('../section-export.service');
+    const { getOrLoadData } = await import('@/lib/data/data-repository');
+    const data = await getOrLoadData();
+
+    let testSpeciesId: string | null = null;
+    for (const [speciesId, traits] of data.traitsBySpecies) {
+      if (traits.some(t => t.traitType === 'egg_diameter')) {
+        testSpeciesId = speciesId;
+        break;
+      }
+    }
+    if (!testSpeciesId) return;
+
+    const rows = await getSectionExportData(testSpeciesId, ['egg_diameter'], 'species');
+    expect(rows).not.toBeNull();
+
+    const cols = Object.keys(rows![0]);
+    const typeIdx = cols.indexOf('TYPE');
+    const meanIdx = cols.indexOf('MEAN');
+
+    // TYPE must come before MEAN
+    expect(typeIdx).toBeLessThan(meanIdx);
+
+    // TYPE should be right after taxonomy (AUTHORITY is last taxonomy col)
+    const authorityIdx = cols.indexOf('AUTHORITY');
+    expect(typeIdx).toBe(authorityIdx + 1);
+
+    // Any extra columns (like EGG_LOCATION, EGG_SHAPE) must come between TYPE and MEAN
+    const extrasBeforeMean = cols.slice(typeIdx + 1, meanIdx);
+    for (const col of extrasBeforeMean) {
+      // These should all be qualitative/text extras, not measurement or tail columns
+      expect(['REMARKS', 'EXT_REF', 'REFERENCE', 'LINK']).not.toContain(col);
+    }
+  });
+
   it('MEAN_TYPE, CONF_TYPE, UNIT should follow immediately after MEAN/MIN/MAX/CONF', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');

@@ -81,12 +81,13 @@ const TAXONOMY_ORDER = ['ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'A
 
 /**
  * Standard measurement + metadata columns in preferred order.
- * MEAN_TYPE, CONF_TYPE, UNIT placed immediately after MEAN/MIN/MAX/CONF.
- * TEMPERATURE_MEAN_TYPE, TEMPERATURE_CONF_TYPE placed immediately after TEMPERATURE columns.
+ * TYPE first, then measurement group (MEAN/MIN/MAX/CONF + MEAN_TYPE/CONF_TYPE/UNIT),
+ * then qualitative metadata, then temperature group, then method columns.
+ * Extra info columns (qualitative/text from specific databases) go between TYPE and MEAN.
  * Does NOT include tail columns (REMARKS, EXT_REF, REFERENCE, LINK) — those always come last.
  */
-const STANDARD_ORDER = [
-  'TYPE', 'MEAN', 'MIN', 'MAX', 'CONF', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT',
+const STANDARD_MEASUREMENT_ORDER = [
+  'MEAN', 'MIN', 'MAX', 'CONF', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT',
   'ORIGIN', 'N', 'LENGTH_TYPE',
   'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
   'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
@@ -195,25 +196,38 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // Set of tail columns for exclusion from standard/extras
   const tailSet = new Set(TAIL_COLUMNS);
 
-  // Build ordered column list: taxonomy → standard → extras (alphabetical) → tail
+  // Build ordered column list:
+  // taxonomy → TYPE → extras (qualitative/text, alphabetical) → measurements → tail
   const orderedColumns: string[] = [];
   const added = new Set<string>();
 
+  // 1. Taxonomy columns
   for (const col of TAXONOMY_ORDER) {
     if (allColumns.has(col)) {
       orderedColumns.push(col);
       added.add(col);
     }
   }
-  for (const col of STANDARD_ORDER) {
+
+  // 2. TYPE column first
+  if (allColumns.has('TYPE')) {
+    orderedColumns.push('TYPE');
+    added.add('TYPE');
+  }
+
+  // 3. Extra info columns (qualitative/text from specific databases) — alphabetical
+  const measurementSet = new Set(STANDARD_MEASUREMENT_ORDER);
+  const extras = [...allColumns].filter(c => !added.has(c) && !tailSet.has(c) && !measurementSet.has(c)).sort();
+  orderedColumns.push(...extras);
+  for (const col of extras) added.add(col);
+
+  // 4. Standard measurement + metadata columns
+  for (const col of STANDARD_MEASUREMENT_ORDER) {
     if (allColumns.has(col) && !added.has(col)) {
       orderedColumns.push(col);
       added.add(col);
     }
   }
-  // Extra columns sorted alphabetically (excluding tail columns)
-  const extras = [...allColumns].filter(c => !added.has(c) && !tailSet.has(c)).sort();
-  orderedColumns.push(...extras);
 
   // Tail columns always last, in fixed order
   for (const col of TAIL_COLUMNS) {
