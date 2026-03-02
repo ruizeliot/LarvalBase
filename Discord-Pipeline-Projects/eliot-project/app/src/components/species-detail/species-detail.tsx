@@ -14,6 +14,8 @@ import { EggQualitativePanel } from "./egg-qualitative-panel";
 import { useEggQualitative } from "@/hooks/use-egg-qualitative";
 import { PelagicJuvenilePanel } from "./pelagic-juvenile-panel";
 import { usePelagicJuvenile } from "@/hooks/use-pelagic-juvenile";
+import { RaftingPanel } from "./rafting-panel";
+import { useRafting } from "@/hooks/use-rafting";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -113,6 +115,9 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
 
   // Fetch pelagic juvenile data (Epic 6)
   const { data: pelagicJuvenileData } = usePelagicJuvenile(speciesId);
+
+  // Fetch rafting data (Epic 7)
+  const { data: raftingData } = useRafting(speciesId);
 
   // Modal state for raw data display
   const [modalOpen, setModalOpen] = useState(false);
@@ -305,6 +310,29 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                         <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
                       </div>
                       <PelagicJuvenilePanel data={pelagicJuvenileData} />
+                    </div>
+                  )}
+
+                  {/* Rafting section (Epic 7) — after Pelagic Juvenile */}
+                  {raftingData && (
+                    <div className="space-y-4 mt-8">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="flex items-center justify-center rounded-full shrink-0"
+                          style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                          title="Rafting"
+                        >
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={getSectionIcon("Rafting")}
+                            alt="Rafting icon"
+                            width={29}
+                            height={29}
+                          />
+                        </div>
+                        <h2 className="text-lg font-semibold">Rafting</h2>
+                      </div>
+                      <RaftingPanel data={raftingData} />
                     </div>
                   )}
                 </>

@@ -242,3 +242,257 @@ describe('US-7.2: Frequency barplots for qualitative rafting traits', () => {
     expect(screen.getByText('15')).toBeInTheDocument();
   });
 });
+
+// --- US-7.3 test data ---
+
+const dataWithSize: RaftingData = {
+  level: 'species',
+  levelName: 'Kyphosus vaigiensis',
+  status: 'Known',
+  flotsamValues: ['algae/plant'],
+  stageValues: ['J'],
+  genusSpecies: [],
+  familySpecies: [],
+  qualitativeRecords: [],
+  sizeRecords: [
+    { mean: 78.0, errorLow: null, errorHigh: null, reference: 'Current study', link: null, species: 'Kyphosus vaigiensis', extRef: null, lengthType: 'TL', rawMin: null, rawMax: null, meanType: 'mean', conf: null, confType: null },
+    { mean: 45.5, errorLow: 30.0, errorHigh: 61.0, reference: 'Castro et al. (2002)', link: 'https://doi.org/10.1234', species: 'Kyphosus vaigiensis', extRef: 'FB_456', lengthType: 'SL', rawMin: 30.0, rawMax: 61.0, meanType: 'mean', conf: null, confType: null },
+    { mean: 52.0, errorLow: null, errorHigh: null, reference: 'Thiel 2003', link: null, species: 'Kyphosus vaigiensis', extRef: null, lengthType: null, rawMin: null, rawMax: null, meanType: null, conf: null, confType: null },
+  ],
+  ageRecords: [],
+  sizeStats: {
+    mean: 58.50,
+    sd: 17.10,
+    min: 30.0,
+    max: 78.0,
+    n: 3,
+  },
+  ageStats: emptyStats,
+  comparisonStats: {
+    size: {
+      species: { mean: 58.5, n: 3, speciesCount: 1 },
+      genus: { mean: 50.2, n: 10, speciesCount: 4 },
+      family: { mean: 42.0, n: 30, speciesCount: 12 },
+    },
+    age: { species: null, genus: null, family: null },
+  },
+  currentSpeciesId: 'kyphosus-vaigiensis',
+  sizeBarChart: {
+    entries: [
+      { speciesId: 'kyphosus-vaigiensis', speciesName: 'Kyphosus vaigiensis', meanValue: 58.5 },
+      { speciesId: 'kyphosus-cinerascens', speciesName: 'Kyphosus cinerascens', meanValue: 42.0 },
+      { speciesId: 'kyphosus-bigibbus', speciesName: 'Kyphosus bigibbus', meanValue: 38.5 },
+    ],
+    comparisonType: 'family',
+    taxonomyName: 'Kyphosidae',
+  },
+  ageBarChart: null,
+};
+
+describe('US-7.3: Barplots for rafting size and age', () => {
+  it('should render size panel title', () => {
+    render(<RaftingPanel data={dataWithSize} />);
+    expect(screen.getByText('Rafting Size')).toBeInTheDocument();
+  });
+
+  it('should render a family bar chart for size', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    expect(container.querySelector('[data-testid="family-bar-chart"]')).toBeInTheDocument();
+  });
+
+  it('should render bar entries for each species in comparison', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const entries = container.querySelectorAll('[data-testid="bar-entry"]');
+    expect(entries.length).toBe(3);
+  });
+
+  it('should highlight current species in bar chart', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const highlighted = container.querySelector('[data-testid="bar-entry"][data-highlight="true"]');
+    expect(highlighted).toBeInTheDocument();
+    expect(highlighted!.textContent).toContain('Kyphosus vaigiensis');
+  });
+
+  it('should show mean ± SD in TraitCard format', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const traitValue = container.querySelector('[data-testid="trait-value"]');
+    expect(traitValue).toBeInTheDocument();
+    expect(traitValue!.textContent).toContain('58.50');
+    expect(traitValue!.textContent).toContain('±');
+    expect(traitValue!.textContent).toContain('17.10');
+  });
+
+  it('should show range and N records link', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    expect(screen.getByText(/Range:/)).toBeInTheDocument();
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    expect(recordsLink).toBeInTheDocument();
+    expect(recordsLink!.textContent).toContain('3 records');
+  });
+
+  it('should show genus and family comparison text with n_sp', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const compText = container.querySelector('[data-testid="comparison-text"]');
+    expect(compText).toBeInTheDocument();
+    expect(screen.getByText('Genus average:')).toBeInTheDocument();
+    expect(screen.getByText('Family average:')).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 4/)).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 12/)).toBeInTheDocument();
+  });
+
+  it('should display "No rafting size data available" when no size records', () => {
+    render(<RaftingPanel data={knownSpeciesData} />);
+    expect(screen.getByText(/no rafting size data available/i)).toBeInTheDocument();
+  });
+
+  it('should show detail table with correct SIZE columns when records link clicked', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    fireEvent.click(recordsLink!);
+
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Mean')).toBeInTheDocument();
+    expect(screen.getByText('Min')).toBeInTheDocument();
+    expect(screen.getByText('Max')).toBeInTheDocument();
+    expect(screen.getByText('Mean type')).toBeInTheDocument();
+    expect(screen.getByText('External references')).toBeInTheDocument();
+    expect(screen.getByText('Main reference')).toBeInTheDocument();
+  });
+
+  it('should show mean, min, max values in size detail table', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    fireEvent.click(recordsLink!);
+
+    expect(screen.getByText('78.00')).toBeInTheDocument();
+    expect(screen.getByText('45.50')).toBeInTheDocument();
+    expect(screen.getByText('30.00')).toBeInTheDocument();
+    expect(screen.getByText('61.00')).toBeInTheDocument();
+    expect(screen.getByText('FB_456')).toBeInTheDocument();
+  });
+
+  it('should render reference as hyperlink in size detail table', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    fireEvent.click(recordsLink!);
+
+    const refLink = screen.getByText('Castro et al. (2002)').closest('a');
+    expect(refLink).toHaveAttribute('href', 'https://doi.org/10.1234');
+  });
+
+  // --- Age panel tests ---
+
+  const dataWithAge: RaftingData = {
+    level: 'species',
+    levelName: 'Kyphosus vaigiensis',
+    status: 'Known',
+    flotsamValues: ['algae/plant'],
+    stageValues: ['J'],
+    genusSpecies: [],
+    familySpecies: [],
+    qualitativeRecords: [],
+    sizeRecords: [],
+    ageRecords: [
+      { mean: 35.0, errorLow: null, errorHigh: null, reference: 'Current study', link: null, species: 'Kyphosus vaigiensis', extRef: null, rawMin: null, rawMax: null, meanType: null, conf: null, confType: null },
+      { mean: 22.0, errorLow: 15.0, errorHigh: 29.0, reference: 'Castro et al. (2002)', link: 'https://doi.org/10.5678', species: 'Kyphosus vaigiensis', extRef: 'FB_789', rawMin: 15.0, rawMax: 29.0, meanType: 'mean', conf: null, confType: null },
+    ],
+    sizeStats: emptyStats,
+    ageStats: {
+      mean: 28.50,
+      sd: 9.19,
+      min: 15.0,
+      max: 35.0,
+      n: 2,
+    },
+    comparisonStats: {
+      size: { species: null, genus: null, family: null },
+      age: {
+        species: { mean: 28.5, n: 2, speciesCount: 1 },
+        genus: { mean: 25.0, n: 6, speciesCount: 3 },
+        family: { mean: 20.0, n: 18, speciesCount: 9 },
+      },
+    },
+    currentSpeciesId: 'kyphosus-vaigiensis',
+    sizeBarChart: null,
+    ageBarChart: {
+      entries: [
+        { speciesId: 'kyphosus-vaigiensis', speciesName: 'Kyphosus vaigiensis', meanValue: 28.5 },
+        { speciesId: 'kyphosus-cinerascens', speciesName: 'Kyphosus cinerascens', meanValue: 20.0 },
+      ],
+      comparisonType: 'genus',
+      taxonomyName: 'Kyphosus',
+    },
+  };
+
+  it('should render age panel title', () => {
+    render(<RaftingPanel data={dataWithAge} />);
+    expect(screen.getByText('Rafting Age')).toBeInTheDocument();
+  });
+
+  it('should render a family bar chart for age', () => {
+    const { container } = render(<RaftingPanel data={dataWithAge} />);
+    const charts = container.querySelectorAll('[data-testid="family-bar-chart"]');
+    expect(charts.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should show mean ± SD for age in TraitCard format', () => {
+    const { container } = render(<RaftingPanel data={dataWithAge} />);
+    const traitValues = container.querySelectorAll('[data-testid="trait-value"]');
+    const ageValue = Array.from(traitValues).find(el => el.textContent?.includes('28.50'));
+    expect(ageValue).toBeTruthy();
+    expect(ageValue!.textContent).toContain('±');
+  });
+
+  it('should show unit "days" in age panel', () => {
+    render(<RaftingPanel data={dataWithAge} />);
+    expect(screen.getAllByText('days').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should show age comparison text with n_sp', () => {
+    render(<RaftingPanel data={dataWithAge} />);
+    expect(screen.getByText('Genus average:')).toBeInTheDocument();
+    expect(screen.getByText('Family average:')).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 3/)).toBeInTheDocument();
+    expect(screen.getByText(/n_sp = 9/)).toBeInTheDocument();
+  });
+
+  it('should display "No rafting age data available" when no age records', () => {
+    render(<RaftingPanel data={knownSpeciesData} />);
+    expect(screen.getByText(/no rafting age data available/i)).toBeInTheDocument();
+  });
+
+  it('should show clickable N records link for age', () => {
+    const { container } = render(<RaftingPanel data={dataWithAge} />);
+    const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
+    expect(recordsLinks.length).toBeGreaterThanOrEqual(1);
+    const ageLink = Array.from(recordsLinks).find(el => el.textContent?.includes('2 records'));
+    expect(ageLink).toBeTruthy();
+  });
+
+  it('should show detail table with correct AGE columns', () => {
+    const { container } = render(<RaftingPanel data={dataWithAge} />);
+    const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
+    const ageLink = Array.from(recordsLinks).find(el => el.textContent?.includes('2 records'));
+    fireEvent.click(ageLink!);
+
+    const headers = document.querySelectorAll('[role="dialog"] th');
+    const headerTexts = Array.from(headers).map(h => h.textContent);
+    expect(headerTexts).toContain('Name');
+    expect(headerTexts).toContain('Mean');
+    expect(headerTexts).toContain('Min');
+    expect(headerTexts).toContain('Max');
+    expect(headerTexts).toContain('Mean type');
+    expect(headerTexts).toContain('External references');
+    expect(headerTexts).toContain('Main reference');
+  });
+
+  it('should render reference as hyperlink in age detail table', () => {
+    const { container } = render(<RaftingPanel data={dataWithAge} />);
+    const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
+    const ageLink = Array.from(recordsLinks).find(el => el.textContent?.includes('2 records'));
+    fireEvent.click(ageLink!);
+
+    const refLink = screen.getByText('Castro et al. (2002)').closest('a');
+    expect(refLink).toHaveAttribute('href', 'https://doi.org/10.5678');
+  });
+});
