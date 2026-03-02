@@ -37,6 +37,21 @@ export interface DotStripRecord {
   lengthType?: string | null;
   conf?: number | null;
   confType?: string | null;
+  rawMin?: number | null;
+  rawMax?: number | null;
+  meanType?: string | null;
+}
+
+/**
+ * A qualitative record for the pelagic juvenile qualitative panel table.
+ */
+export interface QualitativeRecord {
+  species: string;
+  keyword: string | null;
+  remarks: string | null;
+  extRef: string | null;
+  reference: string;
+  link: string | null;
 }
 
 /**
@@ -87,6 +102,7 @@ export interface PelagicJuvenileData {
   keywords: string[];
   genusSpecies: string[];
   familySpecies: string[];
+  qualitativeRecords: QualitativeRecord[];
   sizeRecords: DotStripRecord[];
   durationRecords: DotStripRecord[];
   sizeStats: PelagicJuvenileStats;
@@ -125,9 +141,74 @@ function SpeciesLink({ name }: { name: string }) {
 }
 
 /**
+ * Dialog showing qualitative records table.
+ * Columns: Name (VALID_NAME), Key word (KEY_WORD), Remarks (REMARKS),
+ * External References (EXT_REF), Main references (REFERENCE with LINK as hyperlink).
+ */
+function QualitativeRecordsDialog({
+  open,
+  onOpenChange,
+  records,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  records: QualitativeRecord[];
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Pelagic Juvenile - Raw Data</DialogTitle>
+          <DialogDescription>
+            {records.length} record{records.length !== 1 ? 's' : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto">
+          {records.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">No records found.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Name</TableHead>
+                  <TableHead className="text-xs">Key word</TableHead>
+                  <TableHead className="text-xs">Remarks</TableHead>
+                  <TableHead className="text-xs">External references</TableHead>
+                  <TableHead className="text-xs">Main reference</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.map((r, i) => (
+                  <TableRow key={`${r.reference}-${i}`}>
+                    <TableCell className="text-xs italic">{r.species}</TableCell>
+                    <TableCell className="text-xs">{r.keyword || '-'}</TableCell>
+                    <TableCell className="text-xs max-w-[200px]">{r.remarks || '-'}</TableCell>
+                    <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
+                    <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
+                      {r.link ? (
+                        <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          {r.reference}
+                        </a>
+                      ) : (
+                        r.reference
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
  * Renders the qualitative information panel.
  */
 function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
+  const [modalOpen, setModalOpen] = useState(false);
   const isKnown = data.status === 'Known';
 
   return (
@@ -175,7 +256,7 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
         </div>
 
         {/* Family species */}
-        <div>
+        <div className={data.qualitativeRecords.length > 0 ? "border-b pb-2" : ""}>
           <div className="text-xs text-muted-foreground mb-1">
             Known pelagic juvenile in this family
           </div>
@@ -194,15 +275,34 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
             )}
           </div>
         </div>
+
+        {/* Records link */}
+        {data.qualitativeRecords.length > 0 && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-primary hover:underline text-sm"
+              data-testid="qualitative-records-link"
+            >
+              {data.qualitativeRecords.length} record{data.qualitativeRecords.length !== 1 ? 's' : ''}
+            </button>
+          </div>
+        )}
       </CardContent>
+
+      <QualitativeRecordsDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        records={data.qualitativeRecords}
+      />
     </Card>
   );
 }
 
 /**
  * Dialog showing raw records for a pelagic juvenile trait in a detailed table.
- * Size table includes: Name, Reference, Remarks, External references, Length type, Confidence interval, Confidence interval type
- * Duration table includes: Name, Reference, Remarks, External references, Confidence interval, Confidence interval type
+ * Columns: Name (VALID_NAME), Mean, Min, Max, Confidence interval, Mean type, CI type, External references, Main reference
  */
 function RecordsDialog({
   open,
@@ -221,7 +321,7 @@ function RecordsDialog({
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{label} - Raw Data</DialogTitle>
           <DialogDescription>
@@ -236,20 +336,29 @@ function RecordsDialog({
               <TableHeader>
                 <TableRow>
                   <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Reference</TableHead>
-                  <TableHead className="text-xs">Remarks</TableHead>
-                  <TableHead className="text-xs">External references</TableHead>
-                  {traitType === 'size' && (
-                    <TableHead className="text-xs">Length type</TableHead>
-                  )}
+                  <TableHead className="text-xs">Mean</TableHead>
+                  <TableHead className="text-xs">Min</TableHead>
+                  <TableHead className="text-xs">Max</TableHead>
                   <TableHead className="text-xs">Confidence interval</TableHead>
+                  <TableHead className="text-xs">Mean type</TableHead>
                   <TableHead className="text-xs">Confidence interval type</TableHead>
+                  <TableHead className="text-xs">External references</TableHead>
+                  <TableHead className="text-xs">Main reference</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {records.map((r, i) => (
                   <TableRow key={`${r.reference}-${i}`}>
-                    <TableCell className="text-xs">{r.keyword || '-'}</TableCell>
+                    <TableCell className="text-xs italic">{r.species}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.mean.toFixed(2)}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.rawMin?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.rawMax?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-xs font-mono">{r.conf?.toFixed(2) ?? '-'}</TableCell>
+                    <TableCell className="text-xs">
+                      {traitType === 'size' ? (r.lengthType || '-') : (r.meanType || '-')}
+                    </TableCell>
+                    <TableCell className="text-xs">{r.confType || '-'}</TableCell>
+                    <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
                     <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
                       {r.link ? (
                         <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
@@ -259,13 +368,6 @@ function RecordsDialog({
                         r.reference
                       )}
                     </TableCell>
-                    <TableCell className="text-xs max-w-[200px]">{r.remarks || '-'}</TableCell>
-                    <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
-                    {traitType === 'size' && (
-                      <TableCell className="text-xs">{r.lengthType || '-'}</TableCell>
-                    )}
-                    <TableCell className="text-xs font-mono">{r.conf?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-xs">{r.confType || '-'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

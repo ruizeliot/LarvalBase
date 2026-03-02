@@ -6,7 +6,7 @@
  */
 
 import { getOrLoadData } from '@/lib/data/data-repository';
-import type { PelagicJuvenileData, PelagicJuvenileStats, DotStripRecord, ComparisonLevel, BarChartData, BarChartSpeciesEntry } from '@/components/species-detail/pelagic-juvenile-panel';
+import type { PelagicJuvenileData, PelagicJuvenileStats, DotStripRecord, ComparisonLevel, BarChartData, BarChartSpeciesEntry, QualitativeRecord } from '@/components/species-detail/pelagic-juvenile-panel';
 
 /**
  * Get pelagic juvenile database rows from raw CSV cache.
@@ -78,6 +78,35 @@ function extractSpeciesNames(
 }
 
 /**
+ * Build qualitative records from all rows (no mean filter).
+ */
+function buildQualitativeRecords(
+  rows: Record<string, unknown>[]
+): QualitativeRecord[] {
+  const records: QualitativeRecord[] = [];
+
+  for (const row of rows) {
+    const species = String(row['VALID_NAME'] ?? '').trim();
+    const keyword = isValid(row['KEY_WORD']) ? String(row['KEY_WORD']).trim() : null;
+    const remarks = isValid(row['REMARKS']) ? String(row['REMARKS']).trim() : null;
+    const extRef = isValid(row['EXT_REF']) ? String(row['EXT_REF']).trim() : null;
+    const reference = String(row['REFERENCE'] ?? '').trim();
+    const link = String(row['LINK'] ?? '').trim();
+
+    records.push({
+      species,
+      keyword,
+      remarks,
+      extRef,
+      reference: reference || 'Unknown reference',
+      link: link || null,
+    });
+  }
+
+  return records;
+}
+
+/**
  * Build records (per reference) for size or duration measurements.
  */
 function buildDotStripRecords(
@@ -86,7 +115,8 @@ function buildDotStripRecords(
   minCol: string,
   maxCol: string,
   confCol: string,
-  confTypeCol: string
+  confTypeCol: string,
+  meanTypeCol: string
 ): DotStripRecord[] {
   const records: DotStripRecord[] = [];
 
@@ -106,6 +136,7 @@ function buildDotStripRecords(
     const extRef = isValid(row['EXT_REF']) ? String(row['EXT_REF']).trim() : null;
     const lengthType = isValid(row['LENGTH_TYPE']) ? String(row['LENGTH_TYPE']).trim() : null;
     const confType = isValid(row[confTypeCol]) ? String(row[confTypeCol]).trim() : null;
+    const meanType = isValid(row[meanTypeCol]) ? String(row[meanTypeCol]).trim() : null;
 
     // Compute error bar bounds:
     // If CONF exists, use mean ± conf as error range
@@ -135,6 +166,9 @@ function buildDotStripRecords(
       lengthType,
       conf,
       confType,
+      rawMin: min,
+      rawMax: max,
+      meanType,
     });
   }
 
@@ -264,6 +298,7 @@ export async function getPelagicJuvenileData(
       keywords: [],
       genusSpecies: [],
       familySpecies: [],
+      qualitativeRecords: [],
       sizeRecords: [],
       durationRecords: [],
       sizeStats: emptyStats,
@@ -298,6 +333,10 @@ export async function getPelagicJuvenileData(
   );
   const familySpecies = extractSpeciesNames(familySpeciesRows, species.validName);
 
+  // Build qualitative records from all species/genus rows
+  const qualitativeRows = speciesRows.length > 0 ? speciesRows : genusRows;
+  const qualitativeRecords = buildQualitativeRecords(qualitativeRows);
+
   // Build records for size
   const sizeRecords = buildDotStripRecords(
     speciesRows.length > 0 ? speciesRows : genusRows,
@@ -305,7 +344,8 @@ export async function getPelagicJuvenileData(
     'PELAGIC_JUV_SIZE_MIN',
     'PELAGIC_JUV_SIZE_MAX',
     'PELAGIC_JUV_SIZE_CONF',
-    'PELAGIC_JUV_SIZE_CONF_TYPE'
+    'PELAGIC_JUV_SIZE_CONF_TYPE',
+    'PELAGIC_JUV_SIZE_MEAN_TYPE'
   );
 
   // Build records for duration
@@ -315,7 +355,8 @@ export async function getPelagicJuvenileData(
     'PELAGIC_JUV_DURATION_MIN',
     'PELAGIC_JUV_DURATION_MAX',
     'PELAGIC_JUV_DURATION_CONF',
-    'PELAGIC_JUV_DURATION_CONF_TYPE'
+    'PELAGIC_JUV_DURATION_CONF_TYPE',
+    'PELAGIC_JUV_DURATION_MEAN_TYPE'
   );
 
   // Compute bar chart data (family-level, fall back to genus if >10 species)
@@ -350,6 +391,7 @@ export async function getPelagicJuvenileData(
     keywords,
     genusSpecies,
     familySpecies,
+    qualitativeRecords,
     sizeRecords,
     durationRecords,
     sizeStats: computeRecordStats(sizeRecords),

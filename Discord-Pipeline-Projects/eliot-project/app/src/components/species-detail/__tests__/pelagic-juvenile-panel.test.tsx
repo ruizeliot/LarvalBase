@@ -10,6 +10,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import {
   PelagicJuvenilePanel,
   type PelagicJuvenileData,
+  type QualitativeRecord,
 } from '../pelagic-juvenile-panel';
 
 // Mock FamilyBarChart since it uses Recharts which doesn't render in jsdom
@@ -34,6 +35,11 @@ vi.mock('../family-bar-chart', () => ({
 
 const emptyStats = { mean: null, sd: null, min: null, max: null, n: 0 };
 
+const sampleQualitativeRecords: QualitativeRecord[] = [
+  { species: 'Chromis viridis', keyword: 'acronurus', remarks: 'Reef flat', extRef: 'FB_123', reference: 'Ruiz 2024', link: null },
+  { species: 'Chromis viridis', keyword: 'post-larva', remarks: null, extRef: null, reference: 'Leis 2006', link: 'https://doi.org/10.1234' },
+];
+
 const knownSpeciesData: PelagicJuvenileData = {
   level: 'species',
   levelName: 'Chromis viridis',
@@ -41,6 +47,7 @@ const knownSpeciesData: PelagicJuvenileData = {
   keywords: ['acronurus', 'post-larva'],
   genusSpecies: ['Chromis atripectoralis', 'Chromis margaritifer'],
   familySpecies: ['Dascyllus aruanus', 'Pomacentrus pavo'],
+  qualitativeRecords: sampleQualitativeRecords,
   sizeRecords: [],
   durationRecords: [],
   sizeStats: emptyStats,
@@ -55,6 +62,7 @@ const unknownSpeciesData: PelagicJuvenileData = {
   keywords: [],
   genusSpecies: [],
   familySpecies: ['Gobius paganellus'],
+  qualitativeRecords: [],
   sizeRecords: [],
   durationRecords: [],
   sizeStats: emptyStats,
@@ -117,6 +125,44 @@ describe('US-6.1: Pelagic juvenile qualitative panel', () => {
     render(<PelagicJuvenilePanel data={knownSpeciesData} />);
     expect(screen.getByText('Name given')).toBeInTheDocument();
   });
+
+  it('should show "X records" link in qualitative panel', () => {
+    const { container } = render(<PelagicJuvenilePanel data={knownSpeciesData} />);
+    const link = container.querySelector('[data-testid="qualitative-records-link"]');
+    expect(link).toBeInTheDocument();
+    expect(link!.textContent).toContain('2 records');
+  });
+
+  it('should open qualitative records table with correct columns', () => {
+    const { container } = render(<PelagicJuvenilePanel data={knownSpeciesData} />);
+    const link = container.querySelector('[data-testid="qualitative-records-link"]');
+    fireEvent.click(link!);
+
+    // Check qualitative columns
+    expect(screen.getByText('Name')).toBeInTheDocument();
+    expect(screen.getByText('Key word')).toBeInTheDocument();
+    expect(screen.getByText('Remarks')).toBeInTheDocument();
+    expect(screen.getByText('External references')).toBeInTheDocument();
+    expect(screen.getByText('Main reference')).toBeInTheDocument();
+  });
+
+  it('should show VALID_NAME in qualitative table Name column', () => {
+    const { container } = render(<PelagicJuvenilePanel data={knownSpeciesData} />);
+    const link = container.querySelector('[data-testid="qualitative-records-link"]');
+    fireEvent.click(link!);
+
+    expect(screen.getAllByText('Chromis viridis').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('should render reference as hyperlink in qualitative table', () => {
+    const { container } = render(<PelagicJuvenilePanel data={knownSpeciesData} />);
+    const link = container.querySelector('[data-testid="qualitative-records-link"]');
+    fireEvent.click(link!);
+
+    const refLink = screen.getByText('Leis 2006').closest('a');
+    expect(refLink).toHaveAttribute('href', 'https://doi.org/10.1234');
+    expect(refLink).toHaveAttribute('target', '_blank');
+  });
 });
 
 // --- US-6.2 test data ---
@@ -128,10 +174,11 @@ const dataWithSize: PelagicJuvenileData = {
   keywords: ['post-larva'],
   genusSpecies: [],
   familySpecies: [],
+  qualitativeRecords: [],
   sizeRecords: [
-    { mean: 12.4, errorLow: 10.2, errorHigh: 14.6, reference: 'Ruiz 2024', link: null, species: 'Chromis viridis', n: 5, keyword: 'post-larva', remarks: 'Reef flat', extRef: 'FB_123', lengthType: 'SL', conf: 2.2, confType: 'SD' },
-    { mean: 11.0, errorLow: 9.5, errorHigh: 12.5, reference: 'Leis 2006', link: 'https://doi.org/10.1234', species: 'Chromis viridis', n: 3, keyword: 'acronurus', remarks: null, extRef: null, lengthType: 'TL', conf: 1.5, confType: 'SE' },
-    { mean: 13.2, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis', keyword: null, remarks: null, extRef: null, lengthType: null, conf: null, confType: null },
+    { mean: 12.4, errorLow: 10.2, errorHigh: 14.6, reference: 'Ruiz 2024', link: null, species: 'Chromis viridis', n: 5, keyword: 'post-larva', remarks: 'Reef flat', extRef: 'FB_123', lengthType: 'SL', conf: 2.2, confType: 'SD', rawMin: 10.2, rawMax: 14.6, meanType: 'Mean' },
+    { mean: 11.0, errorLow: 9.5, errorHigh: 12.5, reference: 'Leis 2006', link: 'https://doi.org/10.1234', species: 'Chromis viridis', n: 3, keyword: 'acronurus', remarks: null, extRef: null, lengthType: 'TL', conf: 1.5, confType: 'SE', rawMin: 9.5, rawMax: 12.5, meanType: 'Median' },
+    { mean: 13.2, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis', keyword: null, remarks: null, extRef: null, lengthType: null, conf: null, confType: null, rawMin: null, rawMax: null, meanType: null },
   ],
   durationRecords: [],
   sizeStats: {
@@ -232,28 +279,47 @@ describe('US-6.2: Barplot for pelagic juvenile size', () => {
     const recordsLink = container.querySelector('[data-testid="records-link"]');
     fireEvent.click(recordsLink!);
 
-    // Check SIZE-specific columns
+    // Check SIZE-specific columns: Name, Mean, Min, Max, CI, Mean type, CI type, Ext Ref, Main reference
     expect(screen.getByText('Name')).toBeInTheDocument();
-    expect(screen.getByText('Reference')).toBeInTheDocument();
-    expect(screen.getByText('Remarks')).toBeInTheDocument();
-    expect(screen.getByText('External references')).toBeInTheDocument();
-    expect(screen.getByText('Length type')).toBeInTheDocument();
+    expect(screen.getByText('Mean')).toBeInTheDocument();
+    expect(screen.getByText('Min')).toBeInTheDocument();
+    expect(screen.getByText('Max')).toBeInTheDocument();
     expect(screen.getByText('Confidence interval')).toBeInTheDocument();
+    expect(screen.getByText('Mean type')).toBeInTheDocument();
     expect(screen.getByText('Confidence interval type')).toBeInTheDocument();
+    expect(screen.getByText('External references')).toBeInTheDocument();
+    expect(screen.getByText('Main reference')).toBeInTheDocument();
+    // Remarks column should NOT be present
+    expect(screen.queryByRole('columnheader', { name: 'Remarks' })).not.toBeInTheDocument();
   });
 
-  it('should show keyword, remarks, extRef, lengthType, conf, confType in size detail table', () => {
+  it('should show VALID_NAME (not keyword) in size detail table Name column', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
     const recordsLink = container.querySelector('[data-testid="records-link"]');
     fireEvent.click(recordsLink!);
 
-    // First record data - use getAllByText for values that appear elsewhere
-    expect(screen.getAllByText('post-larva').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Reef flat')).toBeInTheDocument();
-    expect(screen.getByText('FB_123')).toBeInTheDocument();
-    expect(screen.getByText('SL')).toBeInTheDocument();
+    // Name column should show VALID_NAME (Chromis viridis), not keyword
+    // Dialog renders in a portal, so query document.body
+    const rows = document.querySelectorAll('[role="dialog"] tbody tr');
+    const firstRowCells = rows[0]?.querySelectorAll('td');
+    expect(firstRowCells?.[0]?.textContent).toBe('Chromis viridis');
+  });
+
+  it('should show mean, min, max, conf, meanType, extRef in size detail table', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    fireEvent.click(recordsLink!);
+
+    // First record: mean=12.4, min=10.2, max=14.6, conf=2.2, meanType=Mean, extRef=FB_123
+    expect(screen.getByText('12.40')).toBeInTheDocument();
+    expect(screen.getByText('10.20')).toBeInTheDocument();
+    expect(screen.getByText('14.60')).toBeInTheDocument();
     expect(screen.getByText('2.20')).toBeInTheDocument();
-    expect(screen.getAllByText('SD').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('FB_123')).toBeInTheDocument();
+    expect(screen.getAllByText('Mean').length).toBeGreaterThanOrEqual(1);
+    // Second record: lengthType=TL (Mean type column)
+    expect(screen.getByText('SL')).toBeInTheDocument();
+    expect(screen.getByText('TL')).toBeInTheDocument();
   });
 
   it('should render reference as hyperlink when link is present in size detail table', () => {
@@ -276,12 +342,13 @@ const dataWithDuration: PelagicJuvenileData = {
   keywords: ['post-larva'],
   genusSpecies: [],
   familySpecies: [],
+  qualitativeRecords: [],
   sizeRecords: [],
   durationRecords: [
-    { mean: 18.5, errorLow: 14.0, errorHigh: 23.0, reference: 'Ruiz 2024', link: null, species: 'Chromis viridis', n: 4, keyword: 'post-larva', remarks: 'Lagoon site', extRef: 'FB_456', conf: 4.5, confType: 'SD' },
-    { mean: 16.2, errorLow: 12.0, errorHigh: 20.4, reference: 'Leis 2006', link: 'https://doi.org/10.5678', species: 'Chromis viridis', n: 3, keyword: 'acronurus', remarks: null, extRef: null, conf: 4.2, confType: 'SE' },
-    { mean: 22.0, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis', keyword: null, remarks: null, extRef: null, conf: null, confType: null },
-    { mean: 15.0, errorLow: 13.5, errorHigh: 16.5, reference: 'Wellington 1992', link: null, species: 'Chromis viridis', n: 6, keyword: 'juvenile', remarks: 'Outer reef', extRef: 'WoRMS_789', conf: 1.5, confType: 'CI' },
+    { mean: 18.5, errorLow: 14.0, errorHigh: 23.0, reference: 'Ruiz 2024', link: null, species: 'Chromis viridis', n: 4, keyword: 'post-larva', remarks: 'Lagoon site', extRef: 'FB_456', conf: 4.5, confType: 'SD', rawMin: 14.0, rawMax: 23.0, meanType: 'Mean' },
+    { mean: 16.2, errorLow: 12.0, errorHigh: 20.4, reference: 'Leis 2006', link: 'https://doi.org/10.5678', species: 'Chromis viridis', n: 3, keyword: 'acronurus', remarks: null, extRef: null, conf: 4.2, confType: 'SE', rawMin: 12.0, rawMax: 20.4, meanType: null },
+    { mean: 22.0, errorLow: null, errorHigh: null, reference: 'Victor 1986', link: null, species: 'Chromis viridis', keyword: null, remarks: null, extRef: null, conf: null, confType: null, rawMin: null, rawMax: null, meanType: null },
+    { mean: 15.0, errorLow: 13.5, errorHigh: 16.5, reference: 'Wellington 1992', link: null, species: 'Chromis viridis', n: 6, keyword: 'juvenile', remarks: 'Outer reef', extRef: 'WoRMS_789', conf: 1.5, confType: 'CI', rawMin: 13.5, rawMax: 16.5, meanType: 'Mean' },
   ],
   sizeStats: emptyStats,
   durationStats: {
@@ -313,6 +380,7 @@ const dataWithDuration: PelagicJuvenileData = {
 
 const dataWithBoth: PelagicJuvenileData = {
   ...dataWithSize,
+  qualitativeRecords: [],
   durationRecords: dataWithDuration.durationRecords,
   durationStats: dataWithDuration.durationStats,
   durationBarChart: dataWithDuration.durationBarChart,
@@ -374,35 +442,54 @@ describe('US-6.3: Barplot for pelagic juvenile duration', () => {
     expect(durationLink).toBeTruthy();
   });
 
-  it('should show detail table with correct DURATION columns (no Length type)', () => {
+  it('should show detail table with correct DURATION columns', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
     // Click the duration records link
     const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
     const durationLink = Array.from(recordsLinks).find(el => el.textContent?.includes('4 records'));
     fireEvent.click(durationLink!);
 
-    // Check DURATION columns — no Length type
-    expect(screen.getByText('Name')).toBeInTheDocument();
-    expect(screen.getByText('Reference')).toBeInTheDocument();
-    expect(screen.getByText('Remarks')).toBeInTheDocument();
-    expect(screen.getByText('External references')).toBeInTheDocument();
-    expect(screen.queryByText('Length type')).not.toBeInTheDocument();
-    expect(screen.getByText('Confidence interval')).toBeInTheDocument();
-    expect(screen.getByText('Confidence interval type')).toBeInTheDocument();
+    // Check DURATION columns: Name, Mean, Min, Max, CI, Mean type, CI type, Ext Ref, Main reference
+    // "Mean" appears as both header and cell value, so check header count
+    const headers = document.querySelectorAll('[role="dialog"] th');
+    const headerTexts = Array.from(headers).map(h => h.textContent);
+    expect(headerTexts).toContain('Name');
+    expect(headerTexts).toContain('Mean');
+    expect(headerTexts).toContain('Min');
+    expect(headerTexts).toContain('Max');
+    expect(headerTexts).toContain('Confidence interval');
+    expect(headerTexts).toContain('Mean type');
+    expect(headerTexts).toContain('Confidence interval type');
+    expect(headerTexts).toContain('External references');
+    expect(headerTexts).toContain('Main reference');
+    // Remarks column should NOT be present
+    expect(headerTexts).not.toContain('Remarks');
   });
 
-  it('should show keyword, remarks, extRef, conf, confType in duration detail table', () => {
+  it('should show VALID_NAME (not keyword) in duration detail table', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
     const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
     const durationLink = Array.from(recordsLinks).find(el => el.textContent?.includes('4 records'));
     fireEvent.click(durationLink!);
 
-    // First record data - use getAllByText for values that appear elsewhere
-    expect(screen.getAllByText('post-larva').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Lagoon site')).toBeInTheDocument();
-    expect(screen.getByText('FB_456')).toBeInTheDocument();
+    // Dialog renders in a portal, so query document.body
+    const rows = document.querySelectorAll('[role="dialog"] tbody tr');
+    const firstRowCells = rows[0]?.querySelectorAll('td');
+    expect(firstRowCells?.[0]?.textContent).toBe('Chromis viridis');
+  });
+
+  it('should show mean, min, max, conf, meanType, extRef in duration detail table', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
+    const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
+    const durationLink = Array.from(recordsLinks).find(el => el.textContent?.includes('4 records'));
+    fireEvent.click(durationLink!);
+
+    // First record: mean=18.5, min=14.0, max=23.0, conf=4.5
+    expect(screen.getByText('18.50')).toBeInTheDocument();
+    expect(screen.getByText('14.00')).toBeInTheDocument();
+    expect(screen.getByText('23.00')).toBeInTheDocument();
     expect(screen.getByText('4.50')).toBeInTheDocument();
-    expect(screen.getAllByText('SD').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText('FB_456')).toBeInTheDocument();
   });
 
   it('should render reference as hyperlink when link is present in duration detail table', () => {
