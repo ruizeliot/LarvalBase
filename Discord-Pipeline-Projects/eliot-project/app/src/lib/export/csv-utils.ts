@@ -1,17 +1,57 @@
 /**
- * TXT export generation and download utilities.
- * Uses '@' as column delimiter. Fields are always quoted with double quotes
+ * CSV export generation and download utilities.
+ * Uses '@' as column delimiter. ALL fields are always quoted with double quotes
  * to prevent spreadsheet apps from splitting on ';' or other characters.
- * File extension is .txt (not .csv) to avoid auto-import issues.
+ * Internal double quotes are escaped as double-double quotes ("").
  */
 
-import Papa from "papaparse";
+/**
+ * Escape and quote a single field value.
+ * - null/undefined → ""
+ * - Strings → "value" with internal " escaped as ""
+ * - Numbers → "123"
+ */
+function quoteField(value: unknown): string {
+  if (value === null || value === undefined) return '""';
+  const str = String(value);
+  // Escape internal double quotes by doubling them
+  const escaped = str.replace(/"/g, '""');
+  return `"${escaped}"`;
+}
 
 /**
- * Generate TXT and trigger browser download.
+ * Generate CSV string from data array.
+ * Every field is always double-quoted. Uses '@' as delimiter.
+ *
+ * @param data - Array of objects to convert to CSV
+ * @param columns - Optional array of column keys to include (in order)
+ * @returns CSV string
+ */
+export function generateCSV(
+  data: Array<Record<string, unknown>>,
+  columns?: string[]
+): string {
+  if (data.length === 0) return '';
+
+  // Determine columns: explicit list or from first row's keys
+  const cols = columns || Object.keys(data[0]);
+
+  // Header row
+  const headerRow = cols.map(c => quoteField(c)).join('@');
+
+  // Data rows
+  const dataRows = data.map(row =>
+    cols.map(col => quoteField(row[col])).join('@')
+  );
+
+  return [headerRow, ...dataRows].join('\n');
+}
+
+/**
+ * Generate CSV and trigger browser download.
  * Uses Blob API for client-side file generation (no server round-trip).
  *
- * @param data - Array of objects to convert to delimited text
+ * @param data - Array of objects to convert to CSV
  * @param filename - Download filename (without extension)
  * @param columns - Optional array of column keys to include (in order)
  */
@@ -20,23 +60,17 @@ export function downloadCSV(
   filename: string,
   columns?: string[]
 ): void {
-  const txt = Papa.unparse(data, {
-    columns: columns,
-    delimiter: "@",
-    quotes: true,
-    header: true,
-    skipEmptyLines: true,
-  });
+  const csv = generateCSV(data, columns);
 
   // Create Blob with UTF-8 BOM for Excel compatibility
   const BOM = "\uFEFF";
-  const blob = new Blob([BOM + txt], { type: "text/plain;charset=utf-8;" });
+  const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
   // Create and trigger download link
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${filename}.txt`;
+  link.download = `${filename}.csv`;
   link.style.display = "none";
 
   document.body.appendChild(link);
@@ -45,25 +79,4 @@ export function downloadCSV(
   // Cleanup to prevent memory leaks
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
-}
-
-/**
- * Generate delimited text string without triggering download.
- * Useful for previewing or copying to clipboard.
- *
- * @param data - Array of objects to convert
- * @param columns - Optional array of column keys to include (in order)
- * @returns Delimited text string
- */
-export function generateCSV(
-  data: Array<Record<string, unknown>>,
-  columns?: string[]
-): string {
-  return Papa.unparse(data, {
-    columns: columns,
-    delimiter: "@",
-    quotes: true,
-    header: true,
-    skipEmptyLines: true,
-  });
 }
