@@ -72,7 +72,8 @@ const STANDARD_COLUMNS = new Set([
 
 /**
  * Regex matching measurement columns (e.g. MET_AGE_DPH_MEAN, UCRIT_ABS_CONF_TYPE).
- * These are already represented by the normalized MEAN/MIN/MAX/CONF columns.
+ * Used for column ordering: measurement-pattern columns sort into a separate group
+ * after qualitative columns. NOT used for exclusion — all source columns are included.
  */
 const MEASUREMENT_COL_REGEX = /^[A-Z][A-Z0-9_]*_(MEAN|MIN|MAX|CONF|MEAN_TYPE|CONF_TYPE|RANGE_TYPE)$/;
 
@@ -103,11 +104,12 @@ const TAIL_COLUMNS = ['REMARKS', 'EXT_REF', 'REFERENCE', 'LINK'];
 
 /**
  * Check if a rawFields column should be included as an "extra info" column.
- * Returns false for taxonomy, standard metadata, and measurement columns.
+ * Returns false only for taxonomy and standard metadata columns.
+ * All database-specific columns (including measurement columns like YOLK_SIZE_MEAN,
+ * OIL_GLOBULE_SIZE_MEAN) are included to ensure no source data is lost.
  */
 function isExtraInfoColumn(col: string): boolean {
   if (STANDARD_COLUMNS.has(col)) return false;
-  if (MEASUREMENT_COL_REGEX.test(col)) return false;
   return true;
 }
 
