@@ -324,21 +324,28 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                   {/* Rafting section (Epic 7) — after Pelagic Juvenile */}
                   {raftingData && (
                     <div className="space-y-4 mt-8">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex items-center justify-center rounded-full shrink-0"
-                          style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
-                          title="Rafting"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getSectionIcon("Rafting")}
-                            alt="Rafting icon"
-                            width={29}
-                            height={29}
-                          />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex items-center justify-center rounded-full shrink-0"
+                            style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                            title="Rafting"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getSectionIcon("Rafting")}
+                              alt="Rafting icon"
+                              width={29}
+                              height={29}
+                            />
+                          </div>
+                          <h2 className="text-lg font-semibold">Rafting</h2>
                         </div>
-                        <h2 className="text-lg font-semibold">Rafting</h2>
+                        <SectionExportButtons
+                          speciesId={speciesId}
+                          sectionTitle="Rafting"
+                          traitKeys={['rafting_behavior', 'rafting_size']}
+                        />
                       </div>
                       <RaftingPanel data={raftingData} />
                     </div>
