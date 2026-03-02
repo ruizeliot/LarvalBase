@@ -110,6 +110,8 @@ export function formatTraitName(trait: string): string {
   if (trait === 'has_images') return 'All';
   if (trait === 'has_images_sure') return 'Sure ID';
   if (trait === 'has_images_unsure') return 'Unsure ID';
+  if (trait === 'critical_swimming_speed') return 'Critical Swimming Speed (Absolute)';
+  if (trait === 'in_situ_swimming_speed') return 'In Situ Swimming Speed (Absolute)';
   return trait
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
