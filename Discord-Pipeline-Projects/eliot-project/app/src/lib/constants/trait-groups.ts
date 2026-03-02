@@ -45,6 +45,7 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     name: "Metamorphosis",
     traits: [
       "metamorphosis_age",
+      "metamorphosis_duration",
       "metamorphosis_size",
     ],
   },

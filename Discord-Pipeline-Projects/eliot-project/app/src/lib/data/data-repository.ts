@@ -378,6 +378,9 @@ function extractTraitsFromRows(
       addTrait(traits, 'metamorphosis_age', r(row).MET_AGE_DPH_MEAN, 'days', source, doi, metAgeMeta);
       addTrait(traits, 'metamorphosis_age_min', r(row).MET_AGE_DPH_MIN, 'days', source, doi, metadata);
       addTrait(traits, 'metamorphosis_age_max', r(row).MET_AGE_DPH_MAX, 'days', source, doi, metadata);
+      // Metamorphosis Duration (from same database)
+      const metDurMeta = metadataWithMinMaxConf(metadata, r(row), 'MET_DURATION_MIN', 'MET_DURATION_MAX');
+      addTrait(traits, 'metamorphosis_duration', r(row).MET_DURATION_MEAN, 'days', source, doi, metDurMeta);
     }
     // Metamorphosis Size Database
     else if (filename.includes('metamorphosis_size')) {

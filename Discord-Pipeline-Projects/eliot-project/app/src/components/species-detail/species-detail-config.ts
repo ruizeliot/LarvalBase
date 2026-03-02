@@ -61,6 +61,7 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
     stage: 'metamorphosis',
     traits: [
       'metamorphosis_age',
+      'metamorphosis_duration',
       'metamorphosis_size',
     ],
     unit: 'mm',
@@ -108,6 +109,7 @@ export const TRAIT_UNITS: Record<string, string> = {
   flexion_size: 'mm',
   // Metamorphosis
   metamorphosis_age: 'days',
+  metamorphosis_duration: 'days',
   metamorphosis_size: 'mm',
   // Settlement
   settlement_age: 'days',
