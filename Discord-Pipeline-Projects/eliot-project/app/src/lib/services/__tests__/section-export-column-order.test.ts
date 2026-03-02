@@ -1,16 +1,20 @@
 /**
  * Tests for Epic 9 Fix: Column order in exported tables.
  *
- * Rules:
- * 1. TYPE column after CONF (taxonomy → extras → MEAN/MIN/MAX/CONF → TYPE → MEAN_TYPE/CONF_TYPE/UNIT)
- * 2. MEAN_TYPE, CONF_TYPE, UNIT immediately after TYPE
- * 3. TEMPERATURE_MEAN_TYPE, TEMPERATURE_CONF_TYPE after TEMPERATURE_MEAN/MIN/MAX/CONF
- * 4. REMARKS, EXT_REF, REFERENCE, LINK always LAST
+ * Required order:
+ * 1. Taxonomy: ORDER/FAMILY/GENUS/VALID_NAME/APHIA_ID/AUTHORITY
+ * 2. TYPE + qualitative columns (EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE, etc.)
+ * 3. MEAN/MIN/MAX/CONF
+ * 4. MEAN_TYPE/CONF_TYPE/UNIT
+ * 5. Raw measurement extras (YOLK_SIZE_MEAN, OIL_GLOBULE_SIZE_MEAN, etc.)
+ * 6. TEMPERATURE group
+ * 7. Other columns (ORIGIN, N, METHOD, GEAR, LOCATION, etc.)
+ * 8. REMARKS/EXT_REF/REFERENCE/LINK always LAST
  */
 import { describe, it, expect } from 'vitest';
 
 describe('Export column order', () => {
-  it('TYPE should come after CONF, extras before MEAN', async () => {
+  it('TYPE and qualitative columns should come FIRST after taxonomy, BEFORE MEAN', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
@@ -24,32 +28,38 @@ describe('Export column order', () => {
     }
     if (!testSpeciesId) return;
 
-    const rows = await getSectionExportData(testSpeciesId, ['egg_diameter'], 'species');
+    const rows = await getSectionExportData(
+      testSpeciesId,
+      ['egg_diameter', 'egg_volume', 'yolk_diameter', 'oil_globule_size'],
+      'species'
+    );
     expect(rows).not.toBeNull();
 
     const cols = Object.keys(rows![0]);
-    const confIdx = cols.indexOf('CONF');
-    const typeIdx = cols.indexOf('TYPE');
-
-    // TYPE must come right after CONF
-    expect(typeIdx).toBe(confIdx + 1);
-
-    // Extra columns (like EGG_LOCATION, EGG_SHAPE) must come before MEAN
-    const meanIdx = cols.indexOf('MEAN');
     const authorityIdx = cols.indexOf('AUTHORITY');
-    const extrasBeforeMean = cols.slice(authorityIdx + 1, meanIdx);
-    for (const col of extrasBeforeMean) {
-      // These should all be qualitative/text extras, not tail columns
-      expect(['REMARKS', 'EXT_REF', 'REFERENCE', 'LINK']).not.toContain(col);
+    const typeIdx = cols.indexOf('TYPE');
+    const meanIdx = cols.indexOf('MEAN');
+
+    // TYPE must come after taxonomy but before MEAN
+    expect(typeIdx).toBeGreaterThan(authorityIdx);
+    expect(typeIdx).toBeLessThan(meanIdx);
+
+    // Qualitative columns (EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE, etc.) should be before MEAN
+    const qualitativeCols = ['EGG_DETAILS', 'EGG_SHAPE', 'EGG_LOCATION', 'NB_OIL_GLOBULE'];
+    for (const col of qualitativeCols) {
+      const idx = cols.indexOf(col);
+      if (idx !== -1) {
+        expect(idx).toBeLessThan(meanIdx);
+        expect(idx).toBeGreaterThan(authorityIdx);
+      }
     }
   });
 
-  it('MEAN_TYPE, CONF_TYPE, UNIT should follow immediately after TYPE', async () => {
+  it('MEAN/MIN/MAX/CONF should come before MEAN_TYPE/CONF_TYPE/UNIT', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
 
-    // Find any species with egg data
     let testSpeciesId: string | null = null;
     for (const [speciesId, traits] of data.traitsBySpecies) {
       if (traits.some(t => t.traitType === 'egg_diameter')) {
@@ -57,29 +67,31 @@ describe('Export column order', () => {
         break;
       }
     }
-
-    if (!testSpeciesId) {
-      console.warn('No egg data found — skipping test');
-      return;
-    }
+    if (!testSpeciesId) return;
 
     const rows = await getSectionExportData(testSpeciesId, ['egg_diameter'], 'species');
     expect(rows).not.toBeNull();
     expect(rows!.length).toBeGreaterThan(0);
 
     const cols = Object.keys(rows![0]);
-    const typeIdx = cols.indexOf('TYPE');
+    const meanIdx = cols.indexOf('MEAN');
+    const confIdx = cols.indexOf('CONF');
     const meanTypeIdx = cols.indexOf('MEAN_TYPE');
     const confTypeIdx = cols.indexOf('CONF_TYPE');
     const unitIdx = cols.indexOf('UNIT');
 
-    // MEAN_TYPE, CONF_TYPE, UNIT must come right after TYPE
-    expect(meanTypeIdx).toBe(typeIdx + 1);
-    expect(confTypeIdx).toBe(typeIdx + 2);
-    expect(unitIdx).toBe(typeIdx + 3);
+    // MEAN, MIN, MAX, CONF must be in order
+    expect(cols.indexOf('MIN')).toBe(meanIdx + 1);
+    expect(cols.indexOf('MAX')).toBe(meanIdx + 2);
+    expect(confIdx).toBe(meanIdx + 3);
+
+    // MEAN_TYPE, CONF_TYPE, UNIT must follow after CONF
+    expect(meanTypeIdx).toBeGreaterThan(confIdx);
+    expect(confTypeIdx).toBeGreaterThan(meanTypeIdx);
+    expect(unitIdx).toBeGreaterThan(confTypeIdx);
   });
 
-  it('TEMPERATURE_MEAN_TYPE and TEMPERATURE_CONF_TYPE should follow TEMPERATURE columns', async () => {
+  it('TEMPERATURE group should come after MEAN_TYPE/CONF_TYPE/UNIT', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
@@ -91,21 +103,26 @@ describe('Export column order', () => {
         break;
       }
     }
-
     if (!testSpeciesId) return;
 
     const rows = await getSectionExportData(testSpeciesId, ['egg_diameter'], 'species');
     expect(rows).not.toBeNull();
 
     const cols = Object.keys(rows![0]);
+    const unitIdx = cols.indexOf('UNIT');
+    const tempMeanIdx = cols.indexOf('TEMPERATURE_MEAN');
     const tempConfIdx = cols.indexOf('TEMPERATURE_CONF');
     const tempMeanTypeIdx = cols.indexOf('TEMPERATURE_MEAN_TYPE');
     const tempConfTypeIdx = cols.indexOf('TEMPERATURE_CONF_TYPE');
 
-    // TEMPERATURE_MEAN_TYPE should follow TEMPERATURE_CONF
-    expect(tempMeanTypeIdx).toBe(tempConfIdx + 1);
-    // TEMPERATURE_CONF_TYPE should follow TEMPERATURE_MEAN_TYPE
-    expect(tempConfTypeIdx).toBe(tempConfIdx + 2);
+    // Temperature group must come after UNIT
+    expect(tempMeanIdx).toBeGreaterThan(unitIdx);
+
+    // Temperature columns in order
+    if (tempConfIdx !== -1 && tempMeanTypeIdx !== -1) {
+      expect(tempMeanTypeIdx).toBe(tempConfIdx + 1);
+      expect(tempConfTypeIdx).toBe(tempConfIdx + 2);
+    }
   });
 
   it('REMARKS, EXT_REF, REFERENCE, LINK should always be last four columns', async () => {
@@ -120,7 +137,6 @@ describe('Export column order', () => {
         break;
       }
     }
-
     if (!testSpeciesId) return;
 
     const rows = await getSectionExportData(testSpeciesId, ['egg_diameter'], 'species');
@@ -148,7 +164,6 @@ describe('Export column order', () => {
         break;
       }
     }
-
     if (!testSpeciesId) return;
 
     const rows = await getSectionExportData(testSpeciesId, ['egg_diameter'], 'species');

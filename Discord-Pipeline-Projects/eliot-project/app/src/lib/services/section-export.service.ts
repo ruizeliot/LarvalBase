@@ -83,19 +83,25 @@ const MEASUREMENT_COL_REGEX = /^[A-Z][A-Z0-9_]*_(MEAN|MIN|MAX|CONF|MEAN_TYPE|CON
 const TAXONOMY_ORDER = ['ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY'];
 
 /**
- * Standard measurement + metadata columns in preferred order.
- * MEAN/MIN/MAX/CONF first, then TYPE, then MEAN_TYPE/CONF_TYPE/UNIT,
- * then qualitative metadata, then temperature group, then method columns.
- * Extra info columns (qualitative/text from specific databases) go before MEAN.
- * Does NOT include tail columns (REMARKS, EXT_REF, REFERENCE, LINK) — those always come last.
+ * Column groups in fixed order for the merged export format.
+ * TYPE and qualitative columns come first after taxonomy, then measurements.
  */
-const STANDARD_MEASUREMENT_ORDER = [
-  'MEAN', 'MIN', 'MAX', 'CONF', 'TYPE', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT',
-  'ORIGIN', 'N', 'LENGTH_TYPE',
+const NORMALIZED_MEASUREMENT_COLS = ['MEAN', 'MIN', 'MAX', 'CONF'];
+const META_TYPE_COLS = ['MEAN_TYPE', 'CONF_TYPE', 'UNIT'];
+const TEMPERATURE_COLS = [
   'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
   'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
-  'METHOD', 'GEAR', 'LOCATION',
 ];
+const METHOD_COLS = ['ORIGIN', 'N', 'LENGTH_TYPE', 'METHOD', 'GEAR', 'LOCATION'];
+
+/** All known fixed-order columns (used to classify "other" extras). */
+const ALL_FIXED_COLS = new Set([
+  'TYPE',
+  ...NORMALIZED_MEASUREMENT_COLS,
+  ...META_TYPE_COLS,
+  ...TEMPERATURE_COLS,
+  ...METHOD_COLS,
+]);
 
 /**
  * Columns that ALWAYS come last in the export, in this exact order.
@@ -184,7 +190,16 @@ function buildMergedRow(
 
 /**
  * Normalize rows: ensure all rows have the same columns, filling 'NA' for missing ones.
- * Orders columns: taxonomy → TYPE → standard measurement → extra info (alphabetical) → tail (REMARKS, EXT_REF, REFERENCE, LINK).
+ *
+ * Column order:
+ * 1. Taxonomy: ORDER/FAMILY/GENUS/VALID_NAME/APHIA_ID/AUTHORITY
+ * 2. TYPE + qualitative extras (non-measurement columns, alphabetical)
+ * 3. MEAN/MIN/MAX/CONF
+ * 4. MEAN_TYPE/CONF_TYPE/UNIT
+ * 5. Raw measurement extras (columns matching measurement pattern, alphabetical)
+ * 6. TEMPERATURE group
+ * 7. Other columns (ORIGIN, N, LENGTH_TYPE, METHOD, GEAR, LOCATION)
+ * 8. REMARKS/EXT_REF/REFERENCE/LINK (always last)
  */
 function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
   if (rows.length === 0) return [];
@@ -197,43 +212,61 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
     }
   }
 
-  // Set of tail columns for exclusion from standard/extras
   const tailSet = new Set(TAIL_COLUMNS);
-
-  // Build ordered column list:
-  // taxonomy → TYPE → extras (qualitative/text, alphabetical) → measurements → tail
+  const taxonomySet = new Set(TAXONOMY_ORDER);
   const orderedColumns: string[] = [];
   const added = new Set<string>();
 
-  // 1. Taxonomy columns
-  for (const col of TAXONOMY_ORDER) {
-    if (allColumns.has(col)) {
-      orderedColumns.push(col);
-      added.add(col);
-    }
-  }
-
-  // 2. Extra info columns (qualitative/text from specific databases) — alphabetical
-  const measurementSet = new Set(STANDARD_MEASUREMENT_ORDER);
-  const extras = [...allColumns].filter(c => !added.has(c) && !tailSet.has(c) && !measurementSet.has(c)).sort();
-  orderedColumns.push(...extras);
-  for (const col of extras) added.add(col);
-
-  // 3. Standard measurement + metadata columns (includes TYPE after CONF)
-  for (const col of STANDARD_MEASUREMENT_ORDER) {
+  function addCol(col: string) {
     if (allColumns.has(col) && !added.has(col)) {
       orderedColumns.push(col);
       added.add(col);
     }
   }
 
-  // Tail columns always last, in fixed order
-  for (const col of TAIL_COLUMNS) {
-    if (allColumns.has(col)) {
-      orderedColumns.push(col);
-      added.add(col);
+  function addCols(cols: string[]) {
+    for (const col of cols) addCol(col);
+  }
+
+  // 1. Taxonomy columns
+  addCols(TAXONOMY_ORDER);
+
+  // 2. TYPE + qualitative extras (non-measurement columns, alphabetical)
+  addCol('TYPE');
+
+  // Classify remaining extras into qualitative vs raw-measurement
+  const qualitativeExtras: string[] = [];
+  const rawMeasurementExtras: string[] = [];
+
+  for (const col of [...allColumns].sort()) {
+    if (added.has(col) || tailSet.has(col) || taxonomySet.has(col) || ALL_FIXED_COLS.has(col)) continue;
+    if (MEASUREMENT_COL_REGEX.test(col)) {
+      rawMeasurementExtras.push(col);
+    } else {
+      qualitativeExtras.push(col);
     }
   }
+
+  // Qualitative extras before measurements
+  for (const col of qualitativeExtras) addCol(col);
+
+  // 3. MEAN/MIN/MAX/CONF
+  addCols(NORMALIZED_MEASUREMENT_COLS);
+
+  // 4. MEAN_TYPE/CONF_TYPE/UNIT
+  addCols(META_TYPE_COLS);
+
+  // 5. Raw measurement extras (YOLK_SIZE_MEAN, OIL_GLOBULE_SIZE_MEAN, etc.)
+  for (const col of rawMeasurementExtras) addCol(col);
+
+  // 6. Temperature group
+  addCols(TEMPERATURE_COLS);
+
+  // 7. Other columns (METHOD, GEAR, etc.)
+  addCols(METHOD_COLS);
+
+  // 8. Tail columns always last
+  addCols(TAIL_COLUMNS);
 
   // Normalize each row
   return rows.map(row => {
