@@ -3,7 +3,7 @@
 import { useState, useCallback } from "react";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { downloadCSV } from "@/lib/export/csv-utils";
+import { CsvPreviewModal } from "./csv-preview-modal";
 
 interface SectionExportButtonsProps {
   /** Species ID for the current species */
@@ -18,7 +18,7 @@ type ExportLevel = "species" | "genus" | "family";
 
 /**
  * Three export buttons (Species/Genus/Family) for a trait section.
- * Each button fetches data at the corresponding taxonomy level and downloads CSV.
+ * Each button fetches data at the corresponding taxonomy level and opens a preview modal.
  */
 export function SectionExportButtons({
   speciesId,
@@ -26,6 +26,10 @@ export function SectionExportButtons({
   traitKeys,
 }: SectionExportButtonsProps) {
   const [loadingLevel, setLoadingLevel] = useState<ExportLevel | null>(null);
+  const [previewData, setPreviewData] = useState<Array<Record<string, unknown>>>([]);
+  const [previewTitle, setPreviewTitle] = useState("");
+  const [previewFilename, setPreviewFilename] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleExport = useCallback(
     async (level: ExportLevel) => {
@@ -46,13 +50,16 @@ export function SectionExportButtons({
         }
 
         const { rows } = await response.json();
-        if (rows && rows.length > 0) {
+        if (rows) {
           const sectionSlug = sectionTitle
             .toLowerCase()
             .replace(/\s+/g, "-")
             .replace(/[^a-z0-9-]/g, "");
-          const filename = `${sectionSlug}-${level}-export`;
-          downloadCSV(rows, filename);
+          const levelLabel = level.charAt(0).toUpperCase() + level.slice(1);
+          setPreviewData(rows);
+          setPreviewTitle(`${sectionTitle} - ${levelLabel} Export`);
+          setPreviewFilename(`${sectionSlug}-${level}-export`);
+          setPreviewOpen(true);
         }
       } catch (err) {
         console.error("Export error:", err);
@@ -64,37 +71,47 @@ export function SectionExportButtons({
   );
 
   return (
-    <div className="flex items-center gap-1">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleExport("species")}
-        disabled={loadingLevel !== null}
-        className="text-xs h-7 px-2"
-      >
-        <Download className="h-3 w-3 mr-1" />
-        Species
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleExport("genus")}
-        disabled={loadingLevel !== null}
-        className="text-xs h-7 px-2"
-      >
-        <Download className="h-3 w-3 mr-1" />
-        Genus
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleExport("family")}
-        disabled={loadingLevel !== null}
-        className="text-xs h-7 px-2"
-      >
-        <Download className="h-3 w-3 mr-1" />
-        Family
-      </Button>
-    </div>
+    <>
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleExport("species")}
+          disabled={loadingLevel !== null}
+          className="text-xs h-7 px-2"
+        >
+          <Download className="h-3 w-3 mr-1" />
+          Species
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleExport("genus")}
+          disabled={loadingLevel !== null}
+          className="text-xs h-7 px-2"
+        >
+          <Download className="h-3 w-3 mr-1" />
+          Genus
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleExport("family")}
+          disabled={loadingLevel !== null}
+          className="text-xs h-7 px-2"
+        >
+          <Download className="h-3 w-3 mr-1" />
+          Family
+        </Button>
+      </div>
+
+      <CsvPreviewModal
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        data={previewData}
+        title={previewTitle}
+        filename={previewFilename}
+      />
+    </>
   );
 }
