@@ -16,6 +16,7 @@ import { PelagicJuvenilePanel } from "./pelagic-juvenile-panel";
 import { usePelagicJuvenile } from "@/hooks/use-pelagic-juvenile";
 import { RaftingPanel } from "./rafting-panel";
 import { useRafting } from "@/hooks/use-rafting";
+import { SectionExportButtons } from "./section-export-buttons";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -293,21 +294,28 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                   {/* Pelagic Juvenile section (Epic 6) — after Settlement, before Swimming */}
                   {pelagicJuvenileData && (
                     <div className="space-y-4 mt-8">
-                      <div className="flex items-center gap-3">
-                        <div
-                          className="flex items-center justify-center rounded-full shrink-0"
-                          style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
-                          title="Pelagic Juvenile"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={getSectionIcon("Pelagic Juvenile")}
-                            alt="Pelagic Juvenile icon"
-                            width={29}
-                            height={29}
-                          />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="flex items-center justify-center rounded-full shrink-0"
+                            style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                            title="Pelagic Juvenile"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={getSectionIcon("Pelagic Juvenile")}
+                              alt="Pelagic Juvenile icon"
+                              width={29}
+                              height={29}
+                            />
+                          </div>
+                          <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
                         </div>
-                        <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
+                        <SectionExportButtons
+                          speciesId={speciesId}
+                          sectionTitle="Pelagic Juvenile"
+                          traitKeys={['pelagic_juvenile_size', 'pelagic_juvenile_duration']}
+                        />
                       </div>
                       <PelagicJuvenilePanel data={pelagicJuvenileData} />
                     </div>
