@@ -63,8 +63,9 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     ],
   },
   {
-    name: "Swimming Ability",
+    name: "Active Behaviors",
     traits: [
+      "vertical_distribution",
       "critical_swimming_speed",
       "critical_swimming_speed_rel",
       "in_situ_swimming_speed",
@@ -72,12 +73,16 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     ],
   },
   {
-    name: "Behavior & Ecology",
+    name: "Pelagic Juvenile",
     traits: [
-      "vertical_distribution",
+      "pelagic_juvenile_size",
+    ],
+  },
+  {
+    name: "Rafting",
+    traits: [
       "rafting_behavior",
       "rafting_size",
-      "pelagic_juvenile_size",
     ],
   },
   {

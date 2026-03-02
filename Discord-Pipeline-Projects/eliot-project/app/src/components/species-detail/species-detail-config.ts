@@ -75,23 +75,15 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
     unit: 'days',
   },
   {
-    title: 'Swimming Ability',
+    title: 'Active Behaviors',
     traits: [
+      'vertical_distribution',
       'critical_swimming_speed',
       'critical_swimming_speed_rel',
       'in_situ_swimming_speed',
       'in_situ_swimming_speed_rel',
     ],
     unit: 'cm/s',
-  },
-  {
-    title: 'Behavior & Ecology',
-    traits: [
-      'vertical_distribution',
-      'rafting_behavior',
-      'rafting_size',
-    ],
-    unit: '',
   },
 ];
 
