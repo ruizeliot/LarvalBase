@@ -14,6 +14,7 @@ import type {
   BarChartData,
   BarChartSpeciesEntry,
   RaftingQualitativeRecord,
+  RaftingAgeRecord,
   FrequencyCount,
 } from '@/components/species-detail/rafting-panel';
 
@@ -200,35 +201,29 @@ function buildSizeRecords(
 }
 
 /**
- * Build records for age (RAFTING_AGE is a single column, no min/max).
+ * Build qualitative records for age (RAFTING_AGE contains text values).
  */
-function buildAgeRecords(
+function buildAgeQualitativeRecords(
   rows: Record<string, unknown>[]
-): RaftingDotStripRecord[] {
-  const records: RaftingDotStripRecord[] = [];
+): RaftingAgeRecord[] {
+  const records: RaftingAgeRecord[] = [];
 
   for (const row of rows) {
-    const mean = parseNum(row['RAFTING_AGE']);
-    if (mean === null) continue;
+    const ageVal = row['RAFTING_AGE'];
+    if (!isValid(ageVal)) continue;
 
+    const age = String(ageVal).trim();
     const reference = String(row['REFERENCE'] ?? '').trim();
     const link = String(row['LINK'] ?? '').trim();
     const species = String(row['VALID_NAME'] ?? '').trim();
     const extRef = isValid(row['EXT_REF']) ? String(row['EXT_REF']).trim() : null;
 
     records.push({
-      mean,
-      errorLow: null,
-      errorHigh: null,
+      species: species || 'Unknown',
+      age,
+      extRef,
       reference: reference || 'Unknown reference',
       link: link && link !== 'NA' ? link : null,
-      species,
-      extRef,
-      rawMin: null,
-      rawMax: null,
-      meanType: null,
-      conf: null,
-      confType: null,
     });
   }
 
@@ -401,10 +396,13 @@ export async function getRaftingData(
     speciesRows.length > 0 ? speciesRows : genusRows
   );
 
-  // Build records for age
-  const ageRecords = buildAgeRecords(
+  // Build qualitative records for age
+  const ageQualitativeRecords = buildAgeQualitativeRecords(
     speciesRows.length > 0 ? speciesRows : genusRows
   );
+
+  // Compute age frequencies for barplots
+  const ageFrequencies = computeFrequencies(qualitativeRows, 'RAFTING_AGE');
 
   // Compute bar chart data (family-level, fall back to genus if >10 species)
   let sizeBarChart = computeBarChartData(familyRows, 'RAFTING_SIZE_MEAN', species.family, 'family');
@@ -413,18 +411,9 @@ export async function getRaftingData(
     if (genusChart) sizeBarChart = genusChart;
   }
 
-  let ageBarChart = computeBarChartData(familyRows, 'RAFTING_AGE', species.family, 'family');
-  if (ageBarChart && ageBarChart.entries.length > 10) {
-    const genusChart = computeBarChartData(genusRows, 'RAFTING_AGE', species.genus, 'genus');
-    if (genusChart) ageBarChart = genusChart;
-  }
-
   // Compute comparison stats
   const sizeComparisons = computeComparisonStats(
     speciesRows, genusRows, familyRows, 'RAFTING_SIZE_MEAN'
-  );
-  const ageComparisons = computeComparisonStats(
-    speciesRows, genusRows, familyRows, 'RAFTING_AGE'
   );
 
   // Determine cascade level
@@ -441,17 +430,19 @@ export async function getRaftingData(
     familySpecies,
     qualitativeRecords,
     sizeRecords,
-    ageRecords,
+    ageRecords: [],
     sizeStats: computeRecordStats(sizeRecords),
-    ageStats: computeRecordStats(ageRecords),
+    ageStats: { mean: null, sd: null, min: null, max: null, n: 0 },
     comparisonStats: {
       size: sizeComparisons,
-      age: ageComparisons,
+      age: { species: null, genus: null, family: null },
     },
     currentSpeciesId: speciesId,
     sizeBarChart,
-    ageBarChart,
+    ageBarChart: null,
     flotsamFrequencies,
     stageFrequencies,
+    ageFrequencies,
+    ageQualitativeRecords,
   };
 }

@@ -99,6 +99,17 @@ export interface FrequencyCount {
 }
 
 /**
+ * A qualitative record for the rafting age panel table.
+ */
+export interface RaftingAgeRecord {
+  species: string;
+  age: string;
+  extRef: string | null;
+  reference: string;
+  link: string | null;
+}
+
+/**
  * Full rafting data for a species.
  */
 export interface RaftingData {
@@ -131,6 +142,8 @@ export interface RaftingData {
   ageBarChart?: BarChartData | null;
   flotsamFrequencies?: FrequencyCount[];
   stageFrequencies?: FrequencyCount[];
+  ageFrequencies?: FrequencyCount[];
+  ageQualitativeRecords?: RaftingAgeRecord[];
 }
 
 interface RaftingPanelProps {
@@ -572,12 +585,149 @@ function NumericTraitPanel({
 }
 
 /**
+ * Dialog showing rafting age records table.
+ * Columns: Name, Age, External references, Main reference.
+ */
+function AgeRecordsDialog({
+  open,
+  onOpenChange,
+  records,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  records: RaftingAgeRecord[];
+}) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Rafting Age - Raw Data</DialogTitle>
+          <DialogDescription>
+            {records.length} record{records.length !== 1 ? 's' : ''}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex-1 overflow-auto">
+          {records.length === 0 ? (
+            <div className="p-4 text-center text-muted-foreground">No records found.</div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="text-xs">Name</TableHead>
+                  <TableHead className="text-xs">Age</TableHead>
+                  <TableHead className="text-xs">External references</TableHead>
+                  <TableHead className="text-xs">Main reference</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.map((r, i) => (
+                  <TableRow key={`${r.reference}-${i}`}>
+                    <TableCell className="text-xs italic">{r.species}</TableCell>
+                    <TableCell className="text-xs">{r.age}</TableCell>
+                    <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
+                    <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
+                      {r.link ? (
+                        <a href={r.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                          {r.reference}
+                        </a>
+                      ) : (
+                        r.reference
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Qualitative panel for Rafting Age with horizontal barplots.
+ */
+function AgeQualitativeCard({ data }: { data: RaftingData }) {
+  const [modalOpen, setModalOpen] = useState(false);
+  const ageRecords = data.ageQualitativeRecords ?? [];
+  const ageFrequencies = data.ageFrequencies ?? [];
+  const hasData = ageRecords.length > 0 || ageFrequencies.length > 0;
+
+  if (!hasData) {
+    return (
+      <Card className="bg-card">
+        <CardContent className="p-4">
+          <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+            Rafting Age
+          </div>
+          <p className="text-sm text-muted-foreground italic mt-2">No rafting age data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="bg-card">
+      <CardContent className="p-4 space-y-3">
+        <span className="text-xs font-medium uppercase text-muted-foreground">
+          Rafting Age
+        </span>
+
+        {/* Records link at top */}
+        {ageRecords.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-primary hover:underline text-sm"
+              data-testid="age-records-link"
+            >
+              {ageRecords.length} record{ageRecords.length !== 1 ? 's' : ''}
+            </button>
+          </div>
+        )}
+
+        {/* Frequency barplots for age */}
+        {ageFrequencies.length > 0 && (
+          <div className="space-y-1" data-testid="age-barplot">
+            {ageFrequencies.map((f) => {
+              const maxCount = Math.max(...ageFrequencies.map(x => x.count));
+              const widthPct = (f.count / maxCount) * 100;
+              return (
+                <div key={f.value} className="flex items-center gap-2 text-xs">
+                  <span className="w-40 truncate text-muted-foreground" title={f.value}>{f.value}</span>
+                  <div className="flex-1 h-4 bg-muted rounded overflow-hidden">
+                    <div
+                      className="h-full rounded"
+                      style={{ width: `${widthPct}%`, backgroundColor: '#00BA38' }}
+                      data-testid="freq-bar-fill"
+                    />
+                  </div>
+                  <span className="w-6 text-right font-mono">{f.count}</span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+
+      <AgeRecordsDialog
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        records={ageRecords}
+      />
+    </Card>
+  );
+}
+
+/**
  * RaftingPanel renders the complete Rafting section.
  *
- * 3-panel layout matching PelagicJuvenile pattern:
+ * 3-panel layout:
  * 1. Qualitative info (known/unknown, flotsam, stage, related species)
  * 2. Size: mean ± SD, range, N records link, genus/family comparisons, bar chart
- * 3. Age: same layout as size panel
+ * 3. Age: qualitative panel with horizontal barplots
  */
 export function RaftingPanel({ data }: RaftingPanelProps) {
   return (
@@ -593,16 +743,7 @@ export function RaftingPanel({ data }: RaftingPanelProps) {
         currentSpeciesId={data.currentSpeciesId}
         traitType="size"
       />
-      <NumericTraitPanel
-        label="Rafting Age"
-        stats={data.ageStats}
-        unit="days"
-        records={data.ageRecords}
-        comparisons={data.comparisonStats?.age ?? null}
-        barChartData={data.ageBarChart}
-        currentSpeciesId={data.currentSpeciesId}
-        traitType="age"
-      />
+      <AgeQualitativeCard data={data} />
     </div>
   );
 }
