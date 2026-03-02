@@ -90,6 +90,8 @@ export interface TraitMetadata {
   confValue?: number | null;
   /** Confidence type from _CONF_TYPE column (e.g., "SD", "SE", "CI") */
   confType?: string | null;
+  /** All original CSV row fields (for database-specific raw data display) */
+  rawFields?: Record<string, unknown>;
 }
 
 /**

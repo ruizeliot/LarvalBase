@@ -26,6 +26,8 @@ export interface MeasurementMetadata {
   confValue?: number | null;
   /** Confidence type from _CONF_TYPE column (e.g., "SD", "SE", "CI") */
   confType?: string | null;
+  /** All original CSV row fields for database-specific display */
+  rawFields?: Record<string, unknown>;
 }
 
 /**

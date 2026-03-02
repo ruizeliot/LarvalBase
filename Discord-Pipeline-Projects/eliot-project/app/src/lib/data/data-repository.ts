@@ -235,6 +235,8 @@ function extractMetadata(row: Record<string, unknown>): TraitData['metadata'] {
     maxValue: null,
     confValue: null,
     confType: null,
+    // Store all original CSV fields for database-specific raw data display
+    rawFields: { ...row },
   };
 }
 
