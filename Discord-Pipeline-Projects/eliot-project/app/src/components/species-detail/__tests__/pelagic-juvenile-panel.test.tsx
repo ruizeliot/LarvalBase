@@ -133,6 +133,15 @@ describe('US-6.1: Pelagic juvenile qualitative panel', () => {
     expect(link!.textContent).toContain('2 records');
   });
 
+  it('should place records link right after the status (at the top)', () => {
+    const { container } = render(<PelagicJuvenilePanel data={knownSpeciesData} />);
+    const statusEl = screen.getByText('Known');
+    const recordsLink = container.querySelector('[data-testid="qualitative-records-link"]');
+    const statusSection = statusEl.closest('.border-b');
+    expect(statusSection).toBeInTheDocument();
+    expect(statusSection!.contains(recordsLink)).toBe(true);
+  });
+
   it('should open qualitative records table with correct columns', () => {
     const { container } = render(<PelagicJuvenilePanel data={knownSpeciesData} />);
     const link = container.querySelector('[data-testid="qualitative-records-link"]');

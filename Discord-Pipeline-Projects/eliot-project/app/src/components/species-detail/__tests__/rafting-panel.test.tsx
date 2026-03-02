@@ -166,6 +166,16 @@ describe('US-7.1: Rafting qualitative panel', () => {
     expect(link!.textContent).toContain('2 records');
   });
 
+  it('should place records link right after the status (at the top, not the bottom)', () => {
+    const { container } = render(<RaftingPanel data={knownSpeciesData} />);
+    const statusEl = screen.getByText('Known');
+    const recordsLink = container.querySelector('[data-testid="qualitative-records-link"]');
+    // Records link should be within the same parent section as the status
+    const statusSection = statusEl.closest('.border-b');
+    expect(statusSection).toBeInTheDocument();
+    expect(statusSection!.contains(recordsLink)).toBe(true);
+  });
+
   it('should open qualitative records table with correct columns', () => {
     const { container } = render(<RaftingPanel data={knownSpeciesData} />);
     const link = container.querySelector('[data-testid="qualitative-records-link"]');

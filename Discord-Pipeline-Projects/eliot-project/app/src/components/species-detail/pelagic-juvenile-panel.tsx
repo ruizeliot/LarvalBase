@@ -224,6 +224,16 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
           <div className={`text-sm font-semibold ${isKnown ? 'text-green-500' : 'text-red-500'}`}>
             {data.status}
           </div>
+          {data.qualitativeRecords.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-primary hover:underline text-sm mt-1"
+              data-testid="qualitative-records-link"
+            >
+              {data.qualitativeRecords.length} record{data.qualitativeRecords.length !== 1 ? 's' : ''}
+            </button>
+          )}
         </div>
 
         {/* Keywords */}
@@ -276,19 +286,6 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
           </div>
         </div>
 
-        {/* Records link */}
-        {data.qualitativeRecords.length > 0 && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-primary hover:underline text-sm"
-              data-testid="qualitative-records-link"
-            >
-              {data.qualitativeRecords.length} record{data.qualitativeRecords.length !== 1 ? 's' : ''}
-            </button>
-          </div>
-        )}
       </CardContent>
 
       <QualitativeRecordsDialog
