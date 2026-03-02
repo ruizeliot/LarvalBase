@@ -26,14 +26,16 @@ describe('CSV delimiter and quoting', () => {
     expect(txt).toContain('@');
   });
 
-  it('should properly quote fields containing @ or ; or newlines', () => {
+  it('should properly quote fields containing @ or newlines, and replace semicolons', () => {
     const data = [
       { A: 'value@with@at', B: 'value;with;semicolon', C: 'line1\nline2' },
     ];
     const txt = generateCSV(data);
     // All fields are always quoted, so special chars are safe
     expect(txt).toContain('"value@with@at"');
-    expect(txt).toContain('"value;with;semicolon"');
+    // Semicolons replaced with ' -'
+    expect(txt).toContain('"value -with -semicolon"');
+    expect(txt).not.toContain(';');
   });
 
   it('should quote null and undefined values as empty quoted fields', () => {
@@ -46,7 +48,7 @@ describe('CSV delimiter and quoting', () => {
     expect(lines[1]).toBe('""@"Pomacentridae"@""');
   });
 
-  it('should preserve semicolons in EXT_REF fields', () => {
+  it('should replace semicolons with dashes in field values', () => {
     const data = [
       {
         ORDER: 'Ovalentaria incertae sedis',
@@ -55,8 +57,9 @@ describe('CSV delimiter and quoting', () => {
       },
     ];
     const txt = generateCSV(data);
-    // Semicolons must be preserved exactly as-is inside quoted fields
-    expect(txt).toContain('"Fishelson 1964; Danilowicz & Brown 1992"');
+    // Semicolons must be replaced with ' -' to prevent Excel splitting
+    expect(txt).toContain('"Fishelson 1964 - Danilowicz & Brown 1992"');
+    expect(txt).not.toContain(';');
   });
 
   it('should escape internal double quotes as double-double quotes', () => {
@@ -76,8 +79,7 @@ describe('CSV delimiter and quoting', () => {
     expect(lines[1]).toBe('"42"@"3.14"');
   });
 
-  it('should export Dascyllus aruanus egg data with semicolons in EXT_REF preserved in quotes', () => {
-    // Reproduces BUG 1: semicolons in EXT_REF cause Excel to split the row
+  it('should export Dascyllus aruanus egg data with semicolons replaced by dashes', () => {
     const data = [
       {
         ORDER: 'Ovalentaria incertae sedis',
@@ -93,37 +95,19 @@ describe('CSV delimiter and quoting', () => {
     const txt = generateCSV(data);
     const lines = txt.split(/\r?\n/);
 
-    // The semicolon must be inside a quoted field — no row splitting
-    expect(lines[1]).toContain('"Fishelson 1964; Danilowicz & Brown 1992"');
+    // Semicolons must be replaced with ' -'
+    expect(lines[1]).toContain('"Fishelson 1964 - Danilowicz & Brown 1992"');
+    // No semicolons should remain anywhere in the output
+    expect(txt).not.toContain(';');
 
     // The data row must have exactly the same number of @ delimiters as the header
     const headerDelimiters = (lines[0].match(/@/g) || []).length;
     const dataDelimiters = (lines[1].match(/@/g) || []).length;
     expect(dataDelimiters).toBe(headerDelimiters);
-
-    // The raw output must NOT contain any unquoted semicolons that could split in Excel
-    // Every semicolon must be between double quotes
-    for (const line of lines) {
-      const parts = line.split(';');
-      // If semicolons exist, they should be inside quoted fields
-      if (parts.length > 1) {
-        // Count open quotes before each semicolon - should always be odd (inside quotes)
-        let pos = 0;
-        for (const ch of line) {
-          if (ch === ';') {
-            const before = line.substring(0, pos);
-            const quoteCount = (before.match(/"/g) || []).length;
-            expect(quoteCount % 2).toBe(1); // odd = inside quotes
-          }
-          pos++;
-        }
-      }
-    }
   });
 
   it('downloadCSV should use .txt extension to prevent Excel auto-parsing', () => {
-    // BUG 1: .csv extension causes European Excel to auto-parse with ; delimiter
-    // .txt extension forces Import Wizard where user chooses delimiter
+    // Export as .csv with @ delimiter — semicolons replaced in values
     // Mock DOM APIs
     const mockLink = {
       href: '',
@@ -139,8 +123,8 @@ describe('CSV delimiter and quoting', () => {
 
     downloadCSV([{ A: '1' }], 'test-export');
 
-    // File extension must be .txt, not .csv
-    expect(mockLink.download).toBe('test-export.txt');
+    // File extension must be .csv
+    expect(mockLink.download).toBe('test-export.csv');
 
     createElementSpy.mockRestore();
     appendChildSpy.mockRestore();
