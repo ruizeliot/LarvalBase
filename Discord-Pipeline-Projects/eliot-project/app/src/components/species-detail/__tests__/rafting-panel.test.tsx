@@ -383,7 +383,7 @@ describe('US-7.3: Barplots for rafting size and age', () => {
     expect(screen.getByText(/no rafting size data available/i)).toBeInTheDocument();
   });
 
-  it('should show detail table with correct SIZE columns when records link clicked', () => {
+  it('should show detail table with correct SIZE columns including Length type', () => {
     const { container } = render(<RaftingPanel data={dataWithSize} />);
     const recordsLink = container.querySelector('[data-testid="records-link"]');
     fireEvent.click(recordsLink!);
@@ -393,8 +393,27 @@ describe('US-7.3: Barplots for rafting size and age', () => {
     expect(screen.getByText('Min')).toBeInTheDocument();
     expect(screen.getByText('Max')).toBeInTheDocument();
     expect(screen.getByText('Mean type')).toBeInTheDocument();
+    expect(screen.getByText('Length type')).toBeInTheDocument();
     expect(screen.getByText('External references')).toBeInTheDocument();
     expect(screen.getByText('Main reference')).toBeInTheDocument();
+  });
+
+  it('should show RAFTING_SIZE_MEAN_TYPE in Mean type column (not LENGTH_TYPE)', () => {
+    const { container } = render(<RaftingPanel data={dataWithSize} />);
+    const recordsLink = container.querySelector('[data-testid="records-link"]');
+    fireEvent.click(recordsLink!);
+
+    // Record 0 has meanType='mean', lengthType='TL'
+    // Record 1 has meanType='mean', lengthType='SL'
+    // The "Mean type" column should show 'mean' values, not 'TL'/'SL'
+    const dialog = document.querySelector('[role="dialog"]');
+    const rows = dialog!.querySelectorAll('tbody tr');
+    // First row: meanType='mean' and lengthType='TL'
+    const cells0 = rows[0].querySelectorAll('td');
+    // Mean type column (index 4) should show meanType
+    expect(cells0[4].textContent).toBe('mean');
+    // Length type column (index 5) should show lengthType
+    expect(cells0[5].textContent).toBe('TL');
   });
 
   it('should show mean, min, max values in size detail table', () => {

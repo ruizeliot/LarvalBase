@@ -402,6 +402,9 @@ function RecordsDialog({
                   <TableHead className="text-xs">Min</TableHead>
                   <TableHead className="text-xs">Max</TableHead>
                   <TableHead className="text-xs">Mean type</TableHead>
+                  {traitType === 'size' && (
+                    <TableHead className="text-xs">Length type</TableHead>
+                  )}
                   <TableHead className="text-xs">External references</TableHead>
                   <TableHead className="text-xs">Main reference</TableHead>
                 </TableRow>
@@ -413,9 +416,10 @@ function RecordsDialog({
                     <TableCell className="text-xs font-mono">{r.mean.toFixed(2)}</TableCell>
                     <TableCell className="text-xs font-mono">{r.rawMin?.toFixed(2) ?? '-'}</TableCell>
                     <TableCell className="text-xs font-mono">{r.rawMax?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-xs">
-                      {traitType === 'size' ? (r.lengthType || r.meanType || '-') : (r.meanType || '-')}
-                    </TableCell>
+                    <TableCell className="text-xs">{r.meanType || '-'}</TableCell>
+                    {traitType === 'size' && (
+                      <TableCell className="text-xs">{r.lengthType || '-'}</TableCell>
+                    )}
                     <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
                     <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
                       {r.link ? (
