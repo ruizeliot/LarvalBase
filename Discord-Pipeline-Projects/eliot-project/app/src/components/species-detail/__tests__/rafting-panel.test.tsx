@@ -218,6 +218,14 @@ describe('US-7.2: Frequency barplots for qualitative rafting traits', () => {
     expect(bars.length).toBe(6);
   });
 
+  it('should use green #00BA38 color for all frequency bars', () => {
+    const { container } = render(<RaftingPanel data={dataWithFrequencies} />);
+    const bars = container.querySelectorAll('[data-testid="freq-bar-fill"]');
+    bars.forEach((bar) => {
+      expect((bar as HTMLElement).style.backgroundColor).toBe('rgb(0, 186, 56)');
+    });
+  });
+
   it('should not render barplots when no frequency data exists', () => {
     const { container } = render(<RaftingPanel data={knownSpeciesData} />);
     expect(container.querySelector('[data-testid="flotsam-barplot"]')).not.toBeInTheDocument();

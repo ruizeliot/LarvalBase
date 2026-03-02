@@ -251,8 +251,8 @@ function QualitativeCard({ data }: { data: RaftingData }) {
                     <span className="w-28 truncate text-muted-foreground" title={f.value}>{f.value}</span>
                     <div className="flex-1 h-4 bg-muted rounded overflow-hidden">
                       <div
-                        className="h-full bg-primary/60 rounded"
-                        style={{ width: `${widthPct}%` }}
+                        className="h-full rounded"
+                        style={{ width: `${widthPct}%`, backgroundColor: '#00BA38' }}
                         data-testid="freq-bar-fill"
                       />
                     </div>
@@ -281,8 +281,8 @@ function QualitativeCard({ data }: { data: RaftingData }) {
                     <span className="w-28 truncate text-muted-foreground" title={f.value}>{f.value}</span>
                     <div className="flex-1 h-4 bg-muted rounded overflow-hidden">
                       <div
-                        className="h-full bg-primary/60 rounded"
-                        style={{ width: `${widthPct}%` }}
+                        className="h-full rounded"
+                        style={{ width: `${widthPct}%`, backgroundColor: '#00BA38' }}
                         data-testid="freq-bar-fill"
                       />
                     </div>
