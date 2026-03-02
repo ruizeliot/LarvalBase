@@ -58,6 +58,9 @@ export async function getSectionExportData(
       // Use rawFields if available (full original CSV row)
       if (trait.metadata?.rawFields) {
         const rawRow = { ...trait.metadata.rawFields };
+        // Remove internal/unwanted columns
+        delete rawRow.ROW_INDEX;
+        delete rawRow.LINK;
         // Ensure standard taxonomy columns are present
         if (!rawRow.ORDER && sp) rawRow.ORDER = sp.order;
         if (!rawRow.FAMILY && sp) rawRow.FAMILY = sp.family;

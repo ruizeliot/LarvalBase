@@ -279,10 +279,8 @@ function buildTraitSpecificExportData(
   return data.map(row => {
     const record: Record<string, unknown> = {};
     for (const col of columns) {
-      if (col.isReference && col.linkField) {
-        // Include both reference and link as separate columns
+      if (col.isReference) {
         record[col.label] = getRawField(row, col.csvField) ?? "";
-        record["Link"] = getRawField(row, col.linkField) ?? "";
       } else {
         record[col.label] = getRawField(row, col.csvField) ?? "";
       }

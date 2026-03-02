@@ -425,7 +425,6 @@ export async function getRawGrowthExportData(speciesId: string): Promise<Array<R
     'Origin': p.origin ?? '',
     'Method': p.method ?? '',
     'Main reference': p.reference ?? '',
-    'Link': p.link ?? '',
     'Remarks': p.remarks ?? '',
     'External references': p.extRef ?? '',
   }));
