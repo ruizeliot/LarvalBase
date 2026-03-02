@@ -91,12 +91,32 @@ describe('US-7.1: Rafting qualitative panel', () => {
     expect(screen.getByText('Unknown')).toBeInTheDocument();
   });
 
-  it('should show flotsam values comma-separated', () => {
+  it('should NOT show flotsam summary text when frequency data exists', () => {
+    const dataWithFreqs: RaftingData = {
+      ...knownSpeciesData,
+      flotsamFrequencies: [{ value: 'algae/plant', count: 3 }, { value: 'FAD', count: 2 }],
+      stageFrequencies: [{ value: 'J', count: 4 }],
+    };
+    render(<RaftingPanel data={dataWithFreqs} />);
+    expect(screen.queryByText('algae/plant, FAD')).not.toBeInTheDocument();
+  });
+
+  it('should NOT show stage summary text when frequency data exists', () => {
+    const dataWithFreqs: RaftingData = {
+      ...knownSpeciesData,
+      flotsamFrequencies: [{ value: 'algae/plant', count: 3 }],
+      stageFrequencies: [{ value: 'J', count: 4 }, { value: 'J | A', count: 1 }],
+    };
+    render(<RaftingPanel data={dataWithFreqs} />);
+    expect(screen.queryByText('J, J | A')).not.toBeInTheDocument();
+  });
+
+  it('should show flotsam values as fallback when no frequency data', () => {
     render(<RaftingPanel data={knownSpeciesData} />);
     expect(screen.getByText('algae/plant, FAD')).toBeInTheDocument();
   });
 
-  it('should show stage values comma-separated', () => {
+  it('should show stage values as fallback when no frequency data', () => {
     render(<RaftingPanel data={knownSpeciesData} />);
     expect(screen.getByText('J, J | A')).toBeInTheDocument();
   });

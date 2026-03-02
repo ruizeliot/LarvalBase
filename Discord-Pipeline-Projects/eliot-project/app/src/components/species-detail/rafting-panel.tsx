@@ -237,9 +237,12 @@ function QualitativeCard({ data }: { data: RaftingData }) {
         {/* Flotsam type */}
         <div className="border-b pb-2">
           <div className="text-xs text-muted-foreground mb-1">Flotsam type</div>
-          <div className="text-sm">
-            {data.flotsamValues.length > 0 ? data.flotsamValues.join(', ') : 'None'}
-          </div>
+          {/* Show summary text only when no barplot data */}
+          {!(data.flotsamFrequencies && data.flotsamFrequencies.length > 0) && (
+            <div className="text-sm">
+              {data.flotsamValues.length > 0 ? data.flotsamValues.join(', ') : 'None'}
+            </div>
+          )}
           {/* Frequency barplots for flotsam */}
           {data.flotsamFrequencies && data.flotsamFrequencies.length > 0 && (
             <div className="mt-2 space-y-1" data-testid="flotsam-barplot">
@@ -267,9 +270,12 @@ function QualitativeCard({ data }: { data: RaftingData }) {
         {/* Stage */}
         <div className="border-b pb-2">
           <div className="text-xs text-muted-foreground mb-1">Stage</div>
-          <div className="text-sm">
-            {data.stageValues.length > 0 ? data.stageValues.join(', ') : 'None'}
-          </div>
+          {/* Show summary text only when no barplot data */}
+          {!(data.stageFrequencies && data.stageFrequencies.length > 0) && (
+            <div className="text-sm">
+              {data.stageValues.length > 0 ? data.stageValues.join(', ') : 'None'}
+            </div>
+          )}
           {/* Frequency barplots for stage */}
           {data.stageFrequencies && data.stageFrequencies.length > 0 && (
             <div className="mt-2 space-y-1" data-testid="stage-barplot">
