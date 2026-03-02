@@ -83,13 +83,13 @@ const TAXONOMY_ORDER = ['ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'A
 
 /**
  * Standard measurement + metadata columns in preferred order.
- * TYPE first, then measurement group (MEAN/MIN/MAX/CONF + MEAN_TYPE/CONF_TYPE/UNIT),
+ * MEAN/MIN/MAX/CONF first, then TYPE, then MEAN_TYPE/CONF_TYPE/UNIT,
  * then qualitative metadata, then temperature group, then method columns.
- * Extra info columns (qualitative/text from specific databases) go between TYPE and MEAN.
+ * Extra info columns (qualitative/text from specific databases) go before MEAN.
  * Does NOT include tail columns (REMARKS, EXT_REF, REFERENCE, LINK) — those always come last.
  */
 const STANDARD_MEASUREMENT_ORDER = [
-  'MEAN', 'MIN', 'MAX', 'CONF', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT',
+  'MEAN', 'MIN', 'MAX', 'CONF', 'TYPE', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT',
   'ORIGIN', 'N', 'LENGTH_TYPE',
   'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
   'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
@@ -211,19 +211,13 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
     }
   }
 
-  // 2. TYPE column first
-  if (allColumns.has('TYPE')) {
-    orderedColumns.push('TYPE');
-    added.add('TYPE');
-  }
-
-  // 3. Extra info columns (qualitative/text from specific databases) — alphabetical
+  // 2. Extra info columns (qualitative/text from specific databases) — alphabetical
   const measurementSet = new Set(STANDARD_MEASUREMENT_ORDER);
   const extras = [...allColumns].filter(c => !added.has(c) && !tailSet.has(c) && !measurementSet.has(c)).sort();
   orderedColumns.push(...extras);
   for (const col of extras) added.add(col);
 
-  // 4. Standard measurement + metadata columns
+  // 3. Standard measurement + metadata columns (includes TYPE after CONF)
   for (const col of STANDARD_MEASUREMENT_ORDER) {
     if (allColumns.has(col) && !added.has(col)) {
       orderedColumns.push(col);
