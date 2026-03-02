@@ -89,7 +89,7 @@ export function CsvPreviewModal({
               onClick={handleDownload}
             >
               <Download className="h-4 w-4 mr-2" />
-              Download CSV
+              Download TXT
             </Button>
           )}
         </DialogHeader>
