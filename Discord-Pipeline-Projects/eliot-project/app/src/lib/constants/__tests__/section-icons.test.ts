@@ -24,8 +24,7 @@ describe('US-1.5: SVG Section Icons', () => {
       'Flexion Stage',
       'Metamorphosis',
       'Settlement',
-      'Swimming Ability',
-      'Behavior & Ecology',
+      'Active Behaviors',
     ];
 
     for (const section of requiredSections) {
