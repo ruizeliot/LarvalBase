@@ -3,9 +3,8 @@
 import { useMemo, useState, useEffect } from "react";
 import { TraitCard } from "./trait-card";
 import type { LarvalStage } from "./stage-icon";
-import { ExportButton } from "@/components/export/export-button";
+import { SectionExportButtons } from "./section-export-buttons";
 import { getSectionIcon } from "@/lib/constants/section-icons";
-import { useRawData } from "@/hooks/use-raw-data";
 import type { ComparisonStats, FamilyBarChartData, FamilyBarChartEntry } from "@/lib/types/species.types";
 import { EggQualitativePanel, type EggQualitativeData } from "./egg-qualitative-panel";
 
@@ -66,7 +65,7 @@ export function TraitGroup({
   comparisons,
   eggQualitativeData,
 }: TraitGroupProps) {
-  // Get trait keys for this group (for filtering raw data)
+  // Get trait keys for this group
   const traitKeys = useMemo(() => traits.map((t) => t.traitKey), [traits]);
 
   // State for family/genus chart data per trait (includes comparison type)
@@ -102,26 +101,6 @@ export function TraitGroup({
     fetchFamilyCharts();
   }, [speciesId, traits]);
 
-  // Fetch ALL raw data for this species (no trait filter)
-  // Then filter client-side for this group's traits
-  const { data: allRawData } = useRawData(
-    speciesId ?? null,
-    undefined, // No trait filter - get all data
-    !!speciesId && traits.length > 0
-  );
-
-  // Prepare export data for this trait group (filter to group's traits)
-  const groupExportData = useMemo(() => {
-    const filtered = allRawData.filter((m) => traitKeys.includes(m.traitType));
-    return filtered.map((m) => ({
-      Trait_Type: m.traitType,
-      Value: m.value,
-      Unit: m.unit,
-      Reference: m.source || "",
-      DOI: m.doi || "",
-    }));
-  }, [allRawData, traitKeys]);
-
   // Return null only if no trait definitions exist for this group
   // (Groups with traits but no data will show "No known values" cards)
   if (traits.length === 0) {
@@ -149,12 +128,10 @@ export function TraitGroup({
           <h2 className="text-lg font-semibold">{title}</h2>
         </div>
         {speciesId && (
-          <ExportButton
-            data={groupExportData}
-            filename={`${speciesId}-${title.toLowerCase().replace(/\s+/g, "-")}`}
-            label="Export"
-            variant="ghost"
-            size="sm"
+          <SectionExportButtons
+            speciesId={speciesId}
+            sectionTitle={title}
+            traitKeys={traitKeys}
           />
         )}
       </div>
