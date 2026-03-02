@@ -27,6 +27,8 @@ describe('Export missing data check', () => {
       expect(row.MEAN).not.toBe('NA');
       expect(typeof row.MEAN).toBe('number');
     }
+    // Verify exact value from the database (YOLK_SIZE_MEAN=0.48)
+    expect(yolkRows.some(r => r.MEAN === 0.48)).toBe(true);
   });
 
   it('All trait types in egg section should produce export rows when data exists', async () => {
