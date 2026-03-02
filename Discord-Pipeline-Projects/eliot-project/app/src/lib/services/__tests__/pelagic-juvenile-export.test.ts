@@ -1,18 +1,16 @@
 /**
- * Tests for Epic 9 Fix: Pelagic juvenile export produces data.
+ * Tests for Pelagic juvenile export — now uses long format with TYPE column.
  *
- * Verifies that pelagic juvenile size and duration traits are
- * correctly extracted from the database and appear in exports.
+ * Previously used raw database column order. Now normalized like all other sections.
  */
 import { describe, it, expect } from 'vitest';
 
-describe('Pelagic juvenile export', () => {
+describe('Pelagic juvenile export (long format)', () => {
   it('should produce export rows for species with pelagic juvenile data', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
 
-    // Find a species with pelagic_juvenile_size data
     let testSpeciesId: string | null = null;
     for (const [speciesId, traits] of data.traitsBySpecies) {
       if (traits.some(t => t.traitType === 'pelagic_juvenile_size')) {
@@ -20,8 +18,6 @@ describe('Pelagic juvenile export', () => {
         break;
       }
     }
-
-    // There must be species with pelagic juvenile data
     expect(testSpeciesId).not.toBeNull();
 
     const rows = await getSectionExportData(
@@ -34,7 +30,7 @@ describe('Pelagic juvenile export', () => {
     expect(rows!.length).toBeGreaterThan(0);
   });
 
-  it('should use original database column order for pelagic juvenile export', async () => {
+  it('should use long format with TYPE and MEAN columns for pelagic juvenile', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
@@ -57,14 +53,46 @@ describe('Pelagic juvenile export', () => {
     expect(rows).not.toBeNull();
     const cols = Object.keys(rows![0]);
 
-    // Should NOT have normalized MEAN/MIN/MAX/CONF columns
-    expect(cols).not.toContain('MEAN');
-    expect(cols).not.toContain('TYPE');
-
-    // Should have original database columns
-    expect(cols).toContain('PELAGIC_JUV_SIZE_MEAN');
+    // Should have normalized TYPE and MEAN/MIN/MAX/CONF columns
+    expect(cols).toContain('TYPE');
+    expect(cols).toContain('MEAN');
+    expect(cols).toContain('MIN');
+    expect(cols).toContain('MAX');
+    expect(cols).toContain('CONF');
     expect(cols).toContain('ORDER');
     expect(cols).toContain('FAMILY');
+
+    // TYPE values should be pelagic juvenile labels
+    for (const row of rows!) {
+      expect(['Pelagic juvenile size', 'Pelagic juvenile duration']).toContain(row.TYPE);
+    }
+  });
+
+  it('should NOT include raw database columns like PELAGIC_JUV_SIZE_MEAN', async () => {
+    const { getSectionExportData } = await import('../section-export.service');
+    const { getOrLoadData } = await import('@/lib/data/data-repository');
+    const data = await getOrLoadData();
+
+    let testSpeciesId: string | null = null;
+    for (const [speciesId, traits] of data.traitsBySpecies) {
+      if (traits.some(t => t.traitType === 'pelagic_juvenile_size')) {
+        testSpeciesId = speciesId;
+        break;
+      }
+    }
+    expect(testSpeciesId).not.toBeNull();
+
+    const rows = await getSectionExportData(
+      testSpeciesId!,
+      ['pelagic_juvenile_size', 'pelagic_juvenile_duration'],
+      'species'
+    );
+
+    expect(rows).not.toBeNull();
+    const cols = Object.keys(rows![0]);
+    // Raw measurement columns should NOT be present
+    expect(cols).not.toContain('PELAGIC_JUV_SIZE_MEAN');
+    expect(cols).not.toContain('PELAGIC_JUV_DURATION_MEAN');
   });
 
   it('Gadus morhua should have pelagic juvenile export data', async () => {
@@ -84,16 +112,12 @@ describe('Pelagic juvenile export', () => {
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
 
-    // Count species with pelagic_juvenile_duration
     let countDuration = 0;
     for (const [, traits] of data.traitsBySpecies) {
       if (traits.some(t => t.traitType === 'pelagic_juvenile_duration')) {
         countDuration++;
       }
     }
-
-    // The database has PELAGIC_JUV_DURATION_MEAN column with data
-    // so there should be at least some species with duration data
     expect(countDuration).toBeGreaterThan(0);
   });
 });

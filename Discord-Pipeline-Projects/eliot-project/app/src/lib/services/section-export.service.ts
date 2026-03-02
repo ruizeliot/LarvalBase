@@ -272,77 +272,14 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   });
 }
 
-/** Trait keys that should use raw database column order instead of normalized format. */
-const RAW_COLUMN_ORDER_TRAITS = new Set([
-  'pelagic_juvenile_size', 'pelagic_juvenile_duration',
-  'rafting_behavior', 'rafting_size',
-]);
-
-/**
- * Build a raw export row using original database column order.
- * Strips ROW_INDEX and LINK columns but keeps everything else as-is.
- */
-function buildRawRow(
-  trait: TraitData,
-  sp: { order: string; family: string; genus: string; validName: string } | undefined,
-): Record<string, unknown> {
-  const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
-  const row: Record<string, unknown> = {};
-
-  for (const [key, value] of Object.entries(rawFields)) {
-    if (key === 'ROW_INDEX') continue;
-    row[key] = value ?? 'NA';
-  }
-
-  // Ensure taxonomy columns are filled from species data
-  if (sp) {
-    if (!row.ORDER || row.ORDER === 'NA') row.ORDER = sp.order;
-    if (!row.FAMILY || row.FAMILY === 'NA') row.FAMILY = sp.family;
-    if (!row.GENUS || row.GENUS === 'NA') row.GENUS = sp.genus;
-    if (!row.VALID_NAME || row.VALID_NAME === 'NA') row.VALID_NAME = sp.validName;
-  }
-
-  return row;
-}
-
-/**
- * Union-fill raw rows: ensure all rows have the same columns in the same order.
- * Uses the column order from the first row (which reflects original database order).
- */
-function unionFillRawRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
-  if (rows.length === 0) return [];
-
-  // Collect all column names preserving first-seen order
-  const orderedColumns: string[] = [];
-  const seen = new Set<string>();
-  for (const row of rows) {
-    for (const key of Object.keys(row)) {
-      if (!seen.has(key)) {
-        orderedColumns.push(key);
-        seen.add(key);
-      }
-    }
-  }
-
-  // Normalize each row
-  return rows.map(row => {
-    const normalized: Record<string, unknown> = {};
-    for (const col of orderedColumns) {
-      normalized[col] = row[col] ?? 'NA';
-    }
-    return normalized;
-  });
-}
 
 /**
  * Get export data for a section at a given taxonomy level.
  *
- * When a section has multiple trait types, produces a merged table with:
- * - TYPE column indicating which sub-panel each row belongs to
+ * Produces a long-format table with:
+ * - TYPE column indicating the measurement type for each row
  * - Normalized measurement columns (MEAN, MIN, MAX, CONF, etc.)
- * - Extra info columns from specific databases (NA-filled for other sub-panels)
- *
- * Pelagic Juvenile and Rafting sections use original database column order.
+ * - Qualitative extra columns from specific databases (NA-filled for other types)
  *
  * @param speciesId - The current species ID (used to determine genus/family)
  * @param traitKeys - Trait types belonging to this section
@@ -361,9 +298,6 @@ export async function getSectionExportData(
   if (!species) {
     return null;
   }
-
-  // Check if this section should use raw database column order
-  const useRawOrder = traitKeys.every(k => RAW_COLUMN_ORDER_TRAITS.has(k));
 
   // Determine which species IDs to include based on taxonomy level
   const targetSpeciesIds: string[] = [];
@@ -391,14 +325,10 @@ export async function getSectionExportData(
     const sectionTraits = traits.filter((t) => traitKeys.includes(t.traitType));
 
     for (const trait of sectionTraits) {
-      if (useRawOrder) {
-        rows.push(buildRawRow(trait, sp));
-      } else {
-        rows.push(buildMergedRow(trait, sp, trait.traitType));
-      }
+      rows.push(buildMergedRow(trait, sp, trait.traitType));
     }
   }
 
   // Union-fill to ensure all rows have the same columns
-  return useRawOrder ? unionFillRawRows(rows) : unionFillRows(rows);
+  return unionFillRows(rows);
 }
