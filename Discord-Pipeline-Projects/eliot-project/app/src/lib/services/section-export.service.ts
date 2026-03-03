@@ -346,6 +346,35 @@ const TEMPERATURE_COLS = [
 ];
 const METHOD_COLS = ['ORIGIN', 'N', 'LENGTH_TYPE', 'METHOD', 'GEAR', 'LOCATION'];
 
+/**
+ * Per-trait-type allowed optional columns based on columns_per_type.txt.
+ * Only columns listed here (from METHOD_COLS + REMARKS) will appear in the export.
+ * Columns not in this map default to allowing all METHOD_COLS + REMARKS.
+ */
+const TRAIT_ALLOWED_OPTIONAL_COLS: Record<string, Set<string>> = {
+  hatching_size: new Set([]),
+  first_feeding_age: new Set([]),
+  first_feeding_size: new Set([]),
+  yolk_absorption_age: new Set([]),
+  yolk_absorbed_size: new Set([]),
+  flexion_age: new Set(['N']),
+  flexion_size: new Set(['N', 'LENGTH_TYPE']),
+  metamorphosis_age: new Set(['N']),
+  metamorphosis_duration: new Set(['N']),
+  metamorphosis_size: new Set(['N', 'LENGTH_TYPE']),
+  settlement_age: new Set(['ORIGIN', 'N', 'LOCATION', 'GEAR', 'COUNTRY']),
+  settlement_size: new Set(['ORIGIN', 'N', 'LENGTH_TYPE', 'LOCATION', 'GEAR', 'COUNTRY']),
+  vertical_distribution: new Set(['LOCATION', 'GEAR']),
+  critical_swimming_speed: new Set(['ORIGIN', 'N', 'LOCATION', 'LENGTH_TYPE', 'REMARKS']),
+  critical_swimming_speed_rel: new Set(['ORIGIN', 'N', 'LOCATION', 'LENGTH_TYPE', 'REMARKS']),
+  in_situ_swimming_speed: new Set(['ORIGIN', 'N', 'LOCATION', 'REMARKS']),
+  in_situ_swimming_speed_rel: new Set(['ORIGIN', 'N', 'LOCATION', 'LENGTH_TYPE', 'REMARKS']),
+  pelagic_juvenile_size: new Set(['N', 'LENGTH_TYPE', 'REMARKS']),
+  pelagic_juvenile_duration: new Set(['N', 'REMARKS']),
+  rafting_size: new Set(['LENGTH_TYPE']),
+  rafting_behavior: new Set([]),
+};
+
 /** All known fixed-order columns (used to classify "other" extras). */
 const ALL_FIXED_COLS = new Set([
   'TYPE',
@@ -353,6 +382,7 @@ const ALL_FIXED_COLS = new Set([
   ...META_TYPE_COLS,
   ...TEMPERATURE_COLS,
   ...METHOD_COLS,
+  'REMARKS', 'COUNTRY',
 ]);
 
 /**
@@ -371,6 +401,8 @@ function isExtraInfoColumn(col: string): boolean {
 
 /**
  * Build a standardized merged export row from a trait.
+ * Only includes optional columns (ORIGIN, N, LENGTH_TYPE, METHOD, GEAR, LOCATION, REMARKS, COUNTRY)
+ * when allowed by TRAIT_ALLOWED_OPTIONAL_COLS for the trait type.
  */
 function buildMergedRow(
   trait: TraitData,
@@ -379,6 +411,7 @@ function buildMergedRow(
 ): Record<string, unknown> {
   const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
   const meanTypeCol = MEAN_TYPE_COLUMNS[traitType];
+  const allowed = TRAIT_ALLOWED_OPTIONAL_COLS[traitType];
 
   const row: Record<string, unknown> = {
     ORDER: sp?.order || rawFields.ORDER || '',
@@ -396,9 +429,6 @@ function buildMergedRow(
     MEAN_TYPE: meanTypeCol ? (rawFields[meanTypeCol] || 'NA') : 'NA',
     CONF_TYPE: trait.metadata?.confType || 'NA',
     UNIT: trait.unit || '',
-    ORIGIN: trait.metadata?.origin || rawFields.ORIGIN || 'NA',
-    N: trait.metadata?.sampleSize ?? rawFields.N ?? 'NA',
-    LENGTH_TYPE: trait.metadata?.lengthType || rawFields.LENGTH_TYPE || 'NA',
     TEMPERATURE_MEAN: trait.metadata?.temperatureMean
       ?? rawFields.REARING_TEMPERATURE_MEAN
       ?? rawFields.TEMPERATURE_MEAN
@@ -420,14 +450,36 @@ function buildMergedRow(
     TEMPERATURE_CONF_TYPE: rawFields.TEMPERATURE_CONF_TYPE
       ?? rawFields.REARING_TEMPERATURE_CONF_TYPE
       ?? 'NA',
-    METHOD: trait.metadata?.method || rawFields.METHOD || 'NA',
-    GEAR: trait.metadata?.gear || rawFields.GEAR || 'NA',
-    LOCATION: trait.metadata?.location || rawFields.LOCATION || 'NA',
-    REMARKS: trait.metadata?.remarks || rawFields.REMARKS || 'NA',
     EXT_REF: trait.metadata?.externalRef || rawFields.EXT_REF || 'NA',
     REFERENCE: trait.source || rawFields.REFERENCE || 'NA',
     LINK: rawFields.LINK || 'NA',
   };
+
+  // Conditionally add optional columns based on trait type allowlist
+  if (!allowed || allowed.has('ORIGIN')) {
+    row.ORIGIN = trait.metadata?.origin || rawFields.ORIGIN || 'NA';
+  }
+  if (!allowed || allowed.has('N')) {
+    row.N = trait.metadata?.sampleSize ?? rawFields.N ?? 'NA';
+  }
+  if (!allowed || allowed.has('LENGTH_TYPE')) {
+    row.LENGTH_TYPE = trait.metadata?.lengthType || rawFields.LENGTH_TYPE || 'NA';
+  }
+  if (!allowed || allowed.has('METHOD')) {
+    row.METHOD = trait.metadata?.method || rawFields.METHOD || 'NA';
+  }
+  if (!allowed || allowed.has('GEAR')) {
+    row.GEAR = trait.metadata?.gear || rawFields.GEAR || 'NA';
+  }
+  if (!allowed || allowed.has('LOCATION')) {
+    row.LOCATION = trait.metadata?.location || rawFields.LOCATION || 'NA';
+  }
+  if (!allowed || allowed.has('COUNTRY')) {
+    row.COUNTRY = rawFields.COUNTRY || 'NA';
+  }
+  if (!allowed || allowed.has('REMARKS')) {
+    row.REMARKS = trait.metadata?.remarks || rawFields.REMARKS || 'NA';
+  }
 
   // Add extra info columns from rawFields (trait-specific columns like MET_DEFINITION, STAGE, etc.)
   for (const [key, value] of Object.entries(rawFields)) {
@@ -471,9 +523,7 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // 1. Taxonomy columns
   addCols(TAXONOMY_ORDER);
 
-  // 2. TYPE + qualitative extras
-  addCol('TYPE');
-
+  // 2. Qualitative extras (trait-specific columns like MET_DEFINITION, STAGE, etc.)
   const qualitativeExtras: string[] = [];
   for (const col of [...allColumns].sort()) {
     if (added.has(col) || tailSet.has(col) || taxonomySet.has(col) || ALL_FIXED_COLS.has(col)) continue;
@@ -482,19 +532,32 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   }
   for (const col of qualitativeExtras) addCol(col);
 
-  // 3. MEAN/MIN/MAX/CONF
+  // 3. N before TYPE (when N is listed for that TYPE)
+  addCol('N');
+
+  // 4. TYPE
+  addCol('TYPE');
+
+  // 5. MEAN/MIN/MAX/CONF
   addCols(NORMALIZED_MEASUREMENT_COLS);
 
-  // 4. MEAN_TYPE/CONF_TYPE/UNIT
+  // 6. MEAN_TYPE/CONF_TYPE/UNIT
   addCols(META_TYPE_COLS);
 
-  // 5. Temperature group
+  // 7. LENGTH_TYPE after UNIT (when listed)
+  addCol('LENGTH_TYPE');
+
+  // 8. Temperature group
   addCols(TEMPERATURE_COLS);
 
-  // 6. Other columns
-  addCols(METHOD_COLS);
+  // 9. Remaining optional columns (ORIGIN, METHOD, GEAR, LOCATION, COUNTRY)
+  addCol('ORIGIN');
+  addCol('METHOD');
+  addCol('GEAR');
+  addCol('LOCATION');
+  addCol('COUNTRY');
 
-  // 7. Tail columns always last
+  // 10. Tail columns always last
   addCols(TAIL_COLUMNS);
 
   return rows.map(row => {
