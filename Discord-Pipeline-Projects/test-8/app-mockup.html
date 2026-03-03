@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-template Unity Refacto — Mockups</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0e17; color: #e0e0e0; min-height: 100vh; display: flex; flex-direction: column; }
+header { background: #111827; border-bottom: 1px solid #1f2937; padding: 16px 24px; }
+header h1 { font-size: 20px; font-weight: 600; color: #f9fafb; }
+header p { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+.container { display: flex; flex: 1; overflow: hidden; }
+nav { width: 260px; min-width: 260px; background: #111827; border-right: 1px solid #1f2937; overflow-y: auto; padding: 12px 0; }
+nav button { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; border: none; background: transparent; color: #d1d5db; font-size: 13px; text-align: left; cursor: pointer; transition: all 0.15s; }
+nav button:hover { background: #1f2937; color: #f9fafb; }
+nav button.active { background: #1e3a5f; color: #60a5fa; border-left: 3px solid #3b82f6; }
+nav button .icon { font-size: 16px; width: 24px; text-align: center; flex-shrink: 0; }
+nav button .label { flex: 1; }
+nav button .status { font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+nav button .status.ok { background: #065f46; color: #6ee7b7; }
+nav button .status.placeholder { background: #7c2d12; color: #fdba74; }
+main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.tab-header { background: #111827; border-bottom: 1px solid #1f2937; padding: 8px 16px; font-size: 14px; font-weight: 500; color: #f9fafb; display: flex; align-items: center; gap: 8px; }
+.tab-header .section-icon { font-size: 18px; }
+.iframe-container { flex: 1; position: relative; }
+.iframe-container iframe { width: 100%; height: 100%; border: none; background: #0f172a; }
+.placeholder { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; text-align: center; }
+.placeholder .icon-big { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
+.placeholder h3 { font-size: 18px; color: #f9fafb; margin-bottom: 8px; }
+.placeholder p { font-size: 13px; color: #9ca3af; max-width: 500px; line-height: 1.6; }
+.placeholder .specs { text-align: left; background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 16px; margin-top: 16px; max-width: 600px; width: 100%; }
+.placeholder .specs h4 { font-size: 13px; color: #60a5fa; margin-bottom: 8px; }
+.placeholder .specs ul { list-style: none; padding: 0; }
+.placeholder .specs li { font-size: 12px; color: #d1d5db; padding: 3px 0; padding-left: 16px; position: relative; }
+.placeholder .specs li::before { content: '•'; position: absolute; left: 0; color: #6b7280; }
+</style>
+</head>
+<body>
+<header>
+<h1>Multi-template Unity Refacto</h1>
+<p>Complete refactoring of Unity 6 monorepo — PodDefinition (3D graph editor) + PodGab (AI voice assistant) — 65 user stories across 12 sections</p>
+</header>
+<div class="container">
+<nav id="nav"></nav>
+<main id="main"></main>
+</div>
+<script>
+const sections = [
+  {
+    id: 'cleanup',
+    icon: '🧹',
+    label: 'Cleanup & Foundation',
+    us: 'US39-42',
+    specs: [
+      'US39 — Namespace migration to IMT.* hierarchy (IMT.PodDefinition, IMT.PodGab, IMT.XRMP, IMT.Core, IMT.Shared)',
+      'US40 — Dead code removal: SaveLoad V1, placeholder scripts, NGO 1.9.1 workarounds',
+      'US41 — Performance fixes: cache FindObjectsOfType, replace per-frame searches with events/dirty flags',
+      'US42 — Compilation verification workflow: 5 sequential steps with blocking gates',
+      'Mockup: Technical schema with 4 panels (namespace tree, dead code before/after, perf hotspots, compilation workflow)'
+    ]
+  },
+  {
+    id: 'input',
+    icon: '🎮',
+    label: 'Input Abstraction',
+    us: 'US10-12',
+    specs: [
+      'US10 — VRInputProvider: Meta SDK hand tracking (grab, poke, pinch, controller stick)',
+      'US11 — DesktopInputProvider: mouse/keyboard (WASD, click, scroll)',
+      'US12 — IInputProvider interface + PlatformDetector + InputProviderFactory',
+      'Mockup: 4 tabs — Architecture diagram, Interactions detail, Platform Switch flow, Bindings mappings'
+    ]
+  },
+  {
+    id: 'graph',
+    icon: '🌐',
+    label: 'Graph Core',
+    us: 'US1-3, US50-52',
+    specs: [
+      'US1 — Smoother force-directed 3D layout with real-time sliders',
+      'US2 — Adjustable parameters: force, spacing, gravity, damping',
+      'US3 — Node position locking toggle',
+      'US50-52 — Edge cases: empty state onboarding, 500+ node optimization, orphan link detection',
+      '6 node types (spherical, color-coded) + 6 link types (directional arrows)',
+      'Mockup: Three.js 3D scene with 12 nodes, 14 links, orbital camera, force-directed layout, side panel'
+    ]
+  },
+  {
+    id: 'saveload',
+    icon: '💾',
+    label: 'Save/Load',
+    us: 'US4-6, US53-55',
+    specs: [
+      'US4 — JSON/YAML save management with name, version, size, date, Load/Diff/Delete buttons',
+      'US5 — Export/import: JSON, YAML, Bundle .zip, temporary sharing link',
+      'US6 — Auto-save: configurable frequency (1-30 min), retention (3-50 snapshots), crash recovery',
+      'US53-55 — Edge cases: corrupted save recovery, version migration, concurrent edit conflict',
+      'Git-style diff viewer with colored additions/deletions, timeline with AUTO/MANUAL/CRASH tags',
+      'Mockup: 4-tab interface (Saves List, Export/Import, Auto-save, History)'
+    ]
+  },
+  {
+    id: 'canvas',
+    icon: '🖥️',
+    label: 'Canvas UI',
+    us: 'US7-9',
+    specs: [
+      'US7 — World-space property panel floating next to selected node (glassmorphism, billboard)',
+      'US8 — 3 adaptive modes: Desktop (camera-oriented), VR (larger glow panels), MR (transparent, spatial anchors)',
+      'US9 — Visual feedback: hover highlight, pulse on selection, contextual toolbar above node',
+      'All UI is IN the 3D scene, attached to objects — no side panels or fixed overlays',
+      'Link selection panel at midpoint of link: type dropdown, direction, weight, Reverse/Delete',
+      'Mockup: Pure HTML/CSS v5 — glassmorphism panels, 6 nodes, SVG links, 3 mode toggle (5 iterations to finalize)'
+    ]
+  },
+  {
+    id: 'import',
+    icon: '📥',
+    label: 'Data Import',
+    us: 'US13-15, US61-62',
+    specs: [
+      'US13 — Drag &amp; drop import for Excel/JSON/CSV with downloadable templates',
+      'US14 — Visual mapping table: source columns → target fields, auto-detect, color-coded validation',
+      'US15 — Import log with progress bar, timestamped entries, clear error messages',
+      'US61-62 — Edge cases: partial import recovery, duplicate detection with merge/skip/replace',
+      'Mockup: 4-tab interface (File Upload, Mapping Preview, Import Log, History)'
+    ]
+  },
+  {
+    id: 'voice',
+    icon: '🎙️',
+    label: 'Voice Pipeline',
+    us: 'US16-21, US24, US32, US37-38, US49, US56-58',
+    specs: [
+      'US16-17 — STT with fallback chain: Gabriela → Whisper (local), ISTTProvider interface',
+      'US18-20 — Multi-service LLM: Gabriela/n8n/local, ILLMProvider, settings per layer',
+      'US21 — Speech-to-speech (Mochi) as alternative pipeline',
+      'US24, US32 — ITTSProvider + LLM auto-fallback',
+      'US37-38 — Local LLM (Unity AI Inference) for offline, implements ILLMProvider',
+      'US49 — Platform-adaptive: light model (Phi/Gemma) on Quest, performant on desktop',
+      'US56-58 — Edge cases: all providers down, mid-sentence switch, high latency detection',
+      'Mockup: 2 views — Provider Settings (3 columns STT/LLM/TTS) + Live Status (latency, waveform, flow)'
+    ]
+  },
+  {
+    id: 'entities',
+    icon: '🤖',
+    label: 'AI Entities',
+    us: 'US22-23, US25, US33-35, US59-60',
+    specs: [
+      'US22 — 3 incarnation modes: Avatar RPM (lip-sync), Abstract Orb (reactive), No Avatar (voice-only)',
+      'US23 — Mode-adapted interactions per incarnation type',
+      'US25 — IAIEntity interface per incarnation mode',
+      'US33-35 — Smart Objects: auto-detected Unity props + custom designer key/value, AI context view',
+      'US59-60 — Edge cases: avatar load failure → Orb fallback, property conflict priority rules',
+      'Mockup: 2 views — Incarnation Modes (3 cards with preview) + Smart Objects (properties + AI context)'
+    ]
+  },
+  {
+    id: 'kpi',
+    icon: '📊',
+    label: 'KPI & Causal Chain',
+    us: 'US26-28',
+    specs: [
+      'US26 — Interactive DAG graph: clickable nodes (root/KPI/cause/effect), zoom/pan',
+      'US27 — Post-generation modification: edit labels, values, targets, connections',
+      'US28 — Inject into PodDefinition with before/after comparison and diff indicators',
+      'Generation toolbar: text prompt + Generate KPI / Causal Chain buttons',
+      'Mockup: DAG graph + generation toolbar + node detail panel + inject button + before/after diff'
+    ]
+  },
+  {
+    id: 'integration',
+    icon: '🔗',
+    label: 'PodDef ↔ PodGab',
+    us: 'US29-31',
+    specs: [
+      'US29 — Voice → Graph: split view with PodGab chat + PodDef graph responding live, event bus visualization',
+      'US30 — AI reads and comments on graph: structure analysis, issue detection, suggestions, statistics',
+      'US31 — Decoupled event system replacing #if POD_RESEARCH — always active and testable',
+      'Command log: voice → action mapping with executed/failed/clarification statuses',
+      'Mockup: 3 views — Voice → Graph, Command Log, Graph Analysis'
+    ]
+  },
+  {
+    id: 'environments',
+    icon: '🌍',
+    label: 'Environments & MR',
+    us: 'US43-45',
+    specs: [
+      'US43 — Desktop: classic 3D virtual world, free camera, grid floor, skybox',
+      'US44 — Quest MR: passthrough with spatial anchor indicators, VR ↔ MR switch',
+      'US45 — Customizable VR environments: Office/Space/Forest/Abstract, lighting presets, audio toggle',
+      'Mode switcher: Desktop 3D / Quest VR / Quest MR with live viewport preview',
+      'Mockup: Mode switcher with live viewport + environment settings panel'
+    ]
+  },
+  {
+    id: 'multiplayer',
+    icon: '👥',
+    label: 'Multiplayer',
+    us: 'US46-48, US63-65',
+    specs: [
+      'US46 — Colocation: same room, MR mode, shared spatial anchors, real hands/positions',
+      'US47 — Remote user via avatar (Quest or desktop), same session',
+      'US48 — Unified network with auto-detection of colocation vs remote mode',
+      'US63-65 — Edge cases: player disconnect/lock, platform mismatch, host migration',
+      'Mockup: 3 views — Lobby (rooms, modes), Session (users, voice, anchors), Permissions (host controls grid)'
+    ]
+  }
+];
+
+function renderNav() {
+  const nav = document.getElementById('nav');
+  nav.innerHTML = sections.map((s, i) =>
+    `<button onclick="showSection(${i})" id="nav-${i}">
+      <span class="icon">${s.icon}</span>
+      <span class="label">${s.label}</span>
+      <span class="status placeholder">placeholder</span>
+    </button>`
+  ).join('');
+}
+
+function showSection(idx) {
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('nav-' + idx).classList.add('active');
+  const s = sections[idx];
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <div class="tab-header">
+      <span class="section-icon">${s.icon}</span>
+      ${s.label} — ${s.us}
+    </div>
+    <div class="placeholder">
+      <div class="icon-big">${s.icon}</div>
+      <h3>Mockup not yet available for ${s.label}</h3>
+      <p>The mockup HTML file was posted in the Discord thread but could not be downloaded (Discord CDN URLs expire). Below are the validated specs for this section.</p>
+      <div class="specs">
+        <h4>Validated Specifications</h4>
+        <ul>${s.specs.map(sp => `<li>${sp}</li>`).join('')}</ul>
+      </div>
+    </div>
+  `;
+}
+
+renderNav();
+showSection(0);
+</script>
+</body>
+</html>
