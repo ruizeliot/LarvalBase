@@ -119,13 +119,13 @@ export function TraitCard({
               <div className="text-sm text-muted-foreground mt-1">{unit}</div>
             </>
           ) : (
-            // Try to show genus, family, or order average as fallback
+            // Try to show genus, family, or order average as fallback (only if >1 species)
             (() => {
               const fallbackGenus = genusStats?.stats?.mean;
               const fallbackFamily = familyStats?.stats?.mean;
               const fallbackOrder = orderStats?.stats?.mean;
-              
-              if (fallbackGenus !== null && fallbackGenus !== undefined) {
+
+              if (fallbackGenus !== null && fallbackGenus !== undefined && (genusStats?.speciesCount ?? 0) > 1) {
                 return (
                   <>
                     <span className="text-2xl font-mono text-muted-foreground">
@@ -137,7 +137,7 @@ export function TraitCard({
                   </>
                 );
               }
-              if (fallbackFamily !== null && fallbackFamily !== undefined) {
+              if (fallbackFamily !== null && fallbackFamily !== undefined && (familyStats?.speciesCount ?? 0) > 1) {
                 return (
                   <>
                     <span className="text-2xl font-mono text-muted-foreground">
@@ -149,7 +149,7 @@ export function TraitCard({
                   </>
                 );
               }
-              if (fallbackOrder !== null && fallbackOrder !== undefined) {
+              if (fallbackOrder !== null && fallbackOrder !== undefined && (orderStats?.speciesCount ?? 0) > 1) {
                 return (
                   <>
                     <span className="text-2xl font-mono text-muted-foreground">
@@ -208,22 +208,22 @@ export function TraitCard({
           )}
         </div>
 
-        {/* Comparison values - only show if any stats provided */}
+        {/* Comparison values - only show if any stats provided and speciesCount > 1 */}
         {(genusStats !== undefined || familyStats !== undefined || orderStats !== undefined) && (
           <div className="mt-3 pt-3 border-t space-y-1">
-            {genusStats !== undefined && (
+            {genusStats !== undefined && genusStats !== null && (genusStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Genus average:</span>
                 <span className="font-mono">{formatComparison(genusStats, unit)}</span>
               </div>
             )}
-            {familyStats !== undefined && (
+            {familyStats !== undefined && familyStats !== null && (familyStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Family average:</span>
                 <span className="font-mono">{formatComparison(familyStats, unit)}</span>
               </div>
             )}
-            {orderStats !== undefined && (
+            {orderStats !== undefined && orderStats !== null && (orderStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Order average:</span>
                 <span className="font-mono">{formatComparison(orderStats, unit)}</span>

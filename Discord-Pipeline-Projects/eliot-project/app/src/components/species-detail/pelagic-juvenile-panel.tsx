@@ -472,10 +472,13 @@ function NumericTraitPanel({
           )}
         </div>
 
-        {/* Genus/Family comparison text (same format as TraitCard) */}
-        {comparisons && (comparisons.genus || comparisons.family) && (
+        {/* Genus/Family comparison text — hide when only 1 species known */}
+        {comparisons && (
+          (comparisons.genus && comparisons.genus.speciesCount > 1) ||
+          (comparisons.family && comparisons.family.speciesCount > 1)
+        ) && (
           <div className="mt-3 pt-3 border-t space-y-1" data-testid="comparison-text">
-            {comparisons.genus && (
+            {comparisons.genus && comparisons.genus.speciesCount > 1 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Genus average:</span>
                 <span className="font-mono">
@@ -483,7 +486,7 @@ function NumericTraitPanel({
                 </span>
               </div>
             )}
-            {comparisons.family && (
+            {comparisons.family && comparisons.family.speciesCount > 1 && (
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Family average:</span>
                 <span className="font-mono">
