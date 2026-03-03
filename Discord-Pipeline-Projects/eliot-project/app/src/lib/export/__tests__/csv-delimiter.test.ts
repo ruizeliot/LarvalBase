@@ -1,51 +1,47 @@
 /**
- * Test: CSV export uses '@' as column delimiter with all fields quoted.
+ * Test: CSV export uses ';' as column delimiter with NO field quoting.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { generateCSV, downloadCSV } from '../csv-utils';
 
-describe('CSV delimiter and quoting', () => {
-  it('should use @ as column delimiter with all fields quoted', () => {
+describe('CSV delimiter and formatting', () => {
+  it('should use ; as column delimiter with no quoting', () => {
     const data = [
       { A: '1', B: '2', C: '3' },
     ];
     const txt = generateCSV(data);
     const lines = txt.split(/\r?\n/);
-    // Header — all fields quoted
-    expect(lines[0]).toBe('"A"@"B"@"C"');
-    // Data row — all fields quoted
-    expect(lines[1]).toBe('"1"@"2"@"3"');
+    // Header — unquoted, semicolon-delimited
+    expect(lines[0]).toBe('A;B;C');
+    // Data row — unquoted, semicolon-delimited
+    expect(lines[1]).toBe('1;2;3');
   });
 
-  it('should not use comma as delimiter', () => {
+  it('should not use @ or comma as delimiter', () => {
     const data = [
       { COL1: 'val1', COL2: 'val2' },
     ];
     const txt = generateCSV(data);
+    expect(txt).not.toContain('@');
     expect(txt).not.toContain(',');
-    expect(txt).toContain('@');
+    expect(txt).toContain(';');
   });
 
-  it('should properly quote fields containing @ or newlines, and replace semicolons', () => {
+  it('should replace semicolons in field values with " -"', () => {
     const data = [
-      { A: 'value@with@at', B: 'value;with;semicolon', C: 'line1\nline2' },
+      { A: 'value;with;semicolon', B: 'clean' },
     ];
     const txt = generateCSV(data);
-    // All fields are always quoted, so special chars are safe
-    expect(txt).toContain('"value@with@at"');
-    // Semicolons replaced with ' -'
-    expect(txt).toContain('"value -with -semicolon"');
-    expect(txt).not.toContain(';');
+    expect(txt).toContain('value -with -semicolon');
   });
 
-  it('should quote null and undefined values as empty quoted fields', () => {
+  it('should output empty string for null and undefined values', () => {
     const data = [
       { ORDER: null, FAMILY: 'Pomacentridae', EXT_REF: undefined },
     ];
     const txt = generateCSV(data);
     const lines = txt.split(/\r?\n/);
-    // Every field MUST be quoted, including null/undefined (as empty string)
-    expect(lines[1]).toBe('""@"Pomacentridae"@""');
+    expect(lines[1]).toBe(';Pomacentridae;');
   });
 
   it('should replace semicolons with dashes in field values', () => {
@@ -57,58 +53,46 @@ describe('CSV delimiter and quoting', () => {
       },
     ];
     const txt = generateCSV(data);
-    // Semicolons must be replaced with ' -' to prevent Excel splitting
-    expect(txt).toContain('"Fishelson 1964 - Danilowicz & Brown 1992"');
-    expect(txt).not.toContain(';');
+    expect(txt).toContain('Fishelson 1964 - Danilowicz & Brown 1992');
   });
 
-  it('should escape internal double quotes as double-double quotes', () => {
-    const data = [
-      { A: 'value with "quotes" inside' },
-    ];
-    const txt = generateCSV(data);
-    expect(txt).toContain('"value with ""quotes"" inside"');
-  });
-
-  it('should quote numeric values', () => {
+  it('should not quote numeric values', () => {
     const data = [
       { A: 42, B: 3.14 },
     ];
     const txt = generateCSV(data);
     const lines = txt.split(/\r?\n/);
-    expect(lines[1]).toBe('"42"@"3.14"');
+    expect(lines[1]).toBe('42;3.14');
   });
 
-  it('should export Dascyllus aruanus egg data with semicolons replaced by dashes', () => {
+  it('should export Dascyllus aruanus egg data matching gold standard format', () => {
     const data = [
       {
         ORDER: 'Ovalentaria incertae sedis',
         FAMILY: 'Pomacentridae',
         GENUS: 'Dascyllus',
         VALID_NAME: 'Dascyllus aruanus',
-        TYPE: 'Egg diameter',
+        TYPE: 'Egg length',
         MEAN: 0.75,
-        EXT_REF: 'Fishelson 1964; Danilowicz & Brown 1992',
+        EXT_REF: 'Fishelson 1964 - Danilowicz & Brown 1992',
         REFERENCE: 'Some reference',
       },
     ];
     const txt = generateCSV(data);
     const lines = txt.split(/\r?\n/);
 
-    // Semicolons must be replaced with ' -'
-    expect(lines[1]).toContain('"Fishelson 1964 - Danilowicz & Brown 1992"');
-    // No semicolons should remain anywhere in the output
-    expect(txt).not.toContain(';');
+    // Semicolons used as delimiter
+    expect(lines[0]).toBe('ORDER;FAMILY;GENUS;VALID_NAME;TYPE;MEAN;EXT_REF;REFERENCE');
+    // No @ delimiter
+    expect(txt).not.toContain('@');
 
-    // The data row must have exactly the same number of @ delimiters as the header
-    const headerDelimiters = (lines[0].match(/@/g) || []).length;
-    const dataDelimiters = (lines[1].match(/@/g) || []).length;
+    // The data row must have exactly the same number of ; delimiters as the header
+    const headerDelimiters = (lines[0].match(/;/g) || []).length;
+    const dataDelimiters = (lines[1].match(/;/g) || []).length;
     expect(dataDelimiters).toBe(headerDelimiters);
   });
 
-  it('downloadCSV should use .txt extension to prevent Excel auto-parsing', () => {
-    // Export as .csv with @ delimiter — semicolons replaced in values
-    // Mock DOM APIs
+  it('downloadCSV should use .csv extension', () => {
     const mockLink = {
       href: '',
       download: '',
@@ -123,7 +107,6 @@ describe('CSV delimiter and quoting', () => {
 
     downloadCSV([{ A: '1' }], 'test-export');
 
-    // File extension must be .csv
     expect(mockLink.download).toBe('test-export.csv');
 
     createElementSpy.mockRestore();

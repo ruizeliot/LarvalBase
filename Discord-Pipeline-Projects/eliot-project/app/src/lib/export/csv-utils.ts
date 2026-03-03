@@ -1,29 +1,24 @@
 /**
  * CSV export generation and download utilities.
- * Uses '@' as column delimiter. ALL fields are always quoted with double quotes
- * to prevent spreadsheet apps from splitting on ';' or other characters.
- * Internal double quotes are escaped as double-double quotes ("").
+ * Uses ';' as column delimiter. Fields are NOT quoted.
+ * Semicolons within field values are replaced with ' -' to prevent column splitting.
  */
 
 /**
- * Escape and quote a single field value.
- * - null/undefined → ""
- * - Strings → "value" with internal " escaped as ""
- * - Numbers → "123"
+ * Format a single field value for CSV output (no quotes).
+ * - null/undefined → empty string
+ * - Replaces ';' in values with ' -'
  */
-function quoteField(value: unknown): string {
-  if (value === null || value === undefined) return '""';
-  let str = String(value);
-  // Replace semicolons with ' -' to prevent Excel column splitting
-  str = str.replace(/;/g, ' -');
-  // Escape internal double quotes by doubling them
-  const escaped = str.replace(/"/g, '""');
-  return `"${escaped}"`;
+function formatField(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  // Replace semicolons with ' -' to prevent column splitting
+  return str.replace(/;/g, ' -');
 }
 
 /**
  * Generate CSV string from data array.
- * Every field is always double-quoted. Uses '@' as delimiter.
+ * Fields are unquoted. Uses ';' as delimiter.
  *
  * @param data - Array of objects to convert to CSV
  * @param columns - Optional array of column keys to include (in order)
@@ -39,11 +34,11 @@ export function generateCSV(
   const cols = columns || Object.keys(data[0]);
 
   // Header row
-  const headerRow = cols.map(c => quoteField(c)).join('@');
+  const headerRow = cols.join(';');
 
   // Data rows
   const dataRows = data.map(row =>
-    cols.map(col => quoteField(row[col])).join('@')
+    cols.map(col => formatField(row[col])).join(';')
   );
 
   return [headerRow, ...dataRows].join('\n');
@@ -66,8 +61,6 @@ export function downloadCSV(
 
   // Create Blob with UTF-8 BOM for Excel compatibility
   const BOM = "\uFEFF";
-  // Use text/csv MIME type with .csv extension. Semicolons are already
-  // replaced with ' -' in field values to prevent Excel splitting issues.
   const blob = new Blob([BOM + csv], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
 
