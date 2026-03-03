@@ -271,6 +271,10 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
               {/* Insert map after Settlement section */}
               {group.title === "Settlement" && (
                 <>
+                  {/* Settlement-stage sampling locations — only show if GPS data exists */}
+                  {locations.length > 0 && locations.some(
+                    (loc) => loc.latitude != null && loc.longitude != null && !isNaN(loc.latitude) && !isNaN(loc.longitude)
+                  ) && (
                   <div className="space-y-4 mt-8">
                     <div className="flex items-center gap-3">
                       <div
@@ -290,6 +294,7 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                     </div>
                     <CollectionMap locations={locations} />
                   </div>
+                  )}
 
                   {/* Pelagic Juvenile section (Epic 6) — after Settlement, before Swimming */}
                   {pelagicJuvenileData && (
