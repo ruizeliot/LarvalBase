@@ -221,8 +221,12 @@ export async function GET() {
       for (const [, images] of imageRegistry.imagesBySpecies) {
         totalImages += images.length;
         for (const img of images) {
-          if (img.species) imageSpecies.add(img.species);
-          if (img.genus) imageGenera.add(img.genus);
+          if (img.speciesName) {
+            imageSpecies.add(img.speciesName);
+            // Extract genus from species name (first word)
+            const genus = img.speciesName.split(' ')[0];
+            if (genus) imageGenera.add(genus);
+          }
           if (img.family) {
             imageFamilies.add(img.family);
             // Find order for this family
