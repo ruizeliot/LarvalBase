@@ -218,13 +218,12 @@ function LeafletMap({ locations }: LeafletMapProps) {
     }
 
     // Create map instance (center/zoom will be set by fitBounds below)
-    // maxBounds limits panning to -180..180 longitude to prevent point wrapping
+    // Allow free panning/wrapping — points are replicated across the dateline
     const map = L.map(containerRef.current, {
       center: [0, 0],
       zoom: 2,
       scrollWheelZoom: false,
-      maxBounds: L.latLngBounds([-90, -180], [90, 180]),
-      maxBoundsViscosity: 1.0,
+      worldCopyJump: true,
     });
 
     // Use fitBounds to auto-zoom to show ALL markers.
@@ -241,17 +240,15 @@ function LeafletMap({ locations }: LeafletMapProps) {
 
     mapRef.current = map;
 
-    // Base layers — noWrap prevents tile wrapping beyond -180/180
+    // Base layers — tiles wrap naturally so the map is continuous
     const darkLayer = L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
       maxZoom: 19,
-      noWrap: true,
     });
 
     const satelliteLayer = L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}", {
       attribution: '&copy; <a href="https://www.esri.com/">Esri</a>',
       maxZoom: 19,
-      noWrap: true,
     });
     
     // Add satellite by default (as requested)
@@ -267,18 +264,22 @@ function LeafletMap({ locations }: LeafletMapProps) {
     // Group locations by GPS coordinates to combine traits
     const groupedLocations = groupLocationsByCoordinates(locations);
 
-    // Add markers with year-based colors
+    // Add markers with year-based colors, replicated across dateline
     groupedLocations.forEach((loc) => {
       const color = getYearColor(loc.year, minYear, maxYear);
-      const icon = createColoredIcon(color);
-      
-      const marker = L.marker([loc.latitude, loc.longitude], { icon }).addTo(map);
       const popupContent = buildPopupContent(loc);
-      
-      marker.bindPopup(popupContent, {
-        className: "dark-popup",
-        maxWidth: 300,
-      });
+
+      // Place marker at original position and at ±360° longitude
+      // so points are always visible when panning across the dateline
+      const longitudes = [loc.longitude, loc.longitude - 360, loc.longitude + 360];
+      for (const lng of longitudes) {
+        const icon = createColoredIcon(color);
+        const marker = L.marker([loc.latitude, lng], { icon }).addTo(map);
+        marker.bindPopup(popupContent, {
+          className: "dark-popup",
+          maxWidth: 300,
+        });
+      }
     });
 
     // Cleanup on unmount

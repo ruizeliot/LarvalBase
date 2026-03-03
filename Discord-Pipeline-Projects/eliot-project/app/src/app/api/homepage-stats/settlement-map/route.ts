@@ -11,6 +11,8 @@ export async function GET() {
   try {
     const data = await getOrLoadData();
 
+    // Deduplicate by GPS coordinate to reduce payload size for homepage
+    const seen = new Set<string>();
     const locations: Array<{
       latitude: number;
       longitude: number;
@@ -35,6 +37,11 @@ export async function GET() {
           loc.traitType &&
           (loc.traitType === 'settlement_age' || loc.traitType === 'settlement_size')
         ) {
+          // Deduplicate by rounded coordinates (4 decimal places)
+          const key = `${loc.latitude.toFixed(4)},${loc.longitude.toFixed(4)}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+
           locations.push({
             latitude: loc.latitude,
             longitude: loc.longitude,
