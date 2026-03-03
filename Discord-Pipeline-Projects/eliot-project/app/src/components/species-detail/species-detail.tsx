@@ -282,8 +282,8 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                         <img
                           src={getSectionIcon("Settlement-stage sampling locations")}
                           alt="Settlement-stage sampling locations icon"
-                          width={29}
-                          height={29}
+                          width={34}
+                          height={34}
                         />
                       </div>
                       <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>

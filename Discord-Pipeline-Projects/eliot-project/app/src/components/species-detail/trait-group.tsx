@@ -121,8 +121,8 @@ export function TraitGroup({
             <img
               src={getSectionIcon(title)}
               alt={`${title} icon`}
-              width={29}
-              height={29}
+              width={34}
+              height={34}
             />
           </div>
           <h2 className="text-lg font-semibold">{title}</h2>
