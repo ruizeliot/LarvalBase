@@ -318,6 +318,117 @@ function reorderSettlementColumns(rows: Array<Record<string, unknown>>): Array<R
 }
 
 
+// ==================== RAFTING EXPORT (DATABASE COLUMN ORDER) ====================
+
+/** Rafting traits. */
+const RAFTING_SECTION_TRAITS = new Set(['rafting_behavior', 'rafting_size']);
+
+/** Check if the requested traits are the rafting section. */
+function isRaftingSection(traitKeys: string[]): boolean {
+  return traitKeys.some(k => RAFTING_SECTION_TRAITS.has(k));
+}
+
+/**
+ * Rafting export column order — matches rafting_db_01_2026_final exactly.
+ */
+const RAFTING_EXPORT_COLUMNS = [
+  'ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY',
+  'RANK', 'ORIGINAL_NAME', 'FLOATSAM', 'STAGE', 'LENGTH_TYPE',
+  'RAFTING_SIZE_MEAN', 'RAFTING_SIZE_MIN', 'RAFTING_SIZE_MAX',
+  'RAFTING_SIZE_MEAN_TYPE', 'RAFTING_AGE', 'EXT_REF', 'REFERENCE', 'LINK',
+];
+
+/**
+ * Build rafting export rows directly from raw CSV rows.
+ */
+function buildRaftingSectionExport(
+  speciesIds: string[],
+  data: { species: Map<string, any>; traitsBySpecies: Map<string, TraitData[]> },
+): Array<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+
+  for (const sid of speciesIds) {
+    const traits = data.traitsBySpecies.get(sid) || [];
+    const sectionTraits = traits.filter(t => RAFTING_SECTION_TRAITS.has(t.traitType));
+
+    // Track processed raw rows to deduplicate
+    const processedRows = new Set<string>();
+
+    for (const trait of sectionTraits) {
+      const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
+      const rowKey = `${rawFields.VALID_NAME}|${rawFields.REFERENCE}|${rawFields.RAFTING_SIZE_MEAN}|${rawFields.FLOATSAM}`;
+      if (processedRows.has(rowKey)) continue;
+      processedRows.add(rowKey);
+
+      const row: Record<string, unknown> = {};
+      for (const col of RAFTING_EXPORT_COLUMNS) {
+        row[col] = rawFields[col] ?? 'NA';
+      }
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+
+// ==================== PELAGIC JUVENILE EXPORT (DATABASE COLUMN ORDER) ====================
+
+/** Pelagic juvenile traits. */
+const PELAGIC_JUVENILE_SECTION_TRAITS = new Set(['pelagic_juvenile_size', 'pelagic_juvenile_duration']);
+
+/** Check if the requested traits are the pelagic juvenile section. */
+function isPelagicJuvenileSection(traitKeys: string[]): boolean {
+  return traitKeys.some(k => PELAGIC_JUVENILE_SECTION_TRAITS.has(k));
+}
+
+/**
+ * Pelagic juvenile export column order — matches pel_juv_db_01_2026_final exactly.
+ */
+const PELAGIC_JUVENILE_EXPORT_COLUMNS = [
+  'ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY',
+  'ORIGINAL_NAME', 'KEY_WORD', 'N', 'LENGTH_TYPE',
+  'PELAGIC_JUV_SIZE_MEAN', 'PELAGIC_JUV_SIZE_MIN', 'PELAGIC_JUV_SIZE_MAX',
+  'PELAGIC_JUV_SIZE_CONF', 'PELAGIC_JUV_SIZE_MEAN_TYPE', 'PELAGIC_JUV_SIZE_CONF_TYPE',
+  'PELAGIC_JUV_DURATION_MEAN', 'PELAGIC_JUV_DURATION_MIN', 'PELAGIC_JUV_DURATION_MAX',
+  'PELAGIC_JUV_DURATION_CONF', 'PELAGIC_JUV_DURATION_MEAN_TYPE', 'PELAGIC_JUV_DURATION_CONF_TYPE',
+  'REMARKS', 'EXT_REF', 'REFERENCE', 'LINK',
+];
+
+/**
+ * Build pelagic juvenile export rows directly from raw CSV rows.
+ */
+function buildPelagicJuvenileSectionExport(
+  speciesIds: string[],
+  data: { species: Map<string, any>; traitsBySpecies: Map<string, TraitData[]> },
+): Array<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+
+  for (const sid of speciesIds) {
+    const traits = data.traitsBySpecies.get(sid) || [];
+    const sectionTraits = traits.filter(t => PELAGIC_JUVENILE_SECTION_TRAITS.has(t.traitType));
+
+    // Track processed raw rows to deduplicate
+    const processedRows = new Set<string>();
+
+    for (const trait of sectionTraits) {
+      const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
+      const rowKey = `${rawFields.VALID_NAME}|${rawFields.REFERENCE}|${rawFields.PELAGIC_JUV_SIZE_MEAN}|${rawFields.KEY_WORD}`;
+      if (processedRows.has(rowKey)) continue;
+      processedRows.add(rowKey);
+
+      const row: Record<string, unknown> = {};
+      for (const col of PELAGIC_JUVENILE_EXPORT_COLUMNS) {
+        row[col] = rawFields[col] ?? 'NA';
+      }
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+
 // ==================== GENERIC SECTION EXPORT ====================
 
 /** Readable labels for trait types (used as TYPE column values). */
@@ -665,6 +776,16 @@ export async function getSectionExportData(
   // Egg section: use gold-standard format
   if (isEggSection(traitKeys)) {
     return buildEggSectionExport(targetSpeciesIds, data);
+  }
+
+  // Rafting section: use database column order
+  if (isRaftingSection(traitKeys)) {
+    return buildRaftingSectionExport(targetSpeciesIds, data);
+  }
+
+  // Pelagic juvenile section: use database column order
+  if (isPelagicJuvenileSection(traitKeys)) {
+    return buildPelagicJuvenileSectionExport(targetSpeciesIds, data);
   }
 
   // Generic section: merged long format
