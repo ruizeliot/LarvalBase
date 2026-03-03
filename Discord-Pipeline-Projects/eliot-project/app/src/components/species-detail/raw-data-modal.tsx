@@ -386,6 +386,8 @@ export const VERTICAL_DISTRIBUTION_COLUMNS: TraitColumnDef[] = [
   { key: "N_CAPTURE", label: "N Capture", description: "Number of captures", csvField: "N_CAPTURE" },
   { key: "MIN_DEPTH_CAPTURE", label: "Min Depth Capture", description: "Minimum depth of capture (m)", csvField: "MIN_DEPTH_CAPTURE" },
   { key: "MAX_DEPTH_CAPTURE", label: "Max Depth Capture", description: "Maximum depth of capture (m)", csvField: "MAX_DEPTH_CAPTURE" },
+  { key: "WEIGHTED_MEAN_DEPTH_CAPTURE", label: "Weighted Mean Depth", description: "Weighted mean depth of capture (m)", csvField: "WEIGHTED_MEAN_DEPTH_CAPTURE" },
+  { key: "WEIGHTED_SD_DEPTH_CAPTURE", label: "Weighted SD Depth", description: "Weighted SD of depth capture (m)", csvField: "WEIGHTED_SD_DEPTH_CAPTURE" },
   { key: "WEIGHTING_DETAILS", label: "Weighting Details", description: "Details of weighting method", csvField: "WEIGHTING_DETAILS" },
   { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
