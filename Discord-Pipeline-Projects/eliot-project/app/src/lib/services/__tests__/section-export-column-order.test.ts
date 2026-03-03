@@ -144,8 +144,7 @@ describe('Export column order', () => {
     const cols = Object.keys(rows![0]);
     const len = cols.length;
 
-    // Last 4 columns should be REMARKS, EXT_REF, REFERENCE, LINK in this order
-    expect(cols[len - 4]).toBe('REMARKS');
+    // Egg export uses gold-standard format: last 3 columns are EXT_REF, REFERENCE, LINK
     expect(cols[len - 3]).toBe('EXT_REF');
     expect(cols[len - 2]).toBe('REFERENCE');
     expect(cols[len - 1]).toBe('LINK');

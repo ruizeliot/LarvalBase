@@ -28,9 +28,9 @@ describe('Active Behaviors trait-specific column definitions', () => {
     expect(hasTraitSpecificColumns('in_situ_swimming_speed_rel')).toBe(true);
   });
 
-  it('should NOT have trait-specific columns for generic traits', () => {
-    expect(hasTraitSpecificColumns('settlement_age')).toBe(false);
-    expect(hasTraitSpecificColumns('egg_diameter')).toBe(false);
+  it('should have trait-specific columns for ALL trait types (per columns_per_type.txt)', () => {
+    expect(hasTraitSpecificColumns('settlement_age')).toBe(true);
+    expect(hasTraitSpecificColumns('egg_diameter')).toBe(true);
   });
 
   // ==================== VERTICAL DISTRIBUTION ====================
