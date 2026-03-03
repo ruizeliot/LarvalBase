@@ -263,7 +263,7 @@ function QualitativeCard({ data }: { data: RaftingData }) {
           {/* Show summary text only when no barplot data */}
           {!(data.flotsamFrequencies && data.flotsamFrequencies.length > 0) && (
             <div className="text-sm">
-              {data.flotsamValues.length > 0 ? data.flotsamValues.join(', ') : 'None'}
+              {data.flotsamValues.length > 0 ? data.flotsamValues.join(', ') : 'NA'}
             </div>
           )}
           {/* Frequency barplots for flotsam */}
@@ -296,7 +296,7 @@ function QualitativeCard({ data }: { data: RaftingData }) {
           {/* Show summary text only when no barplot data */}
           {!(data.stageFrequencies && data.stageFrequencies.length > 0) && (
             <div className="text-sm">
-              {data.stageValues.length > 0 ? data.stageValues.join(', ') : 'None'}
+              {data.stageValues.length > 0 ? data.stageValues.join(', ') : 'NA'}
             </div>
           )}
           {/* Frequency barplots for stage */}

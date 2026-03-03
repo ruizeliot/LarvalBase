@@ -121,11 +121,11 @@ describe('US-7.1: Rafting qualitative panel', () => {
     expect(screen.getByText('J, J | A')).toBeInTheDocument();
   });
 
-  it('should show "None" when no flotsam values exist', () => {
+  it('should show "NA" when no flotsam or stage values exist for current species', () => {
     render(<RaftingPanel data={unknownSpeciesData} />);
-    // Two "None" labels — one for flotsam, one for stage
-    const noneElements = screen.getAllByText('None');
-    expect(noneElements.length).toBeGreaterThanOrEqual(2);
+    // Two "NA" labels — one for flotsam, one for stage
+    const naElements = screen.getAllByText('NA');
+    expect(naElements.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should list known rafters in genus in italic', () => {
