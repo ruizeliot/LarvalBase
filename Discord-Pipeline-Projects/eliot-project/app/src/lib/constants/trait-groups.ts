@@ -23,6 +23,9 @@ export const TRAIT_GROUPS: TraitGroup[] = [
       "yolk_diameter",
       "oil_globule_size",
       "incubation_duration",
+      "egg_position",
+      "egg_shape",
+      "egg_oil_globules",
     ],
   },
   {
@@ -68,6 +71,8 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     name: "Vertical Position",
     traits: [
       "vertical_distribution",
+      "vertical_day",
+      "vertical_night",
     ],
   },
   {
@@ -84,6 +89,7 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     traits: [
       "pelagic_juvenile_size",
       "pelagic_juvenile_duration",
+      "pelagic_juvenile_behavior",
     ],
   },
   {
@@ -91,6 +97,7 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     traits: [
       "rafting_behavior",
       "rafting_size",
+      "rafting_age",
     ],
   },
   {
@@ -124,6 +131,13 @@ export function formatTraitName(trait: string): string {
   if (trait === 'in_situ_swimming_speed_rel') return 'In Situ Swimming Speed (Relative)';
   if (trait === 'egg_diameter') return 'Egg Length';
   if (trait === 'egg_width') return 'Egg Width';
+  if (trait === 'egg_position') return 'Egg Position';
+  if (trait === 'egg_shape') return 'Egg Shape';
+  if (trait === 'egg_oil_globules') return 'Oil Globules Number';
+  if (trait === 'vertical_day') return 'Day';
+  if (trait === 'vertical_night') return 'Night';
+  if (trait === 'rafting_age') return 'Rafting Age';
+  if (trait === 'pelagic_juvenile_behavior') return 'Pelagic Juvenile Behavior';
   return trait
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

@@ -341,6 +341,19 @@ function extractTraitsFromRows(
           addTrait(traits, 'egg_width', eggWMean, 'mm', source, doi, eggWMeta);
         }
       }
+      // Egg qualitative filter flags
+      const eggLoc = String(r(row).EGG_LOCATION ?? '').trim();
+      if (eggLoc && eggLoc !== 'NA') {
+        traits.push({ traitType: 'egg_position', value: 1, unit: '', source, doi, metadata });
+      }
+      const eggShape = String(r(row).EGG_SHAPE ?? '').trim();
+      if (eggShape && eggShape !== 'NA') {
+        traits.push({ traitType: 'egg_shape', value: 1, unit: '', source, doi, metadata });
+      }
+      const nbOil = String(r(row).NB_OIL_GLOBULE ?? '').trim();
+      if (nbOil && nbOil !== 'NA') {
+        traits.push({ traitType: 'egg_oil_globules', value: 1, unit: '', source, doi, metadata });
+      }
     }
     // Hatching Size Database
     else if (filename.includes('hatching_size')) {
@@ -422,6 +435,13 @@ function extractTraitsFromRows(
       addTrait(traits, 'vertical_distribution', r(row).WEIGHTED_MEAN_DEPTH_CAPTURE, 'm', source, doi, vertMeta);
       addTrait(traits, 'vertical_distribution_min', r(row).MIN_DEPTH_CAPTURE, 'm', source, doi, metadata);
       addTrait(traits, 'vertical_distribution_max', r(row).MAX_DEPTH_CAPTURE, 'm', source, doi, metadata);
+      // Day/Night filter flags from PERIOD column
+      const period = String(r(row).PERIOD ?? '').trim().toLowerCase();
+      if (period === 'day') {
+        traits.push({ traitType: 'vertical_day', value: 1, unit: '', source, doi, metadata });
+      } else if (period === 'night') {
+        traits.push({ traitType: 'vertical_night', value: 1, unit: '', source, doi, metadata });
+      }
     }
     // Rafting Database
     else if (filename.includes('rafting')) {
@@ -433,6 +453,11 @@ function extractTraitsFromRows(
       if (r(row).FLOATSAM) {
         traits.push({ traitType: 'rafting_behavior', value: 1, unit: 'observed', source, doi, metadata });
       }
+      // Rafting age filter flag
+      const raftAge = String(r(row).RAFTING_AGE ?? '').trim();
+      if (raftAge && raftAge !== 'NA') {
+        traits.push({ traitType: 'rafting_age', value: 1, unit: '', source, doi, metadata });
+      }
     }
     // Pelagic Juvenile Database
     else if (filename.includes('pelagic_juvenile')) {
@@ -443,6 +468,11 @@ function extractTraitsFromRows(
       // If no numeric data, still store a qualitative row for export (KEY_WORD, REFERENCE, etc.)
       if (extractNumeric(r(row).PELAGIC_JUV_SIZE_MEAN) === null && extractNumeric(r(row).PELAGIC_JUV_DURATION_MEAN) === null) {
         traits.push({ traitType: 'pelagic_juvenile_size', value: null, unit: 'mm', source, doi, metadata });
+      }
+      // Pelagic juvenile behavior filter flag (from KEY_WORD column)
+      const pjKeyword = String(r(row).KEY_WORD ?? '').trim();
+      if (pjKeyword && pjKeyword !== 'NA') {
+        traits.push({ traitType: 'pelagic_juvenile_behavior', value: 1, unit: '', source, doi, metadata });
       }
     }
     // Larval Growth Database
