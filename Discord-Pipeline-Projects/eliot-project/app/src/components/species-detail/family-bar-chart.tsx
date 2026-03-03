@@ -166,7 +166,8 @@ export function FamilyBarChart({
           <YAxis
             type="category"
             dataKey="displayName"
-            tickLine={false}
+            tickLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+            tickSize={6}
             axisLine={false}
             width={150}
             interval={0}
