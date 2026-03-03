@@ -259,6 +259,70 @@ function buildEggSectionExport(
 }
 
 
+// ==================== SETTLEMENT EXPORT (DATABASE COLUMN ORDER) ====================
+
+/** Settlement traits. */
+const SETTLEMENT_SECTION_TRAITS = new Set([
+  'settlement_age', 'settlement_size',
+]);
+
+/** Check if the requested traits are the settlement section. */
+function isSettlementSection(traitKeys: string[]): boolean {
+  return traitKeys.some(k => SETTLEMENT_SECTION_TRAITS.has(k));
+}
+
+/**
+ * Settlement export column order — matches database column order.
+ * Columns that exist only in one database (OTOLITH=age, MAX_SIZE_PELAGIC_JUV/LENGTH_TYPE=size)
+ * are included for the union; missing values get 'NA'.
+ */
+const SETTLEMENT_EXPORT_COLUMNS = [
+  'ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY', 'ORIGINAL_NAME',
+  'SAMPLING_DATES', 'START_DATE', 'END_DATE', 'ORIGIN', 'LATITUDE', 'LONGITUDE',
+  'ARTICLE_GPS_COORD', 'APPROX_GPS', 'MARINE_ECOREGION', 'LOCATION', 'COUNTRY',
+  'GEAR', 'OTOLITH', 'MAX_SIZE_PELAGIC_JUV', 'N', 'TYPE',
+  'MEAN', 'MIN', 'MAX', 'CONF', 'MEAN_TYPE', 'CONF_TYPE', 'UNIT', 'LENGTH_TYPE',
+  'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_MEAN_TYPE',
+  'EXT_REF', 'REFERENCE', 'LINK',
+];
+
+/**
+ * Reorder settlement rows to match database column order.
+ * Uses SETTLEMENT_EXPORT_COLUMNS as the canonical order, then appends any extra columns.
+ */
+function reorderSettlementColumns(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
+  if (rows.length === 0) return rows;
+
+  const allCols = new Set<string>();
+  for (const row of rows) {
+    for (const key of Object.keys(row)) {
+      allCols.add(key);
+    }
+  }
+
+  const orderedCols: string[] = [];
+  const added = new Set<string>();
+  for (const col of SETTLEMENT_EXPORT_COLUMNS) {
+    if (allCols.has(col)) {
+      orderedCols.push(col);
+      added.add(col);
+    }
+  }
+  // Append any remaining columns not in the defined order
+  for (const col of allCols) {
+    if (!added.has(col)) orderedCols.push(col);
+  }
+
+  return rows.map(row => {
+    const reordered: Record<string, unknown> = {};
+    for (const col of orderedCols) {
+      reordered[col] = row[col] ?? 'NA';
+    }
+    return reordered;
+  });
+}
+
+
 // ==================== GENERIC SECTION EXPORT ====================
 
 /** Readable labels for trait types (used as TYPE column values). */
@@ -620,5 +684,12 @@ export async function getSectionExportData(
     }
   }
 
-  return unionFillRows(rows);
+  const result = unionFillRows(rows);
+
+  // Settlement section: reorder columns to match database layout
+  if (isSettlementSection(traitKeys)) {
+    return reorderSettlementColumns(result);
+  }
+
+  return result;
 }
