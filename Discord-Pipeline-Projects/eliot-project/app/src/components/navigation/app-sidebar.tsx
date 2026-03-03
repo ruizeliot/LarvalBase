@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -76,6 +76,8 @@ function buildTaxonomyFromSpecies(
 
 interface AppSidebarProps {
   onSelectSpecies?: (species: { id: string; scientificName: string }) => void;
+  /** Notify parent when trait filters change the set of visible species names. null = no filter active. */
+  onFilteredSpeciesChange?: (names: Set<string> | null) => void;
 }
 
 /**
@@ -88,7 +90,7 @@ interface AppSidebarProps {
  * - SpeciesSearch receives ALL species (filters internally via cmdk)
  * - Trait filter uses OR logic: species with ANY selected trait type shown
  */
-export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
+export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange }: AppSidebarProps) {
   // Fetch species and taxonomy data
   const {
     species,
@@ -123,6 +125,16 @@ export function AppSidebar({ onSelectSpecies }: AppSidebarProps) {
     // Build taxonomy from filtered species
     return buildTaxonomyFromSpecies(filteredSpecies);
   }, [taxonomy, filteredSpecies, selectedTraits, debouncedSearch]);
+
+  // Notify parent when trait filter changes the visible species set
+  useEffect(() => {
+    if (!onFilteredSpeciesChange) return;
+    if (selectedTraits.size === 0) {
+      onFilteredSpeciesChange(null);
+    } else {
+      onFilteredSpeciesChange(new Set(filteredSpecies.map((sp) => sp.scientificName)));
+    }
+  }, [filteredSpecies, selectedTraits, onFilteredSpeciesChange]);
 
   // Handlers
   const handleTraitToggle = useCallback((trait: string) => {

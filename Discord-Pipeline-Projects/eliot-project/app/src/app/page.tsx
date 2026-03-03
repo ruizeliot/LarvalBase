@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, lazy, Suspense } from "react";
+import { useState, useCallback, lazy, Suspense } from "react";
 import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { SpeciesDetail } from "@/components/species-detail/species-detail";
@@ -40,7 +40,12 @@ function HomepageSkeleton() {
 export default function Home() {
   const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(null);
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
+  const [filteredSpeciesNames, setFilteredSpeciesNames] = useState<Set<string> | null>(null);
   const { barplotStats, imageStats, publicationYears, familyPhotos } = useHomepageStats();
+
+  const handleFilteredSpeciesChange = useCallback((names: Set<string> | null) => {
+    setFilteredSpeciesNames(names);
+  }, []);
 
   // Selecting a species from the gallery
   const handleGallerySpeciesSelect = (name: string) => {
@@ -50,7 +55,7 @@ export default function Home() {
   };
 
   return (
-    <MainLayout sidebar={<AppSidebar onSelectSpecies={setSelectedSpecies} />}>
+    <MainLayout sidebar={<AppSidebar onSelectSpecies={setSelectedSpecies} onFilteredSpeciesChange={handleFilteredSpeciesChange} />}>
       {selectedSpecies ? (
         <SpeciesDetail speciesId={selectedSpecies.id} />
       ) : selectedFamily ? (
@@ -59,6 +64,7 @@ export default function Home() {
             family={selectedFamily}
             onBack={() => setSelectedFamily(null)}
             onSelectSpecies={handleGallerySpeciesSelect}
+            filteredSpeciesNames={filteredSpeciesNames}
           />
         </Suspense>
       ) : (

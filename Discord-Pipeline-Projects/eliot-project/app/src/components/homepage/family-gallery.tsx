@@ -34,6 +34,8 @@ interface FamilyGalleryProps {
   family: string;
   onBack: () => void;
   onSelectSpecies?: (speciesName: string) => void;
+  /** When not null, only show species in this set (genus/family images always visible). */
+  filteredSpeciesNames?: Set<string> | null;
 }
 
 /**
@@ -45,19 +47,37 @@ interface FamilyGalleryProps {
  * Family-level images at bottom (red #F8766D)
  * No names below pictures.
  */
-export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGalleryProps) {
+export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpeciesNames }: FamilyGalleryProps) {
   const [data, setData] = useState<GalleryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Flatten all images for lightbox navigation + compute index map
+  // Filter species subsections when sidebar trait filters are active
+  const filteredData = useMemo((): GalleryData | null => {
+    if (!data) return null;
+    // No filter active → show everything
+    if (!filteredSpeciesNames) return data;
+    // Filter species subsections; keep genus/family images always
+    const genusSections = data.genusSections
+      .map((genus) => ({
+        ...genus,
+        speciesSubsections: genus.speciesSubsections.filter(
+          (sp) => filteredSpeciesNames.has(sp.speciesName)
+        ),
+      }))
+      // Keep genus section if it has genus-level images OR remaining species
+      .filter((genus) => genus.genusImages.length > 0 || genus.speciesSubsections.length > 0);
+    return { ...data, genusSections };
+  }, [data, filteredSpeciesNames]);
+
+  // Flatten all images for lightbox navigation + compute index map (uses filtered data)
   const { allImages, indexMap } = useMemo(() => {
     const all: GalleryImage[] = [];
     // indexMap: key → startIndex in allImages
     const map = new Map<string, number>();
 
-    if (data) {
-      for (const genus of data.genusSections) {
+    if (filteredData) {
+      for (const genus of filteredData.genusSections) {
         if (genus.genusImages.length > 0) {
           map.set(`genus:${genus.genusName}`, all.length);
           all.push(...genus.genusImages);
@@ -67,13 +87,13 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
           all.push(...sp.images);
         }
       }
-      if (data.familyImages.length > 0) {
+      if (filteredData.familyImages.length > 0) {
         map.set('family', all.length);
-        all.push(...data.familyImages);
+        all.push(...filteredData.familyImages);
       }
     }
     return { allImages: all, indexMap: map };
-  }, [data]);
+  }, [filteredData]);
 
   useEffect(() => {
     // Scroll to top when entering the gallery
@@ -131,7 +151,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
     );
   }
 
-  if (!data) return null;
+  if (!data || !filteredData) return null;
 
   return (
     <div data-testid="family-gallery" className="p-6 space-y-6">
@@ -156,12 +176,12 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
         {family} — Photo Gallery
       </h2>
 
-      {data.genusSections.length === 0 && data.familyImages.length === 0 && (
+      {filteredData.genusSections.length === 0 && filteredData.familyImages.length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>
       )}
 
       {/* Genus sections */}
-      {data.genusSections.map((genus) => (
+      {filteredData.genusSections.map((genus) => (
         <div key={genus.genusName} className="space-y-3 rounded-lg border border-border/50 bg-card/30 p-4">
           {/* Genus header */}
           <h3 className="text-base font-semibold italic border-b border-border pb-1 text-white">
@@ -207,7 +227,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
       ))}
 
       {/* Family-level images at bottom */}
-      {data.familyImages.length > 0 && (
+      {filteredData.familyImages.length > 0 && (
         <div className="space-y-2">
           <h3 className="text-base font-semibold border-b border-border pb-1 text-white">
             {family} — Family-level identifications
