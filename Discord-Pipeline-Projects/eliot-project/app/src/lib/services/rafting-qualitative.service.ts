@@ -388,20 +388,16 @@ export async function getRaftingData(
   );
   const familySpecies = extractSpeciesNames(familySpeciesRows, species.validName);
 
-  // Build qualitative records
-  const qualitativeRecords = buildQualitativeRecords(qualitativeRows);
+  // Build qualitative records — species-only for record counts (not genus fallback)
+  const qualitativeRecords = buildQualitativeRecords(speciesRows);
 
-  // Build records for size
-  const sizeRecords = buildSizeRecords(
-    speciesRows.length > 0 ? speciesRows : genusRows
-  );
+  // Build records for size — species-only for record counts
+  const sizeRecords = buildSizeRecords(speciesRows);
 
-  // Build qualitative records for age
-  const ageQualitativeRecords = buildAgeQualitativeRecords(
-    speciesRows.length > 0 ? speciesRows : genusRows
-  );
+  // Build qualitative records for age — species-only for record counts
+  const ageQualitativeRecords = buildAgeQualitativeRecords(speciesRows);
 
-  // Compute age frequencies for barplots
+  // Compute age frequencies for barplots (informational — can use cascade)
   const ageFrequencies = computeFrequencies(qualitativeRows, 'RAFTING_AGE');
 
   // Compute bar chart data (family-level, fall back to genus if >10 species)
