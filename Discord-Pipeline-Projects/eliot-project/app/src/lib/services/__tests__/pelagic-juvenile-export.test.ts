@@ -1,11 +1,12 @@
 /**
- * Tests for Pelagic juvenile export — now uses long format with TYPE column.
+ * Tests for Pelagic juvenile export — uses database-specific column order.
  *
- * Previously used raw database column order. Now normalized like all other sections.
+ * Export uses exact database columns (PELAGIC_JUV_SIZE_MEAN, etc.)
+ * matching pel_juv_db_01_2026_final, NOT the generic normalized TYPE/MEAN format.
  */
 import { describe, it, expect } from 'vitest';
 
-describe('Pelagic juvenile export (long format)', () => {
+describe('Pelagic juvenile export (database column format)', () => {
   it('should produce export rows for species with pelagic juvenile data', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
@@ -30,7 +31,7 @@ describe('Pelagic juvenile export (long format)', () => {
     expect(rows!.length).toBeGreaterThan(0);
   });
 
-  it('should use long format with TYPE and MEAN columns for pelagic juvenile', async () => {
+  it('should use database-specific columns for pelagic juvenile export', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
@@ -53,22 +54,20 @@ describe('Pelagic juvenile export (long format)', () => {
     expect(rows).not.toBeNull();
     const cols = Object.keys(rows![0]);
 
-    // Should have normalized TYPE and MEAN/MIN/MAX/CONF columns
-    expect(cols).toContain('TYPE');
-    expect(cols).toContain('MEAN');
-    expect(cols).toContain('MIN');
-    expect(cols).toContain('MAX');
-    expect(cols).toContain('CONF');
+    // Should have database-specific columns (not normalized TYPE/MEAN)
+    expect(cols).toContain('PELAGIC_JUV_SIZE_MEAN');
+    expect(cols).toContain('PELAGIC_JUV_SIZE_MIN');
+    expect(cols).toContain('PELAGIC_JUV_SIZE_MAX');
+    expect(cols).toContain('PELAGIC_JUV_DURATION_MEAN');
     expect(cols).toContain('ORDER');
     expect(cols).toContain('FAMILY');
 
-    // TYPE values should be pelagic juvenile labels
-    for (const row of rows!) {
-      expect(['Pelagic juvenile size', 'Pelagic juvenile duration']).toContain(row.TYPE);
-    }
+    // Should NOT have generic normalized columns
+    expect(cols).not.toContain('TYPE');
+    expect(cols).not.toContain('MEAN');
   });
 
-  it('should NOT include raw database columns like PELAGIC_JUV_SIZE_MEAN', async () => {
+  it('should have exact database column order for pelagic juvenile export', async () => {
     const { getSectionExportData } = await import('../section-export.service');
     const { getOrLoadData } = await import('@/lib/data/data-repository');
     const data = await getOrLoadData();
@@ -90,9 +89,17 @@ describe('Pelagic juvenile export (long format)', () => {
 
     expect(rows).not.toBeNull();
     const cols = Object.keys(rows![0]);
-    // Raw measurement columns should NOT be present
-    expect(cols).not.toContain('PELAGIC_JUV_SIZE_MEAN');
-    expect(cols).not.toContain('PELAGIC_JUV_DURATION_MEAN');
+
+    const expectedCols = [
+      'ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY',
+      'ORIGINAL_NAME', 'KEY_WORD', 'N', 'LENGTH_TYPE',
+      'PELAGIC_JUV_SIZE_MEAN', 'PELAGIC_JUV_SIZE_MIN', 'PELAGIC_JUV_SIZE_MAX',
+      'PELAGIC_JUV_SIZE_CONF', 'PELAGIC_JUV_SIZE_MEAN_TYPE', 'PELAGIC_JUV_SIZE_CONF_TYPE',
+      'PELAGIC_JUV_DURATION_MEAN', 'PELAGIC_JUV_DURATION_MIN', 'PELAGIC_JUV_DURATION_MAX',
+      'PELAGIC_JUV_DURATION_CONF', 'PELAGIC_JUV_DURATION_MEAN_TYPE', 'PELAGIC_JUV_DURATION_CONF_TYPE',
+      'REMARKS', 'EXT_REF', 'REFERENCE', 'LINK',
+    ];
+    expect(cols).toEqual(expectedCols);
   });
 
   it('Gadus morhua should have pelagic juvenile export data', async () => {
