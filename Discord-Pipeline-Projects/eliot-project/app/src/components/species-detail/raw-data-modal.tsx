@@ -341,7 +341,7 @@ const PELAGIC_JUVENILE_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
   { key: "PELAGIC_JUV_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of size mean", csvField: "PELAGIC_JUV_SIZE_MEAN_TYPE" },
   { key: "PELAGIC_JUV_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "PELAGIC_JUV_SIZE_CONF_TYPE" },
   { key: "LENGTH_TYPE", label: "Length Type", description: "Type of length measurement", csvField: "LENGTH_TYPE" },
-  { key: "REMARKS", label: "Remarks", description: "Additional notes", csvField: "REMARKS" },
+
 ]);
 
 /** Pelagic juvenile duration — per columns_per_type.txt */
@@ -351,7 +351,7 @@ const PELAGIC_JUVENILE_DURATION_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
 ], [
   { key: "PELAGIC_JUV_DURATION_MEAN_TYPE", label: "Mean Type", description: "Type of duration mean", csvField: "PELAGIC_JUV_DURATION_MEAN_TYPE" },
   { key: "PELAGIC_JUV_DURATION_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "PELAGIC_JUV_DURATION_CONF_TYPE" },
-  { key: "REMARKS", label: "Remarks", description: "Additional notes", csvField: "REMARKS" },
+
 ]);
 
 /** Rafters size — per columns_per_type.txt */
@@ -416,7 +416,7 @@ export const CRITICAL_SWIMMING_ABS_COLUMNS: TraitColumnDef[] = [
   { key: "UCRIT_ABS_MEAN_TYPE", label: "Ucrit Abs Mean Type", description: "Type of absolute Ucrit mean", csvField: "UCRIT_ABS_MEAN_TYPE" },
   { key: "UCRIT_ABS_RANGE_TYPE", label: "Ucrit Abs Range Type", description: "Type of absolute Ucrit range", csvField: "UCRIT_ABS_RANGE_TYPE" },
   { key: "UCRIT_ABS_CONF_TYPE", label: "Ucrit Abs Conf Type", description: "Type of absolute Ucrit confidence", csvField: "UCRIT_ABS_CONF_TYPE" },
-  { key: "REMARKS", label: "Remarks", description: "Additional notes", csvField: "REMARKS" },
+
   { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
@@ -446,7 +446,7 @@ export const CRITICAL_SWIMMING_REL_COLUMNS: TraitColumnDef[] = [
   { key: "TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "TEMPERATURE_MEAN_TYPE" },
   { key: "TEMPERATURE_CONF_TYPE", label: "Temp Conf Type", description: "Type of temperature confidence", csvField: "TEMPERATURE_CONF_TYPE" },
   { key: "UCRIT_REL_CONF_TYPE", label: "Ucrit Rel Conf Type", description: "Type of relative Ucrit confidence", csvField: "UCRIT_REL_CONF_TYPE" },
-  { key: "REMARKS", label: "Remarks", description: "Additional notes", csvField: "REMARKS" },
+
   { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
@@ -472,7 +472,7 @@ export const IN_SITU_SWIMMING_ABS_COLUMNS: TraitColumnDef[] = [
   { key: "ISS_ABS_MEAN_TYPE", label: "ISS Abs Mean Type", description: "Type of absolute ISS mean", csvField: "ISS_ABS_MEAN_TYPE" },
   { key: "ISS_ABS_RANGE_TYPE", label: "ISS Abs Range Type", description: "Type of absolute ISS range", csvField: "ISS_ABS_RANGE_TYPE" },
   { key: "ISS_ABS_CONF_TYPE", label: "ISS Abs Conf Type", description: "Type of absolute ISS confidence", csvField: "ISS_ABS_CONF_TYPE" },
-  { key: "REMARKS", label: "Remarks", description: "Additional notes", csvField: "REMARKS" },
+
   { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
@@ -504,7 +504,7 @@ export const IN_SITU_SWIMMING_REL_COLUMNS: TraitColumnDef[] = [
   { key: "ISS_REL_MEAN_TYPE", label: "ISS Rel Mean Type", description: "Type of relative ISS mean", csvField: "ISS_REL_MEAN_TYPE" },
   { key: "ISS_REL_RANGE_TYPE", label: "ISS Rel Range Type", description: "Type of relative ISS range", csvField: "ISS_REL_RANGE_TYPE" },
   { key: "ISS_REL_CONF_TYPE", label: "ISS Rel Conf Type", description: "Type of relative ISS confidence", csvField: "ISS_REL_CONF_TYPE" },
-  { key: "REMARKS", label: "Remarks", description: "Additional notes", csvField: "REMARKS" },
+
   { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
@@ -630,7 +630,6 @@ function buildDefaultExportData(
     Reference: row.source || "",
     DOI: row.doi || "",
     External_Ref: row.metadata?.externalRef || "",
-    Remarks: row.metadata?.remarks || "",
   }));
 }
 
