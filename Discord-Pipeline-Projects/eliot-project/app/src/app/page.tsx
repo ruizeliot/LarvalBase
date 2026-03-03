@@ -65,6 +65,14 @@ export default function Home() {
               LarvalBase: Global pelagic dispersal traits databases for
               early-life stages of marine fishes – Ruiz et al. (2026)
             </h1>
+            <p className="text-xs italic text-muted-foreground leading-snug mt-2">
+              Please send an email to{" "}
+              <a href="mailto:eliotruiz3@gmail.com" className="text-primary hover:underline">
+                eliotruiz3@gmail.com
+              </a>{" "}
+              if you are aware of any missing records on this website, or if one of the
+              images displayed is yours and you would like it to be removed from this website.
+            </p>
           </div>
 
           <Suspense fallback={<HomepageSkeleton />}>

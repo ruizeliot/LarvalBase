@@ -86,6 +86,16 @@ export function SpeciesHeader({
             </span>
           </div>
         )}
+
+        {/* Contact email notice */}
+        <p className="text-xs italic text-muted-foreground leading-snug mt-1">
+          Please send an email to{" "}
+          <a href="mailto:eliotruiz3@gmail.com" className="text-primary hover:underline">
+            eliotruiz3@gmail.com
+          </a>{" "}
+          if you are aware of any missing records on this website, or if one of the
+          images displayed is yours and you would like it to be removed from this website.
+        </p>
       </div>
     </div>
   );
