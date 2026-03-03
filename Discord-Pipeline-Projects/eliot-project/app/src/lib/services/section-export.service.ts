@@ -300,17 +300,12 @@ function reorderSettlementColumns(rows: Array<Record<string, unknown>>): Array<R
     }
   }
 
+  // Only include columns from the defined settlement order (drop any extras)
   const orderedCols: string[] = [];
-  const added = new Set<string>();
   for (const col of SETTLEMENT_EXPORT_COLUMNS) {
     if (allCols.has(col)) {
       orderedCols.push(col);
-      added.add(col);
     }
-  }
-  // Append any remaining columns not in the defined order
-  for (const col of allCols) {
-    if (!added.has(col)) orderedCols.push(col);
   }
 
   return rows.map(row => {
@@ -428,7 +423,7 @@ const TRAIT_ALLOWED_OPTIONAL_COLS: Record<string, Set<string>> = {
   metamorphosis_size: new Set(['N', 'LENGTH_TYPE']),
   settlement_age: new Set(['ORIGIN', 'N', 'LOCATION', 'GEAR', 'COUNTRY']),
   settlement_size: new Set(['ORIGIN', 'N', 'LENGTH_TYPE', 'LOCATION', 'GEAR', 'COUNTRY']),
-  vertical_distribution: new Set(['LOCATION', 'GEAR']),
+  vertical_distribution: new Set(['LOCATION']),
   critical_swimming_speed: new Set(['ORIGIN', 'N', 'LOCATION', 'LENGTH_TYPE', 'REMARKS']),
   critical_swimming_speed_rel: new Set(['ORIGIN', 'N', 'LOCATION', 'LENGTH_TYPE', 'REMARKS']),
   in_situ_swimming_speed: new Set(['ORIGIN', 'N', 'LOCATION', 'REMARKS']),
