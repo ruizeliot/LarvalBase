@@ -188,18 +188,24 @@ export function TraitCard({
             )}
           </div>
 
-          {/* N records link */}
-          <button
-            type="button"
-            onClick={onRecordsClick}
-            disabled={!onRecordsClick}
-            className={cn(
-              "text-primary hover:underline",
-              !onRecordsClick && "cursor-default hover:no-underline"
-            )}
-          >
-            {n} record{n !== 1 ? "s" : ""}
-          </button>
+          {/* N records link — grey and non-clickable when 0 */}
+          {n === 0 ? (
+            <span className="text-muted-foreground">
+              0 records
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={onRecordsClick}
+              disabled={!onRecordsClick}
+              className={cn(
+                "text-primary hover:underline",
+                !onRecordsClick && "cursor-default hover:no-underline"
+              )}
+            >
+              {n} record{n !== 1 ? "s" : ""}
+            </button>
+          )}
         </div>
 
         {/* Comparison values - only show if any stats provided */}
