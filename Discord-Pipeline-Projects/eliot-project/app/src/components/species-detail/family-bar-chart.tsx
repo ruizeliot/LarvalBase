@@ -44,7 +44,9 @@ function formatSpeciesNameTwoLines(name: string): string {
 
 /**
  * Custom Y-axis tick for multi-line species names.
- * Genus (first line) is italic, species epithet (second line) is normal.
+ * Both genus and species epithet are italic.
+ * Reduced spacing between genus and species lines.
+ * Shows n_sp with "sp" as subscript when present.
  */
 function CustomYAxisTick(props: {
   x?: number | string;
@@ -54,23 +56,42 @@ function CustomYAxisTick(props: {
 }) {
   const { x = 0, y = 0, payload, fontFamily } = props;
   if (!payload?.value) return null;
-  
+
   const lines = payload.value.split('\n');
   return (
     <g transform={`translate(${x},${y})`}>
-      {lines.map((line, i) => (
-        <text
-          key={i}
-          x={0}
-          y={0}
-          dy={i === 0 ? -6 : 12}
-          textAnchor="end"
-          fill="hsl(var(--foreground))"
-          style={{ fontFamily, fontSize: 11 }}
-        >
-          {i === 0 ? <tspan fontStyle="italic">{line}</tspan> : line}
-        </text>
-      ))}
+      {lines.map((line, i) => {
+        // Check for n_sp pattern and render "sp" as subscript
+        const nSpMatch = line.match(/^n_sp\s*=\s*(.+)$/);
+        if (nSpMatch) {
+          return (
+            <text
+              key={i}
+              x={0}
+              y={0}
+              dy={i === 0 ? -4 : 8}
+              textAnchor="end"
+              fill="hsl(var(--muted-foreground))"
+              style={{ fontFamily, fontSize: 13 }}
+            >
+              n<tspan baselineShift="sub" style={{ fontSize: 9 }}>sp</tspan> = {nSpMatch[1]}
+            </text>
+          );
+        }
+        return (
+          <text
+            key={i}
+            x={0}
+            y={0}
+            dy={i === 0 ? -4 : 8}
+            textAnchor="end"
+            fill="hsl(var(--foreground))"
+            style={{ fontFamily, fontStyle: 'italic', fontSize: 13 }}
+          >
+            {line}
+          </text>
+        );
+      })}
     </g>
   );
 }
