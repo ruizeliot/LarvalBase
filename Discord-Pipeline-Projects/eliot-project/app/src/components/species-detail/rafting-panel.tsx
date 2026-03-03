@@ -567,7 +567,7 @@ function NumericTraitPanel({
           </div>
         )}
 
-        {barChartData && barChartData.entries.length > 1 && currentSpeciesId && (
+        {barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={barChartData.entries}

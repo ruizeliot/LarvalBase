@@ -255,7 +255,7 @@ function computeBarChartData(
     }
   }
 
-  if (speciesMeans.size < 2) return null;
+  if (speciesMeans.size < 1) return null;
 
   const entries: BarChartSpeciesEntry[] = [];
   for (const [, { name, values }] of speciesMeans) {
