@@ -457,3 +457,60 @@ export async function getGrowthModelExportData(speciesId: string): Promise<Array
     'External references': m.extRef ?? '',
   }));
 }
+
+/**
+ * Read raw rows from a @-delimited database file, filtered by species.
+ * Returns rows with original column names from the file header.
+ */
+async function readRawDatabaseRows(
+  filename: string,
+  speciesId: string
+): Promise<{ columns: string[]; rows: Array<Record<string, string>> }> {
+  const dbPath = path.join(process.cwd(), 'database', filename);
+
+  try {
+    const content = await fs.readFile(dbPath, 'utf-8');
+    const lines = content.split('\n').filter(line => line.trim());
+    if (lines.length < 2) return { columns: [], rows: [] };
+
+    const headers = lines[0].split('@').map(h => h.replace(/^"|"$/g, '').trim());
+    const rows: Array<Record<string, string>> = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split('@').map(v => v.replace(/^"|"$/g, '').trim());
+      const row: Record<string, string> = {};
+      headers.forEach((header, idx) => {
+        row[header] = values[idx] || '';
+      });
+
+      const name = row['VALID_NAME'] || '';
+      if (name && slugify(name) === speciesId) {
+        rows.push(row);
+      }
+    }
+
+    return { columns: headers, rows };
+  } catch {
+    return { columns: [], rows: [] };
+  }
+}
+
+/**
+ * Get raw age-at-length data for preview with original database column names.
+ * Filtered for the current species only.
+ */
+export async function getRawAgeAtLengthPreview(
+  speciesId: string
+): Promise<{ columns: string[]; rows: Array<Record<string, string>> }> {
+  return readRawDatabaseRows('Larval age-length data final 06.2025.txt', speciesId);
+}
+
+/**
+ * Get growth model parameters for preview with original database column names.
+ * Filtered for the current species only.
+ */
+export async function getGrowthModelPreview(
+  speciesId: string
+): Promise<{ columns: string[]; rows: Array<Record<string, string>> }> {
+  return readRawDatabaseRows('Growth model parameters database final 06.2025.txt', speciesId);
+}

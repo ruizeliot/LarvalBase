@@ -9,6 +9,8 @@ import {
   loadGrowthModels,
   getRawGrowthExportData,
   getGrowthModelExportData,
+  getRawAgeAtLengthPreview,
+  getGrowthModelPreview,
 } from '@/lib/services/growth.service';
 import { getAxisCapsForSpecies } from '@/lib/services/axis-caps.service';
 
@@ -44,9 +46,11 @@ export async function GET(
     const axisCaps = await getAxisCapsForSpecies(speciesName, genus, family);
 
     // Export data
-    const [rawExport, modelExport] = await Promise.all([
+    const [rawExport, modelExport, ageAtLengthPreview, growthModelPreview] = await Promise.all([
       getRawGrowthExportData(id),
       getGrowthModelExportData(id),
+      getRawAgeAtLengthPreview(id),
+      getGrowthModelPreview(id),
     ]);
 
     // Fill species name in raw export rows
@@ -66,6 +70,8 @@ export async function GET(
       tempRange,
       rawExport,
       modelExport,
+      ageAtLengthPreview,
+      growthModelPreview,
     });
   } catch (error) {
     console.error('Error fetching growth data:', error);

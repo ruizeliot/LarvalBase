@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ComposedChart,
   Line,
@@ -18,7 +18,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useGrowthData } from "@/hooks/use-growth-data";
 import type { GrowthCurve, RawGrowthPoint, PointShapeType } from "@/lib/types/growth.types";
 import { parseXRange, temperatureToSpectralColorDynamic, POINT_SHAPES, REFERENCE_LINE_STYLES } from "@/lib/types/growth.types";
-import { downloadCSV } from "@/lib/export/csv-utils";
+import { CsvPreviewModal } from "./csv-preview-modal";
 
 interface SpeciesGrowthChartProps {
   speciesId: string;
@@ -551,7 +551,9 @@ export function SpeciesGrowthChart({
   speciesId,
   speciesName,
 }: SpeciesGrowthChartProps) {
-  const { curves, weightCurves, rawPoints, axisCaps, tempRange, rawExport, modelExport, isLoading, error } = useGrowthData(speciesId);
+  const { curves, weightCurves, rawPoints, axisCaps, tempRange, rawExport, modelExport, ageAtLengthPreview, growthModelPreview, isLoading, error } = useGrowthData(speciesId);
+  const [rawPreviewOpen, setRawPreviewOpen] = useState(false);
+  const [modelPreviewOpen, setModelPreviewOpen] = useState(false);
 
   // Dynamic temp range for this species
   const tempMin = tempRange?.min ?? 18;
@@ -719,23 +721,23 @@ export function SpeciesGrowthChart({
               )}
             </p>
           </div>
-          {/* Export buttons */}
+          {/* Export buttons with preview */}
           <div className="flex gap-2 flex-shrink-0">
-            {rawExport.length > 0 && (
+            {ageAtLengthPreview.rows.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadCSV(rawExport, `${speciesName.replace(/\s+/g, '_')}_age-length-data`)}
+                onClick={() => setRawPreviewOpen(true)}
               >
                 <Download className="h-4 w-4 mr-1" />
                 Age-length data
               </Button>
             )}
-            {modelExport.length > 0 && (
+            {growthModelPreview.rows.length > 0 && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadCSV(modelExport, `${speciesName.replace(/\s+/g, '_')}_growth-models`)}
+                onClick={() => setModelPreviewOpen(true)}
               >
                 <Download className="h-4 w-4 mr-1" />
                 Growth models
@@ -838,6 +840,24 @@ export function SpeciesGrowthChart({
           </div>
         </div>
       </CardContent>
+
+      {/* Preview modals for growth exports */}
+      <CsvPreviewModal
+        open={rawPreviewOpen}
+        onOpenChange={setRawPreviewOpen}
+        data={ageAtLengthPreview.rows}
+        title={`Age-at-Length Data — ${speciesName}`}
+        filename={`${speciesName.replace(/\s+/g, '_')}_age-length-data`}
+        columns={ageAtLengthPreview.columns}
+      />
+      <CsvPreviewModal
+        open={modelPreviewOpen}
+        onOpenChange={setModelPreviewOpen}
+        data={growthModelPreview.rows}
+        title={`Growth Models — ${speciesName}`}
+        filename={`${speciesName.replace(/\s+/g, '_')}_growth-models`}
+        columns={growthModelPreview.columns}
+      />
     </Card>
   );
 }
