@@ -114,15 +114,15 @@ export function TraitGroup({
         <div className="flex items-center gap-3">
           <div
             className="flex items-center justify-center rounded-full shrink-0"
-            style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+            style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
             title={title}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={getSectionIcon(title)}
               alt={`${title} icon`}
-              width={34}
-              height={34}
+              width={44}
+              height={44}
             />
           </div>
           <h2 className="text-lg font-semibold">{title}</h2>

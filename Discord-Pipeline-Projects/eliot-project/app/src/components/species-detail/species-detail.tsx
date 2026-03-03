@@ -279,15 +279,15 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                     <div className="flex items-center gap-3">
                       <div
                         className="flex items-center justify-center rounded-full shrink-0"
-                        style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                        style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
                         title="Settlement-stage sampling locations"
                       >
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={getSectionIcon("Settlement-stage sampling locations")}
                           alt="Settlement-stage sampling locations icon"
-                          width={34}
-                          height={34}
+                          width={44}
+                          height={44}
                         />
                       </div>
                       <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
@@ -303,15 +303,15 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                         <div className="flex items-center gap-3">
                           <div
                             className="flex items-center justify-center rounded-full shrink-0"
-                            style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                            style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
                             title="Pelagic Juvenile"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={getSectionIcon("Pelagic Juvenile")}
                               alt="Pelagic Juvenile icon"
-                              width={29}
-                              height={29}
+                              width={44}
+                              height={44}
                             />
                           </div>
                           <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
@@ -333,15 +333,15 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                         <div className="flex items-center gap-3">
                           <div
                             className="flex items-center justify-center rounded-full shrink-0"
-                            style={{ width: 48, height: 48, backgroundColor: "#F5F5F5" }}
+                            style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
                             title="Rafting"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={getSectionIcon("Rafting")}
                               alt="Rafting icon"
-                              width={29}
-                              height={29}
+                              width={44}
+                              height={44}
                             />
                           </div>
                           <h2 className="text-lg font-semibold">Rafting</h2>
