@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
+import { loadImageRegistry } from '@/lib/data/image-registry';
 
 /**
  * Trait display names for the barplots.
@@ -207,8 +208,48 @@ export async function GET() {
     // Sort by record count descending
     stats.sort((a, b) => b.records - a.records);
 
+    // Count colored pictures (images) at all taxonomy levels
+    let imageStats = null;
+    try {
+      const imageRegistry = await loadImageRegistry();
+      const imageSpecies = new Set<string>();
+      const imageGenera = new Set<string>();
+      const imageFamilies = new Set<string>();
+      const imageOrders = new Set<string>();
+      let totalImages = 0;
+
+      for (const [, images] of imageRegistry.imagesBySpecies) {
+        totalImages += images.length;
+        for (const img of images) {
+          if (img.species) imageSpecies.add(img.species);
+          if (img.genus) imageGenera.add(img.genus);
+          if (img.family) {
+            imageFamilies.add(img.family);
+            // Find order for this family
+            for (const sp of data.species.values()) {
+              if (sp.family === img.family) {
+                imageOrders.add(sp.order);
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      imageStats = {
+        traitName: 'Colored pictures',
+        records: totalImages,
+        species: imageSpecies.size,
+        genus: imageGenera.size,
+        family: imageFamilies.size,
+        order: imageOrders.size,
+      };
+    } catch (e) {
+      console.warn('[homepage-stats] Could not load image stats:', e);
+    }
+
     return NextResponse.json(
-      { stats, publicationYears: pubYearData },
+      { stats, publicationYears: pubYearData, imageStats },
       { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
     );
   } catch (error) {

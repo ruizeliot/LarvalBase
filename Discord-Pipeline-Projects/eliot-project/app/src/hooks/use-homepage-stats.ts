@@ -7,6 +7,7 @@ import type { FamilyPhotoData } from "@/components/homepage/photo-grid";
 
 interface HomepageStatsState {
   barplotStats: TraitBarplotStat[];
+  imageStats: TraitBarplotStat | null;
   publicationYears: PublicationDataPoint[];
   familyPhotos: FamilyPhotoData[];
   isLoading: boolean;
@@ -19,6 +20,7 @@ interface HomepageStatsState {
 export function useHomepageStats(): HomepageStatsState {
   const [state, setState] = useState<HomepageStatsState>({
     barplotStats: [],
+    imageStats: null,
     publicationYears: [],
     familyPhotos: [],
     isLoading: true,
@@ -43,6 +45,7 @@ export function useHomepageStats(): HomepageStatsState {
 
         setState({
           barplotStats: statsData.stats ?? [],
+          imageStats: statsData.imageStats ?? null,
           publicationYears: statsData.publicationYears ?? [],
           familyPhotos: familiesData.families ?? [],
           isLoading: false,

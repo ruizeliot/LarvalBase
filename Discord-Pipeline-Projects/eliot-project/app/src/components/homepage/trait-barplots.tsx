@@ -18,6 +18,7 @@ export interface TraitBarplotStat {
 
 interface TraitBarplotsProps {
   stats: TraitBarplotStat[];
+  imageStats?: TraitBarplotStat | null;
 }
 
 const SEGMENTS = [
@@ -29,38 +30,44 @@ const SEGMENTS = [
 ];
 
 /**
- * Map trait display names to their section SVG icon filenames.
+ * Map trait display names to their SVG icon paths (relative to /icons/).
+ * Most icons are in /icons/sections/, but some (Swimming speed, Vertical position, Images)
+ * are directly in /icons/.
  */
 const TRAIT_ICON_MAP: Record<string, string> = {
-  'Age-at-length data': 'Age-at-Length.svg',
-  'Egg traits': 'Egg & Incubation.svg',
-  'Incubation': 'Egg & Incubation.svg',
-  'First feeding size': 'Hatching & Pre-flexion Stage.svg',
-  'Hatching size': 'Hatching & Pre-flexion Stage.svg',
-  'First feeding age': 'Hatching & Pre-flexion Stage.svg',
-  'Flexion size': 'Flexion Stage.svg',
-  'Flexion age': 'Flexion Stage.svg',
-  'Metamorphosis size': 'Metamorphosis.svg',
-  'Metamorphosis age': 'Metamorphosis.svg',
-  'Settlement size': 'Settlement.svg',
-  'Settlement age': 'Settlement.svg',
-  'Pelagic juvenile': 'Pelagic Juvenile.svg',
-  'Rafting': 'Rafting.svg',
-  'In situ swimming': 'Swimming speed.svg',
-  'Critical swimming': 'Swimming speed.svg',
-  'Vertical position': 'Vertical position.svg',
+  'Age-at-length data': '/icons/sections/Age-at-Length.svg',
+  'Egg traits': '/icons/sections/Egg %26 Incubation.svg',
+  'Incubation': '/icons/sections/Egg %26 Incubation.svg',
+  'First feeding size': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'Hatching size': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'First feeding age': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'Flexion size': '/icons/sections/Flexion Stage.svg',
+  'Flexion age': '/icons/sections/Flexion Stage.svg',
+  'Metamorphosis size': '/icons/sections/Metamorphosis.svg',
+  'Metamorphosis age': '/icons/sections/Metamorphosis.svg',
+  'Settlement size': '/icons/sections/Settlement.svg',
+  'Settlement age': '/icons/sections/Settlement.svg',
+  'Pelagic juvenile': '/icons/sections/Pelagic Juvenile.svg',
+  'Rafting': '/icons/sections/Rafting.svg',
+  'In situ swimming': '/icons/Swimming speed.svg',
+  'Critical swimming': '/icons/Swimming speed.svg',
+  'Vertical position': '/icons/Vertical position.svg',
+  'Colored pictures': '/icons/Images.svg',
 };
 
 function formatNumber(n: number): string {
   return n.toLocaleString('en-US');
 }
 
-export function TraitBarplots({ stats }: TraitBarplotsProps) {
+export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
   if (stats.length === 0) return null;
+
+  // Combine stats with optional image stats
+  const allStats = imageStats ? [...stats, imageStats] : stats;
 
   // Find global max for scaling (across all categories individually)
   const globalMax = Math.max(
-    ...stats.flatMap((s) => SEGMENTS.map((seg) => s[seg.key]))
+    ...allStats.flatMap((s) => SEGMENTS.map((seg) => s[seg.key]))
   );
 
   return (
@@ -69,7 +76,7 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
         Taxa per trait (grouped bars)
       </h3>
 
-      {stats.map((stat) => {
+      {allStats.map((stat) => {
         const iconFile = TRAIT_ICON_MAP[stat.traitName];
         return (
         <div key={stat.traitName} className="flex items-start gap-2">
@@ -80,7 +87,7 @@ export function TraitBarplots({ stats }: TraitBarplotsProps) {
             {iconFile && (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
-                src={`/icons/sections/${encodeURIComponent(iconFile)}`}
+                src={iconFile}
                 alt=""
                 width={48}
                 height={48}

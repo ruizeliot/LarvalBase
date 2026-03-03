@@ -37,7 +37,7 @@ function HomepageSkeleton() {
 export default function Home() {
   const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(null);
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
-  const { barplotStats, publicationYears, familyPhotos } = useHomepageStats();
+  const { barplotStats, imageStats, publicationYears, familyPhotos } = useHomepageStats();
 
   // Selecting a species from the gallery
   const handleGallerySpeciesSelect = (name: string) => {
@@ -79,7 +79,7 @@ export default function Home() {
             <PublicationChart data={publicationYears} />
           </Suspense>
           <Suspense fallback={<HomepageSkeleton />}>
-            <TraitBarplots stats={barplotStats} />
+            <TraitBarplots stats={barplotStats} imageStats={imageStats} />
           </Suspense>
           <Suspense fallback={<HomepageSkeleton />}>
             <PhotoGrid
