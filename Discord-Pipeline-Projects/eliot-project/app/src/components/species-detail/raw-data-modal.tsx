@@ -170,6 +170,7 @@ const HATCHING_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
 
 /** First feeding age — per columns_per_type.txt */
 const FIRST_FEEDING_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
+  { key: "N", label: "N", description: "Sample size", csvField: "N" },
   { key: "FIRST_FEEDING_DPH_MEAN_TYPE", label: "Mean Type", description: "Type of first feeding age mean", csvField: "FIRST_FEEDING_DPH_MEAN_TYPE" },
   { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
   { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
@@ -179,6 +180,7 @@ const FIRST_FEEDING_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
 
 /** Yolk absorption age — same pattern as first feeding age */
 const YOLK_ABSORPTION_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
+  { key: "N", label: "N", description: "Sample size", csvField: "N" },
   { key: "YOLK_ABSORPTION_MEAN_TYPE", label: "Mean Type", description: "Type of yolk absorption age mean", csvField: "YOLK_ABSORPTION_MEAN_TYPE" },
   { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
   { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
@@ -188,6 +190,7 @@ const YOLK_ABSORPTION_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
 
 /** First feeding size — per columns_per_type.txt */
 const FIRST_FEEDING_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
+  { key: "N", label: "N", description: "Sample size", csvField: "N" },
   { key: "FIRST_FEEDING_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of first feeding size mean", csvField: "FIRST_FEEDING_SIZE_MEAN_TYPE" },
   { key: "FIRST_FEEDING_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "FIRST_FEEDING_SIZE_CONF_TYPE" },
   { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
@@ -198,6 +201,7 @@ const FIRST_FEEDING_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
 
 /** Yolk absorption size — per columns_per_type.txt */
 const YOLK_ABSORBED_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
+  { key: "N", label: "N", description: "Sample size", csvField: "N" },
   { key: "YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of yolk absorption size mean", csvField: "YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE" },
   { key: "YOLK_SAC_ABSORBED_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "YOLK_SAC_ABSORBED_SIZE_CONF_TYPE" },
   { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
