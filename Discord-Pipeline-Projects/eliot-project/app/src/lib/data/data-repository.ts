@@ -447,11 +447,11 @@ function extractTraitsFromRows(
       const vertMeta = metadataWithMinMaxConf(metadata, r(row), 'MIN_DEPTH_CAPTURE', 'MAX_DEPTH_CAPTURE');
       // Negate depth values (depths are positive in DB but should display as negative)
       const negateDepth = (val: unknown): string | number | null | undefined => {
-        if (val === null || val === undefined) return val;
+        if (val === null || val === undefined) return val as null | undefined;
         const numStr = String(val).trim();
-        if (numStr === '' || numStr === 'NA') return val;
+        if (numStr === '' || numStr === 'NA') return numStr;
         const num = parseFloat(numStr);
-        if (isNaN(num)) return val;
+        if (isNaN(num)) return numStr;
         return num === 0 ? 0 : -Math.abs(num);
       };
       const negatedMean = negateDepth(r(row).WEIGHTED_MEAN_DEPTH_CAPTURE);

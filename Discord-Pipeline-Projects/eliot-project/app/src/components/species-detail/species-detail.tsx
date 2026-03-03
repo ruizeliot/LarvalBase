@@ -197,7 +197,7 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
   // Check if all eggs are spherical (for egg width/diameter logic)
   const allEggsSpherical = (() => {
     if (!eggQualitativeData) return false;
-    const shapeData = (eggQualitativeData as Record<string, unknown>).EGG_SHAPE;
+    const shapeData = (eggQualitativeData as unknown as Record<string, unknown>).EGG_SHAPE;
     if (!shapeData || !Array.isArray(shapeData)) return false;
     // Check frequency data: all entries must be "Spherical" (case-insensitive)
     const entries = shapeData as Array<{ category: string; count: number }>;
