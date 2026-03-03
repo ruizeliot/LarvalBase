@@ -63,8 +63,8 @@ describe('Active Behaviors trait-specific column definitions', () => {
       expect(refCol.linkField).toBe('LINK');
     });
 
-    it('should have 18 columns total', () => {
-      expect(cols.length).toBe(18);
+    it('should have 20 columns total', () => {
+      expect(cols.length).toBe(20);
     });
   });
 
@@ -80,13 +80,13 @@ describe('Active Behaviors trait-specific column definitions', () => {
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
       'LENGTH_TYPE', 'LENGTH_MEAN',
       'UCRIT_ABS_MEAN_TYPE', 'UCRIT_ABS_RANGE_TYPE', 'UCRIT_ABS_CONF_TYPE',
-      'REMARKS', 'EXT_REF', 'REFERENCE',
+      'EXT_REF', 'REFERENCE',
     ])('should include %s column', (field) => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 24 columns total', () => {
-      expect(cols.length).toBe(24);
+    it('should have 23 columns total', () => {
+      expect(cols.length).toBe(23);
     });
   });
 
@@ -102,13 +102,13 @@ describe('Active Behaviors trait-specific column definitions', () => {
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
       'UCRIT_REL_CONF_TYPE',
-      'REMARKS', 'EXT_REF', 'REFERENCE',
+      'EXT_REF', 'REFERENCE',
     ])('should include %s column', (field) => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 26 columns total', () => {
-      expect(cols.length).toBe(26);
+    it('should have 25 columns total', () => {
+      expect(cols.length).toBe(25);
     });
   });
 
@@ -123,13 +123,13 @@ describe('Active Behaviors trait-specific column definitions', () => {
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
       'ISS_ABS_MEAN_TYPE', 'ISS_ABS_RANGE_TYPE', 'ISS_ABS_CONF_TYPE',
-      'REMARKS', 'EXT_REF', 'REFERENCE',
+      'EXT_REF', 'REFERENCE',
     ])('should include %s column', (field) => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 22 columns total', () => {
-      expect(cols.length).toBe(22);
+    it('should have 21 columns total', () => {
+      expect(cols.length).toBe(21);
     });
   });
 
@@ -145,13 +145,13 @@ describe('Active Behaviors trait-specific column definitions', () => {
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
       'ISS_REL_MEAN_TYPE', 'ISS_REL_RANGE_TYPE', 'ISS_REL_CONF_TYPE',
-      'REMARKS', 'EXT_REF', 'REFERENCE',
+      'EXT_REF', 'REFERENCE',
     ])('should include %s column', (field) => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 28 columns total', () => {
-      expect(cols.length).toBe(28);
+    it('should have 27 columns total', () => {
+      expect(cols.length).toBe(27);
     });
   });
 });
@@ -302,7 +302,6 @@ describe('Active Behaviors raw data modal rendering', () => {
     expect(screen.getByText('Temp Mean')).toBeInTheDocument();
     expect(screen.getByText('Length Type')).toBeInTheDocument();
     expect(screen.getByText('Ucrit Abs Mean Type')).toBeInTheDocument();
-    expect(screen.getByText('Remarks')).toBeInTheDocument();
     expect(screen.getByText('Main Reference')).toBeInTheDocument();
 
     // Check data values (some may appear more than once in dialog title/description)
