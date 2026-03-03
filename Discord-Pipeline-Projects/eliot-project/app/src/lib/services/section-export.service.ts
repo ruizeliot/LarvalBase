@@ -693,6 +693,10 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // 1. Taxonomy columns
   addCols(TAXONOMY_ORDER);
 
+  // 1b. ORIGIN and LOCATION right after taxonomy (before qualitative extras)
+  addCol('ORIGIN');
+  addCol('LOCATION');
+
   // 2. Qualitative extras (trait-specific columns like MET_DEFINITION, STAGE, etc.)
   const qualitativeExtras: string[] = [];
   for (const col of [...allColumns].sort()) {
@@ -720,11 +724,10 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // 8. Temperature group
   addCols(TEMPERATURE_COLS);
 
-  // 9. Remaining optional columns (ORIGIN, METHOD, GEAR, LOCATION, COUNTRY)
-  addCol('ORIGIN');
+  // 9. Remaining optional columns (METHOD, GEAR, COUNTRY)
+  // Note: ORIGIN and LOCATION already added in step 1b
   addCol('METHOD');
   addCol('GEAR');
-  addCol('LOCATION');
   addCol('COUNTRY');
 
   // 10. Tail columns always last
