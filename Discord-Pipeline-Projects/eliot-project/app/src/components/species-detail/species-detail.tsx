@@ -194,17 +194,36 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
     return null;
   }
 
+  // Check if all eggs are spherical (for egg width/diameter logic)
+  const allEggsSpherical = (() => {
+    if (!eggQualitativeData) return false;
+    const shapeData = (eggQualitativeData as Record<string, unknown>).EGG_SHAPE;
+    if (!shapeData || !Array.isArray(shapeData)) return false;
+    // Check frequency data: all entries must be "Spherical" (case-insensitive)
+    const entries = shapeData as Array<{ category: string; count: number }>;
+    if (entries.length === 0) return false;
+    return entries.every((e) => e.category.toLowerCase() === 'spherical');
+  })();
+
   // Map API traits to display groups
   // Show ALL trait categories, with "No known values" for traits without data
   const traitGroups = DISPLAY_GROUPS.map((group) => {
     const traits: TraitData[] = [];
 
     for (const traitKey of group.traits) {
+      // If all eggs are spherical, hide egg_width and rename egg_diameter to "Egg Diameter"
+      if (allEggsSpherical && traitKey === 'egg_width') continue;
+
       const stats = data.traits[traitKey];
+      let displayName = formatTraitName(traitKey);
+      if (allEggsSpherical && traitKey === 'egg_diameter') {
+        displayName = 'Egg Diameter';
+      }
+
       // Always include the trait - TraitCard will show "No known values" if no data
       traits.push({
         traitKey,
-        name: formatTraitName(traitKey),
+        name: displayName,
         stats: {
           mean: stats?.mean ?? null,
           sd: stats?.sd ?? null,
