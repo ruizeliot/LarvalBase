@@ -283,12 +283,12 @@ describe('US-6.2: Barplot for pelagic juvenile size', () => {
     expect(screen.getByText(/no pelagic juvenile size data available/i)).toBeInTheDocument();
   });
 
-  it('should show detail table with correct SIZE columns when records link clicked', () => {
+  it('should show detail table with correct SIZE columns including Unit when records link clicked', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
     const recordsLink = container.querySelector('[data-testid="records-link"]');
     fireEvent.click(recordsLink!);
 
-    // Check SIZE-specific columns: Name, Mean, Min, Max, CI, Mean type, CI type, Ext Ref, Main reference
+    // Check SIZE-specific columns: Name, Mean, Min, Max, CI, Mean type, CI type, Unit, Ext Ref, Main reference
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Mean')).toBeInTheDocument();
     expect(screen.getByText('Min')).toBeInTheDocument();
@@ -296,6 +296,7 @@ describe('US-6.2: Barplot for pelagic juvenile size', () => {
     expect(screen.getByText('Confidence interval')).toBeInTheDocument();
     expect(screen.getByText('Mean type')).toBeInTheDocument();
     expect(screen.getByText('Confidence interval type')).toBeInTheDocument();
+    expect(screen.getByText('Unit')).toBeInTheDocument();
     expect(screen.getByText('External references')).toBeInTheDocument();
     expect(screen.getByText('Main reference')).toBeInTheDocument();
     // Remarks column should NOT be present
@@ -451,15 +452,14 @@ describe('US-6.3: Barplot for pelagic juvenile duration', () => {
     expect(durationLink).toBeTruthy();
   });
 
-  it('should show detail table with correct DURATION columns', () => {
+  it('should show detail table with correct DURATION columns including Unit', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
     // Click the duration records link
     const recordsLinks = container.querySelectorAll('[data-testid="records-link"]');
     const durationLink = Array.from(recordsLinks).find(el => el.textContent?.includes('4 records'));
     fireEvent.click(durationLink!);
 
-    // Check DURATION columns: Name, Mean, Min, Max, CI, Mean type, CI type, Ext Ref, Main reference
-    // "Mean" appears as both header and cell value, so check header count
+    // Check DURATION columns: Name, Mean, Min, Max, CI, Mean type, CI type, Unit, Ext Ref, Main reference
     const headers = document.querySelectorAll('[role="dialog"] th');
     const headerTexts = Array.from(headers).map(h => h.textContent);
     expect(headerTexts).toContain('Name');
@@ -469,6 +469,7 @@ describe('US-6.3: Barplot for pelagic juvenile duration', () => {
     expect(headerTexts).toContain('Confidence interval');
     expect(headerTexts).toContain('Mean type');
     expect(headerTexts).toContain('Confidence interval type');
+    expect(headerTexts).toContain('Unit');
     expect(headerTexts).toContain('External references');
     expect(headerTexts).toContain('Main reference');
     // Remarks column should NOT be present

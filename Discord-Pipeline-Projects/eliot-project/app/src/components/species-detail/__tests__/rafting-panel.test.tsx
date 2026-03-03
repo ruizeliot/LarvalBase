@@ -383,7 +383,7 @@ describe('US-7.3: Barplots for rafting size and age', () => {
     expect(screen.getByText(/no rafting size data available/i)).toBeInTheDocument();
   });
 
-  it('should show detail table with correct SIZE columns including Length type', () => {
+  it('should show detail table with correct SIZE columns including Length type and Unit', () => {
     const { container } = render(<RaftingPanel data={dataWithSize} />);
     const recordsLink = container.querySelector('[data-testid="records-link"]');
     fireEvent.click(recordsLink!);
@@ -394,6 +394,7 @@ describe('US-7.3: Barplots for rafting size and age', () => {
     expect(screen.getByText('Max')).toBeInTheDocument();
     expect(screen.getByText('Mean type')).toBeInTheDocument();
     expect(screen.getByText('Length type')).toBeInTheDocument();
+    expect(screen.getByText('Unit')).toBeInTheDocument();
     expect(screen.getByText('External references')).toBeInTheDocument();
     expect(screen.getByText('Main reference')).toBeInTheDocument();
   });

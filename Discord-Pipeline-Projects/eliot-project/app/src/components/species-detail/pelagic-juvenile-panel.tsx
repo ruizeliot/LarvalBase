@@ -339,6 +339,7 @@ function RecordsDialog({
                   <TableHead className="text-xs">Confidence interval</TableHead>
                   <TableHead className="text-xs">Mean type</TableHead>
                   <TableHead className="text-xs">Confidence interval type</TableHead>
+                  <TableHead className="text-xs">Unit</TableHead>
                   <TableHead className="text-xs">External references</TableHead>
                   <TableHead className="text-xs">Main reference</TableHead>
                 </TableRow>
@@ -355,6 +356,7 @@ function RecordsDialog({
                       {traitType === 'size' ? (r.lengthType || '-') : (r.meanType || '-')}
                     </TableCell>
                     <TableCell className="text-xs">{r.confType || '-'}</TableCell>
+                    <TableCell className="text-xs">{unit}</TableCell>
                     <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
                     <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
                       {r.link ? (
