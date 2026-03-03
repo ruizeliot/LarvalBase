@@ -210,6 +210,7 @@ function QualitativeRecordsDialog({
 function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
   const [modalOpen, setModalOpen] = useState(false);
   const isKnown = data.status === 'Known';
+  const totalRecords = data.qualitativeRecords.length + data.sizeRecords.length + data.durationRecords.length;
 
   return (
     <Card className="bg-card">
@@ -221,19 +222,23 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
         {/* Status */}
         <div className="border-b pb-2">
           <div className="text-xs text-muted-foreground mb-1">Pelagic juvenile</div>
-          <div className={`text-sm font-semibold ${isKnown ? 'text-green-500' : 'text-red-500'}`}>
-            {data.status}
+          <div className="flex items-center gap-2">
+            <span className={`text-sm font-semibold ${isKnown ? 'text-green-500' : 'text-red-500'}`}>
+              {data.status}
+            </span>
+            {totalRecords > 0 ? (
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="text-primary hover:underline text-sm"
+                data-testid="qualitative-records-link"
+              >
+                {totalRecords} record{totalRecords !== 1 ? 's' : ''}
+              </button>
+            ) : (
+              <span className="text-muted-foreground text-sm">0 records</span>
+            )}
           </div>
-          {data.qualitativeRecords.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-primary hover:underline text-sm mt-1"
-              data-testid="qualitative-records-link"
-            >
-              {data.qualitativeRecords.length} record{data.qualitativeRecords.length !== 1 ? 's' : ''}
-            </button>
-          )}
         </div>
 
         {/* Keywords */}
