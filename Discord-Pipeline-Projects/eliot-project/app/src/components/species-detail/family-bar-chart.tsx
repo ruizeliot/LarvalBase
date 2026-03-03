@@ -153,8 +153,9 @@ export function FamilyBarChart({
           <XAxis
             type="number"
             domain={[0, 'dataMax']}
-            tickLine={false}
-            axisLine={false}
+            tickLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
+            tickSize={6}
+            axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
             tick={{
               fontFamily,
               fontSize: 10,
