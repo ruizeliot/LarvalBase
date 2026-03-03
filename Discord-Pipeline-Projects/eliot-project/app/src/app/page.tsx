@@ -20,6 +20,9 @@ const PhotoGrid = lazy(() =>
 const FamilyGallery = lazy(() =>
   import("@/components/homepage/family-gallery").then((m) => ({ default: m.FamilyGallery }))
 );
+const HomepageSettlementMap = lazy(() =>
+  import("@/components/homepage/settlement-map").then((m) => ({ default: m.HomepageSettlementMap }))
+);
 
 interface SelectedSpecies {
   id: string;
@@ -80,6 +83,9 @@ export default function Home() {
           </Suspense>
           <Suspense fallback={<HomepageSkeleton />}>
             <TraitBarplots stats={barplotStats} imageStats={imageStats} />
+          </Suspense>
+          <Suspense fallback={<HomepageSkeleton />}>
+            <HomepageSettlementMap />
           </Suspense>
           <Suspense fallback={<HomepageSkeleton />}>
             <PhotoGrid
