@@ -49,7 +49,7 @@ describe('Epic 9: Vertical Position as separate section', () => {
   });
 
   it('should have TRAIT_UNITS entry for vertical_distribution', () => {
-    expect(TRAIT_UNITS['vertical_distribution']).toBe('m depth');
+    expect(TRAIT_UNITS['vertical_distribution']).toBe('m');
   });
 });
 

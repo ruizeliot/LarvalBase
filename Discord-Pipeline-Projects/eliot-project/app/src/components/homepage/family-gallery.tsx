@@ -58,7 +58,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
     // No filter active → show everything
     if (!filteredSpeciesNames) return data;
     // Filter species subsections; keep genus/family images always
-    const genusSections = data.genusSections
+    const genusSections = (data.genusSections ?? [])
       .map((genus) => ({
         ...genus,
         speciesSubsections: genus.speciesSubsections.filter(
@@ -77,7 +77,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
     const map = new Map<string, number>();
 
     if (filteredData) {
-      for (const genus of filteredData.genusSections) {
+      for (const genus of (filteredData.genusSections ?? [])) {
         if (genus.genusImages.length > 0) {
           map.set(`genus:${genus.genusName}`, all.length);
           all.push(...genus.genusImages);
@@ -87,7 +87,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
           all.push(...sp.images);
         }
       }
-      if (filteredData.familyImages.length > 0) {
+      if ((filteredData.familyImages ?? []).length > 0) {
         map.set('family', all.length);
         all.push(...filteredData.familyImages);
       }
@@ -176,12 +176,12 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         {family} — Photo Gallery
       </h2>
 
-      {filteredData.genusSections.length === 0 && filteredData.familyImages.length === 0 && (
+      {(filteredData.genusSections ?? []).length === 0 && (filteredData.familyImages ?? []).length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>
       )}
 
       {/* Genus sections */}
-      {filteredData.genusSections.map((genus) => (
+      {(filteredData.genusSections ?? []).map((genus) => (
         <div key={genus.genusName} className="space-y-3 rounded-lg border border-border/50 bg-card/30 p-4">
           {/* Genus header */}
           <h3 className="text-base font-semibold italic border-b border-border pb-1 text-white">
@@ -227,13 +227,13 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
       ))}
 
       {/* Family-level images at bottom */}
-      {filteredData.familyImages.length > 0 && (
+      {(filteredData.familyImages ?? []).length > 0 && (
         <div className="space-y-2">
           <h3 className="text-base font-semibold border-b border-border pb-1 text-white">
             {family} — Family-level identifications
           </h3>
           <ImageGrid
-            images={data.familyImages}
+            images={filteredData.familyImages}
             startIndex={indexMap.get('family') ?? 0}
             onClickImage={setLightboxIndex}
           />
