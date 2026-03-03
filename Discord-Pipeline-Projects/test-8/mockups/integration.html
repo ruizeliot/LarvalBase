@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodDef ↔ PodGab Integration</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;perspective:1200px;overflow-x:hidden}
+.scene{width:100vw;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:1200px;background:rgba(15,20,35,0.92);border:1px solid rgba(100,140,255,0.15);border-radius:18px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(60,100,255,0.08),0 30px 80px rgba(0,0,0,0.5);transform:rotateX(2deg) rotateY(-1deg);transition:transform 0.6s;overflow:hidden}
+.panel:hover{transform:rotateX(0) rotateY(0)}
+.hdr{padding:20px 28px 16px;border-bottom:1px solid rgba(100,140,255,0.08);display:flex;align-items:center;gap:14px}
+.hdr h1{font-size:18px;font-weight:600;color:#e2e8f0}
+.hdr h1 span{color:#648cff}
+.badge{background:rgba(100,140,255,0.12);color:#648cff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.tabs{display:flex;padding:0 28px;gap:0;margin-top:8px}
+.tab{padding:10px 22px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#6b7a90;transition:all 0.25s;user-select:none}
+.tab:hover{color:#a0b4d0}
+.tab.active{color:#648cff;border-bottom-color:#648cff}
+.content{padding:24px 28px}
+.view{display:none;animation:fadeIn 0.3s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Split view */
+.split{display:grid;grid-template-columns:380px 1fr;gap:0;min-height:500px;border:1px solid rgba(100,140,255,0.08);border-radius:14px;overflow:hidden}
+
+/* PodGab side */
+.podgab-side{background:rgba(20,28,50,0.4);padding:20px;border-right:1px solid rgba(100,140,255,0.08);display:flex;flex-direction:column}
+.podgab-side h3{font-size:14px;color:#a855f7;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.chat-area{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.chat-msg{max-width:90%;padding:10px 14px;border-radius:12px;font-size:12px;line-height:1.5;animation:slideUp 0.3s ease}
+@keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.chat-msg.user{background:rgba(100,140,255,0.12);color:#c8d6e5;align-self:flex-end;border-bottom-right-radius:4px}
+.chat-msg.ai{background:rgba(168,85,247,0.1);color:#c8d6e5;align-self:flex-start;border-bottom-left-radius:4px}
+.chat-msg .cmd{color:#648cff;font-family:monospace;font-weight:500}
+.chat-msg .result{color:#22c55e;font-size:11px;margin-top:4px;display:block}
+.voice-input{display:flex;gap:8px;align-items:center}
+.voice-input input{flex:1;padding:10px 14px;background:rgba(10,14,23,0.6);border:1px solid rgba(100,140,255,0.12);border-radius:10px;color:#c8d6e5;font-size:12px;outline:none}
+.voice-input input:focus{border-color:#648cff}
+.mic-btn{width:40px;height:40px;border-radius:50%;background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);color:#a855f7;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s}
+.mic-btn:hover{background:rgba(168,85,247,0.25)}
+.mic-btn.recording{background:rgba(239,68,68,0.2);border-color:rgba(239,68,68,0.4);animation:micPulse 1s infinite}
+@keyframes micPulse{0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.3)}50%{box-shadow:0 0 0 10px rgba(239,68,68,0)}}
+
+/* PodDef side */
+.poddef-side{background:rgba(10,14,23,0.6);padding:20px;position:relative}
+.poddef-side h3{font-size:14px;color:#22c55e;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.mini-graph{position:relative;width:100%;height:360px}
+.mg-node{position:absolute;padding:8px 14px;border-radius:8px;font-size:11px;font-weight:500;border:1px solid;transition:all 0.5s;cursor:pointer}
+.mg-node.existing{background:rgba(100,140,255,0.08);border-color:rgba(100,140,255,0.2);color:#648cff}
+.mg-node.new{background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#22c55e;animation:nodeAppear 0.5s ease}
+@keyframes nodeAppear{from{opacity:0;transform:scale(0.5)}to{opacity:1;transform:scale(1)}}
+.mg-node.highlight{box-shadow:0 0 15px rgba(34,197,94,0.3)}
+.mg-link{position:absolute;height:2px;background:rgba(100,140,255,0.15);transform-origin:left center}
+.mg-link.new{background:rgba(34,197,94,0.3);animation:linkDraw 0.5s ease}
+@keyframes linkDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* Command log */
+.cmd-log{max-height:300px;overflow-y:auto}
+.cmd-entry{display:flex;align-items:flex-start;gap:10px;padding:8px 12px;border-radius:8px;margin-bottom:4px;font-size:12px}
+.cmd-entry.executed{background:rgba(34,197,94,0.04)}
+.cmd-entry.failed{background:rgba(239,68,68,0.04)}
+.cmd-entry.clarify{background:rgba(251,191,36,0.04)}
+.cmd-icon{font-size:14px;flex-shrink:0}
+.cmd-voice{color:#a855f7;font-style:italic}
+.cmd-action{color:#c8d6e5;margin-top:2px;font-family:monospace;font-size:11px}
+.cmd-status{font-size:10px;padding:2px 8px;border-radius:10px;margin-left:auto;flex-shrink:0}
+.cmd-status.ok{background:rgba(34,197,94,0.1);color:#22c55e}
+.cmd-status.fail{background:rgba(239,68,68,0.1);color:#ef4444}
+.cmd-status.ask{background:rgba(251,191,36,0.1);color:#fbbf24}
+.cmd-time{color:#4a5568;font-size:10px;min-width:50px}
+
+/* Event bus */
+.event-bus{margin-top:20px;padding:16px;background:rgba(20,28,50,0.4);border:1px solid rgba(100,140,255,0.08);border-radius:12px}
+.event-bus h4{font-size:12px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.event-flow{display:flex;flex-direction:column;gap:6px}
+.event-item{display:flex;align-items:center;gap:8px;font-size:11px;padding:4px 8px;border-radius:6px}
+.event-item .ev-from{padding:2px 8px;border-radius:4px;font-weight:500;min-width:60px;text-align:center}
+.ev-from.gab{background:rgba(168,85,247,0.1);color:#a855f7}
+.ev-from.def{background:rgba(34,197,94,0.1);color:#22c55e}
+.event-item .ev-arrow{color:#3a4560}
+.event-item .ev-name{color:#c8d6e5;font-family:monospace}
+.event-item .ev-data{color:#5a6a80}
+.event-dot{width:6px;height:6px;border-radius:50%;background:#648cff;animation:evPulse 0.6s ease;flex-shrink:0}
+@keyframes evPulse{from{transform:scale(2);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* Graph analysis */
+.analysis-panel{background:rgba(20,28,50,0.4);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:16px;margin-top:16px}
+.analysis-panel h4{font-size:12px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.analysis-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid rgba(100,140,255,0.04);font-size:12px}
+.analysis-item:last-child{border:none}
+.analysis-item .a-icon{font-size:14px;flex-shrink:0}
+.analysis-item .a-text{color:#a0b4d0;line-height:1.4}
+.analysis-item .a-text b{color:#e2e8f0}
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel">
+  <div class="hdr">
+    <h1>🔗 <span>PodDef ↔ PodGab</span> Integration</h1>
+    <span class="badge">US-29–31</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">🎤 Voice → Graph</div>
+    <div class="tab" onclick="switchTab(1)">📋 Command Log</div>
+    <div class="tab" onclick="switchTab(2)">🧠 Graph Analysis</div>
+  </div>
+  <div class="content">
+    <!-- VIEW 0: SPLIT VIEW -->
+    <div class="view active" id="view-0">
+      <div class="split">
+        <div class="podgab-side">
+          <h3>🔮 PodGab — AI Assistant</h3>
+          <div class="chat-area">
+            <div class="chat-msg user">Create a node called "User Authentication"</div>
+            <div class="chat-msg ai">Done! Created node <span class="cmd">User Authentication</span> at center of graph.<span class="result">✓ Node N-248 created</span></div>
+            <div class="chat-msg user">Link it to the API Gateway</div>
+            <div class="chat-msg ai">Linked <span class="cmd">User Authentication → API Gateway</span> with default weight.<span class="result">✓ Link L-413 created</span></div>
+            <div class="chat-msg user">Set the type to "service" and add a property "auth_method" = "OAuth2"</div>
+            <div class="chat-msg ai">Updated node properties:<br>• type → <span class="cmd">service</span><br>• auth_method → <span class="cmd">OAuth2</span><span class="result">✓ 2 properties updated</span></div>
+            <div class="chat-msg user">Show me all nodes connected to the Database cluster</div>
+            <div class="chat-msg ai">Found <span class="cmd">6 connections</span> to Database cluster:<br>• User Auth → DB (read/write)<br>• Analytics → DB (read)<br>• Cache Service → DB (sync)<br>• Backup Worker → DB (read)<br>• Migration Tool → DB (write)<br>• API Gateway → DB (proxy)</div>
+          </div>
+          <div class="voice-input">
+            <input placeholder="Type or speak a command..." value="">
+            <div class="mic-btn" onclick="this.classList.toggle('recording')">🎤</div>
+          </div>
+        </div>
+        <div class="poddef-side">
+          <h3>📐 PodDefinition — Graph View</h3>
+          <div class="mini-graph">
+            <div class="mg-node existing" style="left:200px;top:20px">🌐 API Gateway</div>
+            <div class="mg-node existing" style="left:80px;top:100px">💾 Database</div>
+            <div class="mg-node existing" style="left:320px;top:100px">📊 Analytics</div>
+            <div class="mg-node existing" style="left:40px;top:190px">🗄️ Cache Service</div>
+            <div class="mg-node existing" style="left:200px;top:190px">⚙️ Backup Worker</div>
+            <div class="mg-node new highlight" style="left:350px;top:190px">🔐 User Auth</div>
+            <div class="mg-node existing" style="left:140px;top:280px">🔧 Migration Tool</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="event-bus">
+        <h4>📡 Event Bus — Live</h4>
+        <div class="event-flow">
+          <div class="event-item"><div class="event-dot"></div><span class="ev-from gab">PodGab</span><span class="ev-arrow">→</span><span class="ev-name">node.create</span><span class="ev-data">{ id: "N-248", label: "User Auth" }</span></div>
+          <div class="event-item"><div class="event-dot"></div><span class="ev-from def">PodDef</span><span class="ev-arrow">→</span><span class="ev-name">node.created</span><span class="ev-data">{ id: "N-248", pos: (350, 190) }</span></div>
+          <div class="event-item"><div class="event-dot"></div><span class="ev-from gab">PodGab</span><span class="ev-arrow">→</span><span class="ev-name">link.create</span><span class="ev-data">{ from: "N-248", to: "N-001" }</span></div>
+          <div class="event-item"><div class="event-dot"></div><span class="ev-from def">PodDef</span><span class="ev-arrow">→</span><span class="ev-name">link.created</span><span class="ev-data">{ id: "L-413", weight: 1.0 }</span></div>
+          <div class="event-item"><div class="event-dot"></div><span class="ev-from gab">PodGab</span><span class="ev-arrow">→</span><span class="ev-name">node.update</span><span class="ev-data">{ id: "N-248", props: { type, auth_method } }</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: COMMAND LOG -->
+    <div class="view" id="view-1">
+      <div class="cmd-log">
+        <div class="cmd-entry executed"><span class="cmd-time">16:12:04</span><span class="cmd-icon">✅</span><div><div class="cmd-voice">"Create a node called User Authentication"</div><div class="cmd-action">→ graph.createNode({ label: "User Authentication" })</div></div><span class="cmd-status ok">executed</span></div>
+        <div class="cmd-entry executed"><span class="cmd-time">16:12:08</span><span class="cmd-icon">✅</span><div><div class="cmd-voice">"Link it to the API Gateway"</div><div class="cmd-action">→ graph.createLink({ from: "N-248", to: "N-001" })</div></div><span class="cmd-status ok">executed</span></div>
+        <div class="cmd-entry executed"><span class="cmd-time">16:12:15</span><span class="cmd-icon">✅</span><div><div class="cmd-voice">"Set type to service, add auth_method = OAuth2"</div><div class="cmd-action">→ graph.updateNode("N-248", { type: "service", auth_method: "OAuth2" })</div></div><span class="cmd-status ok">executed</span></div>
+        <div class="cmd-entry clarify"><span class="cmd-time">16:11:42</span><span class="cmd-icon">❓</span><div><div class="cmd-voice">"Delete the thing in the middle"</div><div class="cmd-action">→ Clarification: "Which node? There are 3 nodes near center: Database, Cache, Backup"</div></div><span class="cmd-status ask">clarify</span></div>
+        <div class="cmd-entry failed"><span class="cmd-time">16:11:20</span><span class="cmd-icon">❌</span><div><div class="cmd-voice">"Connect Node-999 to Analytics"</div><div class="cmd-action">→ Error: Node-999 does not exist in current graph</div></div><span class="cmd-status fail">failed</span></div>
+        <div class="cmd-entry executed"><span class="cmd-time">16:10:55</span><span class="cmd-icon">✅</span><div><div class="cmd-voice">"Show all connections to Database"</div><div class="cmd-action">→ graph.getConnections("N-003") — returned 6 links</div></div><span class="cmd-status ok">executed</span></div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: GRAPH ANALYSIS -->
+    <div class="view" id="view-2">
+      <div class="analysis-panel">
+        <h4>🧠 AI Graph Analysis</h4>
+        <div class="analysis-item"><span class="a-icon">🏗️</span><span class="a-text"><b>Structure:</b> Hub-and-spoke topology centered on API Gateway (7 connections). Database is secondary hub (6 connections). Graph has 2 clear clusters.</span></div>
+        <div class="analysis-item"><span class="a-icon">⚠️</span><span class="a-text"><b>Issue — Single point of failure:</b> API Gateway handles all external traffic. Consider adding a load balancer node or redundancy path.</span></div>
+        <div class="analysis-item"><span class="a-icon">⚠️</span><span class="a-text"><b>Issue — Missing link:</b> User Authentication has no direct connection to Cache Service. Auth tokens typically need caching for performance.</span></div>
+        <div class="analysis-item"><span class="a-icon">💡</span><span class="a-text"><b>Suggestion:</b> Add a "Rate Limiter" node between API Gateway and User Authentication to protect against brute-force attacks.</span></div>
+        <div class="analysis-item"><span class="a-icon">💡</span><span class="a-text"><b>Suggestion:</b> The Migration Tool → Database link should be marked as "maintenance only" to distinguish it from production data flows.</span></div>
+        <div class="analysis-item"><span class="a-icon">📊</span><span class="a-text"><b>Stats:</b> 7 nodes, 9 links, avg degree 2.6, max depth 3, no orphan nodes, no cycles detected.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function switchTab(i){document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));document.querySelectorAll('.view').forEach((v,j)=>v.classList.toggle('active',j===i))}
+</script>
+</body>
+</html>

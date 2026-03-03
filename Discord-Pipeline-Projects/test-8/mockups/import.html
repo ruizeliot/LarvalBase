@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodDefinition — Data Import</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0e17; color:#c8d6e5; font-family:'Segoe UI',system-ui,sans-serif; min-height:100vh; perspective:1200px; overflow-x:hidden; }
+
+/* 3D container */
+.scene { width:100vw; height:100vh; display:flex; align-items:center; justify-content:center; }
+.panel-3d {
+  width:1100px; min-height:700px;
+  background: rgba(15,20,35,0.92);
+  border:1px solid rgba(100,140,255,0.15);
+  border-radius:18px;
+  backdrop-filter:blur(20px);
+  box-shadow: 0 0 60px rgba(60,100,255,0.08), 0 30px 80px rgba(0,0,0,0.5);
+  transform: rotateX(2deg) rotateY(-1deg);
+  transition: transform 0.6s ease;
+  padding:0;
+  overflow:hidden;
+}
+.panel-3d:hover { transform: rotateX(0deg) rotateY(0deg); }
+
+/* Header */
+.header {
+  padding:20px 28px 0;
+  display:flex; align-items:center; gap:14px;
+  border-bottom:1px solid rgba(100,140,255,0.08);
+  padding-bottom:16px;
+}
+.header h1 { font-size:18px; font-weight:600; color:#e2e8f0; }
+.header h1 span { color:#648cff; }
+.badge { background:rgba(100,140,255,0.12); color:#648cff; font-size:11px; padding:3px 10px; border-radius:20px; font-weight:500; }
+
+/* Tabs */
+.tabs { display:flex; gap:0; padding:0 28px; margin-top:12px; }
+.tab {
+  padding:10px 22px; font-size:13px; font-weight:500; cursor:pointer;
+  border-bottom:2px solid transparent; color:#6b7a90; transition:all 0.25s;
+  user-select:none;
+}
+.tab:hover { color:#a0b4d0; }
+.tab.active { color:#648cff; border-bottom-color:#648cff; }
+
+/* Content area */
+.content { padding:24px 28px; min-height:520px; }
+.view { display:none; animation: fadeIn 0.3s ease; }
+.view.active { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+/* ===== VIEW 1: UPLOAD ===== */
+.upload-grid { display:grid; grid-template-columns:1fr 320px; gap:24px; }
+.dropzone {
+  border:2px dashed rgba(100,140,255,0.25); border-radius:14px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:48px 24px; text-align:center; transition:all 0.3s; cursor:pointer;
+  min-height:280px; position:relative;
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color:#648cff; background:rgba(100,140,255,0.04);
+  box-shadow:0 0 30px rgba(100,140,255,0.06);
+}
+.dropzone .icon { font-size:48px; margin-bottom:16px; opacity:0.7; }
+.dropzone h3 { font-size:15px; color:#e2e8f0; margin-bottom:6px; }
+.dropzone p { font-size:12px; color:#5a6a80; }
+.dropzone .browse-btn {
+  margin-top:16px; padding:8px 24px; background:rgba(100,140,255,0.12);
+  border:1px solid rgba(100,140,255,0.25); border-radius:8px; color:#648cff;
+  font-size:13px; cursor:pointer; transition:all 0.2s;
+}
+.dropzone .browse-btn:hover { background:rgba(100,140,255,0.2); }
+
+.format-panel h3 { font-size:13px; color:#8a9ab5; margin-bottom:14px; font-weight:500; }
+.format-card {
+  background:rgba(20,28,50,0.6); border:1px solid rgba(100,140,255,0.1);
+  border-radius:10px; padding:14px 16px; margin-bottom:10px; cursor:pointer;
+  transition:all 0.25s; display:flex; align-items:center; gap:12px;
+}
+.format-card:hover { border-color:rgba(100,140,255,0.3); background:rgba(25,35,60,0.7); }
+.format-card.selected { border-color:#648cff; background:rgba(100,140,255,0.08); }
+.format-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:700; }
+.format-icon.xlsx { background:rgba(34,197,94,0.15); color:#22c55e; }
+.format-icon.json { background:rgba(251,191,36,0.15); color:#fbbf24; }
+.format-icon.csv { background:rgba(168,85,247,0.15); color:#a855f7; }
+.format-info h4 { font-size:13px; color:#e2e8f0; font-weight:500; }
+.format-info p { font-size:11px; color:#5a6a80; margin-top:2px; }
+.format-card .radio { width:16px; height:16px; border-radius:50%; border:2px solid #3a4560; margin-left:auto; transition:all 0.2s; }
+.format-card.selected .radio { border-color:#648cff; background:#648cff; box-shadow:inset 0 0 0 3px #0a0e17; }
+
+.template-link { display:inline-flex; align-items:center; gap:6px; margin-top:14px; font-size:12px; color:#648cff; cursor:pointer; opacity:0.8; transition:opacity 0.2s; }
+.template-link:hover { opacity:1; }
+
+.recent-imports { margin-top:20px; }
+.recent-imports h3 { font-size:13px; color:#8a9ab5; margin-bottom:10px; font-weight:500; }
+.recent-item {
+  display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:rgba(20,28,50,0.4); border-radius:8px; margin-bottom:6px;
+  font-size:12px;
+}
+.recent-item .status-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.recent-item .status-dot.success { background:#22c55e; }
+.recent-item .status-dot.warning { background:#fbbf24; }
+.recent-item .status-dot.error { background:#ef4444; }
+.recent-item .name { color:#c8d6e5; flex:1; }
+.recent-item .date { color:#4a5568; }
+
+/* File loaded state */
+.file-loaded { display:none; flex-direction:column; align-items:center; gap:12px; }
+.file-loaded.active { display:flex; }
+.file-loaded .file-icon { font-size:40px; }
+.file-loaded .file-name { font-size:14px; color:#e2e8f0; font-weight:500; }
+.file-loaded .file-meta { font-size:11px; color:#5a6a80; }
+.file-loaded .remove-btn { font-size:11px; color:#ef4444; cursor:pointer; opacity:0.7; transition:opacity 0.2s; }
+.file-loaded .remove-btn:hover { opacity:1; }
+
+/* ===== VIEW 2: MAPPING ===== */
+.mapping-header { display:flex; align-items:center; justify-content:between; margin-bottom:16px; gap:16px; }
+.mapping-header .file-tag {
+  background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);
+  padding:4px 12px; border-radius:6px; font-size:12px; color:#22c55e;
+  display:flex; align-items:center; gap:6px;
+}
+.mapping-stats { margin-left:auto; display:flex; gap:16px; }
+.mapping-stats .stat { font-size:12px; color:#5a6a80; }
+.mapping-stats .stat b { color:#c8d6e5; }
+
+.mapping-table { width:100%; border-collapse:separate; border-spacing:0; }
+.mapping-table th {
+  text-align:left; font-size:11px; font-weight:500; color:#5a6a80;
+  padding:10px 14px; border-bottom:1px solid rgba(100,140,255,0.08);
+  text-transform:uppercase; letter-spacing:0.5px;
+}
+.mapping-table td {
+  padding:10px 14px; border-bottom:1px solid rgba(100,140,255,0.04);
+  font-size:13px; vertical-align:middle;
+}
+.mapping-table tr { transition:background 0.15s; }
+.mapping-table tbody tr:hover { background:rgba(100,140,255,0.03); }
+
+.source-col { color:#a0b4d0; font-family:'Cascadia Code',monospace; font-size:12px; }
+.arrow { color:#3a4560; font-size:14px; }
+.target-select {
+  background:rgba(20,28,50,0.8); border:1px solid rgba(100,140,255,0.15);
+  color:#c8d6e5; padding:6px 10px; border-radius:6px; font-size:12px;
+  cursor:pointer; min-width:160px; transition:border-color 0.2s;
+}
+.target-select:hover { border-color:rgba(100,140,255,0.35); }
+.target-select.mapped { border-color:rgba(34,197,94,0.3); }
+.target-select.auto { border-color:rgba(100,140,255,0.4); }
+
+.validation-badge {
+  display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+  border-radius:12px; font-size:11px; font-weight:500;
+}
+.validation-badge.valid { background:rgba(34,197,94,0.1); color:#22c55e; }
+.validation-badge.warning { background:rgba(251,191,36,0.1); color:#fbbf24; }
+.validation-badge.error { background:rgba(239,68,68,0.1); color:#ef4444; }
+.validation-badge.pending { background:rgba(100,140,255,0.1); color:#648cff; }
+
+.auto-tag { font-size:10px; color:#648cff; background:rgba(100,140,255,0.1); padding:2px 6px; border-radius:4px; margin-left:6px; }
+.sample-data { font-size:11px; color:#4a5568; font-style:italic; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+
+.mapping-actions { display:flex; gap:12px; margin-top:20px; align-items:center; }
+.btn-primary {
+  padding:10px 28px; background:#648cff; color:#fff; border:none; border-radius:8px;
+  font-size:13px; font-weight:500; cursor:pointer; transition:all 0.25s;
+}
+.btn-primary:hover { background:#5278e8; box-shadow:0 4px 20px rgba(100,140,255,0.25); }
+.btn-primary:disabled { opacity:0.4; cursor:not-allowed; box-shadow:none; }
+.btn-secondary {
+  padding:10px 20px; background:transparent; color:#648cff; border:1px solid rgba(100,140,255,0.2);
+  border-radius:8px; font-size:13px; cursor:pointer; transition:all 0.2s;
+}
+.btn-secondary:hover { background:rgba(100,140,255,0.06); }
+
+.mapping-summary { margin-left:auto; font-size:12px; color:#5a6a80; }
+.mapping-summary b { color:#22c55e; }
+
+/* ===== VIEW 3: IMPORT LOG ===== */
+.log-header { display:flex; align-items:center; gap:16px; margin-bottom:16px; }
+.progress-container { flex:1; }
+.progress-bar-bg { height:6px; background:rgba(100,140,255,0.08); border-radius:3px; overflow:hidden; }
+.progress-bar-fill { height:100%; background:linear-gradient(90deg,#648cff,#22c55e); border-radius:3px; transition:width 1.5s ease; width:0%; }
+.progress-label { font-size:11px; color:#5a6a80; margin-top:4px; }
+.cancel-btn { font-size:12px; color:#ef4444; cursor:pointer; opacity:0.7; transition:opacity 0.2s; background:none; border:none; }
+.cancel-btn:hover { opacity:1; }
+
+.log-entries { max-height:380px; overflow-y:auto; padding-right:8px; }
+.log-entries::-webkit-scrollbar { width:4px; }
+.log-entries::-webkit-scrollbar-thumb { background:rgba(100,140,255,0.15); border-radius:2px; }
+
+.log-entry {
+  display:flex; align-items:flex-start; gap:10px; padding:8px 12px;
+  border-radius:8px; margin-bottom:4px; font-size:12px; animation:slideIn 0.3s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+.log-entry.success { background:rgba(34,197,94,0.04); }
+.log-entry.warning { background:rgba(251,191,36,0.04); }
+.log-entry.error { background:rgba(239,68,68,0.04); }
+.log-entry.info { background:rgba(100,140,255,0.04); }
+.log-entry .log-icon { font-size:14px; flex-shrink:0; margin-top:1px; }
+.log-entry .log-time { color:#4a5568; font-family:monospace; flex-shrink:0; min-width:70px; }
+.log-entry .log-msg { color:#a0b4d0; flex:1; }
+.log-entry .log-msg b { color:#c8d6e5; font-weight:500; }
+
+.log-summary {
+  margin-top:16px; padding:14px 18px; background:rgba(20,28,50,0.5);
+  border-radius:10px; display:flex; gap:24px;
+}
+.log-summary .sum-item { text-align:center; }
+.log-summary .sum-num { font-size:22px; font-weight:600; }
+.log-summary .sum-num.green { color:#22c55e; }
+.log-summary .sum-num.yellow { color:#fbbf24; }
+.log-summary .sum-num.red { color:#ef4444; }
+.log-summary .sum-label { font-size:11px; color:#5a6a80; margin-top:2px; }
+
+/* History tab extras */
+.history-list { display:flex; flex-direction:column; gap:8px; }
+.history-card {
+  display:flex; align-items:center; gap:14px; padding:14px 18px;
+  background:rgba(20,28,50,0.5); border:1px solid rgba(100,140,255,0.06);
+  border-radius:10px; transition:all 0.2s; cursor:pointer;
+}
+.history-card:hover { border-color:rgba(100,140,255,0.15); background:rgba(25,35,60,0.6); }
+.history-card .h-icon { font-size:24px; }
+.history-card .h-info { flex:1; }
+.history-card .h-name { font-size:13px; color:#e2e8f0; font-weight:500; }
+.history-card .h-meta { font-size:11px; color:#5a6a80; margin-top:2px; }
+.history-badge {
+  padding:4px 12px; border-radius:12px; font-size:11px; font-weight:500;
+}
+.history-badge.success { background:rgba(34,197,94,0.1); color:#22c55e; }
+.history-badge.partial { background:rgba(251,191,36,0.1); color:#fbbf24; }
+.history-badge.failed { background:rgba(239,68,68,0.1); color:#ef4444; }
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel-3d">
+  <div class="header">
+    <h1>📥 <span>Data Import</span> — PodDefinition</h1>
+    <span class="badge">US-13 · US-14 · US-15</span>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">📂 File Upload</div>
+    <div class="tab" onclick="switchTab(1)">🔗 Mapping Preview</div>
+    <div class="tab" onclick="switchTab(2)">📋 Import Log</div>
+    <div class="tab" onclick="switchTab(3)">🕐 History</div>
+  </div>
+
+  <div class="content">
+    <!-- VIEW 0: FILE UPLOAD -->
+    <div class="view active" id="view-0">
+      <div class="upload-grid">
+        <div>
+          <div class="dropzone" id="dropzone" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" onclick="simulateFileLoad()">
+            <div id="drop-empty">
+              <div class="icon">📁</div>
+              <h3>Drop your file here</h3>
+              <p>or click to browse — supports .xlsx, .json, .csv</p>
+              <button class="browse-btn">Browse Files</button>
+            </div>
+            <div class="file-loaded" id="file-loaded">
+              <div class="file-icon">📊</div>
+              <div class="file-name">network_topology_v3.xlsx</div>
+              <div class="file-meta">2.4 MB · 847 rows · 12 columns · Parsed in 0.8s</div>
+              <div class="remove-btn" onclick="event.stopPropagation();removeFile()">✕ Remove file</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="format-panel">
+            <h3>Import Format</h3>
+            <div class="format-card selected" onclick="selectFormat(this)">
+              <div class="format-icon xlsx">XLS</div>
+              <div class="format-info">
+                <h4>Excel Template</h4>
+                <p>Predefined .xlsx with node/link sheets</p>
+              </div>
+              <div class="radio"></div>
+            </div>
+            <div class="format-card" onclick="selectFormat(this)">
+              <div class="format-icon json">{ }</div>
+              <div class="format-info">
+                <h4>JSON Schema</h4>
+                <p>Strict schema with type validation</p>
+              </div>
+              <div class="radio"></div>
+            </div>
+            <div class="format-card" onclick="selectFormat(this)">
+              <div class="format-icon csv">CSV</div>
+              <div class="format-info">
+                <h4>CSV with Headers</h4>
+                <p>Column mapping via header detection</p>
+              </div>
+              <div class="radio"></div>
+            </div>
+            <div class="template-link">⬇ Download Excel template</div>
+          </div>
+
+          <div class="recent-imports">
+            <h3>Recent Imports</h3>
+            <div class="recent-item">
+              <div class="status-dot success"></div>
+              <div class="name">team_roles_q1.json</div>
+              <div class="date">2h ago</div>
+            </div>
+            <div class="recent-item">
+              <div class="status-dot warning"></div>
+              <div class="name">market_data_feb.xlsx</div>
+              <div class="date">Yesterday</div>
+            </div>
+            <div class="recent-item">
+              <div class="status-dot error"></div>
+              <div class="name">legacy_export.csv</div>
+              <div class="date">3 days ago</div>
+            </div>
+            <div class="recent-item">
+              <div class="status-dot success"></div>
+              <div class="name">org_structure_v2.xlsx</div>
+              <div class="date">5 days ago</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: MAPPING PREVIEW -->
+    <div class="view" id="view-1">
+      <div class="mapping-header">
+        <div class="file-tag">📊 network_topology_v3.xlsx — Sheet "Nodes"</div>
+        <div class="mapping-stats">
+          <div class="stat"><b>12</b> columns</div>
+          <div class="stat"><b>847</b> rows</div>
+          <div class="stat"><b>8/12</b> mapped</div>
+        </div>
+      </div>
+
+      <table class="mapping-table">
+        <thead>
+          <tr>
+            <th>Source Column</th>
+            <th></th>
+            <th>Target Field</th>
+            <th>Sample Data</th>
+            <th>Validation</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="source-col">node_id</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select auto mapped"><option>Node.ID</option></select><span class="auto-tag">auto</span></td>
+            <td class="sample-data">N-001, N-002, N-003...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">label</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select auto mapped"><option>Node.Label</option></select><span class="auto-tag">auto</span></td>
+            <td class="sample-data">API Gateway, Auth Service...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">type</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select auto mapped"><option>Node.Type</option></select><span class="auto-tag">auto</span></td>
+            <td class="sample-data">service, database, queue...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">pos_x</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select mapped"><option>Node.Position.X</option></select></td>
+            <td class="sample-data">120.5, -340.2, 0.0...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">pos_y</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select mapped"><option>Node.Position.Y</option></select></td>
+            <td class="sample-data">45.0, 230.8, -12.5...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">connections</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select mapped"><option>Link.SourceRef</option></select></td>
+            <td class="sample-data">N-002;N-005, N-001...</td>
+            <td><span class="validation-badge warning">⚠ 3 unresolved refs</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">weight</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select mapped"><option>Link.Weight</option></select></td>
+            <td class="sample-data">1.0, 0.75, 2.5...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">metadata</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select mapped"><option>Node.Metadata</option></select></td>
+            <td class="sample-data">{"env":"prod","ver":"3.1"}...</td>
+            <td><span class="validation-badge valid">✓ Valid</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">created_date</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select" style="color:#5a6a80"><option>— Select target —</option></select></td>
+            <td class="sample-data">2024-01-15, 2024-02-03...</td>
+            <td><span class="validation-badge pending">◯ Unmapped</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">owner</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select" style="color:#5a6a80"><option>— Select target —</option></select></td>
+            <td class="sample-data">alice.martin, bob.chen...</td>
+            <td><span class="validation-badge pending">◯ Unmapped</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">priority</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select" style="color:#5a6a80"><option>— Select target —</option></select></td>
+            <td class="sample-data">high, medium, low...</td>
+            <td><span class="validation-badge pending">◯ Unmapped</span></td>
+          </tr>
+          <tr>
+            <td class="source-col">deprecated</td>
+            <td class="arrow">→</td>
+            <td><select class="target-select" style="color:#5a6a80"><option>— Select target —</option></select></td>
+            <td class="sample-data">false, false, true...</td>
+            <td><span class="validation-badge error">✕ Type mismatch</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="mapping-actions">
+        <button class="btn-primary" onclick="switchTab(2);runImport()">▶ Import 847 rows</button>
+        <button class="btn-secondary">↻ Auto-detect All</button>
+        <button class="btn-secondary">Reset Mapping</button>
+        <div class="mapping-summary"><b>8</b>/12 fields mapped · <span style="color:#fbbf24">1 warning</span> · <span style="color:#ef4444">1 error</span></div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: IMPORT LOG -->
+    <div class="view" id="view-2">
+      <div class="log-header">
+        <div class="progress-container">
+          <div class="progress-bar-bg">
+            <div class="progress-bar-fill" id="progress-fill"></div>
+          </div>
+          <div class="progress-label" id="progress-label">Ready to import</div>
+        </div>
+        <button class="cancel-btn" id="cancel-btn" style="display:none">✕ Cancel</button>
+      </div>
+
+      <div class="log-entries" id="log-entries">
+        <div class="log-entry info">
+          <span class="log-icon">ℹ️</span>
+          <span class="log-time">16:04:12</span>
+          <span class="log-msg">Schema validation passed for <b>network_topology_v3.xlsx</b></span>
+        </div>
+        <div class="log-entry success">
+          <span class="log-icon">✅</span>
+          <span class="log-time">16:04:13</span>
+          <span class="log-msg">Created <b>247 nodes</b> from sheet "Nodes" (rows 1–247)</span>
+        </div>
+        <div class="log-entry success">
+          <span class="log-icon">✅</span>
+          <span class="log-time">16:04:14</span>
+          <span class="log-msg">Created <b>412 links</b> from sheet "Links" (rows 1–412)</span>
+        </div>
+        <div class="log-entry warning">
+          <span class="log-icon">⚠️</span>
+          <span class="log-time">16:04:14</span>
+          <span class="log-msg">3 link references point to unknown node IDs: <b>N-899, N-900, N-901</b> — skipped</span>
+        </div>
+        <div class="log-entry success">
+          <span class="log-icon">✅</span>
+          <span class="log-time">16:04:15</span>
+          <span class="log-msg">Metadata parsed for <b>188 nodes</b> — JSON valid</span>
+        </div>
+        <div class="log-entry warning">
+          <span class="log-icon">⚠️</span>
+          <span class="log-time">16:04:15</span>
+          <span class="log-msg">12 rows have <b>deprecated=true</b> — type coerced from string to boolean</span>
+        </div>
+        <div class="log-entry success">
+          <span class="log-icon">✅</span>
+          <span class="log-time">16:04:16</span>
+          <span class="log-msg">Position data applied to <b>247 nodes</b> — coordinate system: XY plane</span>
+        </div>
+        <div class="log-entry error">
+          <span class="log-icon">❌</span>
+          <span class="log-time">16:04:16</span>
+          <span class="log-msg">Row 583: duplicate <b>node_id "N-042"</b> — skipped (kept first occurrence)</span>
+        </div>
+        <div class="log-entry success">
+          <span class="log-icon">✅</span>
+          <span class="log-time">16:04:17</span>
+          <span class="log-msg">Weight values applied to <b>409 links</b> (range: 0.1 – 5.0)</span>
+        </div>
+        <div class="log-entry info">
+          <span class="log-icon">ℹ️</span>
+          <span class="log-time">16:04:17</span>
+          <span class="log-msg">Import complete — <b>846/847 rows processed</b> in 5.2s</span>
+        </div>
+      </div>
+
+      <div class="log-summary">
+        <div class="sum-item"><div class="sum-num green">846</div><div class="sum-label">Imported</div></div>
+        <div class="sum-item"><div class="sum-num yellow">15</div><div class="sum-label">Warnings</div></div>
+        <div class="sum-item"><div class="sum-num red">1</div><div class="sum-label">Errors</div></div>
+        <div class="sum-item"><div class="sum-num" style="color:#648cff">5.2s</div><div class="sum-label">Duration</div></div>
+      </div>
+    </div>
+
+    <!-- VIEW 3: HISTORY -->
+    <div class="view" id="view-3">
+      <div class="history-list">
+        <div class="history-card">
+          <div class="h-icon">📊</div>
+          <div class="h-info">
+            <div class="h-name">network_topology_v3.xlsx</div>
+            <div class="h-meta">847 rows · 247 nodes, 412 links · 5.2s · Today 16:04</div>
+          </div>
+          <span class="history-badge success">✓ 846 imported</span>
+        </div>
+        <div class="history-card">
+          <div class="h-icon">📄</div>
+          <div class="h-info">
+            <div class="h-name">team_roles_q1.json</div>
+            <div class="h-meta">156 entries · 42 nodes, 89 links · 1.1s · Today 14:22</div>
+          </div>
+          <span class="history-badge success">✓ 156 imported</span>
+        </div>
+        <div class="history-card">
+          <div class="h-icon">📊</div>
+          <div class="h-info">
+            <div class="h-name">market_data_feb.xlsx</div>
+            <div class="h-meta">2,340 rows · 580 nodes, 1,204 links · 12.8s · Yesterday</div>
+          </div>
+          <span class="history-badge partial">⚠ 2,291 imported</span>
+        </div>
+        <div class="history-card">
+          <div class="h-icon">📝</div>
+          <div class="h-info">
+            <div class="h-name">legacy_export.csv</div>
+            <div class="h-meta">89 rows · Failed at validation · 0.3s · 3 days ago</div>
+          </div>
+          <span class="history-badge failed">✕ Failed</span>
+        </div>
+        <div class="history-card">
+          <div class="h-icon">📊</div>
+          <div class="h-info">
+            <div class="h-name">org_structure_v2.xlsx</div>
+            <div class="h-meta">412 rows · 98 nodes, 267 links · 3.4s · 5 days ago</div>
+          </div>
+          <span class="history-badge success">✓ 412 imported</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+function switchTab(idx) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===idx));
+  document.querySelectorAll('.view').forEach((v,i) => v.classList.toggle('active', i===idx));
+}
+
+function selectFormat(el) {
+  document.querySelectorAll('.format-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+let fileLoaded = false;
+function simulateFileLoad() {
+  if (fileLoaded) return;
+  fileLoaded = true;
+  document.getElementById('drop-empty').style.display = 'none';
+  document.getElementById('file-loaded').classList.add('active');
+  document.getElementById('dropzone').style.borderColor = 'rgba(34,197,94,0.3)';
+  document.getElementById('dropzone').style.background = 'rgba(34,197,94,0.03)';
+}
+
+function removeFile() {
+  fileLoaded = false;
+  document.getElementById('drop-empty').style.display = '';
+  document.getElementById('file-loaded').classList.remove('active');
+  document.getElementById('dropzone').style.borderColor = '';
+  document.getElementById('dropzone').style.background = '';
+}
+
+function runImport() {
+  const fill = document.getElementById('progress-fill');
+  const label = document.getElementById('progress-label');
+  const cancel = document.getElementById('cancel-btn');
+  cancel.style.display = 'block';
+  let pct = 0;
+  const interval = setInterval(() => {
+    pct += Math.random() * 15 + 5;
+    if (pct >= 100) { pct = 100; clearInterval(interval); cancel.style.display = 'none'; label.textContent = 'Import complete — 846/847 rows processed'; }
+    else { label.textContent = `Importing... ${Math.round(pct)}% (${Math.round(pct*8.47)} / 847 rows)`; }
+    fill.style.width = pct + '%';
+  }, 400);
+}
+</script>
+</body>
+</html>

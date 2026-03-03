@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodDefinition — Multiplayer</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;perspective:1200px;overflow-x:hidden}
+.scene{width:100vw;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:1200px;background:rgba(15,20,35,0.92);border:1px solid rgba(100,140,255,0.15);border-radius:18px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(60,100,255,0.08),0 30px 80px rgba(0,0,0,0.5);transform:rotateX(2deg) rotateY(-1deg);transition:transform 0.6s;overflow:hidden}
+.panel:hover{transform:rotateX(0) rotateY(0)}
+.hdr{padding:20px 28px 16px;border-bottom:1px solid rgba(100,140,255,0.08);display:flex;align-items:center;gap:14px}
+.hdr h1{font-size:18px;font-weight:600;color:#e2e8f0}
+.hdr h1 span{color:#648cff}
+.badge{background:rgba(100,140,255,0.12);color:#648cff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.tabs{display:flex;padding:0 28px;gap:0;margin-top:8px}
+.tab{padding:10px 22px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#6b7a90;transition:all 0.25s;user-select:none}
+.tab:hover{color:#a0b4d0}
+.tab.active{color:#648cff;border-bottom-color:#648cff}
+.content{padding:24px 28px}
+.view{display:none;animation:fadeIn 0.3s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+/* Lobby */
+.lobby-header{display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.lobby-header h3{font-size:14px;color:#e2e8f0}
+.create-btn{padding:8px 20px;background:#648cff;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;margin-left:auto}
+.create-btn:hover{background:#5278e8}
+.online-count{font-size:12px;color:#22c55e;display:flex;align-items:center;gap:6px}
+.online-dot{width:8px;height:8px;background:#22c55e;border-radius:50%;animation:pulse 2s infinite}
+.room-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.room-card{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.1);border-radius:12px;padding:18px;cursor:pointer;transition:all 0.25s}
+.room-card:hover{border-color:rgba(100,140,255,0.3);transform:translateY(-2px)}
+.room-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.room-name{font-size:14px;color:#e2e8f0;font-weight:500}
+.room-type{font-size:10px;padding:2px 8px;border-radius:4px}
+.room-type.coloc{background:rgba(34,197,94,0.1);color:#22c55e}
+.room-type.remote{background:rgba(100,140,255,0.1);color:#648cff}
+.room-type.mixed{background:rgba(251,191,36,0.1);color:#fbbf24}
+.room-users{display:flex;margin-bottom:8px}
+.room-avatar{width:28px;height:28px;border-radius:50%;border:2px solid #0a0e17;display:flex;align-items:center;justify-content:center;font-size:12px;margin-left:-6px}
+.room-avatar:first-child{margin-left:0}
+.room-avatar.quest{background:rgba(168,85,247,0.2)}
+.room-avatar.desktop{background:rgba(100,140,255,0.2)}
+.room-meta{font-size:11px;color:#5a6a80;display:flex;gap:12px}
+.join-btn{padding:6px 16px;background:rgba(100,140,255,0.1);border:1px solid rgba(100,140,255,0.2);border-radius:6px;color:#648cff;font-size:12px;cursor:pointer;transition:all 0.2s;margin-top:10px}
+.join-btn:hover{background:rgba(100,140,255,0.2)}
+
+/* Session */
+.session-layout{display:grid;grid-template-columns:1fr 340px;gap:20px}
+.user-list{display:flex;flex-direction:column;gap:8px}
+.user-card{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px}
+.u-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.u-avatar.quest-av{background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3)}
+.u-avatar.desktop-av{background:rgba(100,140,255,0.15);border:1px solid rgba(100,140,255,0.3)}
+.u-info{flex:1}
+.u-name{font-size:13px;color:#e2e8f0;font-weight:500;display:flex;align-items:center;gap:8px}
+.u-badges{display:flex;gap:4px;margin-top:4px}
+.u-badge{font-size:10px;padding:2px 8px;border-radius:4px}
+.u-badge.coloc-b{background:rgba(34,197,94,0.1);color:#22c55e}
+.u-badge.remote-b{background:rgba(100,140,255,0.1);color:#648cff}
+.u-badge.quest-b{background:rgba(168,85,247,0.1);color:#a855f7}
+.u-badge.desktop-b{background:rgba(100,140,255,0.1);color:#648cff}
+.u-badge.host-b{background:rgba(251,191,36,0.1);color:#fbbf24}
+.u-status{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.voice-indicator{display:flex;align-items:center;gap:3px}
+.voice-bar{width:3px;background:#22c55e;border-radius:1px;animation:voiceAnim 0.5s ease infinite}
+.voice-bar:nth-child(1){height:8px}
+.voice-bar:nth-child(2){height:14px;animation-delay:0.1s}
+.voice-bar:nth-child(3){height:10px;animation-delay:0.2s}
+@keyframes voiceAnim{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}
+.latency{font-size:10px}
+.latency.good{color:#22c55e}
+.latency.ok{color:#fbbf24}
+.hand-track{font-size:10px;color:#22c55e;display:flex;align-items:center;gap:4px}
+
+.side-panels{display:flex;flex-direction:column;gap:16px}
+.side-panel{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:16px}
+.side-panel h4{font-size:12px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+.detect-card{padding:12px;background:rgba(34,197,94,0.04);border:1px solid rgba(34,197,94,0.15);border-radius:10px;display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.detect-icon{font-size:24px}
+.detect-info h5{font-size:12px;color:#22c55e;font-weight:500}
+.detect-info p{font-size:11px;color:#5a6a80;margin-top:2px}
+.detect-badge{padding:3px 10px;border-radius:10px;font-size:10px;font-weight:500;background:rgba(34,197,94,0.1);color:#22c55e}
+.anchor-item{display:flex;align-items:center;gap:8px;font-size:11px;padding:6px 10px;background:rgba(15,20,35,0.5);border-radius:6px;margin-bottom:4px}
+.a-dot{width:6px;height:6px;border-radius:50%}
+.a-dot.synced{background:#22c55e}
+.a-dot.syncing{background:#fbbf24;animation:pulse 1s infinite}
+
+/* Permissions */
+.perm-section{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:20px;margin-bottom:16px}
+.perm-section h4{font-size:13px;color:#e2e8f0;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.perm-grid{display:grid;grid-template-columns:180px 1fr 1fr 1fr;gap:0;font-size:12px}
+.perm-header{padding:8px 12px;color:#5a6a80;font-weight:500;border-bottom:1px solid rgba(100,140,255,0.08);font-size:11px;text-transform:uppercase;letter-spacing:0.3px}
+.perm-cell{padding:8px 12px;border-bottom:1px solid rgba(100,140,255,0.04);display:flex;align-items:center}
+.perm-cell.name{color:#c8d6e5}
+.perm-toggle{width:32px;height:18px;background:rgba(100,140,255,0.15);border-radius:9px;cursor:pointer;position:relative;transition:background 0.3s}
+.perm-toggle.on{background:#648cff}
+.perm-toggle::after{content:'';position:absolute;width:12px;height:12px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform 0.3s}
+.perm-toggle.on::after{transform:translateX(14px)}
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel">
+  <div class="hdr">
+    <h1>👥 <span>Multiplayer</span></h1>
+    <span class="badge">US-46–48</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">🏠 Lobby</div>
+    <div class="tab" onclick="switchTab(1)">🎮 Session</div>
+    <div class="tab" onclick="switchTab(2)">🔐 Permissions</div>
+  </div>
+  <div class="content">
+    <!-- LOBBY -->
+    <div class="view active" id="view-0">
+      <div class="lobby-header">
+        <h3>Available Rooms</h3>
+        <div class="online-count"><div class="online-dot"></div> 14 users online</div>
+        <button class="create-btn">+ Create Room</button>
+      </div>
+      <div class="room-grid">
+        <div class="room-card" onclick="switchTab(1)">
+          <div class="room-top"><span class="room-name">🏗️ Architecture Sprint</span><span class="room-type coloc">Colocated</span></div>
+          <div class="room-users"><div class="room-avatar quest">🥽</div><div class="room-avatar quest">🥽</div><div class="room-avatar desktop">🖥️</div></div>
+          <div class="room-meta"><span>3/6 users</span><span>12min ago</span></div>
+          <button class="join-btn">Join Room</button>
+        </div>
+        <div class="room-card" onclick="switchTab(1)">
+          <div class="room-top"><span class="room-name">📊 KPI Review</span><span class="room-type remote">Remote</span></div>
+          <div class="room-users"><div class="room-avatar desktop">🖥️</div><div class="room-avatar desktop">🖥️</div><div class="room-avatar desktop">🖥️</div><div class="room-avatar quest">🥽</div><div class="room-avatar desktop">🖥️</div></div>
+          <div class="room-meta"><span>5/8 users</span><span>45min ago</span></div>
+          <button class="join-btn">Join Room</button>
+        </div>
+        <div class="room-card" onclick="switchTab(1)">
+          <div class="room-top"><span class="room-name">🧪 Prototype Testing</span><span class="room-type mixed">Mixed</span></div>
+          <div class="room-users"><div class="room-avatar quest">🥽</div><div class="room-avatar desktop">🖥️</div></div>
+          <div class="room-meta"><span>2/4 users</span><span>5min ago</span></div>
+          <button class="join-btn">Join Room</button>
+        </div>
+        <div class="room-card" style="opacity:0.5">
+          <div class="room-top"><span class="room-name">🔒 Client Demo</span><span class="room-type remote">Remote</span></div>
+          <div class="room-users"><div class="room-avatar desktop">🖥️</div><div class="room-avatar desktop">🖥️</div></div>
+          <div class="room-meta"><span>2/2 (full)</span><span>Private</span></div>
+          <button class="join-btn" style="opacity:0.4;cursor:not-allowed">Locked</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SESSION -->
+    <div class="view" id="view-1">
+      <div class="session-layout">
+        <div>
+          <h3 style="font-size:14px;color:#e2e8f0;margin-bottom:14px">🏗️ Architecture Sprint — 3 Connected</h3>
+          <div class="user-list">
+            <div class="user-card">
+              <div class="u-avatar quest-av">🥽</div>
+              <div class="u-info">
+                <div class="u-name">Alice Martin <span style="font-size:10px;color:#fbbf24">👑</span></div>
+                <div class="u-badges"><span class="u-badge host-b">Host</span><span class="u-badge coloc-b">Colocated</span><span class="u-badge quest-b">Quest 3</span></div>
+              </div>
+              <div class="u-status">
+                <div class="voice-indicator"><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div></div>
+                <div class="hand-track">✋ Tracking</div>
+                <div class="latency good">2ms</div>
+              </div>
+            </div>
+            <div class="user-card">
+              <div class="u-avatar quest-av">🥽</div>
+              <div class="u-info">
+                <div class="u-name">Bob Chen</div>
+                <div class="u-badges"><span class="u-badge coloc-b">Colocated</span><span class="u-badge quest-b">Quest 3</span></div>
+              </div>
+              <div class="u-status">
+                <div style="font-size:10px;color:#5a6a80">🔇 Muted</div>
+                <div class="hand-track">✋ Tracking</div>
+                <div class="latency good">3ms</div>
+              </div>
+            </div>
+            <div class="user-card">
+              <div class="u-avatar desktop-av">🖥️</div>
+              <div class="u-info">
+                <div class="u-name">Clara Dubois</div>
+                <div class="u-badges"><span class="u-badge remote-b">Remote</span><span class="u-badge desktop-b">Desktop</span></div>
+              </div>
+              <div class="u-status">
+                <div class="voice-indicator"><div class="voice-bar"></div><div class="voice-bar"></div><div class="voice-bar"></div></div>
+                <div class="latency ok">48ms</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="side-panels">
+          <div class="side-panel">
+            <h4>📡 Auto-Detection</h4>
+            <div class="detect-card">
+              <div class="detect-icon">📶</div>
+              <div class="detect-info">
+                <h5>Colocation Detected</h5>
+                <p>Alice & Bob — same network + spatial anchors matched</p>
+              </div>
+              <span class="detect-badge">Active</span>
+            </div>
+            <div class="detect-card" style="border-color:rgba(100,140,255,0.15);background:rgba(100,140,255,0.04)">
+              <div class="detect-icon">🌐</div>
+              <div class="detect-info">
+                <h5 style="color:#648cff">Remote User</h5>
+                <p>Clara — different network, avatar representation</p>
+              </div>
+              <span class="detect-badge" style="background:rgba(100,140,255,0.1);color:#648cff">Remote</span>
+            </div>
+          </div>
+          <div class="side-panel">
+            <h4>📌 Spatial Anchors</h4>
+            <div class="anchor-item"><div class="a-dot synced"></div><span style="color:#c8d6e5">Main Workspace</span><span style="color:#22c55e;margin-left:auto;font-size:10px">Synced</span></div>
+            <div class="anchor-item"><div class="a-dot synced"></div><span style="color:#c8d6e5">Whiteboard Area</span><span style="color:#22c55e;margin-left:auto;font-size:10px">Synced</span></div>
+            <div class="anchor-item"><div class="a-dot syncing"></div><span style="color:#c8d6e5">Presentation Zone</span><span style="color:#fbbf24;margin-left:auto;font-size:10px">Syncing...</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PERMISSIONS -->
+    <div class="view" id="view-2">
+      <div class="perm-section">
+        <h4>👑 Host Controls — Alice Martin</h4>
+        <div class="perm-grid">
+          <div class="perm-header">Permission</div>
+          <div class="perm-header">Alice (Host)</div>
+          <div class="perm-header">Bob</div>
+          <div class="perm-header">Clara</div>
+
+          <div class="perm-cell name">Edit Nodes</div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+          <div class="perm-cell name">Edit Links</div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+
+          <div class="perm-cell name">Delete Elements</div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+
+          <div class="perm-cell name">Import Data</div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+
+          <div class="perm-cell name">Voice Commands</div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle on" onclick="this.classList.toggle('on')"></div></div>
+
+          <div class="perm-cell name">View Only</div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+          <div class="perm-cell"><div class="perm-toggle" onclick="this.classList.toggle('on')"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function switchTab(i){document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));document.querySelectorAll('.view').forEach((v,j)=>v.classList.toggle('active',j===i))}
+</script>
+</body>
+</html>

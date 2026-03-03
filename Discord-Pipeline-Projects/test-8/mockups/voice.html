@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodGab — Voice Pipeline</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;perspective:1200px;overflow-x:hidden}
+.scene{width:100vw;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:1200px;background:rgba(15,20,35,0.92);border:1px solid rgba(100,140,255,0.15);border-radius:18px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(60,100,255,0.08),0 30px 80px rgba(0,0,0,0.5);transform:rotateX(2deg) rotateY(-1deg);transition:transform 0.6s;overflow:hidden}
+.panel:hover{transform:rotateX(0) rotateY(0)}
+.hdr{padding:20px 28px 16px;border-bottom:1px solid rgba(100,140,255,0.08);display:flex;align-items:center;gap:14px}
+.hdr h1{font-size:18px;font-weight:600;color:#e2e8f0}
+.hdr h1 span{color:#648cff}
+.badge{background:rgba(100,140,255,0.12);color:#648cff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.tabs{display:flex;padding:0 28px;gap:0;margin-top:8px}
+.tab{padding:10px 22px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#6b7a90;transition:all 0.25s;user-select:none}
+.tab:hover{color:#a0b4d0}
+.tab.active{color:#648cff;border-bottom-color:#648cff}
+.content{padding:24px 28px}
+.view{display:none;animation:fadeIn 0.3s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Pipeline columns */
+.pipeline-cols{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px}
+.pipe-col{background:rgba(20,28,50,0.4);border:1px solid rgba(100,140,255,0.08);border-radius:14px;padding:18px}
+.pipe-col h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.pipe-col h3 .dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.dot.green{background:#22c55e}
+.dot.yellow{background:#fbbf24}
+.dot.blue{background:#648cff}
+
+.provider-card{background:rgba(15,20,35,0.6);border:1px solid rgba(100,140,255,0.1);border-radius:10px;padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:all 0.25s;display:flex;align-items:center;gap:12px}
+.provider-card:hover{border-color:rgba(100,140,255,0.3);background:rgba(25,35,60,0.5)}
+.provider-card.active{border-color:rgba(34,197,94,0.4);background:rgba(34,197,94,0.05)}
+.provider-card.fallback{border-color:rgba(251,191,36,0.3);border-style:dashed}
+.provider-card.offline{opacity:0.5}
+.p-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.p-icon.cloud{background:rgba(100,140,255,0.12)}
+.p-icon.local{background:rgba(168,85,247,0.12)}
+.p-icon.s2s{background:rgba(251,191,36,0.12)}
+.p-info{flex:1}
+.p-name{font-size:13px;color:#e2e8f0;font-weight:500;display:flex;align-items:center;gap:6px}
+.p-desc{font-size:11px;color:#5a6a80;margin-top:2px}
+.p-status{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:500}
+.p-status.online{background:rgba(34,197,94,0.1);color:#22c55e}
+.p-status.offline{background:rgba(239,68,68,0.1);color:#ef4444}
+.p-status.loading{background:rgba(251,191,36,0.1);color:#fbbf24}
+.platform-tag{font-size:9px;padding:1px 6px;border-radius:4px;background:rgba(168,85,247,0.12);color:#a855f7}
+.fallback-label{font-size:10px;color:#fbbf24;margin-top:6px;display:flex;align-items:center;gap:4px}
+.order-badge{width:20px;height:20px;border-radius:50%;background:rgba(100,140,255,0.15);color:#648cff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Fallback chain */
+.fallback-chain{margin-top:16px;padding:14px;background:rgba(15,20,35,0.4);border-radius:10px;border:1px solid rgba(100,140,255,0.06)}
+.chain-label{font-size:11px;color:#5a6a80;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px}
+.chain-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.chain-node{padding:6px 12px;border-radius:6px;font-size:11px;font-weight:500}
+.chain-node.primary{background:rgba(34,197,94,0.1);color:#22c55e;border:1px solid rgba(34,197,94,0.2)}
+.chain-node.secondary{background:rgba(251,191,36,0.1);color:#fbbf24;border:1px solid rgba(251,191,36,0.2)}
+.chain-node.tertiary{background:rgba(168,85,247,0.1);color:#a855f7;border:1px solid rgba(168,85,247,0.2)}
+.chain-arrow{color:#3a4560;font-size:12px}
+
+/* S2S toggle */
+.s2s-toggle{margin-top:20px;padding:16px;background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.15);border-radius:12px;display:flex;align-items:center;gap:14px}
+.toggle-switch{width:44px;height:24px;background:rgba(100,140,255,0.15);border-radius:12px;cursor:pointer;position:relative;transition:background 0.3s;flex-shrink:0}
+.toggle-switch.on{background:#648cff}
+.toggle-switch::after{content:'';position:absolute;width:18px;height:18px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform 0.3s}
+.toggle-switch.on::after{transform:translateX(20px)}
+.s2s-info h4{font-size:13px;color:#e2e8f0;font-weight:500}
+.s2s-info p{font-size:11px;color:#5a6a80;margin-top:2px}
+
+/* Live status */
+.status-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:20px}
+.status-card{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:16px;text-align:center}
+.status-card .layer{font-size:11px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.status-card .provider{font-size:15px;color:#e2e8f0;font-weight:600}
+.status-card .metrics{display:flex;justify-content:center;gap:16px;margin-top:10px}
+.metric{text-align:center}
+.metric .val{font-size:18px;font-weight:600}
+.metric .val.green{color:#22c55e}
+.metric .val.yellow{color:#fbbf24}
+.metric .label{font-size:10px;color:#5a6a80;margin-top:2px}
+
+.wave-viz{height:60px;display:flex;align-items:center;justify-content:center;gap:3px;margin:16px 0}
+.wave-bar{width:4px;background:#648cff;border-radius:2px;animation:wave 1.2s ease-in-out infinite}
+.wave-bar:nth-child(1){animation-delay:0s;height:20px}
+.wave-bar:nth-child(2){animation-delay:0.1s;height:35px}
+.wave-bar:nth-child(3){animation-delay:0.2s;height:50px}
+.wave-bar:nth-child(4){animation-delay:0.3s;height:30px}
+.wave-bar:nth-child(5){animation-delay:0.4s;height:45px}
+.wave-bar:nth-child(6){animation-delay:0.5s;height:25px}
+.wave-bar:nth-child(7){animation-delay:0.6s;height:40px}
+.wave-bar:nth-child(8){animation-delay:0.7s;height:15px}
+.wave-bar:nth-child(9){animation-delay:0.8s;height:35px}
+.wave-bar:nth-child(10){animation-delay:0.9s;height:20px}
+@keyframes wave{0%,100%{transform:scaleY(0.5);opacity:0.5}50%{transform:scaleY(1);opacity:1}}
+
+.pipeline-flow{display:flex;align-items:center;justify-content:center;gap:12px;padding:20px;background:rgba(15,20,35,0.4);border-radius:12px}
+.flow-box{padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;text-align:center}
+.flow-box.stt{background:rgba(100,140,255,0.1);border:1px solid rgba(100,140,255,0.2);color:#648cff}
+.flow-box.llm{background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.2);color:#22c55e}
+.flow-box.tts{background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.2);color:#a855f7}
+.flow-arrow{color:#3a4560;font-size:20px;animation:flowPulse 1.5s infinite}
+@keyframes flowPulse{0%,100%{opacity:0.3}50%{opacity:1}}
+.flow-label{font-size:10px;color:#5a6a80;margin-top:4px}
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel">
+  <div class="hdr">
+    <h1>🎙️ <span>Voice Pipeline</span> — PodGab</h1>
+    <span class="badge">US-16–21 · US-24 · US-32 · US-37–38 · US-49</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">⚙️ Provider Settings</div>
+    <div class="tab" onclick="switchTab(1)">📊 Live Status</div>
+  </div>
+  <div class="content">
+    <!-- VIEW 0: SETTINGS -->
+    <div class="view active" id="view-0">
+      <div class="pipeline-cols">
+        <!-- STT Column -->
+        <div class="pipe-col">
+          <h3><div class="dot green"></div> STT — Speech-to-Text</h3>
+          <div class="provider-card active" onclick="toggleProvider(this)">
+            <div class="order-badge">1</div>
+            <div class="p-icon cloud">☁️</div>
+            <div class="p-info">
+              <div class="p-name">Gabriela STT <span class="p-status online">● online</span></div>
+              <div class="p-desc">Cloud primary — 42ms avg latency</div>
+            </div>
+          </div>
+          <div class="provider-card fallback" onclick="toggleProvider(this)">
+            <div class="order-badge">2</div>
+            <div class="p-icon cloud">⚡</div>
+            <div class="p-info">
+              <div class="p-name">Groq STT <span class="p-status online">● online</span></div>
+              <div class="p-desc">Cloud secondary — 68ms avg latency</div>
+            </div>
+          </div>
+          <div class="provider-card fallback" onclick="toggleProvider(this)">
+            <div class="order-badge">3</div>
+            <div class="p-icon local">🖥️</div>
+            <div class="p-info">
+              <div class="p-name">Whisper <span class="p-status online">● ready</span></div>
+              <div class="p-desc">Local fallback — on-device</div>
+              <div style="display:flex;gap:4px;margin-top:4px"><span class="platform-tag">Quest: tiny</span><span class="platform-tag">Desktop: medium</span></div>
+            </div>
+          </div>
+          <div class="fallback-chain">
+            <div class="chain-label">Fallback Chain</div>
+            <div class="chain-flow">
+              <span class="chain-node primary">Gabriela</span>
+              <span class="chain-arrow">→</span>
+              <span class="chain-node secondary">Groq</span>
+              <span class="chain-arrow">→</span>
+              <span class="chain-node tertiary">Whisper</span>
+            </div>
+          </div>
+        </div>
+        <!-- LLM Column -->
+        <div class="pipe-col">
+          <h3><div class="dot green"></div> LLM — Language Model</h3>
+          <div class="provider-card active" onclick="toggleProvider(this)">
+            <div class="order-badge">1</div>
+            <div class="p-icon cloud">☁️</div>
+            <div class="p-info">
+              <div class="p-name">Gabriela LLM <span class="p-status online">● online</span></div>
+              <div class="p-desc">Cloud primary — GPT-4o class</div>
+            </div>
+          </div>
+          <div class="provider-card fallback" onclick="toggleProvider(this)">
+            <div class="order-badge">2</div>
+            <div class="p-icon cloud">🔗</div>
+            <div class="p-info">
+              <div class="p-name">n8n Workflow <span class="p-status online">● online</span></div>
+              <div class="p-desc">Cloud secondary — custom chains</div>
+            </div>
+          </div>
+          <div class="provider-card fallback" onclick="toggleProvider(this)">
+            <div class="order-badge">3</div>
+            <div class="p-icon local">🧠</div>
+            <div class="p-info">
+              <div class="p-name">Unity AI Inference <span class="p-status loading">● loading</span></div>
+              <div class="p-desc">Local — Sentis runtime</div>
+              <div style="display:flex;gap:4px;margin-top:4px"><span class="platform-tag">Quest: 3B params</span><span class="platform-tag">Desktop: 7B params</span></div>
+            </div>
+          </div>
+          <div class="fallback-chain">
+            <div class="chain-label">Fallback Chain</div>
+            <div class="chain-flow">
+              <span class="chain-node primary">Gabriela</span>
+              <span class="chain-arrow">→</span>
+              <span class="chain-node secondary">n8n</span>
+              <span class="chain-arrow">→</span>
+              <span class="chain-node tertiary">Unity AI</span>
+            </div>
+          </div>
+        </div>
+        <!-- TTS Column -->
+        <div class="pipe-col">
+          <h3><div class="dot green"></div> TTS — Text-to-Speech</h3>
+          <div class="provider-card active" onclick="toggleProvider(this)">
+            <div class="order-badge">1</div>
+            <div class="p-icon cloud">☁️</div>
+            <div class="p-info">
+              <div class="p-name">Gabriela TTS <span class="p-status online">● online</span></div>
+              <div class="p-desc">Cloud primary — neural voice</div>
+            </div>
+          </div>
+          <div class="provider-card fallback" onclick="toggleProvider(this)">
+            <div class="order-badge">2</div>
+            <div class="p-icon cloud">⚡</div>
+            <div class="p-info">
+              <div class="p-name">Groq TTS <span class="p-status offline">● offline</span></div>
+              <div class="p-desc">Cloud secondary — unavailable</div>
+            </div>
+          </div>
+          <div class="provider-card fallback offline" onclick="toggleProvider(this)">
+            <div class="order-badge">3</div>
+            <div class="p-icon local">🖥️</div>
+            <div class="p-info">
+              <div class="p-name">Unity TTS <span class="p-status offline">● offline</span></div>
+              <div class="p-desc">Local — not configured</div>
+            </div>
+          </div>
+          <div class="fallback-chain">
+            <div class="chain-label">Fallback Chain</div>
+            <div class="chain-flow">
+              <span class="chain-node primary">Gabriela</span>
+              <span class="chain-arrow">→</span>
+              <span class="chain-node secondary" style="opacity:0.4;text-decoration:line-through">Groq</span>
+              <span class="chain-arrow">→</span>
+              <span class="chain-node tertiary" style="opacity:0.4;text-decoration:line-through">Unity TTS</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="s2s-toggle">
+        <div class="toggle-switch" id="s2s-toggle" onclick="this.classList.toggle('on')"></div>
+        <div class="s2s-info">
+          <h4>🔮 Speech-to-Speech Mode — Mochi</h4>
+          <p>Bypass STT→LLM→TTS pipeline. Direct audio-in → audio-out via Mochi model. Lower latency, less control over intermediate text.</p>
+        </div>
+        <span class="p-status online" style="margin-left:auto">● available</span>
+      </div>
+    </div>
+
+    <!-- VIEW 1: LIVE STATUS -->
+    <div class="view" id="view-1">
+      <div class="status-grid">
+        <div class="status-card">
+          <div class="layer">🎤 STT Layer</div>
+          <div class="provider">Gabriela STT</div>
+          <div class="metrics">
+            <div class="metric"><div class="val green">42ms</div><div class="label">Latency</div></div>
+            <div class="metric"><div class="val green">99.2%</div><div class="label">Uptime</div></div>
+          </div>
+        </div>
+        <div class="status-card">
+          <div class="layer">🧠 LLM Layer</div>
+          <div class="provider">Gabriela LLM</div>
+          <div class="metrics">
+            <div class="metric"><div class="val green">380ms</div><div class="label">Latency</div></div>
+            <div class="metric"><div class="val green">98.7%</div><div class="label">Uptime</div></div>
+          </div>
+        </div>
+        <div class="status-card">
+          <div class="layer">🔊 TTS Layer</div>
+          <div class="provider">Gabriela TTS</div>
+          <div class="metrics">
+            <div class="metric"><div class="val yellow">156ms</div><div class="label">Latency</div></div>
+            <div class="metric"><div class="val green">97.1%</div><div class="label">Uptime</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="wave-viz">
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+
+      <div class="pipeline-flow">
+        <div>
+          <div class="flow-box stt">🎤 STT</div>
+          <div class="flow-label">Gabriela · 42ms</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div>
+          <div class="flow-box llm">🧠 LLM</div>
+          <div class="flow-label">Gabriela · 380ms</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div>
+          <div class="flow-box tts">🔊 TTS</div>
+          <div class="flow-label">Gabriela · 156ms</div>
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:#5a6a80">End-to-end latency: <span style="color:#22c55e;font-weight:600">578ms</span> · Last response: <span style="color:#c8d6e5">2.3s ago</span></div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function switchTab(i){document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));document.querySelectorAll('.view').forEach((v,j)=>v.classList.toggle('active',j===i))}
+function toggleProvider(el){el.classList.toggle('active')}
+</script>
+</body>
+</html>

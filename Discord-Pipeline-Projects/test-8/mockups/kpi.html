@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodDefinition — KPI & Causal Chain</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;perspective:1200px;overflow-x:hidden}
+.scene{width:100vw;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:1200px;background:rgba(15,20,35,0.92);border:1px solid rgba(100,140,255,0.15);border-radius:18px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(60,100,255,0.08),0 30px 80px rgba(0,0,0,0.5);transform:rotateX(2deg) rotateY(-1deg);transition:transform 0.6s;overflow:hidden}
+.panel:hover{transform:rotateX(0) rotateY(0)}
+.hdr{padding:20px 28px 16px;border-bottom:1px solid rgba(100,140,255,0.08);display:flex;align-items:center;gap:14px}
+.hdr h1{font-size:18px;font-weight:600;color:#e2e8f0}
+.hdr h1 span{color:#648cff}
+.badge{background:rgba(100,140,255,0.12);color:#648cff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.content{padding:24px 28px}
+
+/* Toolbar */
+.toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 16px;background:rgba(20,28,50,0.4);border-radius:10px;flex-wrap:wrap}
+.tool-btn{padding:7px 14px;background:rgba(100,140,255,0.08);border:1px solid rgba(100,140,255,0.15);border-radius:8px;color:#c8d6e5;font-size:12px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px}
+.tool-btn:hover{background:rgba(100,140,255,0.15);border-color:rgba(100,140,255,0.3)}
+.tool-btn.primary{background:#648cff;border-color:#648cff;color:#fff}
+.tool-btn.primary:hover{background:#5278e8}
+.tool-sep{width:1px;height:24px;background:rgba(100,140,255,0.1)}
+.gen-input{flex:1;min-width:200px;padding:7px 14px;background:rgba(10,14,23,0.6);border:1px solid rgba(100,140,255,0.12);border-radius:8px;color:#c8d6e5;font-size:12px;outline:none}
+.gen-input::placeholder{color:#4a5568}
+.gen-input:focus{border-color:#648cff}
+
+/* Main layout */
+.main-layout{display:grid;grid-template-columns:1fr 320px;gap:20px;min-height:480px}
+
+/* Graph area */
+.graph-area{background:rgba(10,14,23,0.6);border:1px solid rgba(100,140,255,0.08);border-radius:14px;position:relative;overflow:hidden;min-height:480px}
+.graph-canvas{width:100%;height:100%;position:relative}
+
+/* SVG-like nodes using divs */
+.gnode{position:absolute;padding:10px 16px;border-radius:10px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.3s;text-align:center;min-width:100px;user-select:none}
+.gnode:hover{transform:scale(1.08);z-index:10}
+.gnode.root{background:rgba(100,140,255,0.15);border:2px solid #648cff;color:#648cff}
+.gnode.kpi{background:rgba(34,197,94,0.1);border:2px solid rgba(34,197,94,0.4);color:#22c55e}
+.gnode.cause{background:rgba(251,191,36,0.1);border:2px solid rgba(251,191,36,0.4);color:#fbbf24}
+.gnode.effect{background:rgba(168,85,247,0.1);border:2px solid rgba(168,85,247,0.4);color:#a855f7}
+.gnode.selected{box-shadow:0 0 20px rgba(100,140,255,0.3)}
+.gnode .val{font-size:16px;font-weight:700;display:block;margin-top:2px}
+
+/* Connection lines via SVG */
+svg.connections{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+svg.connections line{stroke:rgba(100,140,255,0.2);stroke-width:2;stroke-dasharray:6,4;animation:dashFlow 1s linear infinite}
+@keyframes dashFlow{to{stroke-dashoffset:-10}}
+
+/* Detail panel */
+.detail{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.detail h3{font-size:14px;color:#e2e8f0;font-weight:600;display:flex;align-items:center;gap:8px}
+.detail-field{margin-bottom:12px}
+.detail-field label{display:block;font-size:11px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.detail-input{width:100%;padding:8px 12px;background:rgba(10,14,23,0.6);border:1px solid rgba(100,140,255,0.12);border-radius:6px;color:#c8d6e5;font-size:13px;outline:none}
+.detail-input:focus{border-color:#648cff}
+
+.connections-list{display:flex;flex-direction:column;gap:4px}
+.conn-item{display:flex;align-items:center;gap:8px;padding:6px 10px;background:rgba(15,20,35,0.5);border-radius:6px;font-size:11px}
+.conn-item .conn-type{font-size:9px;padding:2px 6px;border-radius:4px}
+.conn-type.causes{background:rgba(251,191,36,0.1);color:#fbbf24}
+.conn-type.drives{background:rgba(34,197,94,0.1);color:#22c55e}
+
+.inject-btn{width:100%;padding:10px;background:rgba(100,140,255,0.1);border:1px solid rgba(100,140,255,0.2);border-radius:8px;color:#648cff;font-size:13px;cursor:pointer;transition:all 0.2s;margin-top:auto}
+.inject-btn:hover{background:rgba(100,140,255,0.2)}
+
+/* Comparison */
+.comparison{margin-top:16px;display:flex;gap:16px}
+.comp-side{flex:1;background:rgba(20,28,50,0.3);border:1px solid rgba(100,140,255,0.08);border-radius:10px;padding:14px}
+.comp-side h4{font-size:12px;color:#5a6a80;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.comp-side h4 .comp-badge{font-size:9px;padding:2px 6px;border-radius:4px}
+.comp-badge.gen{background:rgba(100,140,255,0.1);color:#648cff}
+.comp-badge.edit{background:rgba(34,197,94,0.1);color:#22c55e}
+.comp-item{font-size:11px;padding:4px 0;color:#a0b4d0;display:flex;align-items:center;gap:6px}
+.comp-item.added{color:#22c55e}
+.comp-item.removed{color:#ef4444;text-decoration:line-through}
+.comp-item.modified{color:#fbbf24}
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel">
+  <div class="hdr">
+    <h1>📊 <span>KPI & Causal Chain</span> — PodDefinition</h1>
+    <span class="badge">US-26–28</span>
+  </div>
+  <div class="content">
+    <div class="toolbar">
+      <input class="gen-input" placeholder="Describe your KPI tree or causal chain..." value="Generate a revenue growth KPI tree with marketing and sales drivers">
+      <button class="tool-btn primary" onclick="animateGen()">🤖 Generate KPI</button>
+      <button class="tool-btn">🔗 Generate Causal Chain</button>
+      <div class="tool-sep"></div>
+      <button class="tool-btn">➕ Add Node</button>
+      <button class="tool-btn">🗑️ Delete</button>
+      <button class="tool-btn">🔄 Reorganize</button>
+    </div>
+
+    <div class="main-layout">
+      <div class="graph-area">
+        <svg class="connections">
+          <line x1="350" y1="60" x2="200" y2="140"/>
+          <line x1="350" y1="60" x2="500" y2="140"/>
+          <line x1="200" y1="170" x2="120" y2="260"/>
+          <line x1="200" y1="170" x2="280" y2="260"/>
+          <line x1="500" y1="170" x2="430" y2="260"/>
+          <line x1="500" y1="170" x2="580" y2="260"/>
+          <line x1="120" y1="290" x2="80" y2="370"/>
+          <line x1="120" y1="290" x2="180" y2="370"/>
+          <line x1="430" y1="290" x2="430" y2="370"/>
+        </svg>
+        <div class="gnode root selected" style="left:280px;top:30px" onclick="selectNode(this)">📊 Revenue Growth<span class="val">+18%</span></div>
+        <div class="gnode kpi" style="left:120px;top:130px" onclick="selectNode(this)">💰 Marketing ROI<span class="val">3.2x</span></div>
+        <div class="gnode kpi" style="left:430px;top:130px" onclick="selectNode(this)">📈 Sales Pipeline<span class="val">$2.4M</span></div>
+        <div class="gnode cause" style="left:40px;top:240px" onclick="selectNode(this)">🎯 Ad Spend<span class="val">$120K</span></div>
+        <div class="gnode cause" style="left:210px;top:240px" onclick="selectNode(this)">📧 Email CTR<span class="val">4.2%</span></div>
+        <div class="gnode cause" style="left:360px;top:240px" onclick="selectNode(this)">🤝 Lead Conv.<span class="val">12%</span></div>
+        <div class="gnode effect" style="left:510px;top:240px" onclick="selectNode(this)">⭐ NPS Score<span class="val">72</span></div>
+        <div class="gnode cause" style="left:10px;top:350px" onclick="selectNode(this)">📱 Social Ads<span class="val">$45K</span></div>
+        <div class="gnode cause" style="left:120px;top:350px" onclick="selectNode(this)">🔍 SEM<span class="val">$75K</span></div>
+        <div class="gnode effect" style="left:360px;top:350px" onclick="selectNode(this)">📞 Demos/mo<span class="val">340</span></div>
+      </div>
+
+      <div class="detail">
+        <h3>📊 Revenue Growth</h3>
+        <div class="detail-field">
+          <label>Label</label>
+          <input class="detail-input" value="Revenue Growth">
+        </div>
+        <div class="detail-field">
+          <label>Current Value</label>
+          <input class="detail-input" value="+18%">
+        </div>
+        <div class="detail-field">
+          <label>Target</label>
+          <input class="detail-input" value="+25% (Q4)">
+        </div>
+        <div class="detail-field">
+          <label>Connections</label>
+          <div class="connections-list">
+            <div class="conn-item"><span class="conn-type drives">drives</span> Marketing ROI → Revenue Growth</div>
+            <div class="conn-item"><span class="conn-type drives">drives</span> Sales Pipeline → Revenue Growth</div>
+          </div>
+        </div>
+        <button class="inject-btn" onclick="this.textContent='✓ Injected to PodDef!';this.style.borderColor='#22c55e';this.style.color='#22c55e'">📤 Inject to PodDefinition</button>
+      </div>
+    </div>
+
+    <div class="comparison">
+      <div class="comp-side">
+        <h4>🤖 Generated <span class="comp-badge gen">AI Output</span></h4>
+        <div class="comp-item">📊 Revenue Growth (+15%)</div>
+        <div class="comp-item">💰 Marketing ROI (2.8x)</div>
+        <div class="comp-item">📈 Sales Pipeline ($1.9M)</div>
+        <div class="comp-item removed">❌ Churn Rate (removed)</div>
+        <div class="comp-item">🎯 Ad Spend ($100K)</div>
+        <div class="comp-item">📧 Email CTR (3.8%)</div>
+      </div>
+      <div class="comp-side">
+        <h4>✏️ Edited <span class="comp-badge edit">Current</span></h4>
+        <div class="comp-item modified">📊 Revenue Growth (+18%) ⬆</div>
+        <div class="comp-item modified">💰 Marketing ROI (3.2x) ⬆</div>
+        <div class="comp-item modified">📈 Sales Pipeline ($2.4M) ⬆</div>
+        <div class="comp-item added">✨ NPS Score (72) — added</div>
+        <div class="comp-item modified">🎯 Ad Spend ($120K) ⬆</div>
+        <div class="comp-item modified">📧 Email CTR (4.2%) ⬆</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function selectNode(el){document.querySelectorAll('.gnode').forEach(n=>n.classList.remove('selected'));el.classList.add('selected')}
+function animateGen(){document.querySelectorAll('.gnode').forEach((n,i)=>{n.style.opacity='0';n.style.transform='scale(0.5)';setTimeout(()=>{n.style.transition='all 0.4s ease';n.style.opacity='1';n.style.transform='scale(1)'},i*150)})}
+</script>
+</body>
+</html>

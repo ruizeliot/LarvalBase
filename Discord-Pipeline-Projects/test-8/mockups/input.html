@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 Input Abstraction — Unity Multi-Template</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0f1117;--card:#1a1d27;--card2:#222633;--accent:#7c5cfc;--accent2:#5b3fd4;--vr:#e84393;--desktop:#00b894;--text:#e8e8f0;--dim:#8888aa;--border:#2a2e3d;--success:#00b894;--warn:#fdcb6e}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:20px}
+.container{max-width:1100px;margin:0 auto}
+h1{font-size:1.6rem;margin-bottom:4px;display:flex;align-items:center;gap:10px}
+h1 .emoji{font-size:1.8rem}
+.subtitle{color:var(--dim);font-size:.9rem;margin-bottom:24px}
+.tabs{display:flex;gap:4px;margin-bottom:20px;flex-wrap:wrap}
+.tab{padding:10px 20px;background:var(--card);border:1px solid var(--border);border-radius:10px 10px 0 0;cursor:pointer;font-size:.85rem;color:var(--dim);transition:all .2s;border-bottom:2px solid transparent}
+.tab:hover{color:var(--text);background:var(--card2)}
+.tab.active{color:var(--accent);border-bottom:2px solid var(--accent);background:var(--card2)}
+.panel{display:none;animation:fadeIn .3s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Architecture Diagram */
+.arch-grid{display:grid;grid-template-rows:auto auto auto;gap:16px}
+.arch-layer{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;position:relative}
+.arch-layer .label{font-size:.7rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:12px}
+.interface-box{background:linear-gradient(135deg,var(--accent2),var(--accent));border-radius:10px;padding:16px 24px;text-align:center;color:#fff;font-weight:600;font-size:1rem;position:relative;box-shadow:0 4px 20px rgba(124,92,252,.3)}
+.interface-box .tag{font-size:.7rem;opacity:.8;font-weight:400;display:block;margin-top:4px}
+.impl-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.impl-box{border-radius:10px;padding:16px;text-align:center;font-weight:600;font-size:.9rem;position:relative;transition:transform .2s,box-shadow .2s;cursor:default}
+.impl-box:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.4)}
+.impl-desktop{background:linear-gradient(135deg,#00b89433,#00b89411);border:1px solid var(--desktop);color:var(--desktop)}
+.impl-vr{background:linear-gradient(135deg,#e8439333,#e8439311);border:1px solid var(--vr);color:var(--vr)}
+.impl-box .methods{font-size:.75rem;color:var(--dim);font-weight:400;margin-top:8px;line-height:1.6}
+.arrow-down{text-align:center;color:var(--accent);font-size:1.4rem;padding:4px 0;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:.4}50%{opacity:1}}
+.consumer-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.consumer-box{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;font-size:.8rem;color:var(--dim)}
+.consumer-box .name{color:var(--text);font-weight:600;margin-bottom:4px}
+
+/* Interactions Table */
+.mode-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:600px){.mode-cards,.impl-row{grid-template-columns:1fr}.consumer-row{grid-template-columns:1fr 1fr}}
+.mode-card{background:var(--card);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.mode-card h3{font-size:1rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.mode-card.desktop h3{color:var(--desktop)}
+.mode-card.vr h3{color:var(--vr)}
+.interaction{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card2);border-radius:8px;margin-bottom:8px;font-size:.85rem;transition:background .2s}
+.interaction:hover{background:var(--border)}
+.interaction .icon{font-size:1.1rem;width:28px;text-align:center}
+.interaction .info{flex:1}
+.interaction .info .name{font-weight:600}
+.interaction .info .desc{font-size:.75rem;color:var(--dim)}
+.badge{font-size:.65rem;padding:3px 8px;border-radius:20px;font-weight:600}
+.badge-ready{background:#00b89422;color:var(--success)}
+.badge-planned{background:#fdcb6e22;color:var(--warn)}
+
+/* Switch Logic */
+.switch-visual{background:var(--card);border-radius:12px;padding:24px;border:1px solid var(--border)}
+.switch-flow{display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:20px 0}
+.flow-node{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 20px;text-align:center;font-size:.85rem;transition:all .3s;cursor:pointer;min-width:120px}
+.flow-node:hover{border-color:var(--accent);transform:scale(1.03)}
+.flow-node.highlight-desktop{border-color:var(--desktop);box-shadow:0 0 16px rgba(0,184,148,.2)}
+.flow-node.highlight-vr{border-color:var(--vr);box-shadow:0 0 16px rgba(232,67,147,.2)}
+.flow-node .small{font-size:.7rem;color:var(--dim);margin-top:4px}
+.flow-arrow{color:var(--accent);font-size:1.2rem;animation:pulse 2s infinite}
+.switch-btn-row{display:flex;justify-content:center;gap:12px;margin-top:16px}
+.switch-btn{padding:10px 24px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);cursor:pointer;font-size:.85rem;font-weight:600;transition:all .2s}
+.switch-btn:hover{border-color:var(--accent)}
+.switch-btn.active-desktop{border-color:var(--desktop);background:rgba(0,184,148,.1);color:var(--desktop)}
+.switch-btn.active-vr{border-color:var(--vr);background:rgba(232,67,147,.1);color:var(--vr)}
+
+/* Bindings */
+.bindings-section{display:grid;gap:12px}
+.binding-group{background:var(--card);border-radius:12px;padding:20px;border:1px solid var(--border)}
+.binding-group h3{font-size:.95rem;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.binding-row{display:grid;grid-template-columns:140px 1fr 100px;gap:12px;align-items:center;padding:10px 12px;background:var(--card2);border-radius:8px;margin-bottom:6px;font-size:.82rem}
+@media(max-width:500px){.binding-row{grid-template-columns:1fr;gap:4px}}
+.binding-action{font-weight:600;color:var(--text)}
+.binding-key{color:var(--dim);font-family:'Cascadia Code',monospace;font-size:.78rem;background:var(--bg);padding:4px 10px;border-radius:6px;display:inline-block}
+.binding-status{text-align:right}
+
+.section-title{font-size:1.1rem;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1><span class="emoji">🎮</span> Input Abstraction</h1>
+  <p class="subtitle">Couche d'abstraction Desktop ↔ VR — Interface commune IInputProvider</p>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">🏗️ Architecture</div>
+    <div class="tab" onclick="switchTab(1)">🎯 Interactions</div>
+    <div class="tab" onclick="switchTab(2)">⚡ Platform Switch</div>
+    <div class="tab" onclick="switchTab(3)">🔧 Bindings</div>
+  </div>
+
+  <!-- ARCHITECTURE -->
+  <div class="panel active" id="panel-0">
+    <div class="arch-grid">
+      <div class="arch-layer">
+        <div class="label">Game Systems (Consumers)</div>
+        <div class="consumer-row">
+          <div class="consumer-box"><div class="name">ObjectManipulator</div>Grab / Move / Scale</div>
+          <div class="consumer-box"><div class="name">UIInteraction</div>Menus / Buttons / HUD</div>
+          <div class="consumer-box"><div class="name">PlayerController</div>Movement / Camera</div>
+        </div>
+      </div>
+
+      <div class="arrow-down">▼ ▼ ▼</div>
+
+      <div class="arch-layer">
+        <div class="label">Abstraction Layer</div>
+        <div class="interface-box">
+          IInputProvider
+          <span class="tag">GetGrab() · GetPoke() · GetPinch() · GetPointer() · GetMove() · GetLook()</span>
+        </div>
+      </div>
+
+      <div class="arrow-down">▼ ▼ ▼</div>
+
+      <div class="arch-layer">
+        <div class="label">Platform Implementations</div>
+        <div class="impl-row">
+          <div class="impl-box impl-desktop">
+            🖥️ DesktopInputProvider
+            <div class="methods">
+              Mouse → Pointer / Grab<br>
+              WASD → Move<br>
+              Mouse Delta → Look<br>
+              Click → Poke / Select
+            </div>
+          </div>
+          <div class="impl-box impl-vr">
+            🥽 VRInputProvider (Meta SDK)
+            <div class="methods">
+              Hand Grab → Grab<br>
+              Index Poke → Poke<br>
+              Pinch Gesture → Pinch<br>
+              Controller Stick → Move
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTERACTIONS -->
+  <div class="panel" id="panel-1">
+    <div class="mode-cards">
+      <div class="mode-card desktop">
+        <h3>🖥️ Desktop Mode</h3>
+        <div class="interaction"><div class="icon">🖱️</div><div class="info"><div class="name">Point & Click</div><div class="desc">Souris → sélection, UI, navigation</div></div><span class="badge badge-ready">US11</span></div>
+        <div class="interaction"><div class="icon">⌨️</div><div class="info"><div class="name">WASD + Space</div><div class="desc">Déplacement FPS classique</div></div><span class="badge badge-ready">US11</span></div>
+        <div class="interaction"><div class="icon">🖱️</div><div class="info"><div class="name">Click & Drag</div><div class="desc">Grab objet → simulé via mouse hold</div></div><span class="badge badge-ready">US11</span></div>
+        <div class="interaction"><div class="icon">🔘</div><div class="info"><div class="name">Scroll Wheel</div><div class="desc">Zoom / distance grab</div></div><span class="badge badge-planned">Planned</span></div>
+      </div>
+      <div class="mode-card vr">
+        <h3>🥽 VR Mode (Quest / Meta SDK)</h3>
+        <div class="interaction"><div class="icon">✊</div><div class="info"><div class="name">Hand Grab</div><div class="desc">Saisie directe d'objets — optimisé Quest</div></div><span class="badge badge-ready">US10</span></div>
+        <div class="interaction"><div class="icon">👆</div><div class="info"><div class="name">Index Poke</div><div class="desc">Appui boutons UI, interaction directe</div></div><span class="badge badge-ready">US10</span></div>
+        <div class="interaction"><div class="icon">🤏</div><div class="info"><div class="name">Pinch</div><div class="desc">Sélection précise, sliders, resize</div></div><span class="badge badge-ready">US10</span></div>
+        <div class="interaction"><div class="icon">🕹️</div><div class="info"><div class="name">Controller Stick</div><div class="desc">Locomotion + snap turn</div></div><span class="badge badge-planned">Planned</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLATFORM SWITCH -->
+  <div class="panel" id="panel-2">
+    <div class="switch-visual">
+      <div class="section-title">⚡ Détection automatique de plateforme</div>
+      <div class="switch-flow">
+        <div class="flow-node" id="fn-app">
+          🚀 App Launch
+          <div class="small">RuntimePlatform</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node" id="fn-detect">
+          🔍 PlatformDetector
+          <div class="small">XRSettings.isDevicePresent</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node" id="fn-factory">
+          🏭 InputProviderFactory
+          <div class="small">Crée le bon provider</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node" id="fn-provider">
+          ✅ IInputProvider
+          <div class="small">Prêt à l'emploi</div>
+        </div>
+      </div>
+
+      <p style="text-align:center;color:var(--dim);font-size:.82rem;margin:16px 0 8px">Simule le switch — clique un mode :</p>
+      <div class="switch-btn-row">
+        <button class="switch-btn active-desktop" onclick="simulateSwitch('desktop')">🖥️ Desktop</button>
+        <button class="switch-btn" onclick="simulateSwitch('vr')">🥽 VR Quest</button>
+      </div>
+
+      <div id="switch-result" style="text-align:center;margin-top:16px;padding:14px;background:var(--card2);border-radius:10px;font-size:.85rem;transition:all .3s">
+        <strong style="color:var(--desktop)">Desktop détecté</strong> → DesktopInputProvider chargé<br>
+        <span style="color:var(--dim)">Fallback: aucun casque XR trouvé — mode souris/clavier activé</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- BINDINGS -->
+  <div class="panel" id="panel-3">
+    <div class="bindings-section">
+      <div class="binding-group">
+        <h3>🖥️ Desktop Bindings</h3>
+        <div class="binding-row"><span class="binding-action">Move Forward</span><span class="binding-key">W</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Move Back</span><span class="binding-key">S</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Strafe Left</span><span class="binding-key">A</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Strafe Right</span><span class="binding-key">D</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Grab Object</span><span class="binding-key">Left Click (hold)</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Poke / Select</span><span class="binding-key">Left Click</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Look Around</span><span class="binding-key">Mouse Delta</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Zoom / Distance</span><span class="binding-key">Scroll Wheel</span><div class="binding-status"><span class="badge badge-planned">Planned</span></div></div>
+      </div>
+
+      <div class="binding-group">
+        <h3>🥽 VR Bindings (Meta SDK)</h3>
+        <div class="binding-row"><span class="binding-action">Grab</span><span class="binding-key">Hand Grab Gesture</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Poke</span><span class="binding-key">Index Finger Extend</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Pinch</span><span class="binding-key">Thumb + Index</span><div class="binding-status"><span class="badge badge-ready">Active</span></div></div>
+        <div class="binding-row"><span class="binding-action">Move</span><span class="binding-key">Left Stick</span><div class="binding-status"><span class="badge badge-planned">Planned</span></div></div>
+        <div class="binding-row"><span class="binding-action">Snap Turn</span><span class="binding-key">Right Stick</span><div class="binding-status"><span class="badge badge-planned">Planned</span></div></div>
+        <div class="binding-row"><span class="binding-action">Menu</span><span class="binding-key">Meta Button</span><div class="binding-status"><span class="badge badge-planned">Planned</span></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(i){
+  document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));
+  document.querySelectorAll('.panel').forEach((p,j)=>p.classList.toggle('active',j===i));
+}
+
+function simulateSwitch(mode){
+  const btns=document.querySelectorAll('.switch-btn');
+  const nodes=document.querySelectorAll('.flow-node');
+  const result=document.getElementById('switch-result');
+  btns.forEach(b=>{b.className='switch-btn';});
+  nodes.forEach(n=>{n.classList.remove('highlight-desktop','highlight-vr');});
+
+  if(mode==='desktop'){
+    btns[0].classList.add('active-desktop');
+    nodes.forEach(n=>n.classList.add('highlight-desktop'));
+    result.innerHTML='<strong style="color:var(--desktop)">Desktop détecté</strong> → DesktopInputProvider chargé<br><span style="color:var(--dim)">Fallback: aucun casque XR trouvé — mode souris/clavier activé</span>';
+  } else {
+    btns[1].classList.add('active-vr');
+    nodes.forEach(n=>n.classList.add('highlight-vr'));
+    result.innerHTML='<strong style="color:var(--vr)">Quest détecté</strong> → VRInputProvider (Meta SDK) chargé<br><span style="color:var(--dim)">XRSettings.isDevicePresent = true — hand tracking activé</span>';
+  }
+}
+</script>
+</body>
+</html>

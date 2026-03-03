@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodDefinition — Environments & MR</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;perspective:1200px;overflow-x:hidden}
+.scene{width:100vw;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:1200px;background:rgba(15,20,35,0.92);border:1px solid rgba(100,140,255,0.15);border-radius:18px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(60,100,255,0.08),0 30px 80px rgba(0,0,0,0.5);transform:rotateX(2deg) rotateY(-1deg);transition:transform 0.6s;overflow:hidden}
+.panel:hover{transform:rotateX(0) rotateY(0)}
+.hdr{padding:20px 28px 16px;border-bottom:1px solid rgba(100,140,255,0.08);display:flex;align-items:center;gap:14px}
+.hdr h1{font-size:18px;font-weight:600;color:#e2e8f0}
+.hdr h1 span{color:#648cff}
+.badge{background:rgba(100,140,255,0.12);color:#648cff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.content{padding:24px 28px}
+
+/* Mode switcher */
+.mode-switch{display:flex;gap:0;background:rgba(20,28,50,0.5);border-radius:12px;padding:4px;margin-bottom:20px;width:fit-content}
+.mode-btn{padding:10px 24px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.25s;color:#6b7a90;user-select:none;display:flex;align-items:center;gap:8px}
+.mode-btn:hover{color:#a0b4d0}
+.mode-btn.active{background:rgba(100,140,255,0.15);color:#648cff}
+
+/* Layout */
+.env-layout{display:grid;grid-template-columns:1fr 320px;gap:20px}
+
+/* Viewport */
+.viewport{background:rgba(10,14,23,0.8);border:1px solid rgba(100,140,255,0.08);border-radius:14px;min-height:420px;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.viewport-label{position:absolute;top:12px;left:16px;font-size:11px;color:#5a6a80;display:flex;align-items:center;gap:6px}
+.viewport-badge{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:500}
+.viewport-badge.desktop{background:rgba(100,140,255,0.1);color:#648cff}
+.viewport-badge.vr{background:rgba(168,85,247,0.1);color:#a855f7}
+.viewport-badge.mr{background:rgba(34,197,94,0.1);color:#22c55e}
+
+/* 3D scene mockups */
+.scene-3d{text-align:center;perspective:800px}
+.floor-grid{width:400px;height:200px;background:repeating-linear-gradient(90deg,rgba(100,140,255,0.05) 0px,rgba(100,140,255,0.05) 1px,transparent 1px,transparent 40px),repeating-linear-gradient(0deg,rgba(100,140,255,0.05) 0px,rgba(100,140,255,0.05) 1px,transparent 1px,transparent 40px);transform:rotateX(60deg);margin:0 auto}
+.scene-objects{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+.floating-panel{width:200px;height:120px;background:rgba(15,20,35,0.8);border:1px solid rgba(100,140,255,0.2);border-radius:8px;position:absolute;backdrop-filter:blur(10px);animation:floatSlow 4s ease-in-out infinite}
+@keyframes floatSlow{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+
+/* Desktop view */
+.desktop-view{position:relative;width:100%;height:100%}
+.desktop-view .sky{position:absolute;top:0;left:0;right:0;height:60%;background:linear-gradient(180deg,#0a1628 0%,#162040 50%,#1a2a50 100%)}
+.desktop-view .ground{position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(180deg,#0f1a30 0%,#0a0e17 100%)}
+.desktop-view .grid-overlay{position:absolute;bottom:0;left:0;right:0;height:40%;background:repeating-linear-gradient(90deg,rgba(100,140,255,0.04) 0px,transparent 1px,transparent 60px),repeating-linear-gradient(0deg,rgba(100,140,255,0.04) 0px,transparent 1px,transparent 30px);transform:perspective(500px) rotateX(45deg);transform-origin:bottom}
+.graph-nodes-3d{position:absolute;top:30%;left:50%;transform:translateX(-50%)}
+.gn3d{position:absolute;padding:6px 12px;background:rgba(100,140,255,0.1);border:1px solid rgba(100,140,255,0.25);border-radius:6px;font-size:10px;color:#648cff;white-space:nowrap;animation:floatSlow 4s ease-in-out infinite}
+.gn3d:nth-child(2){animation-delay:0.5s}
+.gn3d:nth-child(3){animation-delay:1s}
+.gn3d:nth-child(4){animation-delay:1.5s}
+
+/* VR view */
+.vr-view{position:relative;width:100%;height:100%;display:none}
+.vr-env{position:absolute;inset:0;background:radial-gradient(ellipse at center,#1a1040 0%,#0a0e17 70%);overflow:hidden}
+.vr-stars{position:absolute;inset:0}
+.star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:0.3}50%{opacity:1}}
+.vr-label{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;color:#a855f7;background:rgba(168,85,247,0.1);padding:6px 16px;border-radius:8px}
+
+/* MR view */
+.mr-view{position:relative;width:100%;height:100%;display:none}
+.mr-passthrough{position:absolute;inset:0;background:linear-gradient(135deg,#2a2520 0%,#3a3530 25%,#2a2520 50%,#352f28 75%,#2a2520 100%);opacity:0.6}
+.mr-mesh{position:absolute;inset:0;background:repeating-linear-gradient(0deg,rgba(34,197,94,0.03) 0px,transparent 1px,transparent 20px),repeating-linear-gradient(90deg,rgba(34,197,94,0.03) 0px,transparent 1px,transparent 20px)}
+.mr-anchor{position:absolute;width:60px;height:60px;border:2px solid rgba(34,197,94,0.4);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;color:#22c55e;animation:anchorPulse 2s infinite}
+@keyframes anchorPulse{0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.2)}50%{box-shadow:0 0 0 15px rgba(34,197,94,0)}}
+.mr-label{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:12px;color:#22c55e;background:rgba(34,197,94,0.1);padding:6px 16px;border-radius:8px}
+
+/* Settings panel */
+.settings{display:flex;flex-direction:column;gap:16px}
+.settings-section{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:16px}
+.settings-section h4{font-size:12px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px}
+
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.env-thumb{border-radius:8px;overflow:hidden;cursor:pointer;transition:all 0.25s;border:2px solid transparent;position:relative}
+.env-thumb:hover{border-color:rgba(100,140,255,0.3)}
+.env-thumb.selected{border-color:#648cff}
+.env-preview{height:60px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.env-preview.office{background:linear-gradient(135deg,#1a2040,#2a3060)}
+.env-preview.space{background:linear-gradient(135deg,#0a0a20,#1a1040)}
+.env-preview.forest{background:linear-gradient(135deg,#0a2010,#1a3020)}
+.env-preview.abstract{background:linear-gradient(135deg,#200a20,#301a30)}
+.env-name{font-size:11px;color:#c8d6e5;padding:6px 8px;background:rgba(10,14,23,0.6);text-align:center}
+
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid rgba(100,140,255,0.04)}
+.setting-row:last-child{border:none}
+.setting-label{font-size:12px;color:#a0b4d0}
+.setting-toggle{width:36px;height:20px;background:rgba(100,140,255,0.15);border-radius:10px;cursor:pointer;position:relative;transition:background 0.3s}
+.setting-toggle.on{background:#648cff}
+.setting-toggle::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:transform 0.3s}
+.setting-toggle.on::after{transform:translateX(16px)}
+.setting-select{padding:4px 10px;background:rgba(10,14,23,0.6);border:1px solid rgba(100,140,255,0.12);border-radius:6px;color:#c8d6e5;font-size:11px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel">
+  <div class="hdr">
+    <h1>🌍 <span>Environments & MR</span></h1>
+    <span class="badge">US-43–45</span>
+  </div>
+  <div class="content">
+    <div class="mode-switch">
+      <div class="mode-btn active" onclick="switchMode(0,this)">🖥️ Desktop 3D</div>
+      <div class="mode-btn" onclick="switchMode(1,this)">🥽 Quest VR</div>
+      <div class="mode-btn" onclick="switchMode(2,this)">👓 Quest MR</div>
+    </div>
+
+    <div class="env-layout">
+      <div class="viewport">
+        <!-- Desktop -->
+        <div class="desktop-view" id="mode-0">
+          <div class="sky"></div>
+          <div class="ground"></div>
+          <div class="grid-overlay"></div>
+          <div class="graph-nodes-3d">
+            <div class="gn3d" style="left:-120px;top:0">🌐 API Gateway</div>
+            <div class="gn3d" style="left:40px;top:-30px">💾 Database</div>
+            <div class="gn3d" style="left:-60px;top:50px">📊 Analytics</div>
+            <div class="gn3d" style="left:80px;top:30px">🔐 Auth</div>
+          </div>
+          <div class="viewport-label">Desktop 3D <span class="viewport-badge desktop">Free Camera</span></div>
+        </div>
+        <!-- VR -->
+        <div class="vr-view" id="mode-1">
+          <div class="vr-env">
+            <div class="vr-stars">
+              <div class="star" style="top:10%;left:20%"></div>
+              <div class="star" style="top:25%;left:60%;animation-delay:0.5s"></div>
+              <div class="star" style="top:15%;left:80%;animation-delay:1s"></div>
+              <div class="star" style="top:40%;left:30%;animation-delay:1.5s"></div>
+              <div class="star" style="top:35%;left:70%;animation-delay:2s"></div>
+              <div class="star" style="top:8%;left:45%;animation-delay:0.3s"></div>
+              <div class="star" style="top:50%;left:15%;animation-delay:0.8s"></div>
+              <div class="star" style="top:20%;left:90%;animation-delay:1.2s"></div>
+            </div>
+          </div>
+          <div class="graph-nodes-3d" style="position:absolute;top:40%;left:50%;transform:translateX(-50%)">
+            <div class="gn3d" style="left:-100px;top:0">🌐 API Gateway</div>
+            <div class="gn3d" style="left:30px;top:-40px">💾 Database</div>
+            <div class="gn3d" style="left:-40px;top:40px">📊 Analytics</div>
+          </div>
+          <div class="viewport-label">Quest VR <span class="viewport-badge vr">Immersive</span></div>
+          <div class="vr-label">🥽 Immersive Environment — Space</div>
+        </div>
+        <!-- MR -->
+        <div class="mr-view" id="mode-2">
+          <div class="mr-passthrough"></div>
+          <div class="mr-mesh"></div>
+          <div class="mr-anchor" style="top:30%;left:25%">📌</div>
+          <div class="mr-anchor" style="top:60%;left:65%;animation-delay:1s">📌</div>
+          <div class="graph-nodes-3d" style="position:absolute;top:35%;left:50%;transform:translateX(-50%)">
+            <div class="gn3d" style="left:-80px;top:0;background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#22c55e">🌐 API Gateway</div>
+            <div class="gn3d" style="left:50px;top:30px;background:rgba(34,197,94,0.1);border-color:rgba(34,197,94,0.3);color:#22c55e">💾 Database</div>
+          </div>
+          <div class="viewport-label">Quest MR <span class="viewport-badge mr">Passthrough</span></div>
+          <div class="mr-label">👓 Mixed Reality — Objects anchored to surfaces</div>
+        </div>
+      </div>
+
+      <div class="settings">
+        <div class="settings-section">
+          <h4>🎨 Environment</h4>
+          <div class="env-grid">
+            <div class="env-thumb selected" onclick="selectEnv(this)">
+              <div class="env-preview office">🏢</div>
+              <div class="env-name">Office</div>
+            </div>
+            <div class="env-thumb" onclick="selectEnv(this)">
+              <div class="env-preview space">🌌</div>
+              <div class="env-name">Space</div>
+            </div>
+            <div class="env-thumb" onclick="selectEnv(this)">
+              <div class="env-preview forest">🌲</div>
+              <div class="env-name">Forest</div>
+            </div>
+            <div class="env-thumb" onclick="selectEnv(this)">
+              <div class="env-preview abstract">🔮</div>
+              <div class="env-name">Abstract</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>💡 Lighting</h4>
+          <div class="setting-row">
+            <span class="setting-label">Preset</span>
+            <select class="setting-select"><option>Studio</option><option>Natural</option><option>Neon</option><option>Dim</option></select>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Intensity</span>
+            <input type="range" min="0" max="100" value="70" style="width:100px;accent-color:#648cff">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Shadows</span>
+            <div class="setting-toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>🔊 Audio</h4>
+          <div class="setting-row">
+            <span class="setting-label">Ambient Sound</span>
+            <div class="setting-toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Sound Theme</span>
+            <select class="setting-select"><option>Minimal</option><option>Nature</option><option>Synth</option></select>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h4>🥽 MR Settings</h4>
+          <div class="setting-row">
+            <span class="setting-label">Passthrough opacity</span>
+            <input type="range" min="0" max="100" value="60" style="width:100px;accent-color:#22c55e">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Surface detection</span>
+            <div class="setting-toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Spatial anchors</span>
+            <div class="setting-toggle on" onclick="this.classList.toggle('on')"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function switchMode(idx,el){
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  for(let i=0;i<3;i++){
+    const v=document.getElementById('mode-'+i);
+    v.style.display=i===idx?'':'none';
+    if(i===0)v.style.display=i===idx?'block':'none';
+  }
+}
+function selectEnv(el){document.querySelectorAll('.env-thumb').forEach(t=>t.classList.remove('selected'));el.classList.add('selected')}
+</script>
+</body>
+</html>

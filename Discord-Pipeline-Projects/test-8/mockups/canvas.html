@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodDefinition — Canvas UI v5</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#e0e6f0;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh;width:100vw}
+
+/* 3D-like scene background */
+.scene{position:absolute;inset:0;perspective:1200px;overflow:hidden}
+.scene-bg{position:absolute;inset:-20%;transform:rotateX(60deg) rotateZ(-15deg);transform-style:preserve-3d}
+
+/* CSS Grid floor */
+.grid-floor{position:absolute;width:200vw;height:200vh;left:-50vw;top:-50vh;
+  background-image:
+    linear-gradient(rgba(21,26,46,0.5) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(21,26,46,0.5) 1px,transparent 1px);
+  background-size:60px 60px;
+  transform:rotateX(65deg) translateZ(-100px) scale(2);
+  transform-origin:center center;
+  opacity:.6}
+
+/* Fog overlay */
+.fog{position:absolute;inset:0;background:radial-gradient(ellipse at 45% 50%,transparent 20%,rgba(10,14,23,0.4) 50%,rgba(10,14,23,0.85) 80%);pointer-events:none;z-index:1}
+
+/* Particles */
+.particle{position:absolute;width:2px;height:2px;background:#2535a0;border-radius:50%;opacity:.4;animation:pdrift linear infinite}
+@keyframes pdrift{0%{transform:translateY(0) translateX(0);opacity:.4}50%{opacity:.2}100%{transform:translateY(-100vh) translateX(30px);opacity:0}}
+
+/* Ambient glow */
+.ambient{position:absolute;border-radius:50%;filter:blur(80px);opacity:.15;pointer-events:none}
+.amb1{width:400px;height:400px;background:#4a7bff;top:20%;left:25%}
+.amb2{width:300px;height:300px;background:#a855f7;top:10%;right:20%}
+.amb3{width:250px;height:250px;background:#ff6040;bottom:20%;right:30%}
+
+/* Nodes layer */
+.nodes-layer{position:absolute;inset:0;z-index:10}
+
+/* Node base */
+.node{position:absolute;transform:translate(-50%,-50%);z-index:20}
+.node-sphere{width:40px;height:40px;border-radius:50%;position:relative;cursor:default}
+.node-sphere::before{content:'';position:absolute;inset:-8px;border-radius:50%;opacity:.15}
+.node-sphere::after{content:'';position:absolute;inset:-20px;border-radius:50%;opacity:.06}
+.node-sphere,.node-sphere::before,.node-sphere::after{transition:all .3s}
+.node-label{position:absolute;top:50px;left:50%;transform:translateX(-50%);font-size:9px;color:#506080;white-space:nowrap;text-align:center}
+
+/* Node types */
+.node-elementary .node-sphere{background:radial-gradient(circle at 35% 35%,#6b9bff,#4a7bff,#2a5bdf);box-shadow:0 0 20px rgba(74,123,255,.4),inset 0 -4px 8px rgba(0,0,0,.3)}
+.node-elementary .node-sphere::before{background:#4a7bff}
+.node-elementary .node-sphere::after{background:#4a7bff}
+
+.node-complex .node-sphere{background:radial-gradient(circle at 35% 35%,#c87aff,#a855f7,#8835d7);box-shadow:0 0 20px rgba(168,85,247,.4),inset 0 -4px 8px rgba(0,0,0,.3)}
+.node-complex .node-sphere::before{background:#a855f7}
+.node-complex .node-sphere::after{background:#a855f7}
+
+.node-component .node-sphere{background:radial-gradient(circle at 35% 35%,#5ef0b9,#34d399,#14b379);box-shadow:0 0 20px rgba(52,211,153,.4),inset 0 -4px 8px rgba(0,0,0,.3)}
+.node-component .node-sphere::before{background:#34d399}
+.node-component .node-sphere::after{background:#34d399}
+
+.node-potential .node-sphere{background:radial-gradient(circle at 35% 35%,#ffc04b,#f59e0b,#d57e00);box-shadow:0 0 20px rgba(245,158,11,.4),inset 0 -4px 8px rgba(0,0,0,.3)}
+.node-potential .node-sphere::before{background:#f59e0b}
+.node-potential .node-sphere::after{background:#f59e0b}
+
+.node-sensitivity .node-sphere{background:radial-gradient(circle at 35% 35%,#ff6b6b,#ef4444,#cf2424);box-shadow:0 0 20px rgba(239,68,68,.4),inset 0 -4px 8px rgba(0,0,0,.3)}
+.node-sensitivity .node-sphere::before{background:#ef4444}
+.node-sensitivity .node-sphere::after{background:#ef4444}
+
+.node-potentiality .node-sphere{background:radial-gradient(circle at 35% 35%,#ffe04b,#fbbf24,#dba004);box-shadow:0 0 20px rgba(251,191,36,.4),inset 0 -4px 8px rgba(0,0,0,.3)}
+.node-potentiality .node-sphere::before{background:#fbbf24}
+.node-potentiality .node-sphere::after{background:#fbbf24}
+
+/* Selected node special */
+.node-selected .node-sphere{width:52px;height:52px;animation:pulse 2s ease-in-out infinite}
+.node-selected .node-sphere::before{inset:-14px;opacity:.25;animation:glowPulse 2s ease-in-out infinite}
+.node-selected .node-sphere::after{inset:-30px;opacity:.1;animation:glowPulse 2s ease-in-out infinite .3s}
+.select-ring{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:72px;height:72px;border:2px solid rgba(74,123,255,.3);border-radius:50%;animation:ringPulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes glowPulse{0%,100%{opacity:.15}50%{opacity:.3}}
+@keyframes ringPulse{0%,100%{opacity:.3;transform:translate(-50%,-50%) scale(1)}50%{opacity:.15;transform:translate(-50%,-50%) scale(1.15)}}
+
+/* Hovered node */
+.node-hovered .node-sphere{filter:brightness(1.2)}
+.node-hovered .node-sphere::before{opacity:.25}
+
+/* SVG links */
+.links-svg{position:absolute;inset:0;z-index:5;pointer-events:none}
+
+/* Connection line from node to panel */
+.conn-line{position:absolute;z-index:15;pointer-events:none}
+
+/* ── WORLD-SPACE PANELS ── */
+
+/* Properties Panel */
+.prop-panel{position:absolute;z-index:30;width:260px;background:rgba(8,12,24,.88);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(123,140,255,.15);border-radius:14px;box-shadow:0 0 30px rgba(123,140,255,.08),0 8px 40px rgba(0,0,0,.6);overflow:hidden;transform-origin:left center}
+.prop-panel::before{content:'';position:absolute;inset:0;border-radius:14px;background:linear-gradient(135deg,rgba(123,140,255,.03),transparent 50%);pointer-events:none}
+
+.pp-header{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:8px}
+.pp-dot{width:10px;height:10px;border-radius:50%;box-shadow:0 0 8px currentColor}
+.pp-name{font-weight:700;font-size:13px;color:#fff;flex:1}
+.pp-type{font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(74,123,255,.1);color:#4a7bff}
+
+.pp-section{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)}
+.pp-stitle{font-size:9px;text-transform:uppercase;letter-spacing:1.2px;color:#405070;margin-bottom:7px;font-weight:700}
+.pp-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px}
+.pp-label{font-size:11px;color:#607090}
+.pp-val{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:4px;padding:3px 8px;color:#b0c0e0;font-size:11px;width:90px;text-align:right;font-family:inherit}
+
+.pp-conn{display:flex;align-items:center;gap:6px;font-size:10px;color:#708090;padding:3px 0}
+.pp-conn-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.pp-conn-type{font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(255,255,255,.04);color:#506080}
+
+.pp-actions{padding:10px 14px;display:flex;gap:6px}
+.pp-btn{flex:1;padding:6px;border-radius:6px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#708090;font-size:11px;text-align:center;cursor:default;transition:all .2s}
+.pp-btn:hover{background:rgba(123,140,255,.12);color:#c0d0ff;border-color:rgba(123,140,255,.25)}
+.pp-btn.danger:hover{background:rgba(239,68,68,.12);color:#ff8080;border-color:rgba(239,68,68,.25)}
+
+/* Context Toolbar */
+.ctx-toolbar{position:absolute;z-index:35;display:flex;gap:2px;padding:4px;background:rgba(8,12,24,.9);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(123,140,255,.15);border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,.5);transform:translateX(-50%)}
+.ctx-btn{width:30px;height:30px;border-radius:6px;border:none;background:transparent;color:#607090;font-size:13px;cursor:default;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.ctx-btn.on{background:rgba(123,140,255,.2);color:#fff;box-shadow:0 0 8px rgba(123,140,255,.15)}
+
+/* Tooltip */
+.ws-tooltip{position:absolute;z-index:30;background:rgba(8,12,24,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(168,85,247,.25);border-radius:8px;padding:7px 11px;box-shadow:0 4px 16px rgba(0,0,0,.5);pointer-events:none;white-space:nowrap;transform:translate(20px,-50%)}
+.tt-n{font-size:12px;font-weight:600;color:#fff}
+.tt-t{font-size:10px;color:#a855f7}
+.tt-p{font-size:10px;color:#405060}
+
+/* Mode bar */
+#mode-bar{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:500;display:flex;background:rgba(10,14,23,.85);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:3px;gap:2px}
+.mbtn{padding:7px 18px;border-radius:8px;border:none;background:transparent;color:#506080;font-size:12px;cursor:pointer;font-weight:600;transition:all .3s}
+.mbtn.on{background:linear-gradient(135deg,#7b8cff,#5b6abf);color:#fff;box-shadow:0 2px 14px rgba(123,140,255,.35)}
+.mbtn:hover:not(.on){color:#a0b0d0}
+
+#hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);z-index:500;font-size:11px;color:#354060;background:rgba(10,14,23,.7);padding:5px 14px;border-radius:6px;border:1px solid rgba(255,255,255,.04)}
+
+/* ── MODE VARIANTS ── */
+
+/* VR */
+body.vr .prop-panel{width:300px;border:1.5px solid rgba(123,140,255,.25);box-shadow:0 0 50px rgba(123,140,255,.12),0 12px 60px rgba(0,0,0,.7)}
+body.vr .pp-header,body.vr .pp-section,body.vr .pp-actions{padding:12px 16px}
+body.vr .pp-name{font-size:15px}
+body.vr .ctx-btn{width:36px;height:36px;font-size:15px}
+body.vr .ws-tooltip{padding:9px 14px}
+
+.vr-hand{display:none;position:fixed;z-index:400;background:rgba(8,12,24,.6);border:1.5px solid rgba(123,140,255,.25);border-radius:12px;padding:8px 14px;backdrop-filter:blur(12px);font-size:11px;color:#607090}
+.vr-hand b{color:#8090b0}
+body.vr .vr-hand{display:block}
+#vlh{bottom:130px;left:40px;animation:vf 3s ease-in-out infinite}
+#vrh{bottom:110px;right:40px;animation:vf 3s ease-in-out infinite .5s}
+@keyframes vf{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+
+/* MR */
+body.mr .scene{opacity:.75}
+body.mr .prop-panel{background:rgba(8,12,24,.5);border-color:rgba(123,140,255,.1);box-shadow:0 0 40px rgba(123,140,255,.05)}
+body.mr .ctx-toolbar{background:rgba(8,12,24,.5)}
+body.mr .fog{background:radial-gradient(ellipse at 45% 50%,transparent 30%,rgba(10,14,23,.2) 60%,rgba(10,14,23,.5) 85%)}
+body.mr .grid-floor{opacity:.3}
+
+.mr-tag{display:none;position:fixed;z-index:400;font-size:9px;color:rgba(123,140,255,.4);pointer-events:none;letter-spacing:1px}
+body.mr .mr-tag{display:block}
+</style>
+</head>
+<body>
+
+<!-- Scene -->
+<div class="scene">
+  <div class="grid-floor"></div>
+  <div class="fog"></div>
+  <div class="ambient amb1"></div>
+  <div class="ambient amb2"></div>
+  <div class="ambient amb3"></div>
+
+  <!-- Particles -->
+  <div class="particle" style="left:10%;top:80%;animation-duration:12s"></div>
+  <div class="particle" style="left:25%;top:90%;animation-duration:16s;animation-delay:2s"></div>
+  <div class="particle" style="left:45%;top:85%;animation-duration:14s;animation-delay:4s"></div>
+  <div class="particle" style="left:60%;top:95%;animation-duration:18s;animation-delay:1s"></div>
+  <div class="particle" style="left:75%;top:88%;animation-duration:13s;animation-delay:3s"></div>
+  <div class="particle" style="left:85%;top:92%;animation-duration:15s;animation-delay:5s"></div>
+  <div class="particle" style="left:35%;top:78%;animation-duration:17s;animation-delay:6s"></div>
+  <div class="particle" style="left:55%;top:82%;animation-duration:11s;animation-delay:7s"></div>
+
+  <!-- SVG Links -->
+  <svg class="links-svg" viewBox="0 0 1000 600" preserveAspectRatio="none" width="100%" height="100%">
+    <!-- Main to Complex -->
+    <line x1="380" y1="310" x2="220" y2="160" stroke="#a855f7" stroke-width="1.2" stroke-opacity=".3"/>
+    <!-- Main to Component -->
+    <line x1="380" y1="310" x2="680" y2="220" stroke="#34d399" stroke-width="1.2" stroke-opacity=".3" stroke-dasharray="8,4"/>
+    <!-- Main to Potential -->
+    <line x1="380" y1="310" x2="780" y2="360" stroke="#f59e0b" stroke-width="1.2" stroke-opacity=".25"/>
+    <!-- Main to Sensitivity -->
+    <line x1="380" y1="310" x2="300" y2="480" stroke="#ef4444" stroke-width="1.2" stroke-opacity=".3" stroke-dasharray="8,4"/>
+    <!-- Main to Potentiality -->
+    <line x1="380" y1="310" x2="150" y2="380" stroke="#fbbf24" stroke-width="1.2" stroke-opacity=".25"/>
+    <!-- Complex to Component -->
+    <line x1="220" y1="160" x2="680" y2="220" stroke="#607090" stroke-width="1" stroke-opacity=".15" stroke-dasharray="6,4"/>
+    <!-- Sensitivity to Potentiality -->
+    <line x1="300" y1="480" x2="150" y2="380" stroke="#607090" stroke-width="1" stroke-opacity=".15" stroke-dasharray="6,4"/>
+    <!-- Connection line: node to panel -->
+    <line x1="400" y1="300" x2="520" y2="280" stroke="#4a7bff" stroke-width="1" stroke-opacity=".2"/>
+  </svg>
+
+  <!-- Nodes -->
+  <div class="nodes-layer">
+    <!-- MAIN selected node — Elementary -->
+    <div class="node node-elementary node-selected" style="left:38%;top:52%">
+      <div class="select-ring"></div>
+      <div class="node-sphere"></div>
+      <div class="node-label" style="color:#4a7bff">Elementary_00</div>
+    </div>
+
+    <!-- Complex (hovered — has tooltip) -->
+    <div class="node node-complex node-hovered" style="left:22%;top:27%">
+      <div class="node-sphere"></div>
+      <div class="node-label">Complex_01</div>
+      <div class="ws-tooltip">
+        <div class="tt-n">Complex_01</div>
+        <div class="tt-t">Complex</div>
+        <div class="tt-p">(-4.0, 5.5, -5.0)</div>
+      </div>
+    </div>
+
+    <!-- Component -->
+    <div class="node node-component" style="left:68%;top:37%">
+      <div class="node-sphere"></div>
+      <div class="node-label">Component_02</div>
+    </div>
+
+    <!-- Potential -->
+    <div class="node node-potential" style="left:78%;top:60%">
+      <div class="node-sphere"></div>
+      <div class="node-label">Potential_03</div>
+    </div>
+
+    <!-- Sensitivity -->
+    <div class="node node-sensitivity" style="left:30%;top:80%">
+      <div class="node-sphere"></div>
+      <div class="node-label">Sensitivity_04</div>
+    </div>
+
+    <!-- Potentiality -->
+    <div class="node node-potentiality" style="left:15%;top:63%">
+      <div class="node-sphere"></div>
+      <div class="node-label">Potentiality_05</div>
+    </div>
+  </div>
+
+  <!-- Context Toolbar (above selected node) -->
+  <div class="ctx-toolbar" style="left:38%;top:40%">
+    <button class="ctx-btn on" title="Select">⊹</button>
+    <button class="ctx-btn" title="Move">✥</button>
+    <button class="ctx-btn" title="Add Node">⊕</button>
+    <button class="ctx-btn" title="Link">⟋</button>
+    <button class="ctx-btn" title="Delete">⊗</button>
+  </div>
+
+  <!-- Properties Panel (world-space, next to selected node) -->
+  <div class="prop-panel" style="left:52%;top:28%">
+    <div class="pp-header">
+      <div class="pp-dot" style="color:#4a7bff;background:#4a7bff"></div>
+      <div class="pp-name">Elementary_00</div>
+      <div class="pp-type">Elementary</div>
+    </div>
+
+    <div class="pp-section">
+      <div class="pp-stitle">Transform</div>
+      <div class="pp-row"><span class="pp-label">X</span><input class="pp-val" value="-1.0" readonly></div>
+      <div class="pp-row"><span class="pp-label">Y</span><input class="pp-val" value="3.5" readonly></div>
+      <div class="pp-row"><span class="pp-label">Z</span><input class="pp-val" value="0.0" readonly></div>
+    </div>
+
+    <div class="pp-section">
+      <div class="pp-stitle">Connections · 5</div>
+      <div class="pp-conn">
+        <div class="pp-conn-dot" style="background:#a855f7"></div>
+        <span class="pp-conn-type">Hierarchical</span>
+        Complex_01
+      </div>
+      <div class="pp-conn">
+        <div class="pp-conn-dot" style="background:#34d399"></div>
+        <span class="pp-conn-type">Dependency</span>
+        Component_02
+      </div>
+      <div class="pp-conn">
+        <div class="pp-conn-dot" style="background:#f59e0b"></div>
+        <span class="pp-conn-type">Composition</span>
+        Potential_03
+      </div>
+      <div class="pp-conn">
+        <div class="pp-conn-dot" style="background:#ef4444"></div>
+        <span class="pp-conn-type">Sensitivity</span>
+        Sensitivity_04
+      </div>
+      <div class="pp-conn">
+        <div class="pp-conn-dot" style="background:#fbbf24"></div>
+        <span class="pp-conn-type">Flow</span>
+        Potentiality_05
+      </div>
+    </div>
+
+    <div class="pp-actions">
+      <div class="pp-btn">✎ Edit</div>
+      <div class="pp-btn">⟋ Link</div>
+      <div class="pp-btn danger">⊗ Delete</div>
+    </div>
+  </div>
+</div>
+
+<!-- Mode bar -->
+<div id="mode-bar">
+  <button class="mbtn on" data-m="desktop">🖥 Desktop</button>
+  <button class="mbtn" data-m="vr">🥽 VR</button>
+  <button class="mbtn" data-m="mr">🌐 MR</button>
+</div>
+
+<div id="hint">Canvas UI — World-space contextual panels · Toggle modes above</div>
+
+<!-- VR hands -->
+<div class="vr-hand" id="vlh">🤚 <b>Left</b> — Navigation</div>
+<div class="vr-hand" id="vrh">✋ <b>Right</b> — Interact</div>
+
+<!-- MR tags -->
+<div class="mr-tag" style="top:25%;left:12%">⊹ SPATIAL ANCHOR</div>
+<div class="mr-tag" style="bottom:20%;right:15%">⊹ SPATIAL ANCHOR</div>
+
+<script>
+document.querySelectorAll('.mbtn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('.mbtn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  document.body.className=b.dataset.m==='desktop'?'':b.dataset.m;
+}));
+</script>
+</body>
+</html>

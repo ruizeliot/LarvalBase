@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💾 Save/Load — Unity MCP</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --bg: #1a1a2e;
+  --panel: #16213e;
+  --card: #1c2a4a;
+  --accent: #00d4ff;
+  --accent2: #7b2ff7;
+  --green: #00e676;
+  --orange: #ff9100;
+  --red: #ff5252;
+  --text: #e0e0e0;
+  --dim: #8892a4;
+  --border: #2a3a5c;
+}
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; perspective: 1200px; overflow-x: hidden; }
+
+/* 3D Container */
+.scene { padding: 20px; max-width: 1100px; margin: 0 auto; transform-style: preserve-3d; }
+
+/* Header */
+.header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 16px 20px; background: linear-gradient(135deg, var(--panel), var(--card)); border: 1px solid var(--border); border-radius: 12px; transform: rotateX(2deg); transition: transform 0.3s; }
+.header:hover { transform: rotateX(0deg); }
+.header h1 { font-size: 1.3rem; font-weight: 600; }
+.header h1 span { color: var(--accent); }
+.autosave-badge { margin-left: auto; display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--green); }
+.autosave-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,230,118,0.4); } 50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,230,118,0); } }
+
+/* Tabs */
+.tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+.tab { padding: 10px 20px; background: var(--panel); border: 1px solid var(--border); border-bottom: none; border-radius: 8px 8px 0 0; cursor: pointer; font-size: 0.9rem; color: var(--dim); transition: all 0.25s; position: relative; }
+.tab:hover { color: var(--text); background: var(--card); }
+.tab.active { color: var(--accent); background: var(--card); border-color: var(--accent); }
+.tab.active::after { content: ''; position: absolute; bottom: -1px; left: 0; right: 0; height: 2px; background: var(--accent); }
+
+/* Panels */
+.panel { display: none; background: var(--card); border: 1px solid var(--border); border-radius: 0 12px 12px 12px; padding: 20px; transform: rotateX(1deg); transform-origin: top; transition: transform 0.4s, opacity 0.3s; animation: panelIn 0.3s ease-out; }
+.panel.active { display: block; }
+@keyframes panelIn { from { opacity: 0; transform: rotateX(4deg) translateY(10px); } to { opacity: 1; transform: rotateX(1deg) translateY(0); } }
+.panel:hover { transform: rotateX(0deg); }
+
+/* Save List Table */
+.save-list { width: 100%; border-collapse: collapse; }
+.save-list th { text-align: left; padding: 10px 12px; color: var(--dim); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border); }
+.save-list td { padding: 12px; border-bottom: 1px solid rgba(42,58,92,0.5); transition: background 0.2s; }
+.save-list tr:hover td { background: rgba(0,212,255,0.05); }
+.save-name { font-weight: 500; display: flex; align-items: center; gap: 8px; }
+.save-icon { width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.save-icon.json { background: rgba(0,212,255,0.15); color: var(--accent); }
+.save-icon.yaml { background: rgba(123,47,247,0.15); color: var(--accent2); }
+.version-tag { font-size: 0.75rem; padding: 2px 8px; border-radius: 4px; background: rgba(0,212,255,0.1); color: var(--accent); }
+.size-tag { color: var(--dim); font-size: 0.85rem; }
+.date-tag { color: var(--dim); font-size: 0.85rem; }
+.actions { display: flex; gap: 6px; }
+
+/* Buttons */
+.btn { padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 0.8rem; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px; }
+.btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+.btn-primary { background: var(--accent); color: #000; border-color: var(--accent); font-weight: 600; }
+.btn-primary:hover { background: #33ddff; }
+.btn-danger { border-color: var(--red); color: var(--red); }
+.btn-danger:hover { background: rgba(255,82,82,0.15); }
+.btn-save { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+.btn-save:hover { background: #33ff99; }
+.btn-lg { padding: 10px 24px; font-size: 0.95rem; border-radius: 8px; }
+
+/* Top actions bar */
+.top-bar { display: flex; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+.search-box { flex: 1; min-width: 200px; padding: 8px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+.search-box:focus { border-color: var(--accent); }
+.search-box::placeholder { color: var(--dim); }
+
+/* Import/Export panel */
+.dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 40px; text-align: center; transition: all 0.3s; cursor: pointer; margin-bottom: 16px; }
+.dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(0,212,255,0.05); }
+.dropzone-icon { font-size: 2.5rem; margin-bottom: 12px; }
+.dropzone-text { color: var(--dim); font-size: 0.95rem; }
+.dropzone-text strong { color: var(--text); }
+
+.export-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.export-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: all 0.25s; }
+.export-card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.export-card .icon { font-size: 1.8rem; margin-bottom: 8px; }
+.export-card .label { font-weight: 500; margin-bottom: 4px; }
+.export-card .desc { font-size: 0.8rem; color: var(--dim); }
+
+/* Auto-save settings */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 600px) { .settings-grid { grid-template-columns: 1fr; } }
+.setting-card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; }
+.setting-label { font-size: 0.8rem; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.setting-value { font-size: 1.4rem; font-weight: 600; color: var(--accent); }
+.setting-sub { font-size: 0.8rem; color: var(--dim); margin-top: 4px; }
+
+.toggle { width: 44px; height: 24px; border-radius: 12px; background: var(--border); position: relative; cursor: pointer; transition: background 0.3s; }
+.toggle.on { background: var(--green); }
+.toggle::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: white; transition: transform 0.3s; }
+.toggle.on::after { transform: translateX(20px); }
+
+.slider-row { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
+.slider { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 2px; background: var(--border); outline: none; }
+.slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--accent); cursor: pointer; }
+
+/* Version diff */
+.diff-viewer { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; font-family: 'Cascadia Code', 'Fira Code', monospace; font-size: 0.85rem; line-height: 1.6; max-height: 300px; overflow-y: auto; }
+.diff-add { color: var(--green); }
+.diff-remove { color: var(--red); }
+.diff-info { color: var(--accent); }
+.diff-neutral { color: var(--dim); }
+
+/* Timeline */
+.timeline { position: relative; padding-left: 24px; margin-top: 16px; }
+.timeline::before { content: ''; position: absolute; left: 8px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+.timeline-item { position: relative; margin-bottom: 16px; padding: 12px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; transition: all 0.2s; }
+.timeline-item:hover { border-color: var(--accent); transform: translateX(4px); }
+.timeline-item::before { content: ''; position: absolute; left: -20px; top: 18px; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 2px solid var(--bg); }
+.timeline-item.auto::before { background: var(--green); }
+.timeline-item.manual::before { background: var(--accent2); }
+.timeline-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; flex-wrap: wrap; gap: 4px; }
+.timeline-time { font-size: 0.8rem; color: var(--dim); }
+.timeline-type { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; }
+.timeline-type.auto { background: rgba(0,230,118,0.1); color: var(--green); }
+.timeline-type.manual { background: rgba(123,47,247,0.1); color: var(--accent2); }
+.timeline-desc { font-size: 0.9rem; }
+
+/* Status bar */
+.status-bar { margin-top: 20px; padding: 12px 16px; background: var(--panel); border: 1px solid var(--border); border-radius: 8px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.85rem; }
+.status-item { display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 6px; height: 6px; border-radius: 50%; }
+.status-dot.green { background: var(--green); }
+.status-dot.orange { background: var(--orange); }
+
+/* Toast notification */
+.toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; background: var(--green); color: #000; border-radius: 8px; font-weight: 600; font-size: 0.9rem; transform: translateY(100px); opacity: 0; transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); z-index: 100; pointer-events: none; }
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* Loading overlay */
+.loading-overlay { display: none; position: absolute; inset: 0; background: rgba(26,26,46,0.85); border-radius: 12px; z-index: 10; align-items: center; justify-content: center; flex-direction: column; gap: 12px; }
+.loading-overlay.show { display: flex; }
+.spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Mobile */
+@media (max-width: 600px) {
+  .scene { padding: 12px; }
+  .header { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .autosave-badge { margin-left: 0; }
+  .tabs { overflow-x: auto; }
+  .tab { white-space: nowrap; padding: 8px 14px; font-size: 0.8rem; }
+  .top-bar { flex-direction: column; }
+  .save-list { font-size: 0.8rem; }
+  .save-list th:nth-child(3), .save-list td:nth-child(3),
+  .save-list th:nth-child(4), .save-list td:nth-child(4) { display: none; }
+  .actions { flex-direction: column; }
+  .panel { padding: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="scene">
+  <!-- Header -->
+  <div class="header">
+    <h1>💾 <span>Save/Load</span> Manager</h1>
+    <div class="autosave-badge">
+      <div class="autosave-dot"></div>
+      Auto-save actif — dernière: il y a 2 min
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('saves')">📁 Sauvegardes</div>
+    <div class="tab" onclick="switchTab('export')">📤 Export / Import</div>
+    <div class="tab" onclick="switchTab('autosave')">⚙️ Auto-save</div>
+    <div class="tab" onclick="switchTab('history')">🕐 Historique</div>
+  </div>
+
+  <!-- TAB: Saves -->
+  <div class="panel active" id="panel-saves" style="position:relative;">
+    <div class="loading-overlay" id="load-overlay">
+      <div class="spinner"></div>
+      <div style="color:var(--dim);">Chargement en cours...</div>
+    </div>
+    <div class="top-bar">
+      <input class="search-box" type="text" placeholder="🔍 Rechercher une sauvegarde...">
+      <button class="btn btn-save btn-lg" onclick="showToast('💾 Sauvegarde créée !')">💾 Nouvelle sauvegarde</button>
+    </div>
+    <table class="save-list">
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Version</th>
+          <th>Taille</th>
+          <th>Date</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="save-name"><div class="save-icon json">{}</div> terrain-generation-v3</div></td>
+          <td><span class="version-tag">v3.2.1</span></td>
+          <td class="size-tag">2.4 KB</td>
+          <td class="date-tag">03/03/2026 10:42</td>
+          <td><div class="actions">
+            <button class="btn btn-primary" onclick="simulateLoad(this)">▶ Load</button>
+            <button class="btn" onclick="switchTab('history')">📋 Diff</button>
+            <button class="btn btn-danger" onclick="confirmDelete(this)">✕</button>
+          </div></td>
+        </tr>
+        <tr>
+          <td><div class="save-name"><div class="save-icon yaml">📄</div> lighting-preset-sunset</div></td>
+          <td><span class="version-tag">v1.8.0</span></td>
+          <td class="size-tag">1.1 KB</td>
+          <td class="date-tag">02/03/2026 18:15</td>
+          <td><div class="actions">
+            <button class="btn btn-primary" onclick="simulateLoad(this)">▶ Load</button>
+            <button class="btn" onclick="switchTab('history')">📋 Diff</button>
+            <button class="btn btn-danger" onclick="confirmDelete(this)">✕</button>
+          </div></td>
+        </tr>
+        <tr>
+          <td><div class="save-name"><div class="save-icon json">{}</div> npc-behavior-tree</div></td>
+          <td><span class="version-tag">v2.0.4</span></td>
+          <td class="size-tag">5.7 KB</td>
+          <td class="date-tag">02/03/2026 14:30</td>
+          <td><div class="actions">
+            <button class="btn btn-primary" onclick="simulateLoad(this)">▶ Load</button>
+            <button class="btn" onclick="switchTab('history')">📋 Diff</button>
+            <button class="btn btn-danger" onclick="confirmDelete(this)">✕</button>
+          </div></td>
+        </tr>
+        <tr>
+          <td><div class="save-name"><div class="save-icon yaml">📄</div> physics-config-low-gravity</div></td>
+          <td><span class="version-tag">v1.0.0</span></td>
+          <td class="size-tag">0.8 KB</td>
+          <td class="date-tag">01/03/2026 22:05</td>
+          <td><div class="actions">
+            <button class="btn btn-primary" onclick="simulateLoad(this)">▶ Load</button>
+            <button class="btn" onclick="switchTab('history')">📋 Diff</button>
+            <button class="btn btn-danger" onclick="confirmDelete(this)">✕</button>
+          </div></td>
+        </tr>
+        <tr>
+          <td><div class="save-name"><div class="save-icon json">{}</div> ui-layout-main-menu</div></td>
+          <td><span class="version-tag">v4.1.0</span></td>
+          <td class="size-tag">3.2 KB</td>
+          <td class="date-tag">01/03/2026 16:48</td>
+          <td><div class="actions">
+            <button class="btn btn-primary" onclick="simulateLoad(this)">▶ Load</button>
+            <button class="btn" onclick="switchTab('history')">📋 Diff</button>
+            <button class="btn btn-danger" onclick="confirmDelete(this)">✕</button>
+          </div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB: Export/Import -->
+  <div class="panel" id="panel-export">
+    <h3 style="margin-bottom:16px;">📥 Importer une sauvegarde</h3>
+    <div class="dropzone" id="dropzone" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="event.preventDefault();this.classList.remove('dragover');showToast('📥 Fichier importé !')">
+      <div class="dropzone-icon">📂</div>
+      <div class="dropzone-text">Glisse un fichier <strong>.json</strong> ou <strong>.yaml</strong> ici<br>ou clique pour sélectionner</div>
+    </div>
+
+    <h3 style="margin-bottom:16px;">📤 Exporter</h3>
+    <div class="export-grid">
+      <div class="export-card" onclick="showToast('📤 Export JSON téléchargé')">
+        <div class="icon">{}</div>
+        <div class="label">JSON</div>
+        <div class="desc">Format structuré, compatible Git</div>
+      </div>
+      <div class="export-card" onclick="showToast('📤 Export YAML téléchargé')">
+        <div class="icon">📄</div>
+        <div class="label">YAML</div>
+        <div class="desc">Lisible, idéal pour review</div>
+      </div>
+      <div class="export-card" onclick="showToast('📤 Bundle .zip créé')">
+        <div class="icon">📦</div>
+        <div class="label">Bundle (.zip)</div>
+        <div class="desc">Toutes les saves + métadonnées</div>
+      </div>
+      <div class="export-card" onclick="showToast('🔗 Lien de partage copié')">
+        <div class="icon">🔗</div>
+        <div class="label">Lien de partage</div>
+        <div class="desc">URL temporaire pour la collab</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: Auto-save -->
+  <div class="panel" id="panel-autosave">
+    <div class="settings-grid">
+      <div class="setting-card">
+        <div class="setting-label">Auto-save</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          <span style="font-size:0.9rem;">Activé</span>
+        </div>
+        <div class="setting-sub">Sauvegarde automatique du state Unity</div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Fréquence</div>
+        <div class="setting-value" id="freq-val">5 min</div>
+        <div class="slider-row">
+          <span style="font-size:0.8rem;color:var(--dim);">1m</span>
+          <input type="range" class="slider" min="1" max="30" value="5" oninput="document.getElementById('freq-val').textContent=this.value+' min'">
+          <span style="font-size:0.8rem;color:var(--dim);">30m</span>
+        </div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Rétention</div>
+        <div class="setting-value" id="ret-val">10</div>
+        <div class="slider-row">
+          <span style="font-size:0.8rem;color:var(--dim);">3</span>
+          <input type="range" class="slider" min="3" max="50" value="10" oninput="document.getElementById('ret-val').textContent=this.value">
+          <span style="font-size:0.8rem;color:var(--dim);">50</span>
+        </div>
+        <div class="setting-sub">Nombre de snapshots conservés</div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Sauvegarde au crash</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          <span style="font-size:0.9rem;">Activé</span>
+        </div>
+        <div class="setting-sub">Capture automatique avant un crash détecté</div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Save on Play</div>
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+          <span style="font-size:0.9rem;">Activé</span>
+        </div>
+        <div class="setting-sub">Sauvegarde auto avant chaque Play Mode</div>
+      </div>
+      <div class="setting-card">
+        <div class="setting-label">Format</div>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-primary" style="flex:1;">JSON</button>
+          <button class="btn" style="flex:1;">YAML</button>
+        </div>
+        <div class="setting-sub">Format de sérialisation des saves</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: History -->
+  <div class="panel" id="panel-history">
+    <h3 style="margin-bottom:4px;">📋 Diff Viewer — terrain-generation-v3</h3>
+    <p style="font-size:0.8rem;color:var(--dim);margin-bottom:12px;">v3.2.0 → v3.2.1</p>
+    <div class="diff-viewer">
+      <div class="diff-info">@@ terrain.config @@</div>
+      <div class="diff-neutral">  "heightMapResolution": 512,</div>
+      <div class="diff-remove">- "noiseScale": 0.035,</div>
+      <div class="diff-add">+ "noiseScale": 0.042,</div>
+      <div class="diff-neutral">  "octaves": 6,</div>
+      <div class="diff-remove">- "persistence": 0.45,</div>
+      <div class="diff-add">+ "persistence": 0.52,</div>
+      <div class="diff-neutral">  "lacunarity": 2.0,</div>
+      <div class="diff-info">@@ vegetation.spawner @@</div>
+      <div class="diff-neutral">  "treeDensity": 0.8,</div>
+      <div class="diff-add">+ "bushDensity": 0.3,</div>
+      <div class="diff-add">+ "grassWindEffect": true,</div>
+      <div class="diff-neutral">  "maxSpawnHeight": 180</div>
+    </div>
+
+    <h3 style="margin-top:20px;margin-bottom:8px;">🕐 Timeline</h3>
+    <div class="timeline">
+      <div class="timeline-item auto">
+        <div class="timeline-meta">
+          <span class="timeline-desc">Auto-save — terrain-generation-v3</span>
+          <span class="timeline-type auto">AUTO</span>
+        </div>
+        <div class="timeline-time">Aujourd'hui 10:42 — v3.2.1</div>
+      </div>
+      <div class="timeline-item manual">
+        <div class="timeline-meta">
+          <span class="timeline-desc">Save manuelle — lighting-preset-sunset</span>
+          <span class="timeline-type manual">MANUEL</span>
+        </div>
+        <div class="timeline-time">Hier 18:15 — v1.8.0</div>
+      </div>
+      <div class="timeline-item auto">
+        <div class="timeline-meta">
+          <span class="timeline-desc">Auto-save — npc-behavior-tree</span>
+          <span class="timeline-type auto">AUTO</span>
+        </div>
+        <div class="timeline-time">Hier 14:30 — v2.0.4</div>
+      </div>
+      <div class="timeline-item manual">
+        <div class="timeline-meta">
+          <span class="timeline-desc">Save manuelle — physics-config-low-gravity</span>
+          <span class="timeline-type manual">MANUEL</span>
+        </div>
+        <div class="timeline-time">01/03 22:05 — v1.0.0</div>
+      </div>
+      <div class="timeline-item auto">
+        <div class="timeline-meta">
+          <span class="timeline-desc">Crash recovery — ui-layout-main-menu</span>
+          <span class="timeline-type auto" style="background:rgba(255,82,82,0.1);color:var(--red);">CRASH</span>
+        </div>
+        <div class="timeline-time">01/03 16:48 — v4.1.0 (récupéré)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="status-item"><div class="status-dot green"></div> 5 sauvegardes</div>
+    <div class="status-item"><div class="status-dot green"></div> Auto-save: 5 min</div>
+    <div class="status-item"><div class="status-dot orange"></div> Espace: 13.2 KB / 10 MB</div>
+    <div style="margin-left:auto;color:var(--dim);">Format: JSON · Rétention: 10 snapshots</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach((t,i) => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => { p.classList.remove('active'); });
+  const panels = ['saves','export','autosave','history'];
+  const idx = panels.indexOf(name);
+  document.querySelectorAll('.tab')[idx].classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function simulateLoad(btn) {
+  const overlay = document.getElementById('load-overlay');
+  overlay.classList.add('show');
+  setTimeout(() => {
+    overlay.classList.remove('show');
+    showToast('✅ Sauvegarde chargée avec succès');
+  }, 1500);
+}
+
+function confirmDelete(btn) {
+  const row = btn.closest('tr');
+  const name = row.querySelector('.save-name').textContent.trim();
+  if(confirm('Supprimer "'+name+'" ?')) {
+    row.style.transition = 'opacity 0.3s, transform 0.3s';
+    row.style.opacity = '0';
+    row.style.transform = 'translateX(20px)';
+    setTimeout(() => { row.remove(); showToast('🗑️ Sauvegarde supprimée'); }, 300);
+  }
+}
+</script>
+</body>
+</html>

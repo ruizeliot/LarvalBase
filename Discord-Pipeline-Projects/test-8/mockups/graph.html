@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>PodDefinition — Graph Core 3D</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8cdd5;font-family:'Segoe UI',system-ui,sans-serif;overflow:hidden;height:100vh}
+#canvas3d{position:absolute;top:0;left:0;width:100%;height:100%}
+
+/* Toolbar */
+.toolbar{position:fixed;top:0;left:0;right:300px;display:flex;align-items:center;gap:6px;padding:8px 14px;background:#111827ee;border-bottom:1px solid #1e293b;z-index:10;backdrop-filter:blur(8px)}
+.toolbar .logo{font-weight:700;font-size:14px;color:#60a5fa;margin-right:10px}
+.sep{width:1px;height:22px;background:#1e293b;margin:0 2px}
+.tb{display:flex;align-items:center;gap:4px;padding:5px 10px;background:#1a2236;border:1px solid #1e293b;border-radius:5px;color:#94a3b8;font-size:11px;cursor:pointer;transition:.15s}
+.tb:hover{background:#1e293b;color:#e2e8f0;border-color:#334155}
+.tb.active{background:#1e3a5f;color:#60a5fa;border-color:#2563eb}
+.tb svg{width:13px;height:13px;fill:currentColor}
+.spacer{flex:1}
+
+/* Side Panel */
+.side{position:fixed;top:0;right:0;bottom:0;width:300px;background:#111827ee;border-left:1px solid #1e293b;z-index:10;backdrop-filter:blur(8px);overflow-y:auto;display:flex;flex-direction:column}
+.ph{padding:12px 16px;font-size:13px;font-weight:600;color:#e2e8f0;border-bottom:1px solid #1e293b;display:flex;align-items:center;gap:8px}
+.ph .dot{width:8px;height:8px;border-radius:50%}
+.ps{padding:10px 16px;border-bottom:1px solid #1e293b}
+.ps h4{font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:#475569;margin-bottom:6px}
+.pr{display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:11px}
+.pl{color:#64748b}
+.pv{color:#cbd5e1;font-family:'Cascadia Code',monospace;font-size:10px}
+.cb{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-weight:600;margin-left:4px}
+.pin{background:#0f172a;border:1px solid #1e293b;border-radius:4px;padding:2px 6px;color:#cbd5e1;font-size:10px;width:100px;text-align:right;outline:none}
+.pin:focus{border-color:#2563eb}
+
+/* Sliders */
+.sl-row{margin-bottom:8px}
+.sl-lbl{display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-bottom:3px}
+.sl-v{color:#60a5fa;font-family:monospace}
+input[type=range]{width:100%;height:3px;-webkit-appearance:none;background:#1e293b;border-radius:2px;outline:none}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#2563eb;cursor:pointer;border:2px solid #60a5fa}
+
+/* Legend */
+.legend{position:fixed;bottom:40px;left:12px;display:flex;gap:6px;flex-wrap:wrap;z-index:10}
+.li{display:flex;align-items:center;gap:4px;font-size:9px;color:#64748b;background:#0f172aee;padding:3px 7px;border-radius:4px;border:1px solid #1e293b}
+.ld{width:7px;height:7px;border-radius:50%}
+
+/* Status */
+.status{position:fixed;bottom:0;left:0;right:0;display:flex;align-items:center;gap:10px;padding:5px 14px;background:#111827ee;border-top:1px solid #1e293b;font-size:10px;color:#475569;z-index:10;backdrop-filter:blur(8px)}
+.sd{width:5px;height:5px;border-radius:50%;background:#22c55e;box-shadow:0 0 6px #22c55e80}
+
+/* Canvas info */
+.cinfo{position:fixed;top:52px;left:12px;font-size:10px;color:#475569;background:#0f172aee;padding:4px 8px;border-radius:4px;border:1px solid #1e293b;z-index:10}
+
+/* Tooltip */
+.tip{position:fixed;display:none;background:#1e293bee;border:1px solid #334155;border-radius:5px;padding:6px 10px;font-size:10px;color:#e2e8f0;pointer-events:none;z-index:100;backdrop-filter:blur(4px)}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <span class="logo">⬡ PodDefinition</span>
+  <div class="sep"></div>
+  <button class="tb" onclick="resetLayout()"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>Auto Layout</button>
+  <button class="tb active">Select</button>
+  <button class="tb">Add Node</button>
+  <button class="tb">Link</button>
+  <div class="sep"></div>
+  <button class="tb" onclick="flashSave()"><svg viewBox="0 0 24 24"><path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/></svg>Save</button>
+  <button class="tb">Import</button>
+  <button class="tb">Export</button>
+  <div class="spacer"></div>
+  <button class="tb" onclick="fitView()">Fit View</button>
+</div>
+
+<div class="side">
+  <div class="ph"><div class="dot" id="sDot" style="background:#a78bfa"></div><span id="sTitle">Sustainability</span></div>
+  <div class="ps">
+    <h4>Propriétés</h4>
+    <div class="pr"><span class="pl">Type</span><span class="pv" id="sType">Complex</span></div>
+    <div class="pr"><span class="pl">ID</span><span class="pv" id="sId">node_000</span></div>
+    <div class="pr"><span class="pl">X</span><input class="pin" id="sX" value="0.00"></div>
+    <div class="pr"><span class="pl">Y</span><input class="pin" id="sY" value="0.00"></div>
+    <div class="pr"><span class="pl">Z</span><input class="pin" id="sZ" value="0.00"></div>
+    <div class="pr"><span class="pl">Verrouillé</span><span class="pv" id="sLock" style="cursor:pointer" onclick="toggleLock()">🔓 Non</span></div>
+  </div>
+  <div class="ps">
+    <h4 id="sConnH">Connexions (3)</h4>
+    <div id="sConns"></div>
+  </div>
+  <div class="ps">
+    <h4>Métadonnées</h4>
+    <div class="pr"><span class="pl">Créé</span><span class="pv">03/03/2026</span></div>
+    <div class="pr"><span class="pl">Version</span><span class="pv">v1.0</span></div>
+  </div>
+  <div class="ps">
+    <h4>Layout Engine</h4>
+    <div class="sl-row"><div class="sl-lbl"><span>Force</span><span class="sl-v" id="fV">0.60</span></div><input type="range" min="0" max="100" value="60" id="fS"></div>
+    <div class="sl-row"><div class="sl-lbl"><span>Espacement</span><span class="sl-v" id="eV">4.0</span></div><input type="range" min="10" max="100" value="40" id="eS"></div>
+    <div class="sl-row"><div class="sl-lbl"><span>Gravité</span><span class="sl-v" id="gV">0.20</span></div><input type="range" min="0" max="100" value="20" id="gS"></div>
+    <div class="sl-row"><div class="sl-lbl"><span>Damping</span><span class="sl-v" id="dV">0.92</span></div><input type="range" min="50" max="100" value="92" id="dS"></div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="li"><div class="ld" style="background:#60a5fa"></div>Elementary</div>
+  <div class="li"><div class="ld" style="background:#a78bfa"></div>Complex</div>
+  <div class="li"><div class="ld" style="background:#34d399"></div>Component</div>
+  <div class="li"><div class="ld" style="background:#fb923c"></div>Potential</div>
+  <div class="li"><div class="ld" style="background:#f87171"></div>Sensitivity</div>
+  <div class="li"><div class="ld" style="background:#fbbf24"></div>Potentiality</div>
+</div>
+
+<div class="cinfo" id="cinfo">3D Graph • Nodes: 12 • Links: 14 • Zoom: 100%</div>
+<div class="tip" id="tip"></div>
+
+<div class="status">
+  <div class="sd" id="saveDot"></div>
+  <span id="saveText">Auto-save actif — dernière sauvegarde il y a 5s</span>
+  <div class="sep"></div>
+  <span>Format: PodDef v2.1</span>
+  <div class="spacer" style="flex:1"></div>
+  <span>Graph: test-8/graph-core</span>
+  <div class="sep"></div>
+  <span>12 nœuds • 14 liens</span>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const TYPES={
+  elementary:{color:0x60a5fa,hex:'#60a5fa'},
+  complex:{color:0xa78bfa,hex:'#a78bfa'},
+  component:{color:0x34d399,hex:'#34d399'},
+  potential:{color:0xfb923c,hex:'#fb923c'},
+  sensitivity:{color:0xf87171,hex:'#f87171'},
+  potentiality:{color:0xfbbf24,hex:'#fbbf24'}
+};
+
+const LINK_TYPES=['Hiérarchique','Composition','Dépendance','Sensibilité','Association','Flux'];
+const LINK_COLORS=['#2563eb','#22c55e','#a78bfa','#fbbf24','#64748b','#fb923c'];
+
+const graphData=[
+  {id:0,label:'Sustainability',type:'complex',p:[0,0,0]},
+  {id:1,label:'Innovation',type:'elementary',p:[4,2,-1]},
+  {id:2,label:'Resource Flow',type:'component',p:[-3,1,2]},
+  {id:3,label:'Impact Analysis',type:'sensitivity',p:[2,-3,1]},
+  {id:4,label:'Growth Vector',type:'potential',p:[-2,3,-2]},
+  {id:5,label:'Risk Matrix',type:'sensitivity',p:[3,0,3]},
+  {id:6,label:'Value Chain',type:'component',p:[-4,-1,-1]},
+  {id:7,label:'Emergent Pattern',type:'potentiality',p:[1,4,2]},
+  {id:8,label:'Feedback Loop',type:'elementary',p:[-1,-3,-3]},
+  {id:9,label:'Synergy Node',type:'potential',p:[5,-1,0]},
+  {id:10,label:'Constraint Field',type:'potentiality',p:[-3,-2,3]},
+  {id:11,label:'Transformation',type:'complex',p:[0,2,4]}
+];
+
+const linksData=[
+  {s:0,t:1,lt:0},{s:0,t:2,lt:1},{s:0,t:3,lt:3},{s:0,t:6,lt:2},
+  {s:1,t:5,lt:4},{s:1,t:7,lt:5},{s:2,t:4,lt:1},{s:2,t:10,lt:0},
+  {s:3,t:9,lt:3},{s:4,t:7,lt:5},{s:5,t:9,lt:4},{s:6,t:8,lt:2},
+  {s:8,t:10,lt:0},{s:7,t:11,lt:5}
+];
+
+// Scene
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0a0e17);
+scene.fog=new THREE.FogExp2(0x0a0e17,0.03);
+
+const camera=new THREE.PerspectiveCamera(60,1,0.1,200);
+camera.position.set(10,8,10);
+
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled=true;
+document.body.prepend(renderer.domElement);
+renderer.domElement.id='canvas3d';
+
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;
+controls.dampingFactor=0.08;
+controls.minDistance=3;
+controls.maxDistance=40;
+
+// Lights
+scene.add(new THREE.AmbientLight(0x334155,0.6));
+const dLight=new THREE.DirectionalLight(0x60a5fa,0.4);
+dLight.position.set(10,15,10);
+scene.add(dLight);
+const pLight=new THREE.PointLight(0xa78bfa,0.3,30);
+pLight.position.set(-5,8,-5);
+scene.add(pLight);
+
+// Grid
+const gridHelper=new THREE.GridHelper(30,30,0x1e293b,0x111827);
+gridHelper.position.y=-5;
+scene.add(gridHelper);
+
+// Particles background
+const starGeo=new THREE.BufferGeometry();
+const starPos=new Float32Array(600);
+for(let i=0;i<600;i++)starPos[i]=(Math.random()-0.5)*60;
+starGeo.setAttribute('position',new THREE.BufferAttribute(starPos,3));
+const starMat=new THREE.PointsMaterial({color:0x334155,size:0.05});
+scene.add(new THREE.Points(starGeo,starMat));
+
+// Build nodes
+const nodeMeshes=[];
+const nodeGlows=[];
+const nodeLabels=[];
+const physics=graphData.map(n=>({x:n.p[0],y:n.p[1],z:n.p[2],vx:0,vy:0,vz:0,locked:n.id===0}));
+
+graphData.forEach((n,i)=>{
+  const t=TYPES[n.type];
+  // Main sphere
+  const geo=new THREE.SphereGeometry(0.35,24,24);
+  const mat=new THREE.MeshStandardMaterial({color:t.color,emissive:t.color,emissiveIntensity:0.3,roughness:0.3,metalness:0.5});
+  const mesh=new THREE.Mesh(geo,mat);
+  mesh.position.set(n.p[0],n.p[1],n.p[2]);
+  mesh.userData={idx:i};
+  scene.add(mesh);
+  nodeMeshes.push(mesh);
+
+  // Glow sphere
+  const gGeo=new THREE.SphereGeometry(0.55,16,16);
+  const gMat=new THREE.MeshBasicMaterial({color:t.color,transparent:true,opacity:0.1});
+  const gMesh=new THREE.Mesh(gGeo,gMat);
+  mesh.add(gMesh);
+  nodeGlows.push(gMesh);
+
+  // Lock ring for node 0
+  if(n.id===0){
+    const ring=new THREE.RingGeometry(0.45,0.5,32);
+    const rMat=new THREE.MeshBasicMaterial({color:0xfbbf24,side:THREE.DoubleSide,transparent:true,opacity:0.6});
+    const rMesh=new THREE.Mesh(ring,rMat);
+    rMesh.lookAt(camera.position);
+    mesh.add(rMesh);
+    mesh.userData.lockRing=rMesh;
+  }
+
+  // Text sprite
+  const canvas2=document.createElement('canvas');
+  canvas2.width=256;canvas2.height=64;
+  const ctx2=canvas2.getContext('2d');
+  ctx2.font='bold 20px Segoe UI, sans-serif';
+  ctx2.fillStyle='#94a3b8';
+  ctx2.textAlign='center';
+  ctx2.fillText(n.label,128,36);
+  const tex=new THREE.CanvasTexture(canvas2);
+  const sMat=new THREE.SpriteMaterial({map:tex,transparent:true,opacity:0.85});
+  const sprite=new THREE.Sprite(sMat);
+  sprite.scale.set(2.5,0.6,1);
+  sprite.position.y=-0.65;
+  mesh.add(sprite);
+  nodeLabels.push(sprite);
+});
+
+// Build links
+const linkLines=[];
+linksData.forEach(l=>{
+  const geo=new THREE.BufferGeometry();
+  const a=nodeMeshes[l.s].position, b=nodeMeshes[l.t].position;
+  geo.setAttribute('position',new THREE.Float32BufferAttribute([a.x,a.y,a.z,b.x,b.y,b.z],3));
+  const col=new THREE.Color(LINK_COLORS[l.lt]);
+  const mat=new THREE.LineBasicMaterial({color:col,transparent:true,opacity:0.35,linewidth:1});
+  const line=new THREE.Line(geo,mat);
+  scene.add(line);
+  linkLines.push({line,s:l.s,t:l.t});
+
+  // Arrow cone at midpoint
+  const coneGeo=new THREE.ConeGeometry(0.08,0.25,6);
+  const coneMat=new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.5});
+  const cone=new THREE.Mesh(coneGeo,coneMat);
+  scene.add(cone);
+  linkLines[linkLines.length-1].cone=cone;
+});
+
+// Selection
+let selected=0;
+let hovered=-1;
+const raycaster=new THREE.Raycaster();
+const mouse=new THREE.Vector2();
+let isDragging3D=false;
+let dragPlane=new THREE.Plane();
+let dragOffset=new THREE.Vector3();
+
+function updatePanel(i){
+  const n=graphData[i],t=TYPES[n.type],p=physics[i];
+  document.getElementById('sDot').style.background=t.hex;
+  document.getElementById('sTitle').textContent=n.label;
+  document.getElementById('sType').textContent=n.type.charAt(0).toUpperCase()+n.type.slice(1);
+  document.getElementById('sId').textContent='node_'+String(n.id).padStart(3,'0');
+  document.getElementById('sX').value=p.x.toFixed(2);
+  document.getElementById('sY').value=p.y.toFixed(2);
+  document.getElementById('sZ').value=p.z.toFixed(2);
+  document.getElementById('sLock').innerHTML=p.locked?'🔒 Oui':'🔓 Non';
+  document.getElementById('sLock').style.color=p.locked?'#f87171':'#34d399';
+
+  // Connections
+  const conns=linksData.filter(l=>l.s===i||l.t===i);
+  document.getElementById('sConnH').textContent=`Connexions (${conns.length})`;
+  let h='';
+  conns.forEach(c=>{
+    const other=c.s===i?c.t:c.s;
+    const dir=c.s===i?'→':'←';
+    h+=`<div class="pr"><span class="pl">${dir} ${graphData[other].label}</span><span class="cb" style="background:${LINK_COLORS[c.lt]}30;color:${LINK_COLORS[c.lt]}">${LINK_TYPES[c.lt]}</span></div>`;
+  });
+  document.getElementById('sConns').innerHTML=h;
+}
+updatePanel(0);
+
+// Mouse
+const tipEl=document.getElementById('tip');
+renderer.domElement.addEventListener('mousemove',e=>{
+  const rect=renderer.domElement.getBoundingClientRect();
+  mouse.x=((e.clientX-rect.left)/(rect.width))*2-1;
+  mouse.y=-((e.clientY-rect.top)/(rect.height))*2+1;
+
+  if(isDragging3D&&selected>=0){
+    const inter=new THREE.Vector3();
+    raycaster.setFromCamera(mouse,camera);
+    raycaster.ray.intersectPlane(dragPlane,inter);
+    if(inter){
+      inter.add(dragOffset);
+      physics[selected].x=inter.x;
+      physics[selected].y=inter.y;
+      physics[selected].z=inter.z;
+      physics[selected].vx=0;physics[selected].vy=0;physics[selected].vz=0;
+    }
+    return;
+  }
+
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(nodeMeshes);
+  if(hits.length>0){
+    const idx=hits[0].object.userData.idx;
+    hovered=idx;
+    renderer.domElement.style.cursor='pointer';
+    tipEl.style.display='block';
+    tipEl.style.left=(e.clientX+14)+'px';
+    tipEl.style.top=(e.clientY-16)+'px';
+    tipEl.innerHTML=`<b>${graphData[idx].label}</b><br>Type: ${graphData[idx].type}${physics[idx].locked?' • 🔒':''}`;
+  }else{
+    hovered=-1;
+    renderer.domElement.style.cursor='default';
+    tipEl.style.display='none';
+  }
+});
+
+renderer.domElement.addEventListener('mousedown',e=>{
+  if(e.button!==0)return;
+  raycaster.setFromCamera(mouse,camera);
+  const hits=raycaster.intersectObjects(nodeMeshes);
+  if(hits.length>0){
+    const idx=hits[0].object.userData.idx;
+    selected=idx;
+    updatePanel(idx);
+    isDragging3D=true;
+    controls.enabled=false;
+    const pos=nodeMeshes[idx].position.clone();
+    dragPlane.setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()).negate(),pos);
+    const inter=new THREE.Vector3();
+    raycaster.ray.intersectPlane(dragPlane,inter);
+    if(inter)dragOffset.copy(pos).sub(inter);
+  }
+});
+
+renderer.domElement.addEventListener('mouseup',()=>{isDragging3D=false;controls.enabled=true;});
+
+function toggleLock(){
+  if(selected>=0){physics[selected].locked=!physics[selected].locked;updatePanel(selected);}
+}
+
+// Sliders
+document.getElementById('fS').oninput=function(){document.getElementById('fV').textContent=(this.value/100).toFixed(2)};
+document.getElementById('eS').oninput=function(){document.getElementById('eV').textContent=(this.value/10).toFixed(1)};
+document.getElementById('gS').oninput=function(){document.getElementById('gV').textContent=(this.value/100).toFixed(2)};
+document.getElementById('dS').oninput=function(){document.getElementById('dV').textContent=(this.value/100).toFixed(2)};
+
+// Force simulation
+function simulate(){
+  const force=parseFloat(document.getElementById('fV').textContent);
+  const spacing=parseFloat(document.getElementById('eV').textContent);
+  const gravity=parseFloat(document.getElementById('gV').textContent);
+  const damping=parseFloat(document.getElementById('dV').textContent);
+
+  for(let i=0;i<physics.length;i++){
+    const p=physics[i];
+    if(p.locked||(isDragging3D&&i===selected))continue;
+    // Gravity to center
+    p.vx-=p.x*gravity*0.01;
+    p.vy-=p.y*gravity*0.01;
+    p.vz-=p.z*gravity*0.01;
+    // Repulsion
+    for(let j=0;j<physics.length;j++){
+      if(i===j)continue;
+      let dx=p.x-physics[j].x,dy=p.y-physics[j].y,dz=p.z-physics[j].z;
+      let d=Math.sqrt(dx*dx+dy*dy+dz*dz)||0.1;
+      if(d<spacing*3){
+        let f=force*spacing/(d*d)*0.5;
+        p.vx+=dx/d*f;p.vy+=dy/d*f;p.vz+=dz/d*f;
+      }
+    }
+  }
+  // Link attraction
+  for(const l of linksData){
+    const a=physics[l.s],b=physics[l.t];
+    let dx=b.x-a.x,dy=b.y-a.y,dz=b.z-a.z;
+    let d=Math.sqrt(dx*dx+dy*dy+dz*dz)||0.1;
+    let f=(d-spacing)*force*0.02;
+    if(!a.locked&&!(isDragging3D&&l.s===selected)){a.vx+=dx/d*f;a.vy+=dy/d*f;a.vz+=dz/d*f;}
+    if(!b.locked&&!(isDragging3D&&l.t===selected)){b.vx-=dx/d*f;b.vy-=dy/d*f;b.vz-=dz/d*f;}
+  }
+  for(const p of physics){
+    if(p.locked)continue;
+    p.vx*=damping;p.vy*=damping;p.vz*=damping;
+    p.x+=p.vx;p.y+=p.vy;p.z+=p.vz;
+  }
+}
+
+function resetLayout(){
+  for(const p of physics){
+    if(!p.locked){p.vx=(Math.random()-0.5)*2;p.vy=(Math.random()-0.5)*2;p.vz=(Math.random()-0.5)*2;}
+  }
+}
+
+function fitView(){
+  camera.position.set(10,8,10);
+  controls.target.set(0,0,0);
+}
+
+function flashSave(){
+  const d=document.getElementById('saveDot');
+  d.style.background='#eab308';d.style.boxShadow='0 0 6px #eab30880';
+  document.getElementById('saveText').textContent='Sauvegarde en cours...';
+  setTimeout(()=>{d.style.background='#22c55e';d.style.boxShadow='0 0 6px #22c55e80';document.getElementById('saveText').textContent='Auto-save actif — dernière sauvegarde il y a 1s';},700);
+}
+
+let time=0;
+function animate(){
+  requestAnimationFrame(animate);
+  time+=0.02;
+  simulate();
+
+  // Update mesh positions
+  for(let i=0;i<nodeMeshes.length;i++){
+    nodeMeshes[i].position.set(physics[i].x,physics[i].y,physics[i].z);
+    // Pulse selected
+    if(i===selected){
+      const s=0.35+Math.sin(time*3)*0.05;
+      nodeMeshes[i].scale.setScalar(s/0.35);
+      nodeMeshes[i].material.emissiveIntensity=0.5+Math.sin(time*3)*0.2;
+      nodeGlows[i].material.opacity=0.2;
+    }else if(i===hovered){
+      nodeMeshes[i].scale.setScalar(1.15);
+      nodeMeshes[i].material.emissiveIntensity=0.4;
+      nodeGlows[i].material.opacity=0.15;
+    }else{
+      nodeMeshes[i].scale.setScalar(1);
+      nodeMeshes[i].material.emissiveIntensity=0.3;
+      nodeGlows[i].material.opacity=0.08;
+    }
+    // Lock ring billboard
+    if(nodeMeshes[i].userData.lockRing){
+      nodeMeshes[i].userData.lockRing.lookAt(camera.position);
+      nodeMeshes[i].userData.lockRing.material.opacity=physics[i].locked?0.6:0;
+    }
+  }
+
+  // Update links
+  linkLines.forEach(l=>{
+    const a=nodeMeshes[l.s].position,b=nodeMeshes[l.t].position;
+    const pos=l.line.geometry.attributes.position;
+    pos.setXYZ(0,a.x,a.y,a.z);
+    pos.setXYZ(1,b.x,b.y,b.z);
+    pos.needsUpdate=true;
+    // Cone at midpoint
+    l.cone.position.set((a.x+b.x)/2,(a.y+b.y)/2,(a.z+b.z)/2);
+    l.cone.lookAt(b);
+    l.cone.rotateX(Math.PI/2);
+  });
+
+  // Update panel coords for selected
+  if(selected>=0){
+    document.getElementById('sX').value=physics[selected].x.toFixed(2);
+    document.getElementById('sY').value=physics[selected].y.toFixed(2);
+    document.getElementById('sZ').value=physics[selected].z.toFixed(2);
+  }
+
+  controls.update();
+  renderer.render(scene,camera);
+}
+
+function onResize(){
+  const w=window.innerWidth,h=window.innerHeight;
+  camera.aspect=(w-300)/h;
+  camera.updateProjectionMatrix();
+  renderer.setSize(w-300,h);
+}
+window.addEventListener('resize',onResize);
+onResize();
+animate();
+</script>
+</body>
+</html>

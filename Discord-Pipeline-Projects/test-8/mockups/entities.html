@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PodGab — AI Entities</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0e17;color:#c8d6e5;font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;perspective:1200px;overflow-x:hidden}
+.scene{width:100vw;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px}
+.panel{width:1200px;background:rgba(15,20,35,0.92);border:1px solid rgba(100,140,255,0.15);border-radius:18px;backdrop-filter:blur(20px);box-shadow:0 0 60px rgba(60,100,255,0.08),0 30px 80px rgba(0,0,0,0.5);transform:rotateX(2deg) rotateY(-1deg);transition:transform 0.6s;overflow:hidden}
+.panel:hover{transform:rotateX(0) rotateY(0)}
+.hdr{padding:20px 28px 16px;border-bottom:1px solid rgba(100,140,255,0.08);display:flex;align-items:center;gap:14px}
+.hdr h1{font-size:18px;font-weight:600;color:#e2e8f0}
+.hdr h1 span{color:#648cff}
+.badge{background:rgba(100,140,255,0.12);color:#648cff;font-size:11px;padding:3px 10px;border-radius:20px;font-weight:500}
+.tabs{display:flex;padding:0 28px;gap:0;margin-top:8px}
+.tab{padding:10px 22px;font-size:13px;font-weight:500;cursor:pointer;border-bottom:2px solid transparent;color:#6b7a90;transition:all 0.25s;user-select:none}
+.tab:hover{color:#a0b4d0}
+.tab.active{color:#648cff;border-bottom-color:#648cff}
+.content{padding:24px 28px}
+.view{display:none;animation:fadeIn 0.3s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* Mode selector */
+.mode-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:24px}
+.mode-card{background:rgba(20,28,50,0.5);border:2px solid rgba(100,140,255,0.1);border-radius:16px;padding:24px;text-align:center;cursor:pointer;transition:all 0.3s;position:relative;overflow:hidden}
+.mode-card:hover{border-color:rgba(100,140,255,0.3);transform:translateY(-2px)}
+.mode-card.selected{border-color:#648cff;background:rgba(100,140,255,0.06)}
+.mode-card.selected::after{content:'ACTIVE';position:absolute;top:12px;right:12px;font-size:9px;padding:2px 8px;background:#648cff;color:#fff;border-radius:10px;font-weight:600}
+.mode-icon{font-size:48px;margin-bottom:12px;display:block}
+.mode-card h3{font-size:16px;color:#e2e8f0;margin-bottom:6px}
+.mode-card p{font-size:12px;color:#5a6a80;line-height:1.5}
+
+/* Avatar preview */
+.preview-area{background:rgba(10,14,23,0.8);border:1px solid rgba(100,140,255,0.08);border-radius:14px;min-height:300px;display:flex;position:relative;overflow:hidden}
+.preview-3d{flex:1;display:flex;align-items:center;justify-content:center;position:relative}
+
+/* Avatar mode */
+.avatar-figure{text-align:center;animation:float 3s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.avatar-body{width:120px;height:200px;background:linear-gradient(180deg,rgba(100,140,255,0.2),rgba(100,140,255,0.05));border-radius:60px 60px 40px 40px;position:relative;margin:0 auto}
+.avatar-head{width:60px;height:60px;background:rgba(100,140,255,0.3);border-radius:50%;margin:0 auto -10px;position:relative;z-index:1}
+.avatar-head::after{content:'';position:absolute;bottom:18px;left:50%;transform:translateX(-50%);width:20px;height:3px;background:#648cff;border-radius:2px;animation:lipSync 0.4s infinite}
+@keyframes lipSync{0%,100%{transform:translateX(-50%) scaleY(1)}50%{transform:translateX(-50%) scaleY(2.5)}}
+.avatar-label{margin-top:16px;font-size:12px;color:#648cff}
+
+/* Orb mode */
+.orb-container{text-align:center}
+.orb{width:120px;height:120px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(168,85,247,0.6),rgba(100,140,255,0.3),rgba(60,100,255,0.1));box-shadow:0 0 60px rgba(100,140,255,0.3),0 0 120px rgba(168,85,247,0.15);animation:orbPulse 2s ease-in-out infinite,float 3s ease-in-out infinite;margin:0 auto}
+@keyframes orbPulse{0%,100%{box-shadow:0 0 60px rgba(100,140,255,0.3),0 0 120px rgba(168,85,247,0.15)}50%{box-shadow:0 0 80px rgba(100,140,255,0.5),0 0 160px rgba(168,85,247,0.25)}}
+.orb-label{margin-top:20px;font-size:12px;color:#a855f7}
+.orb-rings{position:absolute;width:180px;height:180px;border:1px solid rgba(168,85,247,0.15);border-radius:50%;animation:spin 8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* No avatar mode */
+.voice-only{text-align:center}
+.voice-waves{display:flex;align-items:center;justify-content:center;gap:4px;height:60px}
+.v-bar{width:3px;background:#648cff;border-radius:2px;animation:vwave 1s ease-in-out infinite}
+.v-bar:nth-child(1){height:15px;animation-delay:0s}
+.v-bar:nth-child(2){height:25px;animation-delay:0.1s}
+.v-bar:nth-child(3){height:40px;animation-delay:0.2s}
+.v-bar:nth-child(4){height:30px;animation-delay:0.3s}
+.v-bar:nth-child(5){height:20px;animation-delay:0.4s}
+@keyframes vwave{0%,100%{transform:scaleY(0.5)}50%{transform:scaleY(1.2)}}
+
+/* Detail panel */
+.detail-panel{width:320px;padding:20px;border-left:1px solid rgba(100,140,255,0.08);display:flex;flex-direction:column;gap:14px}
+.detail-section h4{font-size:12px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px}
+.detail-item{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(20,28,50,0.5);border-radius:8px;font-size:12px;margin-bottom:4px}
+.detail-item .di-icon{font-size:16px}
+.detail-item .di-text{color:#c8d6e5}
+.detail-item .di-sub{color:#5a6a80;font-size:11px}
+
+/* Smart Objects */
+.so-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.so-card{background:rgba(20,28,50,0.5);border:1px solid rgba(100,140,255,0.08);border-radius:12px;padding:16px;transition:all 0.2s}
+.so-card:hover{border-color:rgba(100,140,255,0.2)}
+.so-card h4{font-size:13px;color:#e2e8f0;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.so-prop{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:rgba(15,20,35,0.5);border-radius:6px;margin-bottom:4px;font-size:11px}
+.so-prop .key{color:#648cff;font-family:monospace}
+.so-prop .val{color:#c8d6e5}
+.so-prop .type-tag{font-size:9px;padding:1px 6px;border-radius:4px}
+.type-tag.unity{background:rgba(34,197,94,0.1);color:#22c55e}
+.type-tag.custom{background:rgba(251,191,36,0.1);color:#fbbf24}
+.add-prop{width:100%;padding:8px;background:none;border:1px dashed rgba(100,140,255,0.15);border-radius:6px;color:#648cff;font-size:11px;cursor:pointer;transition:all 0.2s;margin-top:6px}
+.add-prop:hover{border-color:#648cff;background:rgba(100,140,255,0.04)}
+
+.ai-context{margin-top:20px;padding:16px;background:rgba(20,28,50,0.4);border:1px solid rgba(100,140,255,0.08);border-radius:12px}
+.ai-context h4{font-size:12px;color:#5a6a80;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px}
+.ai-sees{font-family:monospace;font-size:11px;color:#648cff;background:rgba(10,14,23,0.6);padding:12px;border-radius:8px;white-space:pre-line;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="scene">
+<div class="panel">
+  <div class="hdr">
+    <h1>🤖 <span>AI Entities</span> — PodGab</h1>
+    <span class="badge">US-22–23 · US-25 · US-33–35</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab(0)">🧑 Incarnation Modes</div>
+    <div class="tab" onclick="switchTab(1)">📦 Smart Objects</div>
+  </div>
+  <div class="content">
+    <!-- VIEW 0: INCARNATION MODES -->
+    <div class="view active" id="view-0">
+      <div class="mode-grid">
+        <div class="mode-card selected" onclick="selectMode(0,this)">
+          <span class="mode-icon">🧑</span>
+          <h3>Avatar RPM</h3>
+          <p>Humanoid avatar with lip-sync, gestures, eye tracking. Point & click interaction.</p>
+        </div>
+        <div class="mode-card" onclick="selectMode(1,this)">
+          <span class="mode-icon">🔮</span>
+          <h3>Orb</h3>
+          <p>Abstract floating sphere, reactive to voice. Gesture-based interaction.</p>
+        </div>
+        <div class="mode-card" onclick="selectMode(2,this)">
+          <span class="mode-icon">👻</span>
+          <h3>No Avatar</h3>
+          <p>Voice only, minimal UI. Pure voice commands, ambient presence.</p>
+        </div>
+      </div>
+
+      <div class="preview-area">
+        <div class="preview-3d">
+          <!-- Avatar preview (default) -->
+          <div id="preview-avatar" class="avatar-figure">
+            <div class="avatar-head"></div>
+            <div class="avatar-body"></div>
+            <div class="avatar-label">RPM Avatar — Speaking...</div>
+          </div>
+          <!-- Orb preview -->
+          <div id="preview-orb" style="display:none;text-align:center;position:relative">
+            <div class="orb-rings" style="position:absolute;left:50%;top:50%;margin-left:-90px;margin-top:-90px"></div>
+            <div class="orb"></div>
+            <div class="orb-label" style="margin-top:24px">Orb — Listening...</div>
+          </div>
+          <!-- Voice only preview -->
+          <div id="preview-voice" style="display:none" class="voice-only">
+            <div class="voice-waves">
+              <div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div><div class="v-bar"></div>
+            </div>
+            <div style="font-size:12px;color:#648cff;margin-top:12px">Voice Only — Active</div>
+          </div>
+        </div>
+
+        <div class="detail-panel">
+          <div class="detail-section">
+            <h4>Interaction Method</h4>
+            <div class="detail-item"><span class="di-icon">👆</span><span class="di-text">Point & Click</span></div>
+            <div class="detail-item"><span class="di-icon">🎤</span><span class="di-text">Voice Commands</span></div>
+            <div class="detail-item"><span class="di-icon">👁️</span><span class="di-text">Eye Contact Detection</span></div>
+          </div>
+          <div class="detail-section">
+            <h4>Capabilities</h4>
+            <div class="detail-item"><span class="di-icon">💬</span><span class="di-text">Lip-sync (visemes)</span></div>
+            <div class="detail-item"><span class="di-icon">🤚</span><span class="di-text">Hand gestures</span></div>
+            <div class="detail-item"><span class="di-icon">😊</span><span class="di-text">Facial expressions</span></div>
+            <div class="detail-item"><span class="di-icon">🚶</span><span class="di-text">Spatial navigation</span></div>
+          </div>
+          <div class="detail-section">
+            <h4>Platform</h4>
+            <div class="detail-item"><span class="di-icon">🥽</span><div><span class="di-text">Quest</span><div class="di-sub">Simplified mesh, baked anims</div></div></div>
+            <div class="detail-item"><span class="di-icon">🖥️</span><div><span class="di-text">Desktop</span><div class="di-sub">Full mesh, real-time blend shapes</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 1: SMART OBJECTS -->
+    <div class="view" id="view-1">
+      <div class="so-grid">
+        <div class="so-card">
+          <h4>📦 Conference Table</h4>
+          <div class="so-prop"><span class="key">transform.position</span><span class="type-tag unity">Unity</span><span class="val">(0, 0.8, 2.5)</span></div>
+          <div class="so-prop"><span class="key">transform.scale</span><span class="type-tag unity">Unity</span><span class="val">(2, 1, 1.2)</span></div>
+          <div class="so-prop"><span class="key">collider.bounds</span><span class="type-tag unity">Unity</span><span class="val">Box 2×1×1.2</span></div>
+          <div class="so-prop"><span class="key">capacity</span><span class="type-tag custom">Custom</span><span class="val">8 seats</span></div>
+          <div class="so-prop"><span class="key">meeting_topic</span><span class="type-tag custom">Custom</span><span class="val">Q1 Review</span></div>
+          <button class="add-prop">+ Add Property</button>
+        </div>
+        <div class="so-card">
+          <h4>🖥️ Whiteboard</h4>
+          <div class="so-prop"><span class="key">transform.position</span><span class="type-tag unity">Unity</span><span class="val">(3, 1.5, 0)</span></div>
+          <div class="so-prop"><span class="key">renderer.material</span><span class="type-tag unity">Unity</span><span class="val">WhiteboardMat</span></div>
+          <div class="so-prop"><span class="key">content_type</span><span class="type-tag custom">Custom</span><span class="val">graph_view</span></div>
+          <div class="so-prop"><span class="key">linked_pod</span><span class="type-tag custom">Custom</span><span class="val">PodDef_Main</span></div>
+          <button class="add-prop">+ Add Property</button>
+        </div>
+        <div class="so-card">
+          <h4>💡 Ambient Light</h4>
+          <div class="so-prop"><span class="key">light.intensity</span><span class="type-tag unity">Unity</span><span class="val">1.2</span></div>
+          <div class="so-prop"><span class="key">light.color</span><span class="type-tag unity">Unity</span><span class="val">#FFE4B5</span></div>
+          <div class="so-prop"><span class="key">mood</span><span class="type-tag custom">Custom</span><span class="val">focus</span></div>
+          <button class="add-prop">+ Add Property</button>
+        </div>
+        <div class="so-card">
+          <h4>🔊 Speaker System</h4>
+          <div class="so-prop"><span class="key">audioSource.volume</span><span class="type-tag unity">Unity</span><span class="val">0.7</span></div>
+          <div class="so-prop"><span class="key">audioSource.spatial</span><span class="type-tag unity">Unity</span><span class="val">true</span></div>
+          <div class="so-prop"><span class="key">role</span><span class="type-tag custom">Custom</span><span class="val">ai_voice_output</span></div>
+          <div class="so-prop"><span class="key">priority</span><span class="type-tag custom">Custom</span><span class="val">high</span></div>
+          <button class="add-prop">+ Add Property</button>
+        </div>
+      </div>
+
+      <div class="ai-context">
+        <h4>🧠 AI Context — What the AI "sees"</h4>
+        <div class="ai-sees">SmartObjects in scene: 4
+├─ ConferenceTable { capacity: 8, meeting_topic: "Q1 Review" }
+├─ Whiteboard { content_type: "graph_view", linked_pod: "PodDef_Main" }
+├─ AmbientLight { mood: "focus", intensity: 1.2 }
+└─ SpeakerSystem { role: "ai_voice_output", priority: "high" }
+
+Accessible properties: 17 (9 Unity auto-detected, 8 custom)
+Last context refresh: 1.2s ago</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+<script>
+function switchTab(i){document.querySelectorAll('.tab').forEach((t,j)=>t.classList.toggle('active',j===i));document.querySelectorAll('.view').forEach((v,j)=>v.classList.toggle('active',j===i))}
+const previews=['preview-avatar','preview-orb','preview-voice'];
+function selectMode(idx,el){
+  document.querySelectorAll('.mode-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  previews.forEach((id,i)=>document.getElementById(id).style.display=i===idx?'':'none');
+}
+</script>
+</body>
+</html>
