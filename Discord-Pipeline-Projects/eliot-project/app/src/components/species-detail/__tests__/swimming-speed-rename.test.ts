@@ -18,7 +18,7 @@ describe('US-8.2: Swimming speed panel names include (Absolute)', () => {
   });
 
   it('should still format other traits normally', () => {
-    expect(formatTraitName('egg_diameter')).toBe('Egg Diameter');
+    expect(formatTraitName('egg_diameter')).toBe('Egg Length');
     expect(formatTraitName('settlement_age')).toBe('Settlement Age');
   });
 });

@@ -330,6 +330,17 @@ function extractTraitsFromRows(
       addTrait(traits, 'oil_globule_size', r(row).OIL_GLOBULE_SIZE_MEAN, 'mm', source, doi, ogMeta);
       const eggVolMeta = metadataWithMinMaxConf(metadata, r(row), 'EGG_VOLUME_MIN', 'EGG_VOLUME_MAX');
       addTrait(traits, 'egg_volume', r(row).EGG_VOLUME_MEAN, 'mm³', source, doi, eggVolMeta);
+      // Egg width — only if EGG_W_MEAN exists and differs from EGG_L_MEAN
+      const eggWMean = r(row).EGG_W_MEAN;
+      const eggLMean = r(row).EGG_L_MEAN;
+      if (eggWMean !== null && eggWMean !== undefined && String(eggWMean).trim() !== '' && String(eggWMean).trim() !== 'NA') {
+        const wVal = parseFloat(String(eggWMean));
+        const lVal = eggLMean ? parseFloat(String(eggLMean)) : NaN;
+        if (!isNaN(wVal) && (isNaN(lVal) || Math.abs(wVal - lVal) > 0.001)) {
+          const eggWMeta = metadataWithMinMaxConf(metadata, r(row), 'EGG_W_MIN', 'EGG_W_MAX');
+          addTrait(traits, 'egg_width', eggWMean, 'mm', source, doi, eggWMeta);
+        }
+      }
     }
     // Hatching Size Database
     else if (filename.includes('hatching_size')) {

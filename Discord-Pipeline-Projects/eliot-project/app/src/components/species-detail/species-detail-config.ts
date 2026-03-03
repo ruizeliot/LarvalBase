@@ -27,6 +27,7 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
     stage: 'egg',
     traits: [
       'egg_diameter',
+      'egg_width',
       'egg_volume',
       'yolk_diameter',
       'oil_globule_size',
@@ -100,6 +101,7 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
 export const TRAIT_UNITS: Record<string, string> = {
   // Egg & Incubation
   egg_diameter: 'mm',
+  egg_width: 'mm',
   egg_volume: 'mm³',
   yolk_diameter: 'mm',
   oil_globule_size: 'mm',

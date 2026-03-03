@@ -18,6 +18,7 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     name: "Egg & Incubation",
     traits: [
       "egg_diameter",
+      "egg_width",
       "egg_volume",
       "yolk_diameter",
       "oil_globule_size",
@@ -121,6 +122,8 @@ export function formatTraitName(trait: string): string {
   if (trait === 'critical_swimming_speed_rel') return 'Critical Swimming Speed (Relative)';
   if (trait === 'in_situ_swimming_speed') return 'In Situ Swimming Speed (Absolute)';
   if (trait === 'in_situ_swimming_speed_rel') return 'In Situ Swimming Speed (Relative)';
+  if (trait === 'egg_diameter') return 'Egg Length';
+  if (trait === 'egg_width') return 'Egg Width';
   return trait
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))

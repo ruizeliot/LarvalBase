@@ -82,7 +82,7 @@ describe('US-3.3: Raw data modal shows MIN/MAX/CONF columns', () => {
     speciesId: 'chromis-viridis',
     speciesName: 'Chromis viridis',
     traitType: 'egg_diameter',
-    traitName: 'Egg Diameter',
+    traitName: 'Egg Length',
   };
 
   it('should display Min column header', () => {
