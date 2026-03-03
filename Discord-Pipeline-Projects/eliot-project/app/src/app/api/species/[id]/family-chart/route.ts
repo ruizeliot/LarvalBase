@@ -39,18 +39,30 @@ export async function GET(
       );
     }
 
-    // If >20 species in family, show genus averages (one bar per genus)
+    // If >20 species in family, show only species from the same genus
+    // → "Genus Comparison(GENUS_NAME)" with BLUE bars
     if (familyData.species.length > 20) {
+      const genusData = await getGenusBarChartData(species.genus, trait);
+      if (genusData && genusData.species.length > 1) {
+        return NextResponse.json({
+          ...genusData,
+          comparisonType: 'genus',
+          taxonomyName: species.genus,
+        });
+      }
+      // Fallback: if genus has only 1 species, show genus averages for the family
       const genusAvgData = await getGenusAveragedFamilyData(species.family, trait);
       if (genusAvgData && genusAvgData.species.length > 1) {
         return NextResponse.json({
           ...genusAvgData,
-          comparisonType: 'genus',
+          comparisonType: 'family',
           taxonomyName: species.family,
         });
       }
     }
 
+    // <=20 species: show all species in the family
+    // → "Family Comparison(FAMILY_NAME)" with RED bars
     return NextResponse.json({
       ...familyData,
       comparisonType: 'family',
