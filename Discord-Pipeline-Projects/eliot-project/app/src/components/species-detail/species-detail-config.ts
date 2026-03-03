@@ -76,9 +76,15 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
     unit: 'days',
   },
   {
-    title: 'Active Behaviors',
+    title: 'Vertical Position',
     traits: [
       'vertical_distribution',
+    ],
+    unit: 'm depth',
+  },
+  {
+    title: 'Swimming Speed',
+    traits: [
       'critical_swimming_speed',
       'critical_swimming_speed_rel',
       'in_situ_swimming_speed',

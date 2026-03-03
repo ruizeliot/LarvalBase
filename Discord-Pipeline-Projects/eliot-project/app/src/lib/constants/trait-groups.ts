@@ -64,9 +64,14 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     ],
   },
   {
-    name: "Active Behaviors",
+    name: "Vertical Position",
     traits: [
       "vertical_distribution",
+    ],
+  },
+  {
+    name: "Swimming Speed",
+    traits: [
       "critical_swimming_speed",
       "critical_swimming_speed_rel",
       "in_situ_swimming_speed",

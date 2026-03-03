@@ -24,7 +24,8 @@ describe('US-1.5: SVG Section Icons', () => {
       'Flexion Stage',
       'Metamorphosis',
       'Settlement',
-      'Active Behaviors',
+      'Vertical Position',
+      'Swimming Speed',
     ];
 
     for (const section of requiredSections) {
@@ -59,7 +60,8 @@ describe('US-1.5: SVG Section Icons', () => {
     // New sections from PRD
     expect(SECTION_ICONS['Pelagic Juvenile']).toBeDefined();
     expect(SECTION_ICONS['Rafting']).toBeDefined();
-    expect(SECTION_ICONS['Active Behaviors']).toBeDefined();
+    expect(SECTION_ICONS['Swimming Speed']).toBeDefined();
+    expect(SECTION_ICONS['Vertical Position']).toBeDefined();
   });
 
   it('should have icon mappings for every DISPLAY_GROUP title', () => {

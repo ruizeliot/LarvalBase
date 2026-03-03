@@ -46,9 +46,9 @@ const TRAIT_ICON_MAP: Record<string, string> = {
   'Settlement age': 'Settlement.svg',
   'Pelagic juvenile': 'Pelagic Juvenile.svg',
   'Rafting': 'Rafting.svg',
-  'In situ swimming': 'Active Behaviors.svg',
-  'Critical swimming': 'Active Behaviors.svg',
-  'Vertical position': 'Active Behaviors.svg',
+  'In situ swimming': 'Swimming speed.svg',
+  'Critical swimming': 'Swimming speed.svg',
+  'Vertical position': 'Vertical position.svg',
 };
 
 function formatNumber(n: number): string {

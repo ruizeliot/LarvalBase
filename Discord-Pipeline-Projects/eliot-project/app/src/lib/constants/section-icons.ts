@@ -25,10 +25,12 @@ export const SECTION_ICONS: Record<string, string> = {
 
   // Sections with dedicated SVGs
   'Active Behaviors': '/icons/sections/Active Behaviors.svg',
+  'Swimming Speed': '/icons/Swimming speed.svg',
+  'Vertical Position': '/icons/Vertical position.svg',
   'Pelagic Juvenile': '/icons/sections/Pelagic Juvenile.svg',
   'Rafting': '/icons/sections/Rafting.svg',
   'Age-at-Length': '/icons/sections/Age-at-Length.svg',
-  'References': '/icons/sections/References.svg',
+  'References': '/icons/References.svg',
 
   // Sections without dedicated SVGs — keep stage fallbacks
   'Swimming Ability': '/stages/post-flexion.svg',
