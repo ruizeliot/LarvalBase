@@ -809,21 +809,7 @@ export function RawDataModal({
           </div>
         )}
 
-        {/* Remarks section if any row has remarks */}
-        {!isLoading && !error && data.some(r => r.metadata?.remarks) && (
-          <div className="border-t pt-3 mt-3">
-            <h4 className="text-sm font-medium mb-2">Remarks</h4>
-            <div className="space-y-1 max-h-[100px] overflow-auto">
-              {data
-                .filter(r => r.metadata?.remarks)
-                .map((r, i) => (
-                  <p key={i} className="text-xs text-muted-foreground">
-                    &bull; {r.metadata?.remarks}
-                  </p>
-                ))}
-            </div>
-          </div>
-        )}
+        {/* Remarks are shown as a column inside the enlarged table, not as a separate section */}
       </DialogContent>
     </Dialog>
   );
