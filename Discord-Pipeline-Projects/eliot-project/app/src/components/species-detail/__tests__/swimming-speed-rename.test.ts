@@ -12,9 +12,9 @@ describe('US-8.2: Swimming speed panel names include (Absolute)', () => {
     expect(formatTraitName('in_situ_swimming_speed')).toBe('In Situ Swimming Speed (Absolute)');
   });
 
-  it('should NOT add (Absolute) to relative swimming speed traits', () => {
-    expect(formatTraitName('critical_swimming_speed_rel')).toBe('Critical Swimming Speed Rel');
-    expect(formatTraitName('in_situ_swimming_speed_rel')).toBe('In Situ Swimming Speed Rel');
+  it('should format relative swimming speed traits with (Relative)', () => {
+    expect(formatTraitName('critical_swimming_speed_rel')).toBe('Critical Swimming Speed (Relative)');
+    expect(formatTraitName('in_situ_swimming_speed_rel')).toBe('In Situ Swimming Speed (Relative)');
   });
 
   it('should still format other traits normally', () => {
