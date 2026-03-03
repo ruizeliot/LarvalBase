@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
 import Image from "next/image";
 
@@ -13,10 +13,21 @@ interface GalleryImage {
   level: "species" | "genus" | "family";
 }
 
-interface GallerySection {
-  genus: string;
+interface SpeciesSubsection {
+  speciesName: string;
   images: GalleryImage[];
-  sectionType?: 'family' | 'genus' | 'species';
+}
+
+interface GenusSection {
+  genusName: string;
+  genusImages: GalleryImage[];
+  speciesSubsections: SpeciesSubsection[];
+}
+
+interface GalleryData {
+  family: string;
+  genusSections: GenusSection[];
+  familyImages: GalleryImage[];
 }
 
 interface FamilyGalleryProps {
@@ -27,24 +38,53 @@ interface FamilyGalleryProps {
 
 /**
  * Full gallery page for a family.
- * Shows genus/species/family-level photos organized by genus sections.
- * Includes lightbox with prev/next navigation.
+ * Structure per genus:
+ *   - Genus header (blue #619CFF)
+ *   - Genus-level images (if any)
+ *   - Species subsections (green #00BA38) with "See dispersive traits" link
+ * Family-level images at bottom (red #F8766D)
+ * No names below pictures.
  */
 export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGalleryProps) {
-  const [sections, setSections] = useState<GallerySection[]>([]);
+  const [data, setData] = useState<GalleryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  // Flatten all images for lightbox navigation
-  const allImages = sections.flatMap((s) => s.images);
+  // Flatten all images for lightbox navigation + compute index map
+  const { allImages, indexMap } = useMemo(() => {
+    const all: GalleryImage[] = [];
+    // indexMap: key → startIndex in allImages
+    const map = new Map<string, number>();
+
+    if (data) {
+      for (const genus of data.genusSections) {
+        if (genus.genusImages.length > 0) {
+          map.set(`genus:${genus.genusName}`, all.length);
+          all.push(...genus.genusImages);
+        }
+        for (const sp of genus.speciesSubsections) {
+          map.set(`species:${genus.genusName}:${sp.speciesName}`, all.length);
+          all.push(...sp.images);
+        }
+      }
+      if (data.familyImages.length > 0) {
+        map.set('family', all.length);
+        all.push(...data.familyImages);
+      }
+    }
+    return { allImages: all, indexMap: map };
+  }, [data]);
 
   useEffect(() => {
+    // Scroll to top when entering the gallery
+    window.scrollTo({ top: 0 });
+
     async function loadGallery() {
       try {
         const res = await fetch(`/api/families/${encodeURIComponent(family)}/gallery`);
         if (!res.ok) throw new Error("Failed to load gallery");
-        const data = await res.json();
-        setSections(data.sections ?? []);
+        const json = await res.json();
+        setData(json);
       } catch (error) {
         console.error("Gallery load error:", error);
       } finally {
@@ -54,7 +94,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
     loadGallery();
   }, [family]);
 
-  // Lightbox keyboard navigation
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (lightboxIndex === null) return;
@@ -74,15 +113,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  // Compute global image index for lightbox from section/image indices
-  function getGlobalIndex(sectionIdx: number, imageIdx: number): number {
-    let idx = 0;
-    for (let s = 0; s < sectionIdx; s++) {
-      idx += sections[s].images.length;
-    }
-    return idx + imageIdx;
-  }
-
   if (isLoading) {
     return (
       <div className="p-6">
@@ -101,9 +131,10 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
     );
   }
 
+  if (!data) return null;
+
   return (
     <div data-testid="family-gallery" className="p-6 space-y-6">
-      {/* Back button */}
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -111,7 +142,8 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
         <ArrowLeft className="h-4 w-4" /> Back to homepage
       </button>
 
-      <h2 className="text-xl font-bold text-primary flex items-center gap-2">
+      {/* Family title */}
+      <h2 className="text-xl font-bold flex items-center gap-2 text-white">
         <Image
           src={`/family-icons/${family}.svg`}
           alt={`${family} silhouette`}
@@ -124,45 +156,69 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
         {family} — Photo Gallery
       </h2>
 
-      {sections.length === 0 && (
+      {data.genusSections.length === 0 && data.familyImages.length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>
       )}
 
-      {/* Image sections: family → genus → species */}
-      {sections.map((section, sectionIdx) => {
-        // Color-coded section titles: species=#00BA38, genus=#619CFF, family=#F8766D
-        const colorStyle = section.sectionType === 'species'
-          ? { color: '#00BA38' }
-          : section.sectionType === 'genus'
-            ? { color: '#619CFF' }
-            : { color: '#F8766D' };
-        return (
-        <div key={section.genus} className="space-y-2">
-          <h3 className="text-sm font-semibold italic" style={colorStyle}>
-            {section.genus}
+      {/* Genus sections */}
+      {data.genusSections.map((genus) => (
+        <div key={genus.genusName} className="space-y-3 rounded-lg border border-border/50 bg-card/30 p-4">
+          {/* Genus header */}
+          <h3 className="text-base font-semibold italic border-b border-border pb-1 text-white">
+            {genus.genusName}
           </h3>
-          <div className="grid grid-cols-5 gap-2">
-            {section.images.map((img, imgIdx) => (
-              <div
-                key={`${img.imageUrl}-${imgIdx}`}
-                className="rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03]"
-                onClick={() => setLightboxIndex(getGlobalIndex(sectionIdx, imgIdx))}
-              >
-                <div className="w-full h-28 bg-black">
-                  <img
-                    src={img.imageUrl}
-                    alt={img.species || img.genus || family}
-                    loading="lazy"
-                    decoding="async"
-                    className="w-full h-full object-contain"
-                  />
-                </div>
+
+          {/* Genus-level images */}
+          {genus.genusImages.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                Genus-level identifications
+              </p>
+              <ImageGrid
+                images={genus.genusImages}
+                startIndex={indexMap.get(`genus:${genus.genusName}`) ?? 0}
+                onClickImage={setLightboxIndex}
+              />
+            </div>
+          )}
+
+          {/* Species subsections */}
+          {genus.speciesSubsections.map((sp) => (
+            <div key={sp.speciesName} className="space-y-1.5">
+              <div>
+                <h4 className="text-sm font-semibold italic text-white">
+                  {sp.speciesName}
+                </h4>
+                <button
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
+                  onClick={() => onSelectSpecies?.(sp.speciesName)}
+                >
+                  See dispersive traits →
+                </button>
               </div>
-            ))}
-          </div>
+              <ImageGrid
+                images={sp.images}
+                startIndex={indexMap.get(`species:${genus.genusName}:${sp.speciesName}`) ?? 0}
+                onClickImage={setLightboxIndex}
+              />
+            </div>
+          ))}
         </div>
-        );
-      })}
+      ))}
+
+      {/* Family-level images at bottom */}
+      {data.familyImages.length > 0 && (
+        <div className="space-y-2">
+          <h3 className="text-base font-semibold border-b border-border pb-1 text-white">
+            {family} — Family-level identifications
+          </h3>
+          <ImageGrid
+            images={data.familyImages}
+            startIndex={indexMap.get('family') ?? 0}
+            onClickImage={setLightboxIndex}
+          />
+        </div>
+      )}
 
       {/* Lightbox */}
       {lightboxIndex !== null && allImages[lightboxIndex] && (
@@ -170,7 +226,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
           className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
           onClick={() => setLightboxIndex(null)}
         >
-          {/* Close button */}
           <button
             className="absolute top-4 right-4 text-white/70 hover:text-white z-10"
             onClick={() => setLightboxIndex(null)}
@@ -178,20 +233,15 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
             <X className="h-8 w-8" />
           </button>
 
-          {/* Prev arrow */}
           {lightboxIndex > 0 && (
             <button
               className="absolute left-4 text-white/70 hover:text-white z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxIndex(lightboxIndex - 1);
-              }}
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex - 1); }}
             >
               <ChevronLeft className="h-10 w-10" />
             </button>
           )}
 
-          {/* Image */}
           <div
             className="max-w-[85vw] max-h-[85vh] flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
@@ -202,21 +252,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
               className="max-w-full max-h-[75vh] object-contain"
             />
             <div className="mt-2 text-white text-center">
-              {allImages[lightboxIndex].species && (
-                <p className="italic">{allImages[lightboxIndex].species}</p>
-              )}
-              {allImages[lightboxIndex].species && (
-                <button
-                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline mt-0.5"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setLightboxIndex(null);
-                    onSelectSpecies?.(allImages[lightboxIndex].species!);
-                  }}
-                >
-                  See dispersive traits →
-                </button>
-              )}
               <p className="text-sm text-white/60">
                 {allImages[lightboxIndex].author}
                 {allImages[lightboxIndex].uncertain ? " (Unsure ID)" : " (Sure ID)"}
@@ -227,20 +262,51 @@ export function FamilyGallery({ family, onBack, onSelectSpecies }: FamilyGallery
             </div>
           </div>
 
-          {/* Next arrow */}
           {lightboxIndex < allImages.length - 1 && (
             <button
               className="absolute right-4 text-white/70 hover:text-white z-10"
-              onClick={(e) => {
-                e.stopPropagation();
-                setLightboxIndex(lightboxIndex + 1);
-              }}
+              onClick={(e) => { e.stopPropagation(); setLightboxIndex(lightboxIndex + 1); }}
             >
               <ChevronRight className="h-10 w-10" />
             </button>
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Simple image grid — 5 columns, no names below pictures.
+ */
+function ImageGrid({
+  images,
+  startIndex,
+  onClickImage,
+}: {
+  images: GalleryImage[];
+  startIndex: number;
+  onClickImage: (index: number) => void;
+}) {
+  return (
+    <div className="grid grid-cols-5 gap-2">
+      {images.map((img, i) => (
+        <div
+          key={`${img.imageUrl}-${i}`}
+          className="rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03]"
+          onClick={() => onClickImage(startIndex + i)}
+        >
+          <div className="w-full h-28 bg-black">
+            <img
+              src={img.imageUrl}
+              alt={img.species || img.genus || ""}
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
