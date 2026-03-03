@@ -240,7 +240,7 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
         <div className="border-b pb-2">
           <div className="text-xs text-muted-foreground mb-1">Name given</div>
           <div className="text-sm">
-            {data.keywords.length > 0 ? data.keywords.join(', ') : 'None'}
+            {data.keywords.length > 0 ? data.keywords.join(', ') : 'NA'}
           </div>
         </div>
 

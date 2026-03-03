@@ -93,9 +93,9 @@ describe('US-6.1: Pelagic juvenile qualitative panel', () => {
     expect(screen.getByText('acronurus, post-larva')).toBeInTheDocument();
   });
 
-  it('should show "None" when no keywords exist', () => {
+  it('should show "NA" when no keywords exist for current species', () => {
     render(<PelagicJuvenilePanel data={unknownSpeciesData} />);
-    expect(screen.getByText('None')).toBeInTheDocument();
+    expect(screen.getByText('NA')).toBeInTheDocument();
   });
 
   it('should list known pelagic juveniles in genus in italic', () => {
