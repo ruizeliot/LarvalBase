@@ -5,10 +5,249 @@
  * When a section has multiple sub-panels (trait types), rows are merged into a single
  * table with a TYPE column, normalized measurement columns (MEAN, MIN, MAX, CONF),
  * and union-filled extra info columns (NA for missing).
+ *
+ * The Egg & Incubation section uses a special export format matching the gold standard
+ * (example_dascyllus_aruanus.csv): each raw egg database row explodes into multiple
+ * TYPE rows (Egg length, Egg width, Yolk diameter, etc.) with a fixed column set.
  */
 
 import { getOrLoadData } from '@/lib/data/data-repository';
 import type { TraitData } from '@/lib/types/species.types';
+
+// ==================== EGG EXPORT (GOLD STANDARD FORMAT) ====================
+
+/**
+ * Egg export column order — matches example_dascyllus_aruanus.csv exactly.
+ */
+const EGG_EXPORT_COLUMNS = [
+  'ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY', 'ORIGINAL_NAME',
+  'EGG_LOCATION', 'EGG_DETAILS', 'EGG_SHAPE', 'NB_OIL_GLOBULE',
+  'TYPE', 'MEAN', 'MIN', 'MAX', 'CONF', 'MEAN_TYPE', 'CONF_TYPE', 'VOLUME_TYPE', 'UNIT',
+  'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_MEAN_TYPE',
+  'EXT_REF', 'REFERENCE', 'LINK',
+];
+
+/**
+ * Measurement types to extract from each egg database raw row.
+ * Each entry: [TYPE label, MEAN field, MIN field, MAX field, CONF field,
+ *              MEAN_TYPE field, CONF_TYPE field, VOLUME_TYPE field, UNIT]
+ */
+const EGG_MEASUREMENT_TYPES: Array<{
+  type: string;
+  mean: string;
+  min: string;
+  max: string;
+  conf: string;
+  meanType: string;
+  confType: string;
+  volumeType: string;
+  unit: string;
+}> = [
+  {
+    type: 'Egg length', mean: 'EGG_L_MEAN', min: 'EGG_L_MIN', max: 'EGG_L_MAX',
+    conf: 'EGG_DIAMETER_CONF', meanType: 'EGG_L_MEAN_TYPE', confType: 'EGG_DIAMETER_CONF_TYPE',
+    volumeType: 'EGG_VOLUME_TYPE', unit: 'mm',
+  },
+  {
+    type: 'Egg width', mean: 'EGG_W_MEAN', min: 'EGG_W_MIN', max: 'EGG_W_MAX',
+    conf: 'EGG_DIAMETER_CONF', meanType: 'EGG_W_MEAN_TYPE', confType: 'EGG_DIAMETER_CONF_TYPE',
+    volumeType: 'EGG_VOLUME_TYPE', unit: 'mm',
+  },
+  {
+    type: 'Yolk diameter', mean: 'YOLK_SIZE_MEAN', min: 'YOLK_SIZE_MIN', max: 'YOLK_SIZE_MAX',
+    conf: '', meanType: 'YOLK_SIZE_MEAN_TYPE', confType: '',
+    volumeType: 'EGG_VOLUME_TYPE', unit: 'mm',
+  },
+  {
+    type: 'Yolk size', mean: 'YOLK_SIZE_MEAN', min: 'YOLK_SIZE_MIN', max: 'YOLK_SIZE_MAX',
+    conf: '', meanType: 'YOLK_SIZE_MEAN_TYPE', confType: '',
+    volumeType: '', unit: 'mm',
+  },
+  {
+    type: 'Oil globule size', mean: 'OIL_GLOBULE_SIZE_MEAN', min: 'OIL_GLOBULE_SIZE_MIN', max: 'OIL_GLOBULE_SIZE_MAX',
+    conf: '', meanType: 'OIL_GLOBULE_SIZE_MEAN_TYPE', confType: '',
+    volumeType: '', unit: 'mm',
+  },
+  {
+    type: 'Oil globule volume', mean: 'OIL_GLOBULE_VOLUME_MEAN', min: 'OIL_GLOBULE_VOLUME_MIN', max: 'OIL_GLOBULE_VOLUME_MAX',
+    conf: '', meanType: '', confType: '',
+    volumeType: 'OIL_GLOBULE_VOLUME_TYPE', unit: 'mm',
+  },
+  {
+    type: 'Yolk volume', mean: 'YOLK_VOLUME_MEAN', min: 'YOLK_VOLUME_MIN', max: 'YOLK_VOLUME_MAX',
+    conf: '', meanType: '', confType: '',
+    volumeType: 'YOLK_VOLUME_TYPE', unit: 'mm',
+  },
+  {
+    type: 'Egg volume', mean: 'EGG_VOLUME_MEAN', min: 'EGG_VOLUME_MIN', max: 'EGG_VOLUME_MAX',
+    conf: '', meanType: '', confType: '',
+    volumeType: 'EGG_VOLUME_TYPE', unit: 'mm³',
+  },
+];
+
+/** The trait keys that belong to the egg section. */
+const EGG_SECTION_TRAITS = new Set([
+  'egg_diameter', 'egg_volume', 'yolk_diameter', 'oil_globule_size', 'incubation_duration',
+]);
+
+/**
+ * Check if the requested trait keys are the egg section.
+ */
+function isEggSection(traitKeys: string[]): boolean {
+  return traitKeys.some(k => EGG_SECTION_TRAITS.has(k));
+}
+
+/**
+ * Get raw field value, returning 'NA' for missing/empty/NA values.
+ */
+function rf(rawFields: Record<string, unknown>, key: string): string {
+  if (!key) return 'NA';
+  const val = rawFields[key];
+  if (val === null || val === undefined || val === '' || val === 'NA') return 'NA';
+  return String(val);
+}
+
+/**
+ * Build egg export rows from egg_diameter traits (one per raw egg database row).
+ * Each raw row explodes into multiple TYPE rows based on which measurements have data.
+ */
+function buildEggRowsFromRaw(
+  rawFields: Record<string, unknown>,
+): Array<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+
+  // Common taxonomy/qualitative columns
+  const base: Record<string, unknown> = {
+    ORDER: rf(rawFields, 'ORDER'),
+    FAMILY: rf(rawFields, 'FAMILY'),
+    GENUS: rf(rawFields, 'GENUS'),
+    VALID_NAME: rf(rawFields, 'VALID_NAME'),
+    APHIA_ID: rf(rawFields, 'APHIA_ID'),
+    AUTHORITY: rf(rawFields, 'AUTHORITY'),
+    ORIGINAL_NAME: rf(rawFields, 'ORIGINAL_NAME'),
+    EGG_LOCATION: rf(rawFields, 'EGG_LOCATION'),
+    EGG_DETAILS: rf(rawFields, 'EGG_DETAILS'),
+    EGG_SHAPE: rf(rawFields, 'EGG_SHAPE'),
+    NB_OIL_GLOBULE: rf(rawFields, 'NB_OIL_GLOBULE'),
+    // Egg database has no temperature columns
+    TEMPERATURE_MEAN: 'NA',
+    TEMPERATURE_MIN: 'NA',
+    TEMPERATURE_MAX: 'NA',
+    TEMPERATURE_MEAN_TYPE: 'NA',
+    EXT_REF: rf(rawFields, 'EXT_REF'),
+    REFERENCE: rf(rawFields, 'REFERENCE'),
+    LINK: rf(rawFields, 'LINK'),
+  };
+
+  for (const mt of EGG_MEASUREMENT_TYPES) {
+    const meanVal = rf(rawFields, mt.mean);
+    if (meanVal === 'NA') continue; // Skip if no data for this measurement
+
+    rows.push({
+      ...base,
+      TYPE: mt.type,
+      MEAN: meanVal,
+      MIN: rf(rawFields, mt.min),
+      MAX: rf(rawFields, mt.max),
+      CONF: rf(rawFields, mt.conf),
+      MEAN_TYPE: rf(rawFields, mt.meanType),
+      CONF_TYPE: rf(rawFields, mt.confType),
+      VOLUME_TYPE: rf(rawFields, mt.volumeType),
+      UNIT: mt.unit,
+    });
+  }
+
+  return rows;
+}
+
+/**
+ * Build an incubation duration export row from an incubation_duration trait.
+ */
+function buildIncubationRow(
+  trait: TraitData,
+  sp: { order: string; family: string; genus: string; validName: string } | undefined,
+): Record<string, unknown> {
+  const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
+
+  return {
+    ORDER: sp?.order || rf(rawFields, 'ORDER'),
+    FAMILY: sp?.family || rf(rawFields, 'FAMILY'),
+    GENUS: sp?.genus || rf(rawFields, 'GENUS'),
+    VALID_NAME: sp?.validName || rf(rawFields, 'VALID_NAME'),
+    APHIA_ID: rf(rawFields, 'APHIA_ID'),
+    AUTHORITY: rf(rawFields, 'AUTHORITY'),
+    ORIGINAL_NAME: rf(rawFields, 'ORIGINAL_NAME'),
+    EGG_LOCATION: 'NA',
+    EGG_DETAILS: 'NA',
+    EGG_SHAPE: 'NA',
+    NB_OIL_GLOBULE: 'NA',
+    TYPE: 'Incubation duration',
+    MEAN: trait.value ?? 'NA',
+    MIN: trait.metadata?.minValue ?? 'NA',
+    MAX: trait.metadata?.maxValue ?? 'NA',
+    CONF: 'NA',
+    MEAN_TYPE: rf(rawFields, 'INCUBATION_GESTATION_HOUR_MEAN_TYPE'),
+    CONF_TYPE: 'NA',
+    VOLUME_TYPE: 'NA',
+    UNIT: trait.unit || 'hours',
+    TEMPERATURE_MEAN: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MEAN'),
+    TEMPERATURE_MIN: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MIN'),
+    TEMPERATURE_MAX: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MAX'),
+    TEMPERATURE_MEAN_TYPE: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MEAN_TYPE'),
+    EXT_REF: rf(rawFields, 'EXT_REF'),
+    REFERENCE: trait.source || rf(rawFields, 'REFERENCE'),
+    LINK: rf(rawFields, 'LINK'),
+  };
+}
+
+/**
+ * Build egg section export in gold standard format.
+ * Deduplicates raw egg rows (multiple traits from same CSV row share rawFields).
+ */
+function buildEggSectionExport(
+  speciesIds: string[],
+  data: { species: Map<string, any>; traitsBySpecies: Map<string, TraitData[]> },
+): Array<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+
+  for (const sid of speciesIds) {
+    const sp = data.species.get(sid);
+    const traits = data.traitsBySpecies.get(sid) || [];
+
+    // Track already-processed raw rows by reference+validname to deduplicate
+    const processedEggRows = new Set<string>();
+
+    // Process egg database rows (via egg_diameter traits — one per raw CSV row)
+    const eggTraits = traits.filter(t => t.traitType === 'egg_diameter');
+    for (const trait of eggTraits) {
+      const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
+      // Deduplicate: same raw row produces egg_diameter, yolk_diameter, egg_volume etc.
+      const rowKey = `${rawFields.VALID_NAME}|${rawFields.REFERENCE}|${rawFields.EGG_L_MEAN}|${rawFields.EXT_REF}`;
+      if (processedEggRows.has(rowKey)) continue;
+      processedEggRows.add(rowKey);
+
+      rows.push(...buildEggRowsFromRaw(rawFields));
+    }
+
+    // Process incubation database rows
+    const incubationTraits = traits.filter(t => t.traitType === 'incubation_duration');
+    for (const trait of incubationTraits) {
+      rows.push(buildIncubationRow(trait, sp));
+    }
+  }
+
+  // Ensure all rows have the exact column set in the right order
+  return rows.map(row => {
+    const ordered: Record<string, unknown> = {};
+    for (const col of EGG_EXPORT_COLUMNS) {
+      ordered[col] = row[col] ?? 'NA';
+    }
+    return ordered;
+  });
+}
+
+
+// ==================== GENERIC SECTION EXPORT ====================
 
 /** Readable labels for trait types (used as TYPE column values). */
 const TRAIT_TYPE_LABELS: Record<string, string> = {
@@ -57,6 +296,10 @@ const MEAN_TYPE_COLUMNS: Record<string, string> = {
   in_situ_swimming_speed_rel: 'ISS_REL_MEAN_TYPE',
   pelagic_juvenile_size: 'PELAGIC_JUV_SIZE_MEAN_TYPE',
   pelagic_juvenile_duration: 'PELAGIC_JUV_DURATION_MEAN_TYPE',
+  first_feeding_age: 'FIRST_FEEDING_DPH_MEAN_TYPE',
+  yolk_absorption_age: 'YOLK_ABSORPTION_MEAN_TYPE',
+  first_feeding_size: 'FIRST_FEEDING_SIZE_MEAN_TYPE',
+  yolk_absorbed_size: 'YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE',
 };
 
 /** Columns already represented in the standardized output (excluded from extras). */
@@ -72,19 +315,16 @@ const STANDARD_COLUMNS = new Set([
 
 /**
  * Regex matching measurement columns (e.g. MET_AGE_DPH_MEAN, UCRIT_ABS_CONF_TYPE).
- * Used for column ordering: measurement-pattern columns sort into a separate group
- * after qualitative columns. NOT used for exclusion — all source columns are included.
  */
 const MEASUREMENT_COL_REGEX = /^[A-Z][A-Z0-9_]*_(MEAN|MIN|MAX|CONF|MEAN_TYPE|CONF_TYPE|RANGE_TYPE)$/;
 
 /**
  * Taxonomy columns in preferred order for output.
  */
-const TAXONOMY_ORDER = ['ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY'];
+const TAXONOMY_ORDER = ['ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'APHIA_ID', 'AUTHORITY', 'ORIGINAL_NAME'];
 
 /**
  * Column groups in fixed order for the merged export format.
- * TYPE and qualitative columns come first after taxonomy, then measurements.
  */
 const NORMALIZED_MEASUREMENT_COLS = ['MEAN', 'MIN', 'MAX', 'CONF'];
 const META_TYPE_COLS = ['MEAN_TYPE', 'CONF_TYPE', 'UNIT'];
@@ -110,12 +350,9 @@ const TAIL_COLUMNS = ['REMARKS', 'EXT_REF', 'REFERENCE', 'LINK'];
 
 /**
  * Check if a rawFields column should be included as a qualitative "extra info" column.
- * Returns false for taxonomy columns, standard metadata columns, and measurement columns.
- * Only qualitative columns (EGG_DETAILS, EGG_SHAPE, NB_OIL_GLOBULE, etc.) are included.
  */
 function isExtraInfoColumn(col: string): boolean {
   if (STANDARD_COLUMNS.has(col)) return false;
-  // Exclude raw measurement columns — their values are in MEAN/MIN/MAX/CONF
   if (MEASUREMENT_COL_REGEX.test(col)) return false;
   return true;
 }
@@ -138,6 +375,7 @@ function buildMergedRow(
     VALID_NAME: sp?.validName || rawFields.VALID_NAME || '',
     APHIA_ID: rawFields.APHIA_ID || '',
     AUTHORITY: rawFields.AUTHORITY || '',
+    ORIGINAL_NAME: rawFields.ORIGINAL_NAME || 'NA',
     TYPE: TRAIT_TYPE_LABELS[traitType] || traitType,
     MEAN: trait.value ?? 'NA',
     MIN: trait.metadata?.minValue ?? 'NA',
@@ -191,20 +429,10 @@ function buildMergedRow(
 
 /**
  * Normalize rows: ensure all rows have the same columns, filling 'NA' for missing ones.
- *
- * Column order:
- * 1. Taxonomy: ORDER/FAMILY/GENUS/VALID_NAME/APHIA_ID/AUTHORITY
- * 2. TYPE + qualitative extras (non-measurement columns, alphabetical)
- * 3. MEAN/MIN/MAX/CONF
- * 4. MEAN_TYPE/CONF_TYPE/UNIT
- * 5. TEMPERATURE group
- * 6. Other columns (ORIGIN, N, LENGTH_TYPE, METHOD, GEAR, LOCATION)
- * 7. REMARKS/EXT_REF/REFERENCE/LINK (always last)
  */
 function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<string, unknown>> {
   if (rows.length === 0) return [];
 
-  // Collect all column names
   const allColumns = new Set<string>();
   for (const row of rows) {
     for (const key of Object.keys(row)) {
@@ -231,20 +459,15 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // 1. Taxonomy columns
   addCols(TAXONOMY_ORDER);
 
-  // 2. TYPE + qualitative extras (non-measurement columns, alphabetical)
+  // 2. TYPE + qualitative extras
   addCol('TYPE');
 
-  // Collect qualitative extras (non-measurement, non-fixed columns)
   const qualitativeExtras: string[] = [];
-
   for (const col of [...allColumns].sort()) {
     if (added.has(col) || tailSet.has(col) || taxonomySet.has(col) || ALL_FIXED_COLS.has(col)) continue;
-    // Skip raw measurement columns — their values are in MEAN/MIN/MAX/CONF
     if (MEASUREMENT_COL_REGEX.test(col)) continue;
     qualitativeExtras.push(col);
   }
-
-  // Qualitative extras before measurements
   for (const col of qualitativeExtras) addCol(col);
 
   // 3. MEAN/MIN/MAX/CONF
@@ -253,16 +476,15 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
   // 4. MEAN_TYPE/CONF_TYPE/UNIT
   addCols(META_TYPE_COLS);
 
-  // 6. Temperature group
+  // 5. Temperature group
   addCols(TEMPERATURE_COLS);
 
-  // 7. Other columns (METHOD, GEAR, etc.)
+  // 6. Other columns
   addCols(METHOD_COLS);
 
-  // 8. Tail columns always last
+  // 7. Tail columns always last
   addCols(TAIL_COLUMNS);
 
-  // Normalize each row
   return rows.map(row => {
     const normalized: Record<string, unknown> = {};
     for (const col of orderedColumns) {
@@ -276,15 +498,9 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
 /**
  * Get export data for a section at a given taxonomy level.
  *
- * Produces a long-format table with:
- * - TYPE column indicating the measurement type for each row
- * - Normalized measurement columns (MEAN, MIN, MAX, CONF, etc.)
- * - Qualitative extra columns from specific databases (NA-filled for other types)
- *
- * @param speciesId - The current species ID (used to determine genus/family)
- * @param traitKeys - Trait types belonging to this section
- * @param level - Taxonomy level: species (just this species), genus, or family
- * @returns Array of row objects, or null if species not found
+ * For the Egg & Incubation section, produces gold-standard format matching
+ * example_dascyllus_aruanus.csv. For other sections, produces the generic
+ * long-format merged export.
  */
 export async function getSectionExportData(
   speciesId: string,
@@ -293,7 +509,6 @@ export async function getSectionExportData(
 ): Promise<Array<Record<string, unknown>> | null> {
   const data = await getOrLoadData();
 
-  // Find the current species
   const species = data.species.get(speciesId);
   if (!species) {
     return null;
@@ -301,7 +516,6 @@ export async function getSectionExportData(
 
   // Determine which species IDs to include based on taxonomy level
   const targetSpeciesIds: string[] = [];
-
   if (level === 'species') {
     targetSpeciesIds.push(speciesId);
   } else {
@@ -314,14 +528,16 @@ export async function getSectionExportData(
     }
   }
 
-  // Collect rows
-  const rows: Array<Record<string, unknown>> = [];
+  // Egg section: use gold-standard format
+  if (isEggSection(traitKeys)) {
+    return buildEggSectionExport(targetSpeciesIds, data);
+  }
 
+  // Generic section: merged long format
+  const rows: Array<Record<string, unknown>> = [];
   for (const sid of targetSpeciesIds) {
     const sp = data.species.get(sid);
     const traits = data.traitsBySpecies.get(sid) || [];
-
-    // Filter to only the section's main traits (exclude _min/_max sub-traits)
     const sectionTraits = traits.filter((t) => traitKeys.includes(t.traitType));
 
     for (const trait of sectionTraits) {
@@ -329,6 +545,5 @@ export async function getSectionExportData(
     }
   }
 
-  // Union-fill to ensure all rows have the same columns
   return unionFillRows(rows);
 }
