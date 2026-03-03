@@ -75,4 +75,26 @@ describe('US-2.2: Horizontal barplots counts per trait', () => {
     const { container } = render(<TraitBarplots stats={[]} />);
     expect(container.querySelector('[data-testid="barplots-container"]')).toBeNull();
   });
+
+  it('should sort Colored pictures by record count alongside other traits', () => {
+    const stats = [
+      { traitName: 'Settlement', records: 500, species: 300, genus: 100, family: 50, order: 10 },
+      { traitName: 'Egg traits', records: 200, species: 100, genus: 50, family: 20, order: 5 },
+    ];
+    const imageStats = { traitName: 'Colored pictures', records: 1000, species: 800, genus: 400, family: 150, order: 30 };
+
+    render(<TraitBarplots stats={stats} imageStats={imageStats} />);
+
+    // All three trait names should be present
+    const traitLabels = screen.getAllByText(/Settlement|Egg traits|Colored pictures/);
+    expect(traitLabels).toHaveLength(3);
+
+    // Colored pictures has most records (1000) so should appear first
+    const allText = document.body.textContent ?? '';
+    const cpIdx = allText.indexOf('Colored pictures');
+    const settIdx = allText.indexOf('Settlement');
+    const eggIdx = allText.indexOf('Egg traits');
+    expect(cpIdx).toBeLessThan(settIdx);
+    expect(settIdx).toBeLessThan(eggIdx);
+  });
 });

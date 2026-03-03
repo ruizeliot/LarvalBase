@@ -62,8 +62,8 @@ function formatNumber(n: number): string {
 export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
   if (stats.length === 0) return null;
 
-  // Combine stats with optional image stats
-  const allStats = imageStats ? [...stats, imageStats] : stats;
+  // Combine stats with optional image stats, sorted by record count descending
+  const allStats = imageStats ? [...stats, imageStats].sort((a, b) => b.records - a.records) : stats;
 
   // Find global max for scaling (across all categories individually)
   const globalMax = Math.max(
