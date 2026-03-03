@@ -75,6 +75,7 @@ describe('Active Behaviors trait-specific column definitions', () => {
 
     it.each([
       'VALID_NAME', 'ORIGIN', 'LOCATION', 'N', 'AGE_RANGE_DPH', 'STAGE',
+      'UCRIT_ABS_MEAN', 'UCRIT_ABS_MIN', 'UCRIT_ABS_MAX', 'UCRIT_ABS_CONF',
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
       'LENGTH_TYPE', 'LENGTH_MEAN',
@@ -84,8 +85,8 @@ describe('Active Behaviors trait-specific column definitions', () => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 20 columns total', () => {
-      expect(cols.length).toBe(20);
+    it('should have 24 columns total', () => {
+      expect(cols.length).toBe(24);
     });
   });
 
@@ -96,6 +97,7 @@ describe('Active Behaviors trait-specific column definitions', () => {
 
     it.each([
       'VALID_NAME', 'ORIGIN', 'LOCATION', 'N', 'AGE_RANGE_DPH', 'STAGE',
+      'UCRIT_REL_MEAN', 'UCRIT_REL_MIN', 'UCRIT_REL_MAX', 'UCRIT_REL_CONF',
       'LENGTH_TYPE', 'LENGTH_MEAN', 'LENGTH_MIN', 'LENGTH_MAX', 'LENGTH_CONF', 'LENGTH_CONF_TYPE',
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
@@ -105,8 +107,8 @@ describe('Active Behaviors trait-specific column definitions', () => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 22 columns total', () => {
-      expect(cols.length).toBe(22);
+    it('should have 26 columns total', () => {
+      expect(cols.length).toBe(26);
     });
   });
 
@@ -117,6 +119,7 @@ describe('Active Behaviors trait-specific column definitions', () => {
 
     it.each([
       'VALID_NAME', 'ORIGIN', 'LOCATION', 'N', 'AGE_RANGE_DPH', 'STAGE',
+      'ISS_ABS_MEAN', 'ISS_ABS_MIN', 'ISS_ABS_MAX', 'ISS_ABS_CONF',
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
       'ISS_ABS_MEAN_TYPE', 'ISS_ABS_RANGE_TYPE', 'ISS_ABS_CONF_TYPE',
@@ -125,8 +128,8 @@ describe('Active Behaviors trait-specific column definitions', () => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 18 columns total', () => {
-      expect(cols.length).toBe(18);
+    it('should have 22 columns total', () => {
+      expect(cols.length).toBe(22);
     });
   });
 
@@ -137,17 +140,18 @@ describe('Active Behaviors trait-specific column definitions', () => {
 
     it.each([
       'VALID_NAME', 'ORIGIN', 'LOCATION', 'N', 'AGE_RANGE_DPH', 'STAGE',
+      'ISS_REL_MEAN', 'ISS_REL_MIN', 'ISS_REL_MAX', 'ISS_REL_CONF',
       'LENGTH_TYPE', 'LENGTH_MEAN', 'LENGTH_MIN', 'LENGTH_MAX', 'LENGTH_CONF', 'LENGTH_CONF_TYPE',
       'TEMPERATURE_MEAN', 'TEMPERATURE_MIN', 'TEMPERATURE_MAX', 'TEMPERATURE_CONF',
       'TEMPERATURE_MEAN_TYPE', 'TEMPERATURE_CONF_TYPE',
-      'ISS_ABS_MEAN_TYPE', 'ISS_ABS_RANGE_TYPE', 'ISS_ABS_CONF_TYPE',
+      'ISS_REL_MEAN_TYPE', 'ISS_REL_RANGE_TYPE', 'ISS_REL_CONF_TYPE',
       'REMARKS', 'EXT_REF', 'REFERENCE',
     ])('should include %s column', (field) => {
       expect(colKeys).toContain(field);
     });
 
-    it('should have 24 columns total', () => {
-      expect(cols.length).toBe(24);
+    it('should have 28 columns total', () => {
+      expect(cols.length).toBe(28);
     });
   });
 });
