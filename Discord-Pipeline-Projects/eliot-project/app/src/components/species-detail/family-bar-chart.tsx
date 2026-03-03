@@ -133,12 +133,11 @@ export function FamilyBarChart({
 
   return (
     <div className="space-y-2">
-      {/* Chart title */}
+      {/* Chart title — blue for genus, red for family, no species count */}
       <div className="text-sm font-medium text-center uppercase tracking-wide"
            style={{ color: otherSpeciesColor }}>
         {comparisonType === 'genus' ? 'Genus Comparison' : 'Family Comparison'}
         {taxonomyName && <span className="font-normal ml-1">({taxonomyName})</span>}
-        <span className="text-xs font-normal ml-1 opacity-75">({chartData.length} species)</span>
       </div>
       
       <ChartContainer
