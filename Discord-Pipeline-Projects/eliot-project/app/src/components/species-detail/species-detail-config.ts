@@ -79,9 +79,11 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
   {
     title: 'Vertical Position',
     traits: [
+      'vertical_day_depth',
+      'vertical_night_depth',
       'vertical_distribution',
     ],
-    unit: 'm depth',
+    unit: 'm',
   },
   {
     title: 'Swimming Speed',
@@ -128,7 +130,9 @@ export const TRAIT_UNITS: Record<string, string> = {
   in_situ_swimming_speed: 'cm/s',
   in_situ_swimming_speed_rel: 'BL/s',
   // Behavior
-  vertical_distribution: 'm depth',
+  vertical_distribution: 'm',
+  vertical_day_depth: 'm',
+  vertical_night_depth: 'm',
   rafting_behavior: '',
   rafting_size: 'mm',
 };

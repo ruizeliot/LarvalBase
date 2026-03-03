@@ -71,6 +71,8 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     name: "Vertical Position",
     traits: [
       "vertical_distribution",
+      "vertical_day_depth",
+      "vertical_night_depth",
       "vertical_day",
       "vertical_night",
     ],
@@ -136,6 +138,9 @@ export function formatTraitName(trait: string): string {
   if (trait === 'egg_oil_globules') return 'Oil Globules Number';
   if (trait === 'vertical_day') return 'Day';
   if (trait === 'vertical_night') return 'Night';
+  if (trait === 'vertical_day_depth') return 'Daytime Depth';
+  if (trait === 'vertical_night_depth') return 'Nighttime Depth';
+  if (trait === 'vertical_distribution') return 'Overall Depth';
   if (trait === 'rafting_age') return 'Rafting Age';
   if (trait === 'pelagic_juvenile_behavior') return 'Pelagic Juvenile Behavior';
   return trait

@@ -291,8 +291,21 @@ function extractTraitsFromRows(
   const r = (row: TraitRow) => row as Record<string, unknown>;
 
   for (const row of rows) {
-    const validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
-    if (!validName) continue;
+    let validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
+    const rank = String((row as Record<string, unknown>).RANK ?? '').trim();
+
+    // For genus/family level rows (VALID_NAME is NA), use genus/family name
+    if ((!validName || validName === 'NA') && filename.includes('vertical_position')) {
+      const genus = String((row as Record<string, unknown>).GENUS ?? '').trim();
+      const family = (row as Record<string, unknown>).FAMILY as string ?? '';
+      if (rank === 'Genus' && genus && genus !== 'NA') {
+        validName = genus; // Will be stored under genus name as synthetic species
+      } else if ((rank === 'Family' || rank === 'Subfamily') && family && family !== 'NA') {
+        validName = family;
+      }
+    }
+
+    if (!validName || validName === 'NA') continue;
 
     // Skip excluded families (non-fish taxonomy errors)
     const rowFamily = (row as Record<string, unknown>).FAMILY as string ?? (row as Record<string, unknown>).Family as string ?? '';
@@ -432,16 +445,36 @@ function extractTraitsFromRows(
     // Vertical Position Database
     else if (filename.includes('vertical_position')) {
       const vertMeta = metadataWithMinMaxConf(metadata, r(row), 'MIN_DEPTH_CAPTURE', 'MAX_DEPTH_CAPTURE');
-      addTrait(traits, 'vertical_distribution', r(row).WEIGHTED_MEAN_DEPTH_CAPTURE, 'm', source, doi, vertMeta);
-      addTrait(traits, 'vertical_distribution_min', r(row).MIN_DEPTH_CAPTURE, 'm', source, doi, metadata);
-      addTrait(traits, 'vertical_distribution_max', r(row).MAX_DEPTH_CAPTURE, 'm', source, doi, metadata);
-      // Day/Night filter flags from PERIOD column
+      // Negate depth values (depths are positive in DB but should display as negative)
+      const negateDepth = (val: unknown): string | number | null | undefined => {
+        if (val === null || val === undefined) return val;
+        const numStr = String(val).trim();
+        if (numStr === '' || numStr === 'NA') return val;
+        const num = parseFloat(numStr);
+        if (isNaN(num)) return val;
+        return num === 0 ? 0 : -Math.abs(num);
+      };
+      const negatedMean = negateDepth(r(row).WEIGHTED_MEAN_DEPTH_CAPTURE);
+      const negatedMin = negateDepth(r(row).MIN_DEPTH_CAPTURE);
+      const negatedMax = negateDepth(r(row).MAX_DEPTH_CAPTURE);
+
+      // Split by PERIOD column: Day vs Night
       const period = String(r(row).PERIOD ?? '').trim().toLowerCase();
       if (period === 'day') {
+        addTrait(traits, 'vertical_day_depth', negatedMean, 'm', source, doi, vertMeta);
+        addTrait(traits, 'vertical_day_depth_min', negatedMin, 'm', source, doi, metadata);
+        addTrait(traits, 'vertical_day_depth_max', negatedMax, 'm', source, doi, metadata);
         traits.push({ traitType: 'vertical_day', value: 1, unit: '', source, doi, metadata });
       } else if (period === 'night') {
+        addTrait(traits, 'vertical_night_depth', negatedMean, 'm', source, doi, vertMeta);
+        addTrait(traits, 'vertical_night_depth_min', negatedMin, 'm', source, doi, metadata);
+        addTrait(traits, 'vertical_night_depth_max', negatedMax, 'm', source, doi, metadata);
         traits.push({ traitType: 'vertical_night', value: 1, unit: '', source, doi, metadata });
       }
+      // Also store combined vertical distribution (for backward compat)
+      addTrait(traits, 'vertical_distribution', negatedMean, 'm', source, doi, vertMeta);
+      addTrait(traits, 'vertical_distribution_min', negatedMin, 'm', source, doi, metadata);
+      addTrait(traits, 'vertical_distribution_max', negatedMax, 'm', source, doi, metadata);
     }
     // Rafting Database
     else if (filename.includes('rafting')) {
