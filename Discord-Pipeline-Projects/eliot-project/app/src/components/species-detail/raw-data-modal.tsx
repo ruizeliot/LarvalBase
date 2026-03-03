@@ -98,8 +98,15 @@ interface TraitColumnDef {
 
 /**
  * Get raw field value from a measurement row.
+ * Special keys (__MEAN__, __MIN__, __MAX__, __CONF__, __CONF_TYPE__) read from
+ * the normalized top-level RawMeasurement fields instead of rawFields.
  */
 function getRawField(row: RawMeasurement, csvField: string): unknown {
+  if (csvField === '__MEAN__') return row.value ?? null;
+  if (csvField === '__MIN__') return row.metadata?.minValue ?? null;
+  if (csvField === '__MAX__') return row.metadata?.maxValue ?? null;
+  if (csvField === '__CONF__') return row.metadata?.confValue ?? null;
+  if (csvField === '__CONF_TYPE__') return row.metadata?.confType ?? null;
   return row.metadata?.rawFields?.[csvField] ?? null;
 }
 
@@ -111,6 +118,11 @@ function stdMeasurementCols(extraCols: TraitColumnDef[]): TraitColumnDef[] {
   return [
     { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
     ...extraCols,
+    { key: "__MEAN__", label: "Mean", description: "Mean measured value", csvField: "__MEAN__" },
+    { key: "__MIN__", label: "Min", description: "Minimum value", csvField: "__MIN__" },
+    { key: "__MAX__", label: "Max", description: "Maximum value", csvField: "__MAX__" },
+    { key: "__CONF__", label: "Conf", description: "Confidence interval", csvField: "__CONF__" },
+    { key: "__CONF_TYPE__", label: "Conf Type", description: "Type of confidence measure", csvField: "__CONF_TYPE__" },
     { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
     { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
   ];
