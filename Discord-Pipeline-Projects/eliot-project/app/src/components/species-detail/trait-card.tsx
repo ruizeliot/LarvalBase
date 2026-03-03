@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { FamilyBarChart } from "./family-bar-chart";
@@ -53,15 +54,14 @@ function formatNumber(value: number | null, decimals: number): string {
 /**
  * Format comparison value with sample size annotation.
  * Returns "-" if no stats available.
- * Format: "0.89 mm (n_sp = 9)" with space before unit and subscript notation
+ * Format: "0.89 mm (n_sp = 9)" with "sp" as subscript
  */
 function formatComparison(
   stats: TaxonomyStats | null | undefined,
   unit: string
-): string {
+): React.ReactNode {
   if (!stats || stats.stats.mean === null) return "-";
-  // Add space before unit, use n_sp notation
-  return `${stats.stats.mean.toFixed(2)} ${unit} (n_sp = ${stats.speciesCount})`;
+  return <>{stats.stats.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {stats.speciesCount})</>;
 }
 
 /**
@@ -132,7 +132,7 @@ export function TraitCard({
                       ~{formatNumber(fallbackGenus, 2)}
                     </span>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {unit} <span className="text-xs italic">(genus average, n_sp = {genusStats?.speciesCount})</span>
+                      {unit} <span className="text-xs italic">(genus average, n<sub>sp</sub> = {genusStats?.speciesCount})</span>
                     </div>
                   </>
                 );
@@ -144,7 +144,7 @@ export function TraitCard({
                       ~{formatNumber(fallbackFamily, 2)}
                     </span>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {unit} <span className="text-xs italic">(family average, n_sp = {familyStats?.speciesCount})</span>
+                      {unit} <span className="text-xs italic">(family average, n<sub>sp</sub> = {familyStats?.speciesCount})</span>
                     </div>
                   </>
                 );
@@ -156,7 +156,7 @@ export function TraitCard({
                       ~{formatNumber(fallbackOrder, 2)}
                     </span>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {unit} <span className="text-xs italic">(order average, n_sp = {orderStats?.speciesCount})</span>
+                      {unit} <span className="text-xs italic">(order average, n<sub>sp</sub> = {orderStats?.speciesCount})</span>
                     </div>
                   </>
                 );
