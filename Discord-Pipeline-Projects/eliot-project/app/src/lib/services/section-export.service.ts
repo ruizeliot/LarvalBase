@@ -108,6 +108,18 @@ function rf(rawFields: Record<string, unknown>, key: string): string {
 }
 
 /**
+ * Get raw field value as number if numeric, otherwise string. Returns 'NA' for missing.
+ */
+function rfNum(rawFields: Record<string, unknown>, key: string): string | number {
+  if (!key) return 'NA';
+  const val = rawFields[key];
+  if (val === null || val === undefined || val === '' || val === 'NA') return 'NA';
+  if (typeof val === 'number') return val;
+  const num = Number(val);
+  return isNaN(num) ? String(val) : num;
+}
+
+/**
  * Build egg export rows from egg_diameter traits (one per raw egg database row).
  * Each raw row explodes into multiple TYPE rows based on which measurements have data.
  */
@@ -140,16 +152,16 @@ function buildEggRowsFromRaw(
   };
 
   for (const mt of EGG_MEASUREMENT_TYPES) {
-    const meanVal = rf(rawFields, mt.mean);
+    const meanVal = rfNum(rawFields, mt.mean);
     if (meanVal === 'NA') continue; // Skip if no data for this measurement
 
     rows.push({
       ...base,
       TYPE: mt.type,
       MEAN: meanVal,
-      MIN: rf(rawFields, mt.min),
-      MAX: rf(rawFields, mt.max),
-      CONF: rf(rawFields, mt.conf),
+      MIN: rfNum(rawFields, mt.min),
+      MAX: rfNum(rawFields, mt.max),
+      CONF: rfNum(rawFields, mt.conf),
       MEAN_TYPE: rf(rawFields, mt.meanType),
       CONF_TYPE: rf(rawFields, mt.confType),
       VOLUME_TYPE: rf(rawFields, mt.volumeType),
@@ -190,9 +202,9 @@ function buildIncubationRow(
     CONF_TYPE: 'NA',
     VOLUME_TYPE: 'NA',
     UNIT: trait.unit || 'hours',
-    TEMPERATURE_MEAN: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MEAN'),
-    TEMPERATURE_MIN: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MIN'),
-    TEMPERATURE_MAX: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MAX'),
+    TEMPERATURE_MEAN: rfNum(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MEAN'),
+    TEMPERATURE_MIN: rfNum(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MIN'),
+    TEMPERATURE_MAX: rfNum(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MAX'),
     TEMPERATURE_MEAN_TYPE: rf(rawFields, 'INCUBATION_GESTATION_TEMPERATURE_MEAN_TYPE'),
     EXT_REF: rf(rawFields, 'EXT_REF'),
     REFERENCE: trait.source || rf(rawFields, 'REFERENCE'),
