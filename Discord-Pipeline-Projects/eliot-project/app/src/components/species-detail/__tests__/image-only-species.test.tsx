@@ -148,8 +148,8 @@ describe('US-5.5: Image-only species pages', () => {
       />
     );
 
-    // No record/study counts displayed
-    expect(screen.queryByText(/record/)).toBeNull();
-    expect(screen.queryByText(/stud/)).toBeNull();
+    // No record/study count stats displayed (but contact email text with "records" is OK)
+    expect(screen.queryByText(/^\d+ record/)).toBeNull();
+    expect(screen.queryByText(/^\d+ stud/)).toBeNull();
   });
 });
