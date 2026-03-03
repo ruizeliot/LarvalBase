@@ -82,6 +82,7 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     name: "Pelagic Juvenile",
     traits: [
       "pelagic_juvenile_size",
+      "pelagic_juvenile_duration",
     ],
   },
   {
