@@ -370,14 +370,13 @@ export async function getRaftingData(
   // Determine status
   const isKnown = speciesRows.length > 0;
 
-  // Extract qualitative values from species rows (or genus if none at species level)
-  const qualitativeRows = speciesRows.length > 0 ? speciesRows : genusRows;
-  const flotsamValues = extractFlotsamValues(qualitativeRows);
-  const stageValues = extractStageValues(qualitativeRows);
+  // Extract qualitative values from species rows ONLY (no genus fallback for qualitative display)
+  const flotsamValues = extractFlotsamValues(speciesRows);
+  const stageValues = extractStageValues(speciesRows);
 
-  // Compute frequencies for barplots
-  const flotsamFrequencies = computeFrequencies(qualitativeRows, 'FLOATSAM');
-  const stageFrequencies = computeFrequencies(qualitativeRows, 'STAGE');
+  // Compute frequencies for barplots — species-only to avoid showing other species' data
+  const flotsamFrequencies = computeFrequencies(speciesRows, 'FLOATSAM');
+  const stageFrequencies = computeFrequencies(speciesRows, 'STAGE');
 
   // Extract related species in genus (excluding target species)
   const genusSpecies = extractSpeciesNames(genusRows, species.validName);
@@ -397,8 +396,8 @@ export async function getRaftingData(
   // Build qualitative records for age — species-only for record counts
   const ageQualitativeRecords = buildAgeQualitativeRecords(speciesRows);
 
-  // Compute age frequencies for barplots (informational — can use cascade)
-  const ageFrequencies = computeFrequencies(qualitativeRows, 'RAFTING_AGE');
+  // Compute age frequencies for barplots — species-only
+  const ageFrequencies = computeFrequencies(speciesRows, 'RAFTING_AGE');
 
   // Compute bar chart data (family-level, fall back to genus if >10 species)
   let sizeBarChart = computeBarChartData(familyRows, 'RAFTING_SIZE_MEAN', species.family, 'family');
