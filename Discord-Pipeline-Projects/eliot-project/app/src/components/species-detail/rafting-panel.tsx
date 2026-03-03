@@ -527,14 +527,21 @@ function NumericTraitPanel({
               <span>&nbsp;</span>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            className="text-primary hover:underline"
-            data-testid="records-link"
-          >
-            {stats.n} record{stats.n !== 1 ? 's' : ''}
-          </button>
+          {/* N records link — grey and non-clickable when 0 */}
+          {stats.n === 0 ? (
+            <span className="text-muted-foreground" data-testid="records-link">
+              0 records
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-primary hover:underline"
+              data-testid="records-link"
+            >
+              {stats.n} record{stats.n !== 1 ? 's' : ''}
+            </button>
+          )}
         </div>
 
         {comparisons && (comparisons.genus || comparisons.family) && (
