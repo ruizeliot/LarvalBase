@@ -161,6 +161,7 @@ export function FamilyBarChart({
             vertical={true}
             stroke="#cccccc"
             strokeDasharray="3 3"
+            style={{ stroke: '#cccccc' }}
           />
           <XAxis
             type="number"

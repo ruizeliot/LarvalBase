@@ -18,6 +18,7 @@ vi.mock('recharts', () => ({
   XAxis: () => <div />,
   YAxis: () => <div />,
   Cell: () => <div />,
+  CartesianGrid: () => <div />,
 }));
 
 vi.mock('@/components/ui/chart', () => ({
