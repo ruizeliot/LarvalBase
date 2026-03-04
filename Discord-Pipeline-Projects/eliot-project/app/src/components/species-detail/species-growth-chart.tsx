@@ -411,7 +411,6 @@ function GrowthChartPanel({
   refIndexMap,
   tempMin,
   tempMax,
-  title,
 }: {
   curves: GrowthCurve[];
   scatterGroups: RawPointGroup[];
@@ -421,7 +420,6 @@ function GrowthChartPanel({
   refIndexMap: Map<string, number>;
   tempMin: number;
   tempMax: number;
-  title: string;
 }) {
   const chartData = useMemo(() => buildChartData(curves), [curves]);
 
@@ -759,7 +757,6 @@ export function SpeciesGrowthChart({
               refIndexMap={refIndexMap}
               tempMin={tempMin}
               tempMax={tempMax}
-              title="Length"
             />
           )}
           {/* Weight chart — show if weight data or weight curves exist */}
@@ -777,7 +774,6 @@ export function SpeciesGrowthChart({
               refIndexMap={refIndexMap}
               tempMin={tempMin}
               tempMax={tempMax}
-              title="Weight"
             />
           )}
         </div>
