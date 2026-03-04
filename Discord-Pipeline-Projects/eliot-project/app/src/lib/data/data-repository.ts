@@ -17,6 +17,7 @@ import { parseTraitCSV } from './csv-parser';
 import { validateParsedCSV, type SchemaValidationResult } from './schema-validator';
 import { buildDatabaseTraitRegistry, type DatabaseTraitRegistry } from './database-registry';
 import { loadImageRegistry } from './image-registry';
+import { getSpeciesWithGrowthModels } from '@/lib/services/growth.service';
 import { isExcludedFamily } from './excluded-families';
 import { buildTaxonomyTree } from '@/lib/services/taxonomy.service';
 import type { Species, TraitData } from '@/lib/types/species.types';
@@ -813,6 +814,29 @@ export async function getOrLoadData(): Promise<AllData> {
     console.log(`[data-repository] After image merge: ${species.size} total species`);
   } catch (error) {
     console.warn('[data-repository] Could not load image registry for species merge:', error);
+  }
+
+  // 2c. Tag species that have growth model data with virtual 'growth_model' trait
+  // (same pattern as larval_age_at_length — ensures sidebar filter works)
+  try {
+    const growthModelSpecies = await getSpeciesWithGrowthModels();
+    let growthModelCount = 0;
+    for (const speciesName of growthModelSpecies) {
+      const id = slugify(speciesName);
+      const existing = traitsBySpecies.get(id) || [];
+      existing.push({
+        traitType: 'growth_model',
+        value: 1,
+        unit: '',
+        source: null,
+        doi: null,
+      });
+      traitsBySpecies.set(id, existing);
+      growthModelCount++;
+    }
+    console.log(`[data-repository] Tagged ${growthModelCount} species with growth_model trait`);
+  } catch (error) {
+    console.warn('[data-repository] Could not load growth models for trait tagging:', error);
   }
 
   // 3. Build taxonomy tree from species list
