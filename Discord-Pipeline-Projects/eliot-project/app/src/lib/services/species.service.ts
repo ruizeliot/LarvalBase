@@ -18,6 +18,16 @@ import type {
 import type { TaxonomyNode } from '@/lib/types/taxonomy.types';
 
 /**
+ * Check if a species name is a genus-level or family-level identification.
+ * These should not have individual species pages but remain in barplots/exports.
+ * Examples: "Acanthocybium sp.", "Pomacentridae und.", "Gobiidae spp."
+ */
+export function isGenusOrFamilyLevelId(name: string): boolean {
+  const trimmed = name.trim();
+  return trimmed.endsWith(' sp.') || trimmed.endsWith(' spp.') || trimmed.endsWith(' und.');
+}
+
+/**
  * Reference data for citations.
  */
 export interface ReferenceData {
@@ -44,7 +54,10 @@ export interface SpeciesWithTraitsAndLocations {
  */
 export async function getSpeciesList(): Promise<Species[]> {
   const data = await getOrLoadData();
-  return Array.from(data.species.values());
+  // Exclude genus/family level IDs — they should not have species pages
+  return Array.from(data.species.values()).filter(
+    (s) => !isGenusOrFamilyLevelId(s.validName)
+  );
 }
 
 /**

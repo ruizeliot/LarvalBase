@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllSpeciesWithTaxonomy } from '@/lib/services/species.service';
+import { getAllSpeciesWithTaxonomy, isGenusOrFamilyLevelId } from '@/lib/services/species.service';
 import { getSpeciesWithImages, getSpeciesWithSureImages, getSpeciesWithUnsureImages } from '@/lib/data/image-registry';
 import { getSpeciesWithGrowthModels } from '@/lib/services/growth.service';
 
@@ -14,7 +14,8 @@ export async function GET() {
     ]);
 
     // Convert species array to API response format, including traits
-    const speciesList = data.species.map(s => {
+    // Exclude genus/family level IDs from sidebar (keep in barplots/exports)
+    const speciesList = data.species.filter(s => !isGenusOrFamilyLevelId(s.validName)).map(s => {
       const traits = data.traitsBySpecies.get(s.id) || [];
       // Check if species has images (use original validName as that's what image registry uses)
       const hasImages = speciesWithImages.has(s.validName);
