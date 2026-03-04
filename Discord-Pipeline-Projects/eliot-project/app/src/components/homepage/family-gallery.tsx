@@ -325,7 +325,10 @@ function ImageGrid({
       {images.map((img, i) => (
         <div
           key={`${img.imageUrl}-${i}`}
-          className="rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03]"
+          className={`rounded-md border bg-card overflow-hidden cursor-pointer transition-transform hover:scale-[1.03]${
+            img.uncertain ? " border-2 border-[#F8766D]" : ""
+          }`}
+          title={img.uncertain ? "Unsure ID" : undefined}
           onClick={() => onClickImage(startIndex + i)}
         >
           <div className="w-full h-28 bg-black">
