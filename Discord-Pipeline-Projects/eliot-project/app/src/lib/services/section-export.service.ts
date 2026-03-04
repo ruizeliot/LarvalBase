@@ -437,9 +437,9 @@ const VERTICAL_POSITION_SECTION_TRAITS = new Set([
   'vertical_day', 'vertical_night',
 ]);
 
-/** Check if the requested traits are the vertical position section. */
+/** Check if the requested traits are exclusively the vertical position section. */
 export function isVerticalPositionSection(traitKeys: string[]): boolean {
-  return traitKeys.some(k => VERTICAL_POSITION_SECTION_TRAITS.has(k));
+  return traitKeys.length > 0 && traitKeys.every(k => VERTICAL_POSITION_SECTION_TRAITS.has(k));
 }
 
 /**

@@ -28,5 +28,7 @@ describe('vertical position export columns', () => {
     expect((mod as any).isVerticalPositionSection(['vertical_distribution'])).toBe(true);
     expect((mod as any).isVerticalPositionSection(['vertical_day_depth'])).toBe(true);
     expect((mod as any).isVerticalPositionSection(['settlement_age'])).toBe(false);
+    // Mixed VP + non-VP traits should NOT match VP section (falls through to generic)
+    expect((mod as any).isVerticalPositionSection(['vertical_distribution', 'critical_swimming_speed'])).toBe(false);
   });
 });
