@@ -32,15 +32,15 @@ export const TRAIT_GROUPS: TraitGroup[] = [
   {
     name: "Egg & Incubation",
     traits: [
+      "egg_position",
+      "egg_shape",
       "egg_diameter",
       "egg_width",
       "egg_volume",
       "yolk_diameter",
+      "egg_oil_globules",
       "oil_globule_size",
       "incubation_duration",
-      "egg_position",
-      "egg_shape",
-      "egg_oil_globules",
     ],
   },
   {
