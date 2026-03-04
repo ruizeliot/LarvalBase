@@ -79,7 +79,7 @@ export default function Home() {
               <a href="mailto:eliotruiz3@gmail.com" className="text-primary hover:underline">
                 eliotruiz3@gmail.com
               </a>{" "}
-              if you are aware of any missing records or error on this website, or if one of the
+              if you are aware of any error or missing records, or if one of the
               images displayed is yours and you would like it to be removed from this website.
             </p>
           </div>

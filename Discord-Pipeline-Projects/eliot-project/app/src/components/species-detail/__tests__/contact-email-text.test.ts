@@ -5,7 +5,7 @@ import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const EXPECTED_TEXT = 'missing records or error on this website';
+const EXPECTED_TEXT = 'any error or missing records';
 
 describe('contact email text', () => {
   it('homepage should contain updated contact text with "or error"', () => {
