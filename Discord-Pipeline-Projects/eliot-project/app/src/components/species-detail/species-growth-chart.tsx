@@ -459,7 +459,6 @@ function GrowthChartPanel({
 
   return (
     <div>
-      <p className="text-xs font-medium text-muted-foreground mb-1">{title}</p>
       <div className="h-[350px] w-full">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
