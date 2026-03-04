@@ -74,6 +74,7 @@ export function useSpeciesData(): SpeciesDataState {
 
         // Include ALL species — don't filter by traits/images
         let anyHasImages = false;
+        let anyHasGrowthModel = false;
         for (const sp of speciesData.species as ApiSpeciesItem[]) {
           const traits: TraitData[] = [];
           if (sp.traits && sp.traits.length > 0) {
@@ -96,6 +97,7 @@ export function useSpeciesData(): SpeciesDataState {
           // Growth model virtual trait
           if (sp.hasGrowthModel) {
             traits.push({ traitType: 'growth_model', value: 1, unit: '', source: null, doi: null });
+            anyHasGrowthModel = true;
           }
           if (traits.length > 0) {
             traitsBySpecies.set(sp.id, traits);
@@ -105,6 +107,9 @@ export function useSpeciesData(): SpeciesDataState {
           traitTypes.add('has_images');
           traitTypes.add('has_images_sure');
           traitTypes.add('has_images_unsure');
+        }
+        if (anyHasGrowthModel) {
+          traitTypes.add('growth_model');
         }
 
         const allSpecies = speciesData.species as ApiSpeciesItem[];
