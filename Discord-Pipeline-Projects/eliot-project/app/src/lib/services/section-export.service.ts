@@ -429,6 +429,67 @@ function buildPelagicJuvenileSectionExport(
 }
 
 
+// ==================== VERTICAL POSITION EXPORT (DATABASE COLUMN ORDER) ====================
+
+/** Vertical position traits. */
+const VERTICAL_POSITION_SECTION_TRAITS = new Set([
+  'vertical_distribution', 'vertical_day_depth', 'vertical_night_depth',
+  'vertical_day', 'vertical_night',
+]);
+
+/** Check if the requested traits are the vertical position section. */
+export function isVerticalPositionSection(traitKeys: string[]): boolean {
+  return traitKeys.some(k => VERTICAL_POSITION_SECTION_TRAITS.has(k));
+}
+
+/**
+ * Vertical position export column order — matches original database exactly.
+ * Columns from Vertical_position_database_final_01.2026.txt header.
+ */
+export const VERTICAL_POSITION_EXPORT_COLUMNS = [
+  'ORDER', 'FAMILY', 'GENUS', 'VALID_NAME', 'RANK', 'APHIA_ID', 'AUTHORITY',
+  'ORIGINAL_NAME', 'LOCATION', 'LATITUDE', 'LONGITUDE', 'GEAR', 'PERIOD',
+  'ZONE', 'STAGE', 'POSITION_ISLAND', 'FILTERED_VOLUME', 'BOTTOM_DEPTH',
+  'DEPTH_INTERVAL_CONSIDERED', 'N_CAPTURE', 'MIN_DEPTH_CAPTURE',
+  'MAX_DEPTH_CAPTURE', 'WEIGHTED_MEAN_DEPTH_CAPTURE',
+  'WEIGHTED_SD_DEPTH_CAPTURE', 'WEIGHTING_DETAILS', 'EXT_REF',
+  'REFERENCE', 'LINK',
+];
+
+/**
+ * Build vertical position export rows directly from raw CSV rows.
+ */
+function buildVerticalPositionSectionExport(
+  speciesIds: string[],
+  data: { species: Map<string, any>; traitsBySpecies: Map<string, TraitData[]> },
+): Array<Record<string, unknown>> {
+  const rows: Array<Record<string, unknown>> = [];
+
+  for (const sid of speciesIds) {
+    const traits = data.traitsBySpecies.get(sid) || [];
+    const sectionTraits = traits.filter(t => VERTICAL_POSITION_SECTION_TRAITS.has(t.traitType));
+
+    // Track processed raw rows to deduplicate
+    const processedRows = new Set<string>();
+
+    for (const trait of sectionTraits) {
+      const rawFields = (trait.metadata?.rawFields || {}) as Record<string, unknown>;
+      const rowKey = `${rawFields.VALID_NAME}|${rawFields.REFERENCE}|${rawFields.WEIGHTED_MEAN_DEPTH_CAPTURE}|${rawFields.PERIOD}|${rawFields.LOCATION}`;
+      if (processedRows.has(rowKey)) continue;
+      processedRows.add(rowKey);
+
+      const row: Record<string, unknown> = {};
+      for (const col of VERTICAL_POSITION_EXPORT_COLUMNS) {
+        row[col] = rawFields[col] ?? 'NA';
+      }
+      rows.push(row);
+    }
+  }
+
+  return rows;
+}
+
+
 // ==================== GENERIC SECTION EXPORT ====================
 
 /** Readable labels for trait types (used as TYPE column values). */
@@ -789,6 +850,11 @@ export async function getSectionExportData(
   // Pelagic juvenile section: use database column order
   if (isPelagicJuvenileSection(traitKeys)) {
     return buildPelagicJuvenileSectionExport(targetSpeciesIds, data);
+  }
+
+  // Vertical position section: use original database column order
+  if (isVerticalPositionSection(traitKeys)) {
+    return buildVerticalPositionSectionExport(targetSpeciesIds, data);
   }
 
   // Generic section: merged long format
