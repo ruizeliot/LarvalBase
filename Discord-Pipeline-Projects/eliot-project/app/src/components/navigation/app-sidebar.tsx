@@ -229,7 +229,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange }: AppSide
 
           {/* Trait Filters - uses availableTraitTypes from useSpeciesData */}
           <SidebarGroup>
-            <SidebarGroupLabel>Traits</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-base text-muted-foreground font-medium text-center justify-center">Filter by trait</SidebarGroupLabel>
             <SidebarGroupContent>
               <TraitFilters
                 selectedTraits={selectedTraits}

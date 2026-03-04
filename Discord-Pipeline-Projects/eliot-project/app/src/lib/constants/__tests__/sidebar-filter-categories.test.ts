@@ -1,5 +1,5 @@
 /**
- * Tests for new sidebar filter categories.
+ * Tests for sidebar filter categories.
  */
 import { describe, it, expect } from 'vitest';
 import { TRAIT_GROUPS, formatTraitName } from '../trait-groups';
@@ -36,5 +36,38 @@ describe('sidebar filter categories', () => {
     expect(formatTraitName('egg_position')).toBe('Egg Position');
     expect(formatTraitName('egg_shape')).toBe('Egg Shape');
     expect(formatTraitName('egg_oil_globules')).toBe('Oil Globules Number');
+  });
+
+  it('should rename Growth Curves to Larval Growth', () => {
+    const names = TRAIT_GROUPS.map((g) => g.name);
+    expect(names).toContain('Larval Growth');
+    expect(names).not.toContain('Growth Curves');
+  });
+
+  it('should have correct sidebar order', () => {
+    const names = TRAIT_GROUPS.map((g) => g.name);
+    expect(names).toEqual([
+      'Pictures',
+      'Larval Growth',
+      'Egg & Incubation',
+      'Hatching & Pre-flexion Stage',
+      'Flexion Stage',
+      'Metamorphosis',
+      'Settlement',
+      'Pelagic Juvenile',
+      'Rafting',
+      'Vertical Position',
+      'Swimming Speed',
+    ]);
+  });
+
+  it('should have PJ Behavior first in Pelagic Juvenile group', () => {
+    const pj = TRAIT_GROUPS.find((g) => g.name === 'Pelagic Juvenile');
+    expect(pj?.traits[0]).toBe('pelagic_juvenile_behavior');
+  });
+
+  it('should have Rafting Behavior first in Rafting group', () => {
+    const rafting = TRAIT_GROUPS.find((g) => g.name === 'Rafting');
+    expect(rafting?.traits[0]).toBe('rafting_behavior');
   });
 });

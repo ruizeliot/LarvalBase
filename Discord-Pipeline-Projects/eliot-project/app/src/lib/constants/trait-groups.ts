@@ -15,6 +15,21 @@ export interface TraitGroup {
  */
 export const TRAIT_GROUPS: TraitGroup[] = [
   {
+    name: "Pictures",
+    traits: [
+      "has_images",
+      "has_images_sure",
+      "has_images_unsure",
+    ],
+  },
+  {
+    name: "Larval Growth",
+    traits: [
+      "larval_length",
+      "larval_age",
+    ],
+  },
+  {
     name: "Egg & Incubation",
     traits: [
       "egg_diameter",
@@ -61,10 +76,19 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     ],
   },
   {
-    name: "Growth Curves",
+    name: "Pelagic Juvenile",
     traits: [
-      "larval_length",
-      "larval_age",
+      "pelagic_juvenile_behavior",
+      "pelagic_juvenile_size",
+      "pelagic_juvenile_duration",
+    ],
+  },
+  {
+    name: "Rafting",
+    traits: [
+      "rafting_behavior",
+      "rafting_size",
+      "rafting_age",
     ],
   },
   {
@@ -84,30 +108,6 @@ export const TRAIT_GROUPS: TraitGroup[] = [
       "critical_swimming_speed_rel",
       "in_situ_swimming_speed",
       "in_situ_swimming_speed_rel",
-    ],
-  },
-  {
-    name: "Pelagic Juvenile",
-    traits: [
-      "pelagic_juvenile_size",
-      "pelagic_juvenile_duration",
-      "pelagic_juvenile_behavior",
-    ],
-  },
-  {
-    name: "Rafting",
-    traits: [
-      "rafting_behavior",
-      "rafting_size",
-      "rafting_age",
-    ],
-  },
-  {
-    name: "Pictures",
-    traits: [
-      "has_images",
-      "has_images_sure",
-      "has_images_unsure",
     ],
   },
 ];
