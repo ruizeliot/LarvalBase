@@ -85,11 +85,13 @@ export default function Home() {
                 <a href="https://doi.org/10.1111/2041-210X.70011" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
                   https://doi.org/10.1111/2041-210X.70011
                 </a>
-                ). Behavioral databases were completed by 907 previously unpublished records of larval fish vertical position in the water column. Considered together, dispersal traits datasets comprise 47,132 records across 6,874 marine fish species, representing 1,932 genera, 358 families, and 58 orders, sourced from 3,201 references. LarvalBase was further enriched by an additional 4,046 colored pictures of post-flexion and early juveniles of 919 species obtained from 100 sources. Growth rate models curves from 47 original references and 90 populations are also now newly displayed, along with age-at-length data. If one of the images displayed is yours and you would like it to be removed from this website, or if you found any missing record or an error Do not hesitate to signal errors, copyright problems or missing records by sending an email to{" "}
-                <a href="mailto:eliotruiz3@gmail.com" className="text-primary hover:underline">
-                  eliotruiz3@gmail.com
-                </a>
-                . Please cite both the original reference and our data paper, which describes in further detail this new database and method, if you use any part of our database:{" "}
+                ). Behavioral databases were completed by 907 previously unpublished records of larval fish vertical position in the water column. Considered together, dispersal traits datasets comprise 47,132 records across 6,874 marine fish species, representing 1,932 genera, 358 families, and 58 orders, sourced from 3,201 references.
+              </p>
+              <p className="text-xs text-muted-foreground leading-snug mt-3">
+                LarvalBase was further enriched by an additional 4,046 colored pictures of post-flexion and early juveniles of 919 species obtained from 100 sources. Growth rate models curves from 47 original references and 90 populations are also now newly displayed, along with age-at-length data.
+              </p>
+              <p className="text-xs text-muted-foreground leading-snug mt-3">
+                Please cite both the original reference and our data paper, which describes in further detail this new database and method, if you use any part of our database:{" "}
                 <a href="https://github.com/ruizeliot/fish_larvae_traits_db" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
                   https://github.com/ruizeliot/fish_larvae_traits_db
                 </a>
