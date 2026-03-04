@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-XR — AI Incarnation System</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07070d;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+.mr-scene{perspective:1100px;perspective-origin:50% 45%;width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+.mr-scene::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 55%,#12122a 0%,#07070d 70%);z-index:0}
+.mr-scene::after{content:'';position:fixed;bottom:0;left:-50%;width:200%;height:55%;background:repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(80,100,255,0.025) 79px,rgba(80,100,255,0.025) 80px),repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(80,100,255,0.025) 79px,rgba(80,100,255,0.025) 80px);transform:perspective(600px) rotateX(62deg);transform-origin:top center;z-index:0}
+.scene-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:44px;padding:30px 20px;transform:rotateX(1.5deg)}
+.panel{background:rgba(12,12,28,0.88);border:1px solid rgba(90,110,255,0.16);border-radius:16px;backdrop-filter:blur(20px);box-shadow:0 0 50px rgba(70,90,255,0.05),0 24px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04);position:relative;transform-style:preserve-3d}
+.panel::before{content:'';position:absolute;top:-1px;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,140,255,0.35),transparent)}
+.panel-header{padding:16px 22px 12px;border-bottom:1px solid rgba(90,110,255,0.08);display:flex;align-items:center;gap:12px}
+.panel-header .icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.panel-header h2{font-size:14px;font-weight:600}
+.panel-header .sub{font-size:10px;color:#777;margin-top:2px}
+
+/* === MODES ROW === */
+.modes-row{display:flex;gap:32px;align-items:flex-start;transform-style:preserve-3d}
+
+/* Mode Card */
+.mode-card{width:240px;transform-style:preserve-3d;transition:transform 0.3s}
+.mode-card.left{transform:translateZ(15px) rotateY(6deg)}
+.mode-card.center{transform:translateZ(45px) rotateY(0deg)}
+.mode-card.right{transform:translateZ(15px) rotateY(-6deg)}
+.mode-body{padding:20px}
+.mode-label{text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:16px;font-weight:600}
+.mode-label.active-label{color:#4a6cf7}
+.mode-label.inactive-label{color:#555}
+
+/* Avatar Display */
+.avatar-display{width:140px;height:180px;margin:0 auto 16px;border-radius:14px;background:linear-gradient(180deg,rgba(74,108,247,0.08) 0%,rgba(20,20,40,0.6) 100%);border:1px solid rgba(74,108,247,0.12);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.avatar-silhouette{width:70px;height:70px;border-radius:50%;background:linear-gradient(135deg,#3a4a8f,#5a6abf);margin-bottom:8px;position:relative;box-shadow:0 8px 25px rgba(74,108,247,0.2)}
+.avatar-silhouette::before{content:'';position:absolute;top:52%;left:50%;transform:translate(-50%,-30%);width:10px;height:6px;border-radius:50%;background:rgba(255,255,255,0.15)}
+.avatar-body{width:50px;height:40px;border-radius:25px 25px 0 0;background:linear-gradient(180deg,#3a4a8f,#2a3a7f);margin-top:-4px}
+.avatar-tag{font-size:9px;color:#8ba4ff;margin-top:10px;font-weight:600;letter-spacing:0.5px}
+/* Lip sync bars */
+.lip-sync{display:flex;gap:2px;justify-content:center;margin-top:6px}
+.lip-sync span{width:3px;height:8px;background:#8ba4ff;border-radius:2px;animation:lip 0.6s infinite ease-in-out}
+.lip-sync span:nth-child(2){animation-delay:0.1s;height:12px}
+.lip-sync span:nth-child(3){animation-delay:0.2s;height:6px}
+
+@keyframes lip{0%,100%{transform:scaleY(0.5)}50%{transform:scaleY(1)}}
+
+/* Anim list */
+.anim-list{margin-top:12px}
+.anim-item{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;margin-bottom:4px;font-size:11px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04)}
+.anim-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.anim-dot.a-idle{background:#4ade80}
+.anim-dot.a-talk{background:#8ba4ff}
+.anim-dot.a-think{background:#a78bfa}
+.anim-name{color:#bbb;font-size:10px}
+
+/* === ORB === */
+.orb-container{width:140px;height:180px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;position:relative}
+.orb{width:90px;height:90px;border-radius:50%;position:relative}
+.orb-thinking{background:radial-gradient(circle at 40% 35%,#fde68a,#f59e0b 60%,#92400e);box-shadow:0 0 40px rgba(245,158,11,0.35),0 0 80px rgba(245,158,11,0.15);animation:orb-pulse 2s infinite}
+.orb::after{content:'';position:absolute;top:15%;left:25%;width:30%;height:20%;border-radius:50%;background:rgba(255,255,255,0.25);filter:blur(4px)}
+@keyframes orb-pulse{0%,100%{transform:scale(1);box-shadow:0 0 40px rgba(245,158,11,0.35),0 0 80px rgba(245,158,11,0.15)}50%{transform:scale(1.06);box-shadow:0 0 55px rgba(245,158,11,0.45),0 0 100px rgba(245,158,11,0.2)}}
+
+.orb-states{margin-top:12px}
+.orb-state{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:8px;margin-bottom:4px;font-size:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04)}
+.orb-color{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+.orb-color.oc-listen{background:#60a5fa;box-shadow:0 0 6px rgba(96,165,250,0.4)}
+.orb-color.oc-think{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,0.4)}
+.orb-color.oc-talk{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.4)}
+.orb-color.oc-idle{background:#555;box-shadow:0 0 4px rgba(85,85,85,0.3)}
+.orb-state-label{color:#bbb}
+
+/* === INVISIBLE === */
+.invis-container{width:140px;height:180px;margin:0 auto 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative}
+.invis-void{width:90px;height:90px;border-radius:50%;border:1px dashed rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center}
+.invis-icon{font-size:28px;opacity:0.15}
+.hud-text{margin-top:16px;padding:8px 14px;border-radius:8px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);font-size:10px;color:#888;text-align:center;font-family:'Courier New',monospace}
+.hud-text .hud-status{color:#4ade80;font-weight:600}
+
+.invis-features{margin-top:12px}
+.invis-feat{display:flex;align-items:center;gap:8px;padding:5px 10px;font-size:10px;color:#888}
+.invis-feat .check{color:#4ade80;font-size:12px}
+.invis-feat .cross{color:#f87171;font-size:12px}
+
+/* === SETTINGS PANEL === */
+.settings-panel{width:360px;transform:translateZ(35px)}
+.settings-body{padding:18px 22px}
+.setting-group{margin-bottom:16px}
+.setting-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#6b7aff;margin-bottom:10px}
+.mode-selector{display:flex;gap:6px}
+.mode-opt{flex:1;padding:12px 8px;border-radius:10px;text-align:center;cursor:pointer;transition:all 0.2s;border:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.02)}
+.mode-opt.selected{background:rgba(74,108,247,0.1);border-color:rgba(74,108,247,0.3);box-shadow:0 0 15px rgba(74,108,247,0.08)}
+.mode-opt .mo-icon{font-size:20px;margin-bottom:4px}
+.mode-opt .mo-name{font-size:11px;font-weight:600}
+.mode-opt.selected .mo-name{color:#8ba4ff}
+.mode-opt .mo-desc{font-size:8px;color:#777;margin-top:2px}
+
+/* Active badge */
+.active-badge{display:inline-block;font-size:8px;padding:2px 8px;border-radius:6px;background:rgba(74,222,128,0.12);color:#4ade80;font-weight:600;letter-spacing:0.5px;margin-top:6px}
+
+/* Preview section */
+.preview-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);margin-top:4px}
+.preview-bar .pv-label{font-size:11px;color:#999}
+.preview-bar .pv-mode{font-size:12px;font-weight:600;color:#fbbf24;display:flex;align-items:center;gap:6px}
+.preview-bar .pv-dot{width:8px;height:8px;border-radius:50%;background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.4)}
+
+.particle{position:fixed;width:2px;height:2px;background:rgba(90,120,255,0.2);border-radius:50%;z-index:0;animation:float 9s infinite ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0);opacity:0.2}50%{transform:translateY(-30px);opacity:0.5}}
+
+@media(max-width:850px){
+.modes-row{flex-direction:column;align-items:center;gap:20px}
+.mode-card.left,.mode-card.center,.mode-card.right{transform:none;width:min(95vw,280px)}
+.settings-panel{width:min(95vw,360px);transform:none}
+}
+</style>
+</head>
+<body>
+
+<div class="mr-scene">
+  <div class="particle" style="top:12%;left:22%;animation-delay:0s"></div>
+  <div class="particle" style="top:55%;left:78%;animation-delay:3s"></div>
+  <div class="particle" style="top:80%;left:40%;animation-delay:1.5s"></div>
+  <div class="particle" style="top:30%;left:65%;animation-delay:4.5s"></div>
+
+  <div class="scene-wrap">
+
+    <!-- 3 MODES SIDE BY SIDE -->
+    <div class="modes-row">
+
+      <!-- AVATAR MODE -->
+      <div class="panel mode-card left">
+        <div class="panel-header">
+          <div class="icon" style="background:linear-gradient(135deg,#4a6cf7,#6b4cf7)">👤</div>
+          <div><h2>Avatar</h2><div class="sub">Ready Player Me</div></div>
+        </div>
+        <div class="mode-body">
+          <div class="mode-label inactive-label">MODE 1</div>
+          <div class="avatar-display">
+            <div class="avatar-silhouette"></div>
+            <div class="avatar-body"></div>
+            <div class="avatar-tag">RPM Avatar</div>
+            <div class="lip-sync"><span></span><span></span><span></span></div>
+          </div>
+          <div class="anim-list">
+            <div class="anim-item"><span class="anim-dot a-idle"></span><span class="anim-name">Idle — breathing, subtle sway</span></div>
+            <div class="anim-item"><span class="anim-dot a-talk"></span><span class="anim-name">Talking — lip sync + gestures</span></div>
+            <div class="anim-item"><span class="anim-dot a-think"></span><span class="anim-name">Thinking — head tilt, look away</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ORB MODE -->
+      <div class="panel mode-card center">
+        <div class="panel-header">
+          <div class="icon" style="background:linear-gradient(135deg,#f59e0b,#fbbf24)">🔮</div>
+          <div><h2>Orbe</h2><div class="sub">Luminous floating orb</div></div>
+        </div>
+        <div class="mode-body">
+          <div class="mode-label active-label">MODE 2 — ACTIF</div>
+          <div class="orb-container">
+            <div class="orb orb-thinking"></div>
+          </div>
+          <div class="orb-states">
+            <div class="orb-state"><span class="orb-color oc-listen"></span><span class="orb-state-label">Bleu — écoute</span></div>
+            <div class="orb-state"><span class="orb-color oc-think"></span><span class="orb-state-label">Jaune — réflexion</span></div>
+            <div class="orb-state"><span class="orb-color oc-talk"></span><span class="orb-state-label">Vert — parle</span></div>
+            <div class="orb-state"><span class="orb-color oc-idle"></span><span class="orb-state-label">Dim — en veille</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVISIBLE MODE -->
+      <div class="panel mode-card right">
+        <div class="panel-header">
+          <div class="icon" style="background:linear-gradient(135deg,#555,#777)">👻</div>
+          <div><h2>Invisible</h2><div class="sub">Voice-only + HUD</div></div>
+        </div>
+        <div class="mode-body">
+          <div class="mode-label inactive-label">MODE 3</div>
+          <div class="invis-container">
+            <div class="invis-void"><span class="invis-icon">👻</span></div>
+            <div class="hud-text">Status: <span class="hud-status">READY</span><br>Last: "La fenêtre est à gauche"</div>
+          </div>
+          <div class="invis-features">
+            <div class="invis-feat"><span class="check">✓</span> Voice interaction</div>
+            <div class="invis-feat"><span class="check">✓</span> Minimal HUD text</div>
+            <div class="invis-feat"><span class="cross">✗</span> No visual embodiment</div>
+            <div class="invis-feat"><span class="cross">✗</span> No spatial presence</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- SETTINGS PANEL -->
+    <div class="panel settings-panel">
+      <div class="panel-header">
+        <div class="icon" style="background:linear-gradient(135deg,#4a6cf7,#4ade80)">⚙️</div>
+        <div><h2>Incarnation Settings</h2><div class="sub">Switch manuelle dans les paramètres</div></div>
+      </div>
+      <div class="settings-body">
+        <div class="setting-group">
+          <div class="setting-label">Mode d'incarnation</div>
+          <div class="mode-selector">
+            <div class="mode-opt">
+              <div class="mo-icon">👤</div>
+              <div class="mo-name">Avatar</div>
+              <div class="mo-desc">RPM 3D model</div>
+            </div>
+            <div class="mode-opt selected">
+              <div class="mo-icon">🔮</div>
+              <div class="mo-name">Orbe</div>
+              <div class="mo-desc">Floating light</div>
+              <div class="active-badge">ACTIVE</div>
+            </div>
+            <div class="mode-opt">
+              <div class="mo-icon">👻</div>
+              <div class="mo-name">Invisible</div>
+              <div class="mo-desc">Voice only</div>
+            </div>
+          </div>
+        </div>
+        <div class="preview-bar">
+          <span class="pv-label">Active mode</span>
+          <span class="pv-mode"><span class="pv-dot"></span>Orbe — Thinking</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

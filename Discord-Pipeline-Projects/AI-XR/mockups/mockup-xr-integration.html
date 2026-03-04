@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-XR — XR Integration & MR Setup</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#07070d;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+.mr-scene{perspective:1100px;perspective-origin:50% 44%;width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+.mr-scene::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 55%,#111126 0%,#07070d 70%);z-index:0}
+.mr-scene::after{content:'';position:fixed;bottom:0;left:-50%;width:200%;height:55%;background:repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(80,100,255,0.025) 79px,rgba(80,100,255,0.025) 80px),repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(80,100,255,0.025) 79px,rgba(80,100,255,0.025) 80px);transform:perspective(600px) rotateX(62deg);transform-origin:top center;z-index:0}
+.scene-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:40px;padding:30px 20px;transform:rotateX(1.5deg)}
+.panel{background:rgba(12,12,28,0.88);border:1px solid rgba(90,110,255,0.16);border-radius:16px;backdrop-filter:blur(20px);box-shadow:0 0 50px rgba(70,90,255,0.05),0 24px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04);position:relative;transform-style:preserve-3d}
+.panel::before{content:'';position:absolute;top:-1px;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,140,255,0.35),transparent)}
+.ph{padding:16px 22px 12px;border-bottom:1px solid rgba(90,110,255,0.08);display:flex;align-items:center;gap:12px}
+.ph .icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.ph h2{font-size:14px;font-weight:600}
+.ph .sub{font-size:10px;color:#777;margin-top:2px}
+.top-row{display:flex;gap:36px;align-items:flex-start;transform-style:preserve-3d}
+
+/* === MR LIVING ROOM SCENE === */
+.mr-panel{width:440px;transform:translateZ(40px) rotateY(-3deg)}
+.mr-body{padding:20px;position:relative}
+.room-view{width:100%;height:320px;border-radius:12px;background:linear-gradient(180deg,#1e1e2e 0%,#1a1825 30%,#16141f 100%);border:1px solid rgba(100,120,255,0.1);position:relative;overflow:hidden}
+
+/* Passthrough simulation — room elements */
+.room-floor{position:absolute;bottom:0;left:0;right:0;height:40%;background:linear-gradient(180deg,rgba(60,50,40,0.3),rgba(45,38,30,0.5))}
+.room-wall{position:absolute;top:0;left:0;right:0;height:62%;background:linear-gradient(180deg,rgba(40,38,50,0.4),rgba(50,45,55,0.3))}
+/* Table */
+.table{position:absolute;bottom:28%;left:15%;width:70%;height:12%;background:linear-gradient(180deg,#3d352a,#2e2720);border-radius:4px 4px 0 0;box-shadow:0 4px 15px rgba(0,0,0,0.3)}
+.table-leg-l{position:absolute;bottom:10%;left:20%;width:4%;height:18%;background:#2a2318}
+.table-leg-r{position:absolute;bottom:10%;right:20%;width:4%;height:18%;background:#2a2318}
+/* Couch */
+.couch{position:absolute;bottom:18%;right:5%;width:28%;height:20%;background:linear-gradient(180deg,#2a2a3e,#222236);border-radius:6px 6px 2px 2px;border:1px solid rgba(100,100,140,0.1)}
+.couch-back{position:absolute;bottom:36%;right:5%;width:28%;height:8%;background:#252538;border-radius:4px 4px 0 0}
+/* Window with light */
+.window{position:absolute;top:8%;left:8%;width:20%;height:35%;background:linear-gradient(180deg,#2a3a5a,#1e2e48);border:2px solid rgba(100,140,200,0.15);border-radius:3px}
+.window-glow{position:absolute;top:5%;left:6%;width:24%;height:40%;background:radial-gradient(ellipse,rgba(100,150,220,0.08),transparent 70%);pointer-events:none}
+/* Shelf */
+.shelf{position:absolute;top:15%;right:10%;width:18%;height:3%;background:#2e2822;box-shadow:0 2px 6px rgba(0,0,0,0.2)}
+.shelf-book1{position:absolute;top:10%;right:12%;width:3%;height:8%;background:#3a2a40;border-radius:1px}
+.shelf-book2{position:absolute;top:10%;right:16%;width:2.5%;height:7%;background:#2a3a40;border-radius:1px}
+
+/* AI Avatar on table — spatial anchor */
+.avatar-anchor{position:absolute;bottom:38%;left:42%;transform:translateX(-50%);text-align:center}
+.av-figure{width:44px;height:60px;margin:0 auto;position:relative}
+.av-head{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,#5a6abf,#3a4a8f);margin:0 auto;box-shadow:0 0 20px rgba(90,106,191,0.4),0 0 40px rgba(90,106,191,0.15)}
+.av-body-shape{width:30px;height:28px;border-radius:15px 15px 0 0;background:linear-gradient(180deg,#4a5aaf,#3a4a8f);margin:-4px auto 0;box-shadow:0 4px 15px rgba(74,90,175,0.3)}
+/* Glow ring on surface */
+.anchor-ring{width:60px;height:10px;border-radius:50%;background:radial-gradient(ellipse,rgba(74,108,247,0.3),transparent 70%);margin:-2px auto 0;animation:anchor-glow 2s infinite}
+@keyframes anchor-glow{0%,100%{opacity:0.6;transform:scale(1)}50%{opacity:1;transform:scale(1.1)}}
+.anchor-label{font-size:7px;color:rgba(74,108,247,0.7);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+/* Anchor line */
+.anchor-line{position:absolute;bottom:28%;left:42%;width:1px;height:10%;background:linear-gradient(180deg,rgba(74,108,247,0.3),rgba(74,108,247,0.05));transform:translateX(-50%)}
+
+/* Hand tracking visualization */
+.hand-viz{position:absolute;bottom:30%;right:30%;opacity:0.8}
+.hand-outline{width:50px;height:55px;position:relative}
+.palm{width:30px;height:28px;border:1.5px solid rgba(74,222,128,0.5);border-radius:8px;position:absolute;bottom:0;left:10px;background:rgba(74,222,128,0.03)}
+.finger{position:absolute;width:6px;border:1.5px solid rgba(74,222,128,0.4);border-radius:3px;background:rgba(74,222,128,0.02)}
+.f1{height:18px;bottom:26px;left:8px;transform:rotate(-8deg)}
+.f2{height:22px;bottom:28px;left:16px}
+.f3{height:20px;bottom:27px;left:24px}
+.f4{height:16px;bottom:24px;left:31px;transform:rotate(5deg)}
+.thumb{height:14px;bottom:10px;left:1px;transform:rotate(-30deg)}
+.hand-dots span{position:absolute;width:4px;height:4px;border-radius:50%;background:#4ade80;box-shadow:0 0 4px rgba(74,222,128,0.5)}
+.hd1{bottom:26px;left:12px}.hd2{bottom:28px;left:20px}.hd3{bottom:27px;left:27px}.hd4{bottom:0;left:22px}
+.hand-label{position:absolute;bottom:-14px;left:50%;transform:translateX(-50%);font-size:7px;color:rgba(74,222,128,0.6);white-space:nowrap;letter-spacing:0.5px}
+/* Point ray */
+.point-ray{position:absolute;bottom:50px;right:42px;width:80px;height:1px;background:linear-gradient(90deg,rgba(74,222,128,0.4),rgba(74,222,128,0));transform:rotate(-15deg);transform-origin:left}
+
+/* Passthrough badge */
+.pt-badge{position:absolute;top:10px;right:10px;font-size:8px;padding:4px 10px;border-radius:6px;background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:#4ade80;letter-spacing:0.5px;font-weight:600}
+/* OVR badge */
+.ovr-badge{position:absolute;top:10px;left:10px;font-size:8px;padding:4px 10px;border-radius:6px;background:rgba(74,108,247,0.1);border:1px solid rgba(74,108,247,0.15);color:#8ba4ff;letter-spacing:0.5px}
+
+/* Controller overlay */
+.ctrl-overlay{margin-top:14px;display:flex;gap:10px}
+.ctrl-btn{flex:1;padding:10px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);text-align:center}
+.ctrl-btn .cb-icon{font-size:16px;margin-bottom:4px}
+.ctrl-btn .cb-label{font-size:10px;font-weight:600;color:#bbb}
+.ctrl-btn .cb-map{font-size:8px;color:#777;margin-top:2px}
+.ctrl-btn.cb-active{background:rgba(74,108,247,0.06);border-color:rgba(74,108,247,0.15)}
+.ctrl-btn.cb-active .cb-label{color:#8ba4ff}
+
+/* === UNITY EDITOR PANEL === */
+.editor-panel{width:380px;transform:translateZ(20px) rotateY(4deg)}
+.editor-body{padding:16px}
+.editor-frame{border-radius:10px;background:#1a1a24;border:1px solid rgba(100,120,255,0.08);overflow:hidden}
+/* Title bar */
+.ed-titlebar{height:24px;background:#141420;display:flex;align-items:center;padding:0 10px;gap:6px;border-bottom:1px solid rgba(255,255,255,0.04)}
+.ed-dot{width:8px;height:8px;border-radius:50%}
+.ed-dot.r{background:#f87171}.ed-dot.y{background:#fbbf24}.ed-dot.g{background:#4ade80}
+.ed-title{font-size:9px;color:#666;margin-left:8px;letter-spacing:0.5px}
+/* Editor layout */
+.ed-layout{display:flex;height:200px}
+.ed-hierarchy{width:28%;background:#12121c;border-right:1px solid rgba(255,255,255,0.03);padding:8px 6px;overflow:hidden}
+.ed-h-title{font-size:8px;color:#555;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.ed-h-item{font-size:9px;padding:3px 4px;border-radius:3px;margin-bottom:2px;color:#999;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ed-h-item.selected{background:rgba(74,108,247,0.15);color:#8ba4ff}
+.ed-h-item .indent{display:inline-block;width:10px}
+.ed-viewport{flex:1;background:#0e0e18;position:relative;display:flex;align-items:center;justify-content:center}
+.ed-vp-grid{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 29px,rgba(60,60,100,0.06) 29px,rgba(60,60,100,0.06) 30px),repeating-linear-gradient(0deg,transparent,transparent 29px,rgba(60,60,100,0.06) 29px,rgba(60,60,100,0.06) 30px)}
+.ed-vp-label{font-size:8px;color:#444;position:absolute;top:6px;left:8px}
+.ed-gizmo{width:30px;height:30px;position:absolute;top:8px;right:8px}
+.ed-gizmo-x{position:absolute;width:14px;height:2px;background:#f87171;top:14px;left:10px;border-radius:1px}
+.ed-gizmo-y{position:absolute;width:2px;height:14px;background:#4ade80;top:2px;left:14px;border-radius:1px}
+.ed-gizmo-z{position:absolute;width:10px;height:2px;background:#60a5fa;top:18px;left:6px;transform:rotate(-45deg);border-radius:1px}
+/* Mini avatar in viewport */
+.ed-avatar{text-align:center;z-index:1}
+.ed-av-box{width:24px;height:32px;border:1px solid rgba(74,108,247,0.3);border-radius:3px;margin:0 auto 4px;background:rgba(74,108,247,0.05);display:flex;align-items:center;justify-content:center;font-size:12px}
+.ed-av-name{font-size:7px;color:#8ba4ff}
+
+/* MCP Panel */
+.mcp-panel{margin-top:12px;padding:14px;border-radius:10px;background:rgba(107,76,247,0.04);border:1px solid rgba(107,76,247,0.12)}
+.mcp-header{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.mcp-logo{width:22px;height:22px;border-radius:6px;background:linear-gradient(135deg,#6b4cf7,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff}
+.mcp-title{font-size:12px;font-weight:600;color:#a78bfa}
+.mcp-sub{font-size:9px;color:#777}
+.mcp-status{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.mcp-dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.4)}
+.mcp-status-text{font-size:10px;color:#4ade80}
+.mcp-cmds{display:flex;flex-wrap:wrap;gap:4px}
+.mcp-cmd{font-size:8px;padding:3px 8px;border-radius:5px;background:rgba(107,76,247,0.08);border:1px solid rgba(107,76,247,0.12);color:#b4a0ff;font-family:'Courier New',monospace}
+
+/* Build pipeline */
+.build-section{margin-top:14px}
+.build-title{font-size:10px;color:#6b7aff;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-weight:600}
+.build-steps{display:flex;gap:4px;align-items:center}
+.build-step{padding:6px 10px;border-radius:8px;font-size:9px;text-align:center;font-weight:500}
+.build-step.b-done{background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.12);color:#4ade80}
+.build-step.b-active{background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.18);color:#8ba4ff}
+.build-step.b-idle{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);color:#777}
+.build-arrow{color:#333;font-size:10px}
+
+/* Stack badges */
+.stack-row{margin-top:14px;display:flex;flex-wrap:wrap;gap:4px}
+.stack-badge{font-size:7px;padding:3px 7px;border-radius:4px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:#999;letter-spacing:0.3px}
+
+.particle{position:fixed;width:2px;height:2px;background:rgba(90,120,255,0.2);border-radius:50%;z-index:0;animation:float 9s infinite ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0);opacity:0.2}50%{transform:translateY(-30px);opacity:0.5}}
+
+@media(max-width:900px){
+.top-row{flex-direction:column;align-items:center;gap:24px}
+.mr-panel,.editor-panel{transform:none;width:min(95vw,440px)}
+}
+</style>
+</head>
+<body>
+
+<div class="mr-scene">
+  <div class="particle" style="top:18%;left:15%;animation-delay:0s"></div>
+  <div class="particle" style="top:65%;left:80%;animation-delay:2.5s"></div>
+  <div class="particle" style="top:40%;left:50%;animation-delay:4s"></div>
+
+  <div class="scene-wrap">
+    <div class="top-row">
+
+      <!-- MR SCENE -->
+      <div class="panel mr-panel">
+        <div class="ph">
+          <div class="icon" style="background:linear-gradient(135deg,#4a6cf7,#4ade80)">🥽</div>
+          <div><h2>MR Scene — Passthrough</h2><div class="sub">Quest 3 · Spatial anchoring · Hand tracking</div></div>
+        </div>
+        <div class="mr-body">
+          <div class="room-view">
+            <!-- Room -->
+            <div class="room-wall"></div>
+            <div class="room-floor"></div>
+            <div class="window"></div>
+            <div class="window-glow"></div>
+            <div class="table"></div>
+            <div class="table-leg-l"></div>
+            <div class="table-leg-r"></div>
+            <div class="couch"></div>
+            <div class="couch-back"></div>
+            <div class="shelf"></div>
+            <div class="shelf-book1"></div>
+            <div class="shelf-book2"></div>
+
+            <!-- Avatar anchored on table -->
+            <div class="anchor-line"></div>
+            <div class="avatar-anchor">
+              <div class="av-figure">
+                <div class="av-head"></div>
+                <div class="av-body-shape"></div>
+              </div>
+              <div class="anchor-ring"></div>
+              <div class="anchor-label">⚓ anchored</div>
+            </div>
+
+            <!-- Hand tracking -->
+            <div class="hand-viz">
+              <div class="hand-outline">
+                <div class="palm"></div>
+                <div class="finger f1"></div>
+                <div class="finger f2"></div>
+                <div class="finger f3"></div>
+                <div class="finger f4"></div>
+                <div class="finger thumb"></div>
+                <div class="hand-dots">
+                  <span class="hd1"></span><span class="hd2"></span><span class="hd3"></span><span class="hd4"></span>
+                </div>
+                <div class="hand-label">XR Hands 1.5.0</div>
+              </div>
+              <div class="point-ray"></div>
+            </div>
+
+            <div class="pt-badge">🔲 PASSTHROUGH</div>
+            <div class="ovr-badge">OVRCameraRig</div>
+          </div>
+
+          <!-- Controller mapping -->
+          <div class="ctrl-overlay">
+            <div class="ctrl-btn cb-active">
+              <div class="cb-icon">🎙️</div>
+              <div class="cb-label">Push-to-Talk</div>
+              <div class="cb-map">Right Trigger</div>
+            </div>
+            <div class="ctrl-btn">
+              <div class="cb-icon">👁️</div>
+              <div class="cb-label">Vision</div>
+              <div class="cb-map">A Button</div>
+            </div>
+            <div class="ctrl-btn">
+              <div class="cb-icon">✊</div>
+              <div class="cb-label">Grab & Move</div>
+              <div class="cb-map">Grip / Pinch</div>
+            </div>
+            <div class="ctrl-btn">
+              <div class="cb-icon">👆</div>
+              <div class="cb-label">Point Trigger</div>
+              <div class="cb-map">Index Point</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- UNITY EDITOR + MCP -->
+      <div class="panel editor-panel">
+        <div class="ph">
+          <div class="icon" style="background:linear-gradient(135deg,#6b4cf7,#a78bfa)">🛠️</div>
+          <div><h2>Unity Editor + MCP</h2><div class="sub">Dev prototyping without headset deploy</div></div>
+        </div>
+        <div class="editor-body">
+          <div class="editor-frame">
+            <div class="ed-titlebar">
+              <div class="ed-dot r"></div><div class="ed-dot y"></div><div class="ed-dot g"></div>
+              <span class="ed-title">Unity 6 — AI-XR.unity</span>
+            </div>
+            <div class="ed-layout">
+              <div class="ed-hierarchy">
+                <div class="ed-h-title">Hierarchy</div>
+                <div class="ed-h-item">📷 OVRCameraRig</div>
+                <div class="ed-h-item"><span class="indent"></span>TrackingSpace</div>
+                <div class="ed-h-item"><span class="indent"></span>CenterEyeAnchor</div>
+                <div class="ed-h-item selected">🤖 AIEntity</div>
+                <div class="ed-h-item"><span class="indent"></span>AvatarRoot (RPM)</div>
+                <div class="ed-h-item"><span class="indent"></span>OrbPrefab</div>
+                <div class="ed-h-item">🧠 AIManager</div>
+                <div class="ed-h-item"><span class="indent"></span>ProviderConfig</div>
+                <div class="ed-h-item">✋ XRHandsManager</div>
+                <div class="ed-h-item">⚓ SpatialAnchorManager</div>
+                <div class="ed-h-item">🎙️ MicrophoneRecorder</div>
+                <div class="ed-h-item">📸 CameraFeedDisplay</div>
+              </div>
+              <div class="ed-viewport">
+                <div class="ed-vp-grid"></div>
+                <div class="ed-vp-label">Scene View</div>
+                <div class="ed-gizmo">
+                  <div class="ed-gizmo-x"></div>
+                  <div class="ed-gizmo-y"></div>
+                  <div class="ed-gizmo-z"></div>
+                </div>
+                <div class="ed-avatar">
+                  <div class="ed-av-box">🤖</div>
+                  <div class="ed-av-name">AIEntity</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MCP Panel -->
+          <div class="mcp-panel">
+            <div class="mcp-header">
+              <div class="mcp-logo">M</div>
+              <div>
+                <div class="mcp-title">unity-mcp</div>
+                <div class="mcp-sub">Model Context Protocol · Editor only</div>
+              </div>
+            </div>
+            <div class="mcp-status">
+              <span class="mcp-dot"></span>
+              <span class="mcp-status-text">Connected — Editor mode</span>
+            </div>
+            <div class="mcp-cmds">
+              <span class="mcp-cmd">scene.query</span>
+              <span class="mcp-cmd">object.create</span>
+              <span class="mcp-cmd">component.add</span>
+              <span class="mcp-cmd">transform.set</span>
+              <span class="mcp-cmd">prefab.spawn</span>
+              <span class="mcp-cmd">play.toggle</span>
+            </div>
+          </div>
+
+          <!-- Build Pipeline -->
+          <div class="build-section">
+            <div class="build-title">🏗️ Build Pipeline → Quest 3</div>
+            <div class="build-steps">
+              <div class="build-step b-done">Editor Dev</div>
+              <span class="build-arrow">→</span>
+              <div class="build-step b-done">MCP Test</div>
+              <span class="build-arrow">→</span>
+              <div class="build-step b-active">Android Build</div>
+              <span class="build-arrow">→</span>
+              <div class="build-step b-idle">APK Sign</div>
+              <span class="build-arrow">→</span>
+              <div class="build-step b-idle">Quest Deploy</div>
+            </div>
+          </div>
+
+          <!-- Stack -->
+          <div class="stack-row">
+            <span class="stack-badge">Unity 6 (URP 17)</span>
+            <span class="stack-badge">Meta OpenXR 2.0.1</span>
+            <span class="stack-badge">XRI 3.0.7</span>
+            <span class="stack-badge">XR Hands 1.5.0</span>
+            <span class="stack-badge">AR Foundation 6.0.6</span>
+            <span class="stack-badge">Ready Player Me</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-XR — Voice Pipeline (STT → LLM → TTS)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#08080e;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+
+.mr-scene{perspective:1100px;perspective-origin:50% 42%;width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative}
+.mr-scene::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 55%,#141428 0%,#08080e 70%);z-index:0}
+.mr-scene::after{content:'';position:fixed;bottom:0;left:-50%;width:200%;height:55%;background:repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(80,100,255,0.03) 79px,rgba(80,100,255,0.03) 80px),repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(80,100,255,0.03) 79px,rgba(80,100,255,0.03) 80px);transform:perspective(600px) rotateX(62deg);transform-origin:top center;z-index:0}
+
+.scene-wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:50px;padding:30px 20px;transform:rotateX(1.5deg)}
+
+/* === PANELS === */
+.panel{background:rgba(12,12,28,0.88);border:1px solid rgba(90,110,255,0.18);border-radius:16px;backdrop-filter:blur(20px);box-shadow:0 0 50px rgba(70,90,255,0.06),0 24px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.04);position:relative;transform-style:preserve-3d}
+.panel::before{content:'';position:absolute;top:-1px;left:15%;right:15%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,140,255,0.4),transparent)}
+.panel-header{padding:16px 22px 12px;border-bottom:1px solid rgba(90,110,255,0.08);display:flex;align-items:center;gap:12px}
+.panel-header .icon{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 4px 12px rgba(0,0,0,0.3)}
+.panel-header h2{font-size:14px;font-weight:600;letter-spacing:0.3px}
+.panel-header .sub{font-size:10px;color:#777;margin-top:2px}
+
+/* === TOP ROW: Pipeline + Context === */
+.top-row{display:flex;gap:40px;align-items:flex-start;transform-style:preserve-3d}
+
+/* Pipeline Flow */
+.pipeline-panel{width:620px;transform:translateZ(30px) rotateY(-2deg)}
+.pipeline-flow{padding:24px 20px;display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap}
+.pipe-stage{text-align:center;padding:14px 10px;border-radius:12px;min-width:90px;position:relative;transition:all 0.3s}
+.pipe-stage .p-icon{font-size:22px;margin-bottom:6px}
+.pipe-stage .p-label{font-size:11px;font-weight:600;letter-spacing:0.5px}
+.pipe-stage .p-detail{font-size:9px;color:#888;margin-top:3px}
+
+.pipe-stage.idle{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06)}
+.pipe-stage.active{background:rgba(74,108,247,0.1);border:1px solid rgba(74,108,247,0.3);box-shadow:0 0 20px rgba(74,108,247,0.1)}
+.pipe-stage.active .p-label{color:#8ba4ff}
+.pipe-stage.done{background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15)}
+.pipe-stage.done .p-label{color:#4ade80}
+
+.pipe-arrow{color:#333;font-size:18px;margin:0 2px;flex-shrink:0}
+.pipe-arrow.lit{color:#4a6cf7}
+.pipe-arrow.done-arrow{color:#4ade80}
+
+/* Context Window Panel */
+.context-panel{width:280px;transform:translateZ(50px) rotateY(4deg)}
+.context-content{padding:16px 18px}
+.ctx-info{font-size:10px;color:#999;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.ctx-info .ctx-icon{color:#6b7aff}
+.msg-bubble{padding:8px 12px;border-radius:10px;margin-bottom:6px;font-size:11px;line-height:1.4;max-width:92%}
+.msg-user{background:rgba(74,108,247,0.1);border:1px solid rgba(74,108,247,0.15);margin-left:auto;border-bottom-right-radius:3px}
+.msg-ai{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);border-bottom-left-radius:3px}
+.msg-label{font-size:9px;font-weight:600;margin-bottom:3px;letter-spacing:0.5px}
+.msg-user .msg-label{color:#8ba4ff}
+.msg-ai .msg-label{color:#a78bfa}
+.msg-faded{opacity:0.35}
+.ctx-window-label{text-align:center;font-size:9px;color:#555;margin:10px 0 4px;letter-spacing:1px;text-transform:uppercase}
+.ctx-bracket{border-left:2px solid rgba(74,108,247,0.2);border-right:2px solid rgba(74,108,247,0.2);border-bottom:2px solid rgba(74,108,247,0.2);border-radius:0 0 8px 8px;padding:4px 0;margin:0 10px}
+.ctx-bracket-label{text-align:center;font-size:8px;color:#4a6cf7;letter-spacing:1px;padding-top:2px}
+
+/* === BOTTOM: State Cards === */
+.states-panel{width:700px;transform:translateZ(20px) rotateY(0deg)}
+.states-row{display:flex;gap:8px;padding:18px 16px;overflow-x:auto}
+.state-card{flex:1;min-width:105px;padding:14px 10px;border-radius:12px;text-align:center;position:relative}
+.state-card .s-num{position:absolute;top:6px;left:10px;font-size:8px;color:#555;font-weight:700}
+.state-card .s-icon{font-size:24px;margin-bottom:6px}
+.state-card .s-label{font-size:11px;font-weight:600;margin-bottom:4px}
+.state-card .s-desc{font-size:9px;color:#888;line-height:1.3}
+
+.state-card.st-ready{background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.12)}
+.state-card.st-ready .s-label{color:#4ade80}
+.state-card.st-recording{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2)}
+.state-card.st-recording .s-label{color:#f87171}
+.state-card.st-transcribing{background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.15)}
+.state-card.st-transcribing .s-label{color:#fbbf24}
+.state-card.st-thinking{background:rgba(107,76,247,0.08);border:1px solid rgba(107,76,247,0.18)}
+.state-card.st-thinking .s-label{color:#a78bfa}
+.state-card.st-talking{background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.18)}
+.state-card.st-talking .s-label{color:#8ba4ff}
+
+.state-arrow{color:#333;font-size:14px;display:flex;align-items:center;flex-shrink:0}
+
+/* Recording ring animation */
+.rec-ring{width:36px;height:36px;border-radius:50%;border:3px solid #f87171;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;animation:pulse-ring 1.5s infinite;position:relative}
+.rec-ring::after{content:'';width:12px;height:12px;border-radius:50%;background:#f87171;animation:pulse-dot 1.5s infinite}
+@keyframes pulse-ring{0%,100%{box-shadow:0 0 0 0 rgba(248,113,113,0.3)}50%{box-shadow:0 0 0 8px rgba(248,113,113,0)}}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* Thinking dots animation */
+.think-dots{display:flex;gap:4px;justify-content:center;margin:0 auto 6px}
+.think-dots span{width:8px;height:8px;border-radius:50%;background:#a78bfa;animation:bounce 1.2s infinite}
+.think-dots span:nth-child(2){animation-delay:0.15s}
+.think-dots span:nth-child(3){animation-delay:0.3s}
+@keyframes bounce{0%,100%{transform:translateY(0);opacity:0.4}50%{transform:translateY(-6px);opacity:1}}
+
+/* Sound wave animation */
+.sound-wave{display:flex;gap:3px;justify-content:center;align-items:end;height:28px;margin:0 auto 6px}
+.sound-wave span{width:3px;background:#8ba4ff;border-radius:2px;animation:wave 0.8s infinite ease-in-out}
+.sound-wave span:nth-child(1){animation-delay:0s;height:10px}
+.sound-wave span:nth-child(2){animation-delay:0.1s;height:18px}
+.sound-wave span:nth-child(3){animation-delay:0.2s;height:24px}
+.sound-wave span:nth-child(4){animation-delay:0.3s;height:14px}
+.sound-wave span:nth-child(5){animation-delay:0.15s;height:20px}
+@keyframes wave{0%,100%{transform:scaleY(0.4)}50%{transform:scaleY(1)}}
+
+/* PTT Button */
+.ptt-section{padding:0 20px 18px;display:flex;align-items:center;gap:16px;justify-content:center}
+.ptt-btn{width:56px;height:56px;border-radius:50%;border:3px solid rgba(74,108,247,0.4);background:radial-gradient(circle at 40% 35%,rgba(74,108,247,0.2),rgba(20,20,40,0.9));display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 0 25px rgba(74,108,247,0.15),0 8px 20px rgba(0,0,0,0.4);position:relative;cursor:pointer}
+.ptt-btn::after{content:'';position:absolute;inset:-6px;border-radius:50%;border:1px solid rgba(74,108,247,0.1)}
+.ptt-label{font-size:11px;color:#999}
+.ptt-label b{color:#8ba4ff;font-weight:600}
+.ptt-disabled{opacity:0.3;pointer-events:none}
+.ptt-disabled .ptt-btn{border-color:rgba(100,100,100,0.3);box-shadow:none}
+
+/* Particles */
+.particle{position:fixed;width:2px;height:2px;background:rgba(90,120,255,0.25);border-radius:50%;z-index:0;animation:float 9s infinite ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0);opacity:0.2}50%{transform:translateY(-35px);opacity:0.5}}
+
+@media(max-width:800px){
+.top-row{flex-direction:column;align-items:center;gap:24px}
+.pipeline-panel,.context-panel,.states-panel{transform:none;width:min(95vw,620px)}
+.states-row{flex-wrap:wrap}
+}
+</style>
+</head>
+<body>
+
+<div class="mr-scene">
+  <div class="particle" style="top:15%;left:20%;animation-delay:0s"></div>
+  <div class="particle" style="top:50%;left:75%;animation-delay:2.5s"></div>
+  <div class="particle" style="top:70%;left:35%;animation-delay:4s"></div>
+  <div class="particle" style="top:25%;left:60%;animation-delay:1.5s"></div>
+
+  <div class="scene-wrap">
+
+    <!-- TOP ROW -->
+    <div class="top-row">
+
+      <!-- Pipeline Flow -->
+      <div class="panel pipeline-panel">
+        <div class="panel-header">
+          <div class="icon" style="background:linear-gradient(135deg,#4a6cf7,#a78bfa)">🎙️</div>
+          <div><h2>Voice Pipeline</h2><div class="sub">Push-to-Talk → STT → LLM → TTS → Audio</div></div>
+        </div>
+        <div class="pipeline-flow">
+          <div class="pipe-stage done">
+            <div class="p-icon">🎤</div>
+            <div class="p-label">Record</div>
+            <div class="p-detail">Push-to-Talk</div>
+          </div>
+          <span class="pipe-arrow done-arrow">→</span>
+          <div class="pipe-stage done">
+            <div class="p-icon">📝</div>
+            <div class="p-label">STT</div>
+            <div class="p-detail">Transcribe</div>
+          </div>
+          <span class="pipe-arrow done-arrow">→</span>
+          <div class="pipe-stage active">
+            <div class="p-icon">🧠</div>
+            <div class="p-label">LLM</div>
+            <div class="p-detail">Thinking…</div>
+          </div>
+          <span class="pipe-arrow">→</span>
+          <div class="pipe-stage idle">
+            <div class="p-icon">🔊</div>
+            <div class="p-label">TTS</div>
+            <div class="p-detail">Synthesize</div>
+          </div>
+          <span class="pipe-arrow">→</span>
+          <div class="pipe-stage idle">
+            <div class="p-icon">🔈</div>
+            <div class="p-label">Play</div>
+            <div class="p-detail">Audio out</div>
+          </div>
+        </div>
+        <div class="ptt-section">
+          <div class="ptt-disabled">
+            <div class="ptt-btn">🎙️</div>
+          </div>
+          <div class="ptt-label"><b>Push-to-Talk</b> — disabled while processing</div>
+        </div>
+      </div>
+
+      <!-- Context Window -->
+      <div class="panel context-panel">
+        <div class="panel-header">
+          <div class="icon" style="background:linear-gradient(135deg,#6b4cf7,#4a6cf7)">💬</div>
+          <div><h2>Context Window</h2><div class="sub">Sliding window · N derniers messages</div></div>
+        </div>
+        <div class="context-content">
+          <div class="ctx-info"><span class="ctx-icon">📏</span> Window size: 6 messages</div>
+
+          <div class="msg-bubble msg-user msg-faded">
+            <div class="msg-label">USER</div>
+            Qu'est-ce que tu vois ?
+          </div>
+          <div class="msg-bubble msg-ai msg-faded">
+            <div class="msg-label">ASSISTANT</div>
+            Je vois une table avec un laptop…
+          </div>
+
+          <div class="ctx-bracket">
+            <div class="msg-bubble msg-user">
+              <div class="msg-label">USER</div>
+              Décris la pièce autour
+            </div>
+            <div class="msg-bubble msg-ai">
+              <div class="msg-label">ASSISTANT</div>
+              C'est un bureau avec des étagères…
+            </div>
+            <div class="msg-bubble msg-user">
+              <div class="msg-label">USER</div>
+              Et la lumière, elle vient d'où ?
+            </div>
+            <div class="msg-bubble msg-ai">
+              <div class="msg-label">ASSISTANT</div>
+              La lumière naturelle entre par la fenêtre à gauche…
+            </div>
+            <div class="ctx-bracket-label">▲ ACTIVE CONTEXT WINDOW ▲</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM: Feedback States -->
+    <div class="panel states-panel">
+      <div class="panel-header">
+        <div class="icon" style="background:linear-gradient(135deg,#4ade80,#4a6cf7)">📡</div>
+        <div><h2>Feedback States</h2><div class="sub">Visual feedback for each pipeline stage (PodGab pattern)</div></div>
+      </div>
+      <div class="states-row">
+        <div class="state-card st-ready">
+          <div class="s-num">1</div>
+          <div class="s-icon">✅</div>
+          <div class="s-label">Ready</div>
+          <div class="s-desc">PTT button enabled, awaiting input</div>
+        </div>
+        <div class="state-arrow">→</div>
+        <div class="state-card st-recording">
+          <div class="s-num">2</div>
+          <div class="rec-ring"></div>
+          <div class="s-label">Recording</div>
+          <div class="s-desc">Red outline pulse, timer visible</div>
+        </div>
+        <div class="state-arrow">→</div>
+        <div class="state-card st-transcribing">
+          <div class="s-num">3</div>
+          <div class="s-icon">📝</div>
+          <div class="s-label">Transcribing</div>
+          <div class="s-desc">STT processing, spinner feedback</div>
+        </div>
+        <div class="state-arrow">→</div>
+        <div class="state-card st-thinking">
+          <div class="s-num">4</div>
+          <div class="think-dots"><span></span><span></span><span></span></div>
+          <div class="s-label">Thinking</div>
+          <div class="s-desc">LLM bubbles, timer, service name</div>
+        </div>
+        <div class="state-arrow">→</div>
+        <div class="state-card st-talking">
+          <div class="s-num">5</div>
+          <div class="sound-wave"><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="s-label">Talking</div>
+          <div class="s-desc">Audio playback, avatar animation</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

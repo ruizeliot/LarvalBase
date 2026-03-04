@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-XR — Core Architecture & Provider System</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0f;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;overflow-x:hidden;min-height:100vh}
+
+/* === MR ENVIRONMENT === */
+.mr-scene{perspective:1200px;perspective-origin:50% 40%;width:100%;min-height:100vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.mr-scene::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 50% 60%,#1a1a2e 0%,#0a0a0f 70%);z-index:0}
+/* Subtle grid floor */
+.mr-scene::after{content:'';position:fixed;bottom:0;left:-50%;width:200%;height:60%;background:repeating-linear-gradient(90deg,transparent,transparent 79px,rgba(100,100,255,0.04) 79px,rgba(100,100,255,0.04) 80px),repeating-linear-gradient(0deg,transparent,transparent 79px,rgba(100,100,255,0.04) 79px,rgba(100,100,255,0.04) 80px);transform:perspective(600px) rotateX(60deg);transform-origin:top center;z-index:0}
+
+.scene-container{position:relative;z-index:1;display:flex;gap:60px;align-items:flex-start;padding:40px;transform:rotateX(2deg) rotateY(-3deg);transform-style:preserve-3d}
+
+/* === FLOATING PANEL BASE === */
+.panel{background:rgba(15,15,30,0.85);border:1px solid rgba(100,120,255,0.2);border-radius:16px;backdrop-filter:blur(20px);box-shadow:0 0 40px rgba(80,100,255,0.08),0 20px 60px rgba(0,0,0,0.5),inset 0 1px 0 rgba(255,255,255,0.05);transform-style:preserve-3d;position:relative}
+.panel::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,150,255,0.5),transparent)}
+
+/* === MAIN SETTINGS PANEL === */
+.main-panel{width:420px;padding:0;transform:translateZ(40px) rotateY(2deg)}
+.panel-header{padding:18px 24px 14px;border-bottom:1px solid rgba(100,120,255,0.1);display:flex;align-items:center;gap:12px}
+.panel-header .icon{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#4a6cf7,#6b4cf7);display:flex;align-items:center;justify-content:center;font-size:16px;box-shadow:0 4px 15px rgba(74,108,247,0.3)}
+.panel-header h2{font-size:15px;font-weight:600;letter-spacing:0.3px}
+.panel-header .subtitle{font-size:11px;color:#888;margin-top:2px}
+
+/* Provider Section */
+.provider-section{padding:16px 24px}
+.provider-section+.provider-section{border-top:1px solid rgba(100,120,255,0.06)}
+.section-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:#6b7aff;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.section-label .dot{width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 8px rgba(74,222,128,0.4)}
+.section-label .dot.warn{background:#fbbf24;box-shadow:0 0 8px rgba(251,191,36,0.4)}
+.section-label .dot.err{background:#f87171;box-shadow:0 0 8px rgba(248,113,113,0.4)}
+
+.slot-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);transition:all 0.2s}
+.slot-row.active{background:rgba(74,108,247,0.08);border-color:rgba(74,108,247,0.2)}
+.slot-radio{width:16px;height:16px;border-radius:50%;border:2px solid #444;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.slot-radio.selected{border-color:#4a6cf7}
+.slot-radio.selected::after{content:'';width:8px;height:8px;border-radius:50%;background:#4a6cf7;box-shadow:0 0 6px rgba(74,108,247,0.5)}
+.slot-info{flex:1;min-width:0}
+.slot-name{font-size:13px;font-weight:500}
+.slot-detail{font-size:10px;color:#777;margin-top:1px}
+.slot-badge{font-size:9px;padding:2px 8px;border-radius:6px;font-weight:600;letter-spacing:0.5px}
+.badge-cloud{background:rgba(74,108,247,0.15);color:#8b9cff}
+.badge-local{background:rgba(74,222,128,0.12);color:#4ade80}
+
+/* Retry toggle */
+.retry-row{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-top:4px;border-radius:8px;background:rgba(255,255,255,0.015)}
+.retry-label{font-size:11px;color:#999}
+.toggle{width:36px;height:20px;border-radius:10px;background:#333;position:relative;cursor:pointer;transition:background 0.2s}
+.toggle.on{background:#4a6cf7}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.3)}
+.toggle.on::after{transform:translateX(16px)}
+
+/* === ERROR NOTIFICATION PANEL === */
+.error-panel{width:340px;transform:translateZ(20px) rotateY(-4deg) translateY(30px)}
+.error-notif{margin:16px;padding:14px 16px;border-radius:12px;background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.2)}
+.error-notif .err-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.error-notif .err-icon{font-size:16px}
+.error-notif .err-title{font-size:13px;font-weight:600;color:#f87171}
+.error-notif .err-msg{font-size:11px;color:#ccc;line-height:1.5;margin-bottom:12px}
+.error-notif .err-actions{display:flex;gap:8px}
+.btn{padding:7px 16px;border-radius:8px;font-size:11px;font-weight:600;border:none;cursor:pointer;letter-spacing:0.3px}
+.btn-retry{background:rgba(248,113,113,0.15);color:#f87171;border:1px solid rgba(248,113,113,0.25)}
+.btn-dismiss{background:rgba(255,255,255,0.05);color:#999;border:1px solid rgba(255,255,255,0.08)}
+
+/* Degradation states */
+.degrade-section{padding:16px 20px}
+.degrade-title{font-size:11px;font-weight:600;color:#fbbf24;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.degrade-item{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:6px;border-radius:10px;background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.1)}
+.degrade-icon{font-size:18px;flex-shrink:0}
+.degrade-info .d-label{font-size:12px;font-weight:500}
+.degrade-info .d-fallback{font-size:10px;color:#999;margin-top:2px}
+.degrade-arrow{color:#fbbf24;font-size:12px;margin:0 4px}
+
+/* === ARCHITECTURE DIAGRAM PANEL === */
+.arch-panel{width:280px;transform:translateZ(60px) rotateY(5deg) translateY(-20px)}
+.arch-content{padding:20px}
+.arch-block{text-align:center;padding:12px;border-radius:10px;margin-bottom:8px;font-size:12px;font-weight:600;position:relative}
+.arch-block.iface{background:rgba(107,76,247,0.1);border:1px solid rgba(107,76,247,0.25);color:#b4a0ff}
+.arch-block.provider{background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.15);color:#8b9cff;font-size:11px}
+.arch-connector{text-align:center;color:#444;font-size:18px;line-height:1;margin:4px 0}
+.arch-row{display:flex;gap:6px;margin-bottom:8px}
+.arch-row .arch-block{flex:1;font-size:10px;padding:8px 4px}
+.arch-label{font-size:9px;color:#666;text-align:center;margin:8px 0 4px;text-transform:uppercase;letter-spacing:1px}
+
+/* === AMBIENT PARTICLES === */
+.particle{position:fixed;width:2px;height:2px;background:rgba(100,130,255,0.3);border-radius:50%;z-index:0;animation:float 8s infinite ease-in-out}
+@keyframes float{0%,100%{transform:translateY(0) scale(1);opacity:0.3}50%{transform:translateY(-40px) scale(1.5);opacity:0.6}}
+
+/* === RESPONSIVE === */
+@media(max-width:900px){
+.scene-container{flex-direction:column;align-items:center;gap:30px;transform:none}
+.main-panel,.error-panel,.arch-panel{transform:none;width:min(95vw,420px)}
+}
+
+/* Glow ring behind main panel */
+.glow-ring{position:absolute;width:500px;height:500px;border-radius:50%;background:radial-gradient(circle,rgba(74,108,247,0.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%) translateZ(-60px);z-index:-1;pointer-events:none}
+</style>
+</head>
+<body>
+
+<div class="mr-scene">
+  <!-- Ambient particles -->
+  <div class="particle" style="top:20%;left:15%;animation-delay:0s"></div>
+  <div class="particle" style="top:60%;left:80%;animation-delay:2s"></div>
+  <div class="particle" style="top:35%;left:55%;animation-delay:4s"></div>
+  <div class="particle" style="top:75%;left:30%;animation-delay:1s"></div>
+  <div class="particle" style="top:10%;left:70%;animation-delay:3s"></div>
+
+  <div class="scene-container">
+
+    <!-- LEFT: Architecture Overview -->
+    <div class="panel arch-panel">
+      <div class="panel-header">
+        <div class="icon">🧩</div>
+        <div><h2>Architecture</h2><div class="subtitle">Provider Abstraction</div></div>
+      </div>
+      <div class="arch-content">
+        <div class="arch-block iface">AIManager</div>
+        <div class="arch-connector">↓</div>
+        <div class="arch-label">Interfaces</div>
+        <div class="arch-row">
+          <div class="arch-block iface" style="font-size:9px">ISTT</div>
+          <div class="arch-block iface" style="font-size:9px">ILLM</div>
+          <div class="arch-block iface" style="font-size:9px">ITTS</div>
+          <div class="arch-block iface" style="font-size:9px">IVision</div>
+        </div>
+        <div class="arch-connector">↓</div>
+        <div class="arch-label">Implementations</div>
+        <div class="arch-row">
+          <div class="arch-block provider">Cloud 1</div>
+          <div class="arch-block provider">Cloud 2</div>
+          <div class="arch-block provider">Local</div>
+        </div>
+        <div class="arch-connector">↓</div>
+        <div class="arch-block" style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);color:#4ade80;font-size:11px">Settings UI → Manual Selection</div>
+      </div>
+      <div class="glow-ring"></div>
+    </div>
+
+    <!-- CENTER: Main Settings Panel -->
+    <div class="panel main-panel">
+      <div class="panel-header">
+        <div class="icon">⚙️</div>
+        <div><h2>Provider Settings</h2><div class="subtitle">Configure each AI pipeline brique</div></div>
+      </div>
+
+      <!-- STT Section -->
+      <div class="provider-section">
+        <div class="section-label"><span class="dot"></span>STT — Speech-to-Text</div>
+        <div class="slot-row active">
+          <div class="slot-radio selected"></div>
+          <div class="slot-info"><div class="slot-name">Whisper API</div><div class="slot-detail">OpenAI · ~200ms latency</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 1</span>
+        </div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">Deepgram Nova-2</div><div class="slot-detail">Deepgram · ~150ms latency</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 2</span>
+        </div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">Whisper.cpp</div><div class="slot-detail">On-device · ~800ms latency</div></div>
+          <span class="slot-badge badge-local">LOCAL</span>
+        </div>
+        <div class="retry-row">
+          <span class="retry-label">Auto-retry on failure</span>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+
+      <!-- LLM Section -->
+      <div class="provider-section">
+        <div class="section-label"><span class="dot"></span>LLM — Language Model</div>
+        <div class="slot-row active">
+          <div class="slot-radio selected"></div>
+          <div class="slot-info"><div class="slot-name">GPT-4o</div><div class="slot-detail">OpenAI · multimodal</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 1</span>
+        </div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">Claude 3.5 Sonnet</div><div class="slot-detail">Anthropic</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 2</span>
+        </div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">Llama 3 8B</div><div class="slot-detail">Ollama · quantized</div></div>
+          <span class="slot-badge badge-local">LOCAL</span>
+        </div>
+        <div class="retry-row">
+          <span class="retry-label">Auto-retry on failure</span>
+          <div class="toggle"></div>
+        </div>
+      </div>
+
+      <!-- TTS Section -->
+      <div class="provider-section">
+        <div class="section-label"><span class="dot warn"></span>TTS — Text-to-Speech</div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">ElevenLabs</div><div class="slot-detail">ElevenLabs · natural voice</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 1</span>
+        </div>
+        <div class="slot-row active">
+          <div class="slot-radio selected"></div>
+          <div class="slot-info"><div class="slot-name">Azure TTS</div><div class="slot-detail">Microsoft · low latency</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 2</span>
+        </div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">Piper TTS</div><div class="slot-detail">Local · offline capable</div></div>
+          <span class="slot-badge badge-local">LOCAL</span>
+        </div>
+        <div class="retry-row">
+          <span class="retry-label">Auto-retry on failure</span>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+
+      <!-- Vision Section -->
+      <div class="provider-section">
+        <div class="section-label"><span class="dot"></span>Vision — VLM</div>
+        <div class="slot-row active">
+          <div class="slot-radio selected"></div>
+          <div class="slot-info"><div class="slot-name">GPT-4o Vision</div><div class="slot-detail">OpenAI · screenshot analysis</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 1</span>
+        </div>
+        <div class="slot-row">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">Claude 3.5 Vision</div><div class="slot-detail">Anthropic</div></div>
+          <span class="slot-badge badge-cloud">CLOUD 2</span>
+        </div>
+        <div class="slot-row" style="opacity:0.4">
+          <div class="slot-radio"></div>
+          <div class="slot-info"><div class="slot-name">—</div><div class="slot-detail">No local VLM configured</div></div>
+          <span class="slot-badge badge-local">LOCAL</span>
+        </div>
+        <div class="retry-row">
+          <span class="retry-label">Auto-retry on failure</span>
+          <div class="toggle on"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Error & Degradation Panel -->
+    <div class="panel error-panel">
+      <div class="panel-header">
+        <div class="icon" style="background:linear-gradient(135deg,#f87171,#fbbf24)">⚠️</div>
+        <div><h2>Error & Degradation</h2><div class="subtitle">Graceful per-brique fallback</div></div>
+      </div>
+
+      <!-- Error notification example -->
+      <div class="error-notif">
+        <div class="err-header">
+          <span class="err-icon">🔴</span>
+          <span class="err-title">STT Provider Error</span>
+        </div>
+        <div class="err-msg">Whisper API — Connection timeout after 3 attempts. Switch provider or use virtual keyboard.</div>
+        <div class="err-actions">
+          <button class="btn btn-retry">↻ Retry</button>
+          <button class="btn btn-dismiss">Dismiss</button>
+        </div>
+      </div>
+
+      <!-- Degradation modes -->
+      <div class="degrade-section">
+        <div class="degrade-title">⚡ Degradation Modes</div>
+
+        <div class="degrade-item">
+          <div class="degrade-icon">🎙️</div>
+          <div class="degrade-info">
+            <div class="d-label">STT down <span class="degrade-arrow">→</span> Virtual Keyboard</div>
+            <div class="d-fallback">Text input via Quest virtual keyboard</div>
+          </div>
+        </div>
+
+        <div class="degrade-item">
+          <div class="degrade-icon">🧠</div>
+          <div class="degrade-info">
+            <div class="d-label">LLM down <span class="degrade-arrow">→</span> Pre-recorded Msg</div>
+            <div class="d-fallback">"Service temporarily unavailable"</div>
+          </div>
+        </div>
+
+        <div class="degrade-item">
+          <div class="degrade-icon">🔊</div>
+          <div class="degrade-info">
+            <div class="d-label">TTS down <span class="degrade-arrow">→</span> HUD Text</div>
+            <div class="d-fallback">Response displayed as floating text overlay</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

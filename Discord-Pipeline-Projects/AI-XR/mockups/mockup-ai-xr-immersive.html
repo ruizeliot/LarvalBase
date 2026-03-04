@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-XR — Immersive Mockup (14 Sections)</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050509;color:#e0e0e0;font-family:'Segoe UI',system-ui,sans-serif;line-height:1.4}
+::selection{background:rgba(74,108,247,0.3)}
+
+/* NAV */
+.nav{position:sticky;top:0;z-index:100;background:rgba(6,6,12,0.96);backdrop-filter:blur(14px);border-bottom:1px solid rgba(80,100,255,0.1);padding:8px 12px;display:flex;flex-wrap:wrap;gap:4px;justify-content:center}
+.nav a{font-size:8px;padding:4px 8px;border-radius:5px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:#999;text-decoration:none;transition:all 0.15s;white-space:nowrap;letter-spacing:0.3px}
+.nav a:hover{background:rgba(74,108,247,0.1);border-color:rgba(74,108,247,0.2);color:#8ba4ff}
+.nav a.xr{border-color:rgba(74,222,128,0.15);color:#3dbe70}
+.nav a.xr:hover{background:rgba(74,222,128,0.08);color:#4ade80}
+.nav a.ec{border-color:rgba(251,191,36,0.15);color:#c9a227}
+.nav a.ec:hover{background:rgba(251,191,36,0.08);color:#fbbf24}
+.nav-t{width:100%;text-align:center;font-size:10px;font-weight:700;letter-spacing:2px;color:#6b7aff;margin-bottom:4px;text-transform:uppercase}
+
+/* SECTION */
+.sec{max-width:900px;margin:0 auto;padding:30px 16px 10px;scroll-margin-top:50px}
+.sh{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid rgba(80,100,255,0.08)}
+.sh .st{font-size:9px;padding:3px 8px;border-radius:5px;font-weight:700;letter-spacing:0.5px;flex-shrink:0}
+.t-us{background:rgba(74,108,247,0.1);border:1px solid rgba(74,108,247,0.2);color:#8ba4ff}
+.t-xr{background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);color:#4ade80}
+.t-ec{background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.15);color:#fbbf24}
+.sh h2{font-size:14px;font-weight:600}
+.sh .se{font-size:9px;color:#666;margin-top:2px}
+
+/* FLAT PANEL */
+.p{background:rgba(11,11,26,0.9);border:1px solid rgba(85,105,255,0.14);border-radius:14px;backdrop-filter:blur(16px);box-shadow:0 0 40px rgba(60,80,255,0.04),0 20px 50px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.03);position:relative;overflow:hidden}
+.p::before{content:'';position:absolute;top:-1px;left:18%;right:18%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,140,255,0.25),transparent);z-index:1}
+.ph{padding:14px 18px 10px;border-bottom:1px solid rgba(85,105,255,0.06);display:flex;align-items:center;gap:10px}
+.ph .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 3px 10px rgba(0,0,0,0.25);flex-shrink:0}
+.ph h3{font-size:12px;font-weight:600}
+.ph .su{font-size:9px;color:#666;margin-top:1px}
+.row{display:flex;gap:14px}.row>.p{flex:1;min-width:0}
+
+/* ============================================
+   3D IMMERSIVE HEADSET VIEW
+   ============================================ */
+.headset{width:100%;border-radius:16px;overflow:hidden;position:relative;background:#000;box-shadow:0 0 80px rgba(0,0,0,0.8),0 0 30px rgba(60,80,255,0.04)}
+/* Headset lens vignette */
+.headset::after{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,0.6) 80%,rgba(0,0,0,0.9) 100%);pointer-events:none;z-index:10}
+/* Headset badge */
+.hset-badge{position:absolute;top:12px;right:14px;z-index:15;font-size:7px;padding:3px 10px;border-radius:5px;background:rgba(0,0,0,0.5);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);letter-spacing:0.5px;backdrop-filter:blur(4px)}
+
+/* 3D MR Room base */
+.mr-room{width:100%;height:480px;position:relative;perspective:900px;perspective-origin:50% 52%;overflow:hidden}
+/* Passthrough room background */
+.room-bg{position:absolute;inset:0;background:linear-gradient(180deg,#1a1a2e 0%,#18162a 25%,#1a1828 50%,#1e1a20 75%,#1c1816 100%)}
+/* Floor with perspective grid */
+.floor-grid{position:absolute;bottom:0;left:-30%;width:160%;height:52%;background:repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(100,120,200,0.04) 59px,rgba(100,120,200,0.04) 60px),repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(100,120,200,0.04) 59px,rgba(100,120,200,0.04) 60px);transform:perspective(400px) rotateX(68deg);transform-origin:top center}
+/* Real floor overlay */
+.floor{position:absolute;bottom:0;left:0;right:0;height:48%;background:linear-gradient(180deg,rgba(60,50,40,0.15),rgba(45,38,30,0.35))}
+/* Walls */
+.wall{position:absolute;top:0;left:0;right:0;height:55%;background:linear-gradient(180deg,rgba(35,32,48,0.5),rgba(42,38,50,0.3))}
+/* Furniture */
+.f-table{position:absolute;bottom:28%;left:20%;width:46%;height:9%;background:linear-gradient(180deg,#3d352a,#2e2720);border-radius:3px 3px 0 0;box-shadow:0 6px 25px rgba(0,0,0,0.35)}
+.f-tleg1{position:absolute;bottom:12%;left:24%;width:2.2%;height:16%;background:#28201a}
+.f-tleg2{position:absolute;bottom:12%;left:60%;width:2.2%;height:16%;background:#28201a}
+.f-couch{position:absolute;bottom:20%;right:6%;width:20%;height:18%;background:linear-gradient(180deg,#2a2a3e,#222236);border-radius:6px 6px 2px 2px;border:1px solid rgba(80,80,120,0.06)}
+.f-couch-b{position:absolute;bottom:37%;right:6%;width:20%;height:5%;background:#26263a;border-radius:4px 4px 0 0}
+.f-window{position:absolute;top:8%;left:5%;width:13%;height:30%;background:linear-gradient(180deg,#2a3c5c,#1e2e48);border:2px solid rgba(100,140,210,0.12);border-radius:3px}
+.f-wglow{position:absolute;top:4%;left:3%;width:18%;height:36%;background:radial-gradient(ellipse,rgba(110,160,230,0.06),transparent 60%);pointer-events:none}
+.f-shelf{position:absolute;top:14%;right:22%;width:10%;height:2%;background:#2e2822;box-shadow:0 2px 8px rgba(0,0,0,0.2)}
+.f-book1{position:absolute;top:8%;right:24%;width:1.8%;height:6%;background:#3a2840;border-radius:1px}
+.f-book2{position:absolute;top:9%;right:27%;width:1.5%;height:5%;background:#283838;border-radius:1px}
+.f-plant{position:absolute;bottom:36%;left:24%;width:10px;height:16px;background:linear-gradient(180deg,#1e4a1e,#143814);border-radius:50% 50% 0 0}
+.f-lamp{position:absolute;bottom:36%;right:10%;width:4px;height:28px;background:linear-gradient(180deg,#fbbf24,#44403c);border-radius:2px}
+.f-lamp-g{position:absolute;bottom:calc(36% + 24px);right:8.8%;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,rgba(251,191,36,0.12),transparent 70%)}
+
+/* ===== 3D AVATAR ===== */
+.avatar-3d{position:absolute;text-align:center;transform-style:preserve-3d;z-index:5}
+/* Full body avatar */
+.av-full{width:80px;margin:0 auto;position:relative}
+.av-head-3d{width:48px;height:48px;border-radius:50%;background:radial-gradient(circle at 40% 35%,#7080d0,#4a5aaf 50%,#3040880);margin:0 auto;box-shadow:0 0 30px rgba(90,106,191,0.5),0 0 60px rgba(90,106,191,0.2),0 -4px 20px rgba(130,150,255,0.15);position:relative;z-index:2}
+/* Eyes */
+.av-eye{position:absolute;width:5px;height:6px;border-radius:50%;background:rgba(200,220,255,0.7);top:40%;box-shadow:0 0 6px rgba(200,220,255,0.5)}
+.av-eye.l{left:32%}.av-eye.r{right:32%}
+/* Body */
+.av-torso{width:52px;height:55px;background:linear-gradient(180deg,#4858a8,#3848908);border-radius:26px 26px 8px 8px;margin:-8px auto 0;position:relative;box-shadow:0 8px 30px rgba(60,72,144,0.3)}
+/* Arms */
+.av-arm{position:absolute;width:14px;height:40px;background:linear-gradient(180deg,#4858a8,#384890);border-radius:7px;top:8px}
+.av-arm.l{left:-10px;transform:rotate(8deg)}.av-arm.r{right:-10px;transform:rotate(-8deg)}
+/* Legs */
+.av-legs{display:flex;justify-content:center;gap:4px;margin-top:-4px}
+.av-leg{width:16px;height:35px;background:linear-gradient(180deg,#2a3468,#222850);border-radius:4px 4px 8px 8px}
+/* Shadow on surface */
+.av-shadow{width:70px;height:12px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,0.35),transparent 70%);margin:2px auto 0}
+/* Anchor glow */
+.anchor-glow{width:90px;height:16px;border-radius:50%;background:radial-gradient(ellipse,rgba(74,108,247,0.4),rgba(74,108,247,0.1) 50%,transparent 75%);margin:-4px auto 0;animation:ag 2.5s infinite ease-in-out}
+@keyframes ag{0%,100%{opacity:0.5;transform:scaleX(1)}50%{opacity:1;transform:scaleX(1.15)}}
+.anchor-tag{font-size:7px;color:rgba(74,108,247,0.6);letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+
+/* Lip sync bars on avatar */
+.av-lips-3d{display:flex;gap:2px;justify-content:center;position:absolute;bottom:34%;left:50%;transform:translateX(-50%);z-index:3}
+.av-lips-3d span{width:3px;background:rgba(180,200,255,0.7);border-radius:1.5px;animation:lip3d 0.5s infinite ease-in-out}
+.av-lips-3d span:nth-child(1){height:3px;animation-delay:0s}
+.av-lips-3d span:nth-child(2){height:6px;animation-delay:0.08s}
+.av-lips-3d span:nth-child(3){height:4px;animation-delay:0.16s}
+@keyframes lip3d{0%,100%{transform:scaleY(0.3)}50%{transform:scaleY(1)}}
+
+/* ===== 3D ORB ===== */
+.orb-3d{border-radius:50%;position:relative}
+.orb-3d::before{content:'';position:absolute;top:12%;left:22%;width:35%;height:25%;border-radius:50%;background:rgba(255,255,255,0.25);filter:blur(4px)}
+.orb-3d::after{content:'';position:absolute;inset:-15px;border-radius:50%;background:radial-gradient(circle,currentColor,transparent 70%);opacity:0.15;z-index:-1}
+.orb-thinking-3d{width:60px;height:60px;background:radial-gradient(circle at 38% 30%,#fef3c7,#f59e0b 40%,#b45309 80%,#78350f);box-shadow:0 0 40px rgba(245,158,11,0.4),0 0 80px rgba(245,158,11,0.15),0 0 120px rgba(245,158,11,0.05);color:rgba(245,158,11,1);animation:orb-float 3s infinite ease-in-out}
+.orb-listen{background:radial-gradient(circle at 38% 30%,#bfdbfe,#3b82f6 40%,#1e40af 80%,#1e3a5f);box-shadow:0 0 40px rgba(59,130,246,0.4),0 0 80px rgba(59,130,246,0.15);color:rgba(59,130,246,1)}
+.orb-talk{background:radial-gradient(circle at 38% 30%,#bbf7d0,#22c55e 40%,#15803d 80%,#14532d);box-shadow:0 0 40px rgba(34,197,94,0.4),0 0 80px rgba(34,197,94,0.15);color:rgba(34,197,94,1)}
+.orb-idle{background:radial-gradient(circle at 38% 30%,#666,#444 40%,#2a2a2a 80%,#1a1a1a);box-shadow:0 0 20px rgba(100,100,100,0.15);color:rgba(100,100,100,1)}
+@keyframes orb-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.orb-shadow{width:50px;height:10px;border-radius:50%;background:radial-gradient(ellipse,rgba(0,0,0,0.3),transparent 70%);margin:8px auto 0;animation:orb-sh 3s infinite ease-in-out}
+@keyframes orb-sh{0%,100%{transform:scaleX(1);opacity:0.6}50%{transform:scaleX(0.8);opacity:0.3}}
+
+/* ===== THINKING BUBBLES floating in 3D ===== */
+.think-bubble{position:absolute;border-radius:50%;background:rgba(167,139,250,0.2);border:1px solid rgba(167,139,250,0.3);backdrop-filter:blur(2px);animation:bubble-float 3s infinite ease-in-out}
+@keyframes bubble-float{0%,100%{transform:translateY(0) scale(1);opacity:0.6}50%{transform:translateY(-15px) scale(1.1);opacity:1}}
+.tb-1{width:12px;height:12px;animation-delay:0s}
+.tb-2{width:18px;height:18px;animation-delay:0.5s}
+.tb-3{width:10px;height:10px;animation-delay:1s}
+.tb-4{width:14px;height:14px;animation-delay:1.5s}
+.tb-5{width:8px;height:8px;animation-delay:0.8s}
+
+/* ===== FLOATING HUD PANELS in 3D ===== */
+.hud-float{position:absolute;background:rgba(8,8,20,0.75);border:1px solid rgba(90,110,255,0.15);border-radius:10px;backdrop-filter:blur(10px);padding:10px;box-shadow:0 0 30px rgba(0,0,0,0.4),0 0 15px rgba(70,90,255,0.04);z-index:6}
+.hud-float::before{content:'';position:absolute;top:-1px;left:20%;right:20%;height:1px;background:linear-gradient(90deg,transparent,rgba(100,140,255,0.2),transparent)}
+
+/* ===== 3D HAND ===== */
+.hand-3d{position:absolute;z-index:5}
+.h3-palm{width:30px;height:28px;border:2px solid rgba(74,222,128,0.5);border-radius:7px;background:rgba(74,222,128,0.04);position:relative;box-shadow:0 0 12px rgba(74,222,128,0.1)}
+.h3-f{position:absolute;width:5px;border:1.5px solid rgba(74,222,128,0.4);border-radius:3px;background:rgba(74,222,128,0.03)}
+.h3f1{height:14px;bottom:26px;left:2px;transform:rotate(-8deg)}
+.h3f2{height:18px;bottom:28px;left:8px}
+.h3f3{height:16px;bottom:27px;left:14px}
+.h3f4{height:12px;bottom:24px;left:20px;transform:rotate(5deg)}
+.h3-thumb{height:12px;width:5px;position:absolute;bottom:8px;left:-4px;transform:rotate(-35deg);border:1.5px solid rgba(74,222,128,0.4);border-radius:3px}
+/* Joint dots */
+.h3-joints span{position:absolute;width:4px;height:4px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.6)}
+.hj1{bottom:26px;left:5px}.hj2{bottom:28px;left:11px}.hj3{bottom:27px;left:17px}.hj4{bottom:24px;left:22px}.hj5{bottom:0;left:12px}
+.hj6{bottom:14px;left:5px}.hj7{bottom:16px;left:11px}.hj8{bottom:15px;left:17px}
+/* Ray */
+.h3-ray{position:absolute;height:1px;background:linear-gradient(90deg,rgba(74,222,128,0.5),rgba(74,222,128,0));transform-origin:left center;box-shadow:0 0 4px rgba(74,222,128,0.2)}
+
+/* Recording red glow */
+.rec-glow{position:absolute;border-radius:50%;background:radial-gradient(circle,rgba(248,113,113,0.15),transparent 70%);animation:rec-pulse 1.2s infinite}
+@keyframes rec-pulse{0%,100%{opacity:0.4;transform:scale(1)}50%{opacity:0.8;transform:scale(1.08)}}
+
+/* PTT floating button */
+.ptt-3d{position:absolute;z-index:8}
+.ptt-orb{width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative}
+.ptt-ready{background:radial-gradient(circle at 40% 35%,rgba(74,108,247,0.3),rgba(20,20,50,0.8));border:2px solid rgba(74,108,247,0.4);box-shadow:0 0 25px rgba(74,108,247,0.15),0 8px 25px rgba(0,0,0,0.4)}
+.ptt-recording{background:radial-gradient(circle at 40% 35%,rgba(248,113,113,0.4),rgba(50,15,15,0.8));border:2px solid rgba(248,113,113,0.5);box-shadow:0 0 35px rgba(248,113,113,0.25),0 8px 25px rgba(0,0,0,0.4);animation:ptt-rec 1s infinite}
+@keyframes ptt-rec{0%,100%{box-shadow:0 0 25px rgba(248,113,113,0.2)}50%{box-shadow:0 0 45px rgba(248,113,113,0.4)}}
+.ptt-disabled-3d{background:radial-gradient(circle at 40% 35%,rgba(100,100,100,0.15),rgba(20,20,20,0.8));border:2px solid rgba(100,100,100,0.2);box-shadow:0 4px 15px rgba(0,0,0,0.3);opacity:0.4}
+.ptt-label-3d{font-size:7px;text-align:center;margin-top:4px;letter-spacing:0.5px}
+
+/* Crosshair for Vision */
+.crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:8}
+.ch-h{position:absolute;width:40px;height:1px;background:rgba(74,222,128,0.5);top:0;left:-20px}
+.ch-v{position:absolute;height:40px;width:1px;background:rgba(74,222,128,0.5);left:0;top:-20px}
+.ch-c{position:absolute;width:6px;height:6px;border-radius:50%;border:1px solid rgba(74,222,128,0.6);top:-3px;left:-3px}
+.ch-corner{position:absolute;width:16px;height:16px}
+.ch-tl{top:-25px;left:-25px;border-top:2px solid rgba(74,222,128,0.5);border-left:2px solid rgba(74,222,128,0.5)}
+.ch-tr{top:-25px;right:-25px;border-top:2px solid rgba(74,222,128,0.5);border-right:2px solid rgba(74,222,128,0.5)}
+.ch-bl{bottom:-25px;left:-25px;border-bottom:2px solid rgba(74,222,128,0.5);border-left:2px solid rgba(74,222,128,0.5)}
+.ch-br{bottom:-25px;right:-25px;border-bottom:2px solid rgba(74,222,128,0.5);border-right:2px solid rgba(74,222,128,0.5)}
+
+/* Capture flash */
+.cap-flash{position:absolute;inset:0;background:rgba(255,255,255,0.12);animation:cap-fl 4s infinite;z-index:9;pointer-events:none}
+@keyframes cap-fl{0%,90%,100%{opacity:0}93%{opacity:1}96%{opacity:0}}
+
+/* 3D Timer */
+.timer-3d{position:absolute;z-index:8;text-align:center}
+.timer-val{font-size:28px;font-weight:700;color:#e0e0e0;text-shadow:0 0 20px rgba(167,139,250,0.4);font-variant-numeric:tabular-nums}
+.timer-label{font-size:9px;color:#a78bfa;margin-top:2px}
+
+/* State indicator floating */
+.state-float{position:absolute;z-index:8;display:flex;gap:4px}
+.sf-dot{padding:4px 8px;border-radius:5px;font-size:7px;font-weight:700;letter-spacing:0.5px}
+.sf-done{background:rgba(74,222,128,0.1);border:1px solid rgba(74,222,128,0.2);color:#4ade80}
+.sf-active{background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.25);color:#a78bfa;animation:sf-blink 1.5s infinite}
+@keyframes sf-blink{0%,100%{opacity:1}50%{opacity:0.6}}
+.sf-idle{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:#555}
+
+/* VLM overlay */
+.vlm-overlay{position:absolute;z-index:8;background:rgba(8,8,20,0.8);border:1px solid rgba(107,76,247,0.2);border-radius:12px;backdrop-filter:blur(8px);padding:14px;box-shadow:0 0 40px rgba(107,76,247,0.1)}
+
+/* ============================================
+   FLAT UI COMPONENTS (reused)
+   ============================================ */
+.prov{padding:12px 16px}
+.prov+.prov{border-top:1px solid rgba(85,105,255,0.04)}
+.pl{font-size:8px;text-transform:uppercase;letter-spacing:1.5px;color:#6b7aff;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.pd{width:5px;height:5px;border-radius:50%}
+.pd.ok{background:#4ade80;box-shadow:0 0 6px rgba(74,222,128,0.4)}
+.pd.wr{background:#fbbf24;box-shadow:0 0 6px rgba(251,191,36,0.4)}
+.pd.er{background:#f87171;box-shadow:0 0 6px rgba(248,113,113,0.4)}
+.sl{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;margin-bottom:4px;background:rgba(255,255,255,0.015);border:1px solid rgba(255,255,255,0.03);font-size:10px}
+.sl.ac{background:rgba(74,108,247,0.06);border-color:rgba(74,108,247,0.15)}
+.sr{width:12px;height:12px;border-radius:50%;border:1.5px solid #444;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sr.on{border-color:#4a6cf7}.sr.on::after{content:'';width:6px;height:6px;border-radius:50%;background:#4a6cf7}
+.sn{flex:1;font-weight:500}.sd{font-size:8px;color:#777;margin-left:4px}
+.sb{font-size:7px;padding:2px 6px;border-radius:4px;font-weight:600;letter-spacing:0.3px;flex-shrink:0}
+.sb-c{background:rgba(74,108,247,0.12);color:#8b9cff}.sb-l{background:rgba(74,222,128,0.1);color:#4ade80}
+.rr{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;margin-top:2px;font-size:9px;color:#888}
+.tg{width:28px;height:15px;border-radius:8px;background:#333;position:relative}
+.tg.on{background:#4a6cf7}
+.tg::after{content:'';position:absolute;top:2px;left:2px;width:11px;height:11px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,0.3)}
+.tg.on::after{left:15px}
+.err{margin:12px 16px;padding:12px 14px;border-radius:10px;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.15)}
+.err-h{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#f87171;margin-bottom:4px}
+.err-d{font-size:10px;color:#bbb;margin-bottom:4px}
+.err-detail{font-size:9px;color:#888;margin-bottom:8px;font-family:monospace;background:rgba(0,0,0,0.2);padding:6px 8px;border-radius:6px}
+.err-btns{display:flex;gap:6px}
+.eb{padding:5px 14px;border-radius:6px;font-size:9px;font-weight:600;border:none;cursor:pointer}
+.eb-r{background:rgba(248,113,113,0.12);color:#f87171;border:1px solid rgba(248,113,113,0.2)}
+.eb-d{background:rgba(255,255,255,0.04);color:#888;border:1px solid rgba(255,255,255,0.06)}
+.deg{padding:14px 16px}
+.di{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;margin-bottom:8px;border-radius:10px;border:1px solid rgba(251,191,36,0.1);background:rgba(251,191,36,0.03)}
+.di-ic{font-size:20px;flex-shrink:0}.di-l{font-size:11px;font-weight:600;margin-bottom:2px}.di-f{font-size:9px;color:#999;margin-bottom:6px}
+.di-vis{padding:8px 10px;border-radius:8px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.04);font-size:10px}
+.da{color:#fbbf24;font-weight:700}
+.ctx-body{padding:16px}
+.ctx-info{font-size:9px;color:#888;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.ctx-info span{color:#6b7aff}
+.mb{padding:6px 10px;border-radius:8px;margin-bottom:5px;font-size:10px;line-height:1.4;max-width:85%}
+.mb-u{background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.1);margin-left:auto}
+.mb-a{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.05)}
+.mb-tag{font-size:8px;font-weight:600;margin-bottom:2px;letter-spacing:0.5px}
+.mb-u .mb-tag{color:#8ba4ff}.mb-a .mb-tag{color:#a78bfa}
+.mb-faded{opacity:0.25}
+.ctx-bracket{border-left:2px solid rgba(74,108,247,0.2);padding-left:8px;margin-left:4px}
+.ctx-bl{text-align:center;font-size:8px;color:#4a6cf7;letter-spacing:1px;margin-top:6px}
+.sep{height:1px;background:linear-gradient(90deg,transparent,rgba(80,100,255,0.1),transparent);margin:10px 0}
+
+/* Editor */
+.ed-frame{border-radius:8px;background:#16161f;border:1px solid rgba(255,255,255,0.04);overflow:hidden;margin:12px 16px}
+.ed-tb{height:22px;background:#111118;display:flex;align-items:center;padding:0 8px;gap:4px;border-bottom:1px solid rgba(255,255,255,0.03)}
+.ed-dot{width:7px;height:7px;border-radius:50%}.ed-r{background:#f87171}.ed-y{background:#fbbf24}.ed-g{background:#4ade80}
+.ed-tn{font-size:8px;color:#555;margin-left:6px}
+.ed-lay{display:flex;height:160px}
+.ed-hi{width:32%;background:#11111a;border-right:1px solid rgba(255,255,255,0.02);padding:6px;overflow:hidden}
+.ed-ht{font-size:7px;color:#444;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px}
+.ed-hh{font-size:8px;padding:2px 4px;margin-bottom:1px;color:#888;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:2px}
+.ed-hh.sel{background:rgba(74,108,247,0.12);color:#8ba4ff}
+.ed-hh .in{display:inline-block;width:8px}
+.ed-vp{flex:1;background:#0c0c14;position:relative;display:flex;align-items:center;justify-content:center}
+.ed-vpg{position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent,transparent 24px,rgba(50,50,80,0.04) 24px,rgba(50,50,80,0.04) 25px),repeating-linear-gradient(0deg,transparent,transparent 24px,rgba(50,50,80,0.04) 24px,rgba(50,50,80,0.04) 25px)}
+.ed-vpl{font-size:7px;color:#333;position:absolute;top:4px;left:6px}
+.ed-obj{text-align:center;z-index:1;font-size:20px}
+.ed-obj-n{font-size:7px;color:#8ba4ff;margin-top:2px}
+.ed-giz{position:absolute;top:6px;right:8px}
+.ed-gx{width:12px;height:2px;background:#f87171;position:absolute;top:12px;left:8px;border-radius:1px}
+.ed-gy{width:2px;height:12px;background:#4ade80;position:absolute;top:2px;left:12px;border-radius:1px}
+.ed-gz{width:9px;height:2px;background:#60a5fa;position:absolute;top:16px;left:4px;transform:rotate(-45deg);border-radius:1px}
+.mcp-box{margin:0 16px 12px;padding:10px 14px;border-radius:9px;background:rgba(107,76,247,0.03);border:1px solid rgba(107,76,247,0.1)}
+.mcp-h{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.mcp-logo{width:20px;height:20px;border-radius:5px;background:linear-gradient(135deg,#6b4cf7,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.mcp-t{font-size:11px;font-weight:600;color:#a78bfa}
+.mcp-ms{font-size:9px;color:#777}
+.mcp-st{display:flex;align-items:center;gap:4px;margin-bottom:6px}
+.mcp-dot{width:5px;height:5px;border-radius:50%;background:#4ade80;box-shadow:0 0 5px rgba(74,222,128,0.4)}
+.mcp-stx{font-size:9px;color:#4ade80}
+.mcp-cmds{display:flex;flex-wrap:wrap;gap:3px}
+.mcp-c{font-size:8px;padding:3px 7px;border-radius:4px;background:rgba(107,76,247,0.06);border:1px solid rgba(107,76,247,0.1);color:#b4a0ff;font-family:monospace}
+.build-row{display:flex;gap:3px;align-items:center;padding:0 16px 14px}
+.bs{padding:5px 10px;border-radius:6px;font-size:8px;font-weight:500}
+.bs-d{background:rgba(74,222,128,0.04);border:1px solid rgba(74,222,128,0.08);color:#4ade80}
+.bs-a{background:rgba(74,108,247,0.06);border:1px solid rgba(74,108,247,0.12);color:#8ba4ff}
+.bs-i{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#666}
+.ba{color:#333;font-size:8px}
+.stack-row{display:flex;flex-wrap:wrap;gap:3px;padding:0 16px 14px}
+.stk{font-size:7px;padding:2px 6px;border-radius:3px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.04);color:#888}
+
+/* EC specifics */
+.ec-scenario{margin:12px 16px;padding:14px;border-radius:10px;border:1px solid rgba(251,191,36,0.1);background:rgba(251,191,36,0.02)}
+.ec-label{font-size:10px;font-weight:600;color:#fbbf24;margin-bottom:6px}
+.ec-desc{font-size:10px;color:#bbb;line-height:1.5}
+.ec-visual{margin-top:10px;padding:10px;border-radius:8px;background:rgba(0,0,0,0.15);border:1px solid rgba(255,255,255,0.04)}
+.ptt-flat-disabled{display:flex;align-items:center;gap:16px;padding:16px}
+.ptt-gray{width:50px;height:50px;border-radius:50%;border:2px solid rgba(100,100,100,0.2);background:rgba(40,40,40,0.5);display:flex;align-items:center;justify-content:center;font-size:20px;opacity:0.3}
+.proc-bar{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;background:rgba(107,76,247,0.06);border:1px solid rgba(107,76,247,0.12);font-size:10px;color:#a78bfa}
+.proc-spin{width:14px;height:14px;border:2px solid rgba(167,139,250,0.2);border-top-color:#a78bfa;border-radius:50%;animation:spin 0.8s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+@media(max-width:700px){.row{flex-direction:column}.mr-room{height:350px}}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-t">AI-XR — Immersive Mockup</div>
+  <a href="#us1">US-1</a><a href="#us2">US-2</a><a href="#us3">US-3</a>
+  <a href="#us4" class="xr">US-4 🥽</a><a href="#us5">US-5</a>
+  <a href="#us6" class="xr">US-6 🥽</a>
+  <a href="#us7" class="xr">US-7 🥽</a><a href="#us8">US-8</a>
+  <a href="#us9" class="xr">US-9 🥽</a>
+  <a href="#ec1" class="ec">EC-1</a><a href="#ec2" class="ec">EC-2</a>
+  <a href="#ec3" class="xr ec">EC-3 🥽</a>
+  <a href="#ec4" class="ec">EC-4</a><a href="#ec5" class="ec">EC-5</a>
+</nav>
+
+<!-- ==================== US-1: Provider Configuration (FLAT) ==================== -->
+<div class="sec" id="us1">
+  <div class="sh"><span class="st t-us">US-1</span><div><h2>Provider Configuration</h2><div class="se">Epic 1 — Core Architecture</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#4a6cf7,#6b4cf7)">⚙️</div><div><h3>Provider Settings</h3><div class="su">4 briques × 3 slots · No auto fallback</div></div></div>
+    <div class="prov"><div class="pl"><span class="pd ok"></span>STT</div><div class="sl ac"><div class="sr on"></div><div class="sn">Whisper API</div><div class="sd">~200ms</div><span class="sb sb-c">CLOUD 1</span></div><div class="sl"><div class="sr"></div><div class="sn">Deepgram Nova-2</div><div class="sd">~150ms</div><span class="sb sb-c">CLOUD 2</span></div><div class="sl"><div class="sr"></div><div class="sn">Whisper.cpp</div><div class="sd">~800ms</div><span class="sb sb-l">LOCAL</span></div><div class="rr">Auto-retry<div class="tg on"></div></div></div>
+    <div class="prov"><div class="pl"><span class="pd ok"></span>LLM</div><div class="sl ac"><div class="sr on"></div><div class="sn">GPT-4o</div><div class="sd">multimodal</div><span class="sb sb-c">CLOUD 1</span></div><div class="sl"><div class="sr"></div><div class="sn">Claude 3.5 Sonnet</div><span class="sb sb-c">CLOUD 2</span></div><div class="sl"><div class="sr"></div><div class="sn">Llama 3 8B</div><div class="sd">Ollama</div><span class="sb sb-l">LOCAL</span></div><div class="rr">Auto-retry<div class="tg"></div></div></div>
+    <div class="prov"><div class="pl"><span class="pd wr"></span>TTS</div><div class="sl"><div class="sr"></div><div class="sn">ElevenLabs</div><span class="sb sb-c">CLOUD 1</span></div><div class="sl ac"><div class="sr on"></div><div class="sn">Azure TTS</div><span class="sb sb-c">CLOUD 2</span></div><div class="sl"><div class="sr"></div><div class="sn">Piper TTS</div><span class="sb sb-l">LOCAL</span></div><div class="rr">Auto-retry<div class="tg on"></div></div></div>
+    <div class="prov"><div class="pl"><span class="pd ok"></span>Vision</div><div class="sl ac"><div class="sr on"></div><div class="sn">GPT-4o Vision</div><span class="sb sb-c">CLOUD 1</span></div><div class="sl"><div class="sr"></div><div class="sn">Claude 3.5 Vision</div><span class="sb sb-c">CLOUD 2</span></div><div class="sl" style="opacity:.35"><div class="sr"></div><div class="sn">—</div><span class="sb sb-l">LOCAL</span></div><div class="rr">Auto-retry<div class="tg on"></div></div></div>
+  </div>
+</div>
+
+<!-- ==================== US-2: Error Notification (FLAT) ==================== -->
+<div class="sec" id="us2">
+  <div class="sh"><span class="st t-us">US-2</span><div><h2>Error Notification & Retry</h2><div class="se">Epic 1 — Core Architecture</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#f87171,#fbbf24)">⚠️</div><div><h3>Error Notifications</h3><div class="su">Provider-specific · Optional retry</div></div></div>
+    <div class="err"><div class="err-h">🔴 STT Provider Error — Whisper API</div><div class="err-d">Speech recognition failed</div><div class="err-detail">ConnectionError: timeout after 5000ms (attempt 3/3)</div><div class="err-btns"><button class="eb eb-r">↻ Retry</button><button class="eb eb-d">Dismiss</button></div></div>
+    <div class="sep"></div>
+    <div class="err" style="border-color:rgba(251,191,36,0.15);background:rgba(251,191,36,0.04)"><div class="err-h" style="color:#fbbf24">🟡 LLM Latency Warning — GPT-4o</div><div class="err-d">High latency detected</div><div class="err-detail">LatencyWarning: avg 3200ms over last 5 requests</div><div class="err-btns"><button class="eb eb-d">Dismiss</button></div></div>
+  </div>
+</div>
+
+<!-- ==================== US-3: Degradation (FLAT) ==================== -->
+<div class="sec" id="us3">
+  <div class="sh"><span class="st t-us">US-3</span><div><h2>Per-Brique Degradation</h2><div class="se">Epic 1 — Core Architecture</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#fbbf24,#f87171)">⚡</div><div><h3>Graceful Degradation</h3><div class="su">Each brique degrades independently</div></div></div>
+    <div class="deg">
+      <div class="di"><span class="di-ic">🎙️</span><div><div class="di-l">STT Down <span class="da">→</span> Virtual Keyboard</div><div class="di-f">Voice unavailable</div><div class="di-vis">⌨️ Quest virtual keyboard appears. User types instead of speaking.</div></div></div>
+      <div class="di"><span class="di-ic">🧠</span><div><div class="di-l">LLM Down <span class="da">→</span> Pre-recorded Message</div><div class="di-f">No AI reasoning</div><div class="di-vis">💬 "Le service IA est temporairement indisponible."</div></div></div>
+      <div class="di"><span class="di-ic">🔊</span><div><div class="di-l">TTS Down <span class="da">→</span> HUD Text Overlay</div><div class="di-f">No voice output</div><div class="di-vis" style="font-family:monospace;color:#4ade80">📄 Floating text in MR space above avatar</div></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== US-4: Push-to-Talk (3D IMMERSIVE) ==================== -->
+<div class="sec" id="us4">
+  <div class="sh"><span class="st t-xr">US-4 🥽</span><div><h2>Push-to-Talk Voice Interaction</h2><div class="se">Epic 2 — Voice Pipeline · 3D XR View</div></div></div>
+  <div class="headset">
+    <div class="hset-badge">Meta Quest 3 · Voice Pipeline</div>
+    <div class="mr-room">
+      <div class="room-bg"></div>
+      <div class="floor-grid"></div>
+      <div class="floor"></div>
+      <div class="wall"></div>
+      <div class="f-window"></div><div class="f-wglow"></div>
+      <div class="f-table"></div><div class="f-tleg1"></div><div class="f-tleg2"></div>
+      <div class="f-couch"></div><div class="f-couch-b"></div>
+      <div class="f-plant"></div>
+
+      <!-- Avatar in THINKING state -->
+      <div class="avatar-3d" style="bottom:36%;left:38%;transform:translateX(-50%)">
+        <div class="av-full">
+          <div class="av-head-3d"><div class="av-eye l"></div><div class="av-eye r"></div></div>
+          <div class="av-torso"><div class="av-arm l"></div><div class="av-arm r"></div></div>
+          <div class="av-legs"><div class="av-leg"></div><div class="av-leg"></div></div>
+        </div>
+        <div class="av-shadow"></div>
+        <div class="anchor-glow"></div>
+        <!-- Thinking bubbles -->
+        <div class="think-bubble tb-2" style="top:-30px;left:-20px"></div>
+        <div class="think-bubble tb-1" style="top:-15px;right:-15px"></div>
+        <div class="think-bubble tb-3" style="top:-40px;left:30px;animation-delay:0.7s"></div>
+        <div class="think-bubble tb-4" style="top:5px;left:-30px;animation-delay:1.2s"></div>
+      </div>
+
+      <!-- Recording red glow behind avatar -->
+      <div class="rec-glow" style="bottom:25%;left:28%;width:200px;height:200px;opacity:0.3"></div>
+
+      <!-- PTT Button floating bottom-left -->
+      <div class="ptt-3d" style="bottom:12%;left:10%">
+        <div class="ptt-orb ptt-recording">🎙️</div>
+        <div class="ptt-label-3d" style="color:#f87171">Recording 0:03</div>
+      </div>
+
+      <!-- State indicators top -->
+      <div class="state-float" style="top:14%;left:50%;transform:translateX(-50%)">
+        <span class="sf-dot sf-done">✓ REC</span>
+        <span class="sf-dot sf-done">✓ STT</span>
+        <span class="sf-dot sf-active">● LLM</span>
+        <span class="sf-dot sf-idle">TTS</span>
+        <span class="sf-dot sf-idle">PLAY</span>
+      </div>
+
+      <!-- Timer floating near avatar -->
+      <div class="timer-3d" style="top:20%;right:15%">
+        <div class="timer-val">1.8s</div>
+        <div class="timer-label">GPT-4o · thinking</div>
+      </div>
+
+      <!-- 5 state cards floating bottom -->
+      <div class="hud-float" style="bottom:6%;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:8px 12px">
+        <div style="text-align:center;padding:4px 8px"><div style="font-size:12px">✅</div><div style="font-size:7px;color:#4ade80;font-weight:600">Ready</div></div>
+        <div style="text-align:center;padding:4px 8px;background:rgba(248,113,113,0.1);border-radius:6px"><div style="width:14px;height:14px;border-radius:50%;border:2px solid #f87171;margin:0 auto;animation:rec-pulse 1s infinite"></div><div style="font-size:7px;color:#f87171;font-weight:600;margin-top:2px">Record</div></div>
+        <div style="text-align:center;padding:4px 8px"><div style="font-size:12px">📝</div><div style="font-size:7px;color:#fbbf24;font-weight:600">STT</div></div>
+        <div style="text-align:center;padding:4px 8px;background:rgba(167,139,250,0.1);border-radius:6px"><div style="display:flex;gap:2px;justify-content:center"><span style="width:4px;height:4px;border-radius:50%;background:#a78bfa;display:block;animation:td 1.2s infinite"></span><span style="width:4px;height:4px;border-radius:50%;background:#a78bfa;display:block;animation:td 1.2s infinite 0.15s"></span><span style="width:4px;height:4px;border-radius:50%;background:#a78bfa;display:block;animation:td 1.2s infinite 0.3s"></span></div><div style="font-size:7px;color:#a78bfa;font-weight:600;margin-top:2px">Think</div></div>
+        <div style="text-align:center;padding:4px 8px"><div style="display:flex;gap:1px;justify-content:center;align-items:end;height:14px"><span style="width:2px;height:4px;background:#8ba4ff;border-radius:1px"></span><span style="width:2px;height:8px;background:#8ba4ff;border-radius:1px"></span><span style="width:2px;height:12px;background:#8ba4ff;border-radius:1px"></span><span style="width:2px;height:6px;background:#8ba4ff;border-radius:1px"></span></div><div style="font-size:7px;color:#8ba4ff;font-weight:600;margin-top:2px">Talk</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== US-5: Context Window (FLAT) ==================== -->
+<div class="sec" id="us5">
+  <div class="sh"><span class="st t-us">US-5</span><div><h2>Sliding Window Context</h2><div class="se">Epic 2 — Voice Pipeline</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#6b4cf7,#4a6cf7)">💬</div><div><h3>Conversation Context</h3><div class="su">Window: 6 messages · No session persistence</div></div></div>
+    <div class="ctx-body">
+      <div class="ctx-info"><span>📏</span> Last 6 messages sent to LLM</div>
+      <div class="mb mb-u mb-faded"><div class="mb-tag">USER</div>Bonjour, tu me vois ?</div>
+      <div class="mb mb-a mb-faded"><div class="mb-tag">ASSISTANT</div>Je ne peux voir que quand tu me le demandes.</div>
+      <div class="ctx-bracket">
+        <div class="mb mb-u"><div class="mb-tag">USER</div>Qu'est-ce que tu sais faire ?</div>
+        <div class="mb mb-a"><div class="mb-tag">ASSISTANT</div>Je peux répondre à tes questions, analyser ton environnement, et t'accompagner en MR.</div>
+        <div class="mb mb-u"><div class="mb-tag">USER</div>Regarde autour et décris</div>
+        <div class="mb mb-a"><div class="mb-tag">ASSISTANT</div>Un bureau avec laptop, étagères à droite, fenêtre avec lumière naturelle.</div>
+        <div class="mb mb-u"><div class="mb-tag">USER</div>La lumière vient d'où ?</div>
+        <div class="mb mb-a"><div class="mb-tag">ASSISTANT</div>Fenêtre à gauche — lumière naturelle, début d'après-midi vu l'angle.</div>
+      </div>
+      <div class="ctx-bl">▲ ACTIVE WINDOW (6/8) ▲</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== US-6: Incarnation Modes (3D IMMERSIVE) ==================== -->
+<div class="sec" id="us6">
+  <div class="sh"><span class="st t-xr">US-6 🥽</span><div><h2>Incarnation Modes</h2><div class="se">Epic 3 — AI Incarnation · 3D XR View</div></div></div>
+  <div class="headset">
+    <div class="hset-badge">Meta Quest 3 · Incarnation Modes</div>
+    <div class="mr-room">
+      <div class="room-bg"></div>
+      <div class="floor-grid"></div>
+      <div class="floor"></div>
+      <div class="wall"></div>
+      <div class="f-window"></div><div class="f-wglow"></div>
+      <div class="f-table"></div><div class="f-tleg1"></div><div class="f-tleg2"></div>
+
+      <!-- MODE 1: AVATAR on table left -->
+      <div class="avatar-3d" style="bottom:36%;left:22%">
+        <div class="av-full">
+          <div class="av-head-3d" style="box-shadow:0 0 25px rgba(90,106,191,0.5),0 0 50px rgba(90,106,191,0.2)"><div class="av-eye l"></div><div class="av-eye r"></div><div class="av-lips-3d"><span></span><span></span><span></span></div></div>
+          <div class="av-torso"><div class="av-arm l" style="transform:rotate(15deg)"></div><div class="av-arm r" style="transform:rotate(-5deg)"></div></div>
+          <div class="av-legs"><div class="av-leg"></div><div class="av-leg"></div></div>
+        </div>
+        <div class="av-shadow"></div>
+        <div class="anchor-glow"></div>
+        <div style="font-size:8px;color:#8ba4ff;text-align:center;margin-top:4px;font-weight:600">AVATAR</div>
+        <div style="font-size:6px;color:#666;text-align:center">RPM · Talking</div>
+      </div>
+
+      <!-- MODE 2: ORB floating center -->
+      <div style="position:absolute;bottom:40%;left:48%;text-align:center;z-index:5">
+        <div class="orb-3d orb-thinking-3d" style="margin:0 auto;animation:orb-float 3s infinite ease-in-out"></div>
+        <div class="orb-shadow"></div>
+        <div style="font-size:8px;color:#fbbf24;margin-top:6px;font-weight:600">ORBE</div>
+        <div style="font-size:6px;color:#666">Thinking</div>
+        <!-- Color legend floating -->
+        <div class="hud-float" style="position:absolute;top:-70px;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:6px 10px;white-space:nowrap">
+          <span style="display:flex;align-items:center;gap:3px;font-size:7px"><span style="width:6px;height:6px;border-radius:50%;background:#60a5fa;box-shadow:0 0 4px rgba(96,165,250,0.5);display:inline-block"></span><span style="color:#888">Listen</span></span>
+          <span style="display:flex;align-items:center;gap:3px;font-size:7px"><span style="width:6px;height:6px;border-radius:50%;background:#fbbf24;box-shadow:0 0 4px rgba(251,191,36,0.5);display:inline-block"></span><span style="color:#888">Think</span></span>
+          <span style="display:flex;align-items:center;gap:3px;font-size:7px"><span style="width:6px;height:6px;border-radius:50%;background:#4ade80;box-shadow:0 0 4px rgba(74,222,128,0.5);display:inline-block"></span><span style="color:#888">Talk</span></span>
+          <span style="display:flex;align-items:center;gap:3px;font-size:7px"><span style="width:6px;height:6px;border-radius:50%;background:#555;display:inline-block"></span><span style="color:#888">Idle</span></span>
+        </div>
+      </div>
+
+      <!-- MODE 3: INVISIBLE — just HUD text floating -->
+      <div style="position:absolute;bottom:42%;right:12%;z-index:5;text-align:center">
+        <div style="width:60px;height:60px;border-radius:50%;border:1px dashed rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;margin:0 auto"><span style="font-size:24px;opacity:0.08">👻</span></div>
+        <div class="hud-float" style="position:relative;margin-top:8px;padding:8px 10px;font-family:monospace;font-size:8px;text-align:left">
+          <div style="color:#4ade80;font-weight:600;margin-bottom:2px">Status: READY</div>
+          <div style="color:#888;font-size:7px">Last: "La fenêtre est à gauche"</div>
+        </div>
+        <div style="font-size:8px;color:#888;margin-top:6px;font-weight:600">INVISIBLE</div>
+        <div style="font-size:6px;color:#666">Voice only</div>
+      </div>
+
+      <!-- Settings selector floating bottom -->
+      <div class="hud-float" style="bottom:6%;left:50%;transform:translateX(-50%);display:flex;gap:6px;padding:8px 14px">
+        <div style="padding:5px 12px;border-radius:6px;background:rgba(74,108,247,0.1);border:1px solid rgba(74,108,247,0.2);font-size:8px;color:#8ba4ff;font-weight:600;text-align:center">👤 Avatar<div style="font-size:6px;color:#4ade80;margin-top:2px">ACTIVE</div></div>
+        <div style="padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);font-size:8px;color:#888;text-align:center">🔮 Orbe</div>
+        <div style="padding:5px 12px;border-radius:6px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);font-size:8px;color:#888;text-align:center">👻 Invisible</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== US-7: Vision On-Demand (3D IMMERSIVE) ==================== -->
+<div class="sec" id="us7">
+  <div class="sh"><span class="st t-xr">US-7 🥽</span><div><h2>Vision On-Demand</h2><div class="se">Epic 4 — Vision · 3D XR POV</div></div></div>
+  <div class="headset">
+    <div class="hset-badge">Meta Quest 3 · Vision Capture</div>
+    <div class="mr-room">
+      <div class="room-bg"></div>
+      <div class="floor-grid"></div>
+      <div class="floor"></div>
+      <div class="wall"></div>
+      <div class="f-window"></div><div class="f-wglow"></div>
+      <div class="f-table"></div><div class="f-tleg1"></div><div class="f-tleg2"></div>
+      <div class="f-couch"></div><div class="f-couch-b"></div>
+      <div class="f-shelf"></div><div class="f-book1"></div><div class="f-book2"></div>
+      <div class="f-lamp"></div><div class="f-lamp-g"></div>
+
+      <!-- Crosshair center -->
+      <div class="crosshair">
+        <div class="ch-h"></div><div class="ch-v"></div><div class="ch-c"></div>
+        <div class="ch-corner ch-tl"></div><div class="ch-corner ch-tr"></div>
+        <div class="ch-corner ch-bl"></div><div class="ch-corner ch-br"></div>
+      </div>
+
+      <!-- Capture flash -->
+      <div class="cap-flash"></div>
+
+      <!-- Camera badge -->
+      <div style="position:absolute;top:14%;left:8%;z-index:11;font-size:8px;color:rgba(74,222,128,0.5);display:flex;align-items:center;gap:4px">📷 <span style="font-size:7px">WebCamTexture · capturing</span></div>
+
+      <!-- VLM Analysis overlay floating right -->
+      <div class="vlm-overlay" style="top:15%;right:6%;width:200px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+          <div style="width:24px;height:24px;border-radius:50%;background:radial-gradient(circle at 38% 30%,#c4b5fd,#7c3aed 55%,#4c1d95);box-shadow:0 0 15px rgba(124,58,237,0.3);animation:orb-float 2s infinite;flex-shrink:0"></div>
+          <div><div style="font-size:9px;color:#a78bfa;font-weight:600">Analyzing…</div><div style="font-size:7px;color:#777">GPT-4o Vision</div></div>
+        </div>
+        <div style="display:flex;gap:3px;justify-content:center;margin:6px 0"><span style="width:5px;height:5px;border-radius:50%;background:#a78bfa;animation:td 1.2s infinite"></span><span style="width:5px;height:5px;border-radius:50%;background:#a78bfa;animation:td 1.2s infinite 0.15s"></span><span style="width:5px;height:5px;border-radius:50%;background:#a78bfa;animation:td 1.2s infinite 0.3s"></span></div>
+        <div style="font-size:16px;font-weight:700;text-align:center;margin:4px 0">2.4s</div>
+      </div>
+
+      <!-- Response overlay bottom-right -->
+      <div class="hud-float" style="bottom:10%;right:6%;width:220px;border-color:rgba(74,222,128,0.12)">
+        <div style="font-size:8px;color:#4ade80;font-weight:600;margin-bottom:4px">✅ VLM Response</div>
+        <div style="font-size:9px;color:#ccc;font-style:italic;line-height:1.4">"Je vois un bureau avec un laptop, des étagères avec des livres, et une lampe allumée sur le côté droit."</div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:6px;font-size:7px;color:#888">
+          <div style="display:flex;gap:1px;align-items:end;height:8px"><span style="width:2px;height:3px;background:#4ade80;border-radius:1px;animation:wv .7s infinite"></span><span style="width:2px;height:6px;background:#4ade80;border-radius:1px;animation:wv .7s infinite .1s"></span><span style="width:2px;height:8px;background:#4ade80;border-radius:1px;animation:wv .7s infinite .2s"></span><span style="width:2px;height:4px;background:#4ade80;border-radius:1px;animation:wv .7s infinite .15s"></span></div>
+          → TTS playback
+        </div>
+      </div>
+
+      <!-- Pipeline state top-center -->
+      <div class="state-float" style="top:12%;left:50%;transform:translateX(-50%)">
+        <span class="sf-dot sf-done">✓ TRIGGER</span>
+        <span class="sf-dot sf-done">✓ CAPTURE</span>
+        <span class="sf-dot sf-done">✓ SEND</span>
+        <span class="sf-dot sf-active">● VLM</span>
+        <span class="sf-dot sf-idle">TTS</span>
+      </div>
+
+      <!-- No QC badge -->
+      <div style="position:absolute;bottom:12%;left:8%;z-index:11;font-size:7px;padding:3px 8px;border-radius:4px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.15);color:#fbbf24">⚡ No quality check</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== US-8: Editor MCP (FLAT) ==================== -->
+<div class="sec" id="us8">
+  <div class="sh"><span class="st t-us">US-8</span><div><h2>Editor MCP Prototyping</h2><div class="se">Epic 5 — XR Integration</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#6b4cf7,#a78bfa)">🛠️</div><div><h3>Unity Editor + unity-mcp</h3><div class="su">Prototype without headset deploy</div></div></div>
+    <div class="ed-frame"><div class="ed-tb"><div class="ed-dot ed-r"></div><div class="ed-dot ed-y"></div><div class="ed-dot ed-g"></div><span class="ed-tn">Unity 6 — AI-XR.unity</span></div><div class="ed-lay"><div class="ed-hi"><div class="ed-ht">Hierarchy</div><div class="ed-hh">📷 OVRCameraRig</div><div class="ed-hh"><span class="in"></span>TrackingSpace</div><div class="ed-hh"><span class="in"></span>CenterEyeAnchor</div><div class="ed-hh sel">🤖 AIEntity</div><div class="ed-hh"><span class="in"></span>AvatarRoot (RPM)</div><div class="ed-hh"><span class="in"></span>OrbPrefab</div><div class="ed-hh">🧠 AIManager</div><div class="ed-hh"><span class="in"></span>ProviderConfig</div><div class="ed-hh">✋ XRHandsManager</div><div class="ed-hh">⚓ SpatialAnchorMgr</div><div class="ed-hh">🎙️ MicRecorder</div><div class="ed-hh">📸 CameraFeed</div></div><div class="ed-vp"><div class="ed-vpg"></div><div class="ed-vpl">Scene View</div><div class="ed-giz"><div class="ed-gx"></div><div class="ed-gy"></div><div class="ed-gz"></div></div><div class="ed-obj">🤖<div class="ed-obj-n">AIEntity</div></div></div></div></div>
+    <div class="mcp-box"><div class="mcp-h"><div class="mcp-logo">M</div><div><div class="mcp-t">unity-mcp</div><div class="mcp-ms">Model Context Protocol · Editor only</div></div></div><div class="mcp-st"><span class="mcp-dot"></span><span class="mcp-stx">Connected — Editor mode</span></div><div class="mcp-cmds"><span class="mcp-c">scene.query</span><span class="mcp-c">object.create</span><span class="mcp-c">component.add</span><span class="mcp-c">transform.set</span><span class="mcp-c">prefab.spawn</span><span class="mcp-c">play.toggle</span></div></div>
+    <div class="build-row"><div class="bs bs-d">Editor</div><span class="ba">→</span><div class="bs bs-d">MCP Test</div><span class="ba">→</span><div class="bs bs-a">Android</div><span class="ba">→</span><div class="bs bs-i">APK Sign</div><span class="ba">→</span><div class="bs bs-i">Quest 3</div></div>
+    <div class="stack-row"><span class="stk">Unity 6 (URP 17)</span><span class="stk">Meta OpenXR 2.0.1</span><span class="stk">XRI 3.0.7</span><span class="stk">XR Hands 1.5.0</span><span class="stk">AR Foundation 6.0.6</span><span class="stk">RPM</span></div>
+  </div>
+</div>
+
+<!-- ==================== US-9: Spatial Anchoring (3D IMMERSIVE) ==================== -->
+<div class="sec" id="us9">
+  <div class="sh"><span class="st t-xr">US-9 🥽</span><div><h2>Spatial Anchoring & MR Scene</h2><div class="se">Epic 5 — XR Integration · 3D XR View</div></div></div>
+  <div class="headset">
+    <div class="hset-badge">Meta Quest 3 · Passthrough MR</div>
+    <div class="mr-room">
+      <div class="room-bg"></div>
+      <div class="floor-grid"></div>
+      <div class="floor"></div>
+      <div class="wall"></div>
+      <div class="f-window"></div><div class="f-wglow"></div>
+      <div class="f-table"></div><div class="f-tleg1"></div><div class="f-tleg2"></div>
+      <div class="f-couch"></div><div class="f-couch-b"></div>
+      <div class="f-shelf"></div><div class="f-book1"></div><div class="f-book2"></div>
+      <div class="f-plant"></div><div class="f-lamp"></div><div class="f-lamp-g"></div>
+
+      <!-- Avatar anchored on table -->
+      <div class="avatar-3d" style="bottom:36%;left:38%;transform:translateX(-50%)">
+        <div class="av-full">
+          <div class="av-head-3d"><div class="av-eye l"></div><div class="av-eye r"></div><div class="av-lips-3d"><span></span><span></span><span></span></div></div>
+          <div class="av-torso"><div class="av-arm l" style="transform:rotate(12deg)"></div><div class="av-arm r" style="transform:rotate(-8deg)"></div></div>
+          <div class="av-legs"><div class="av-leg"></div><div class="av-leg"></div></div>
+        </div>
+        <div class="av-shadow"></div>
+        <div class="anchor-glow"></div>
+        <div class="anchor-tag">⚓ spatial anchor</div>
+      </div>
+
+      <!-- Hand tracking right side -->
+      <div class="hand-3d" style="bottom:30%;right:20%">
+        <div class="h3-palm">
+          <div class="h3-f h3f1"></div><div class="h3-f h3f2"></div><div class="h3-f h3f3"></div><div class="h3-f h3f4"></div>
+          <div class="h3-thumb"></div>
+          <div class="h3-joints"><span class="hj1"></span><span class="hj2"></span><span class="hj3"></span><span class="hj4"></span><span class="hj5"></span><span class="hj6"></span><span class="hj7"></span><span class="hj8"></span></div>
+        </div>
+        <div class="h3-ray" style="width:70px;top:-6px;left:10px;transform:rotate(-15deg)"></div>
+        <div style="font-size:7px;color:rgba(74,222,128,0.5);margin-top:4px;text-align:center">✋ XR Hands 1.5.0</div>
+      </div>
+
+      <!-- Controller mapping floating bottom -->
+      <div class="hud-float" style="bottom:6%;left:50%;transform:translateX(-50%);display:flex;gap:10px;padding:8px 14px">
+        <div style="text-align:center"><div style="font-size:12px">🎙️</div><div style="font-size:7px;color:#8ba4ff;font-weight:600">PTT</div><div style="font-size:6px;color:#666">R. Trigger</div></div>
+        <div style="text-align:center"><div style="font-size:12px">👁️</div><div style="font-size:7px;color:#4ade80;font-weight:600">Vision</div><div style="font-size:6px;color:#666">A Button</div></div>
+        <div style="text-align:center"><div style="font-size:12px">✊</div><div style="font-size:7px;color:#fbbf24;font-weight:600">Grab</div><div style="font-size:6px;color:#666">Grip/Pinch</div></div>
+        <div style="text-align:center"><div style="font-size:12px">👆</div><div style="font-size:7px;color:#a78bfa;font-weight:600">Point</div><div style="font-size:6px;color:#666">Index</div></div>
+      </div>
+
+      <!-- Passthrough badge -->
+      <div style="position:absolute;top:10px;right:50px;z-index:11;font-size:7px;padding:3px 10px;border-radius:5px;background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.15);color:#4ade80">🔲 PASSTHROUGH</div>
+      <div style="position:absolute;top:10px;left:10px;z-index:11;font-size:7px;padding:3px 10px;border-radius:5px;background:rgba(74,108,247,0.08);border:1px solid rgba(74,108,247,0.1);color:#8ba4ff">OVRCameraRig</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EC-1: Total Provider Failure (FLAT) ==================== -->
+<div class="sec" id="ec1">
+  <div class="sh"><span class="st t-ec">EC-1</span><div><h2>Total Provider Failure</h2><div class="se">Edge Case — All 3 slots down</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#f87171,#dc2626)">💀</div><div><h3>Complete Brique Failure</h3><div class="su">All providers exhausted → degradation</div></div></div>
+    <div class="prov">
+      <div class="pl"><span class="pd er"></span>STT — ALL DOWN</div>
+      <div class="sl" style="opacity:.4;border-color:rgba(248,113,113,0.15)"><div class="sr"></div><div class="sn" style="color:#f87171;text-decoration:line-through">Whisper API</div><span class="sb" style="background:rgba(248,113,113,0.1);color:#f87171">FAILED</span></div>
+      <div class="sl" style="opacity:.4;border-color:rgba(248,113,113,0.15)"><div class="sr"></div><div class="sn" style="color:#f87171;text-decoration:line-through">Deepgram</div><span class="sb" style="background:rgba(248,113,113,0.1);color:#f87171">FAILED</span></div>
+      <div class="sl" style="opacity:.4;border-color:rgba(248,113,113,0.15)"><div class="sr"></div><div class="sn" style="color:#f87171;text-decoration:line-through">Whisper.cpp</div><span class="sb" style="background:rgba(248,113,113,0.1);color:#f87171">FAILED</span></div>
+    </div>
+    <div class="di" style="margin:12px 16px"><span class="di-ic">⌨️</span><div><div class="di-l" style="color:#f87171">Degradation Active: Virtual Keyboard</div><div class="di-f">All STT providers failed</div><div class="di-vis">Quest virtual keyboard appears. User types instead of speaking.</div></div></div>
+  </div>
+</div>
+
+<!-- ==================== EC-2: Degraded Image (FLAT) ==================== -->
+<div class="sec" id="ec2">
+  <div class="sh"><span class="st t-ec">EC-2</span><div><h2>Degraded Image Quality</h2><div class="se">Edge Case — Blurry/dark capture</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#fbbf24,#f59e0b)">📸</div><div><h3>Low Quality Capture</h3><div class="su">Sent as-is · VLM assesses quality</div></div></div>
+    <div style="padding:16px">
+      <div style="width:100%;max-width:300px;aspect-ratio:4/3;margin:0 auto 12px;border-radius:10px;background:linear-gradient(135deg,#0a0a12,#080810);border:2px solid rgba(248,113,113,0.15);filter:blur(2px) brightness(0.3);display:flex;align-items:center;justify-content:center"><span style="font-size:40px;opacity:0.1;filter:blur(0)">📷</span></div>
+      <div style="text-align:center;margin:8px 0;font-size:7px;padding:3px 8px;border-radius:4px;background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.1);color:#fbbf24;display:inline-block">⚡ No quality check — sent as-is to VLM</div>
+      <div style="margin-top:12px;padding:10px 14px;border-radius:9px;background:rgba(251,191,36,0.04);border:1px solid rgba(251,191,36,0.1)">
+        <div style="font-size:9px;color:#fbbf24;font-weight:600;margin-bottom:4px">🟡 VLM Response</div>
+        <div style="font-size:10px;color:#ccc;font-style:italic">"L'image est trop sombre pour analyser les détails. Essaye de capturer avec plus de lumière."</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EC-3: Long VLM Wait (3D IMMERSIVE) ==================== -->
+<div class="sec" id="ec3">
+  <div class="sh"><span class="st t-xr" style="background:rgba(251,191,36,0.08);border-color:rgba(251,191,36,0.15);color:#fbbf24">EC-3 🥽</span><div><h2>Long VLM Wait</h2><div class="se">Edge Case — Extended processing · 3D XR View</div></div></div>
+  <div class="headset">
+    <div class="hset-badge">Meta Quest 3 · VLM Processing</div>
+    <div class="mr-room">
+      <div class="room-bg"></div>
+      <div class="floor-grid"></div>
+      <div class="floor"></div>
+      <div class="wall"></div>
+      <div class="f-window"></div><div class="f-wglow"></div>
+      <div class="f-table"></div><div class="f-tleg1"></div><div class="f-tleg2"></div>
+
+      <!-- Avatar in thinking pose -->
+      <div class="avatar-3d" style="bottom:36%;left:42%;transform:translateX(-50%)">
+        <div class="av-full">
+          <div class="av-head-3d" style="transform:rotate(-8deg) translateX(3px)"><div class="av-eye l"></div><div class="av-eye r" style="height:4px"></div></div>
+          <div class="av-torso"><div class="av-arm l" style="transform:rotate(45deg) translateY(-5px)"></div><div class="av-arm r" style="transform:rotate(-12deg)"></div></div>
+          <div class="av-legs"><div class="av-leg"></div><div class="av-leg"></div></div>
+        </div>
+        <div class="av-shadow"></div>
+        <div class="anchor-glow"></div>
+
+        <!-- Lots of thinking bubbles -->
+        <div class="think-bubble tb-2" style="top:-35px;left:-25px"></div>
+        <div class="think-bubble tb-3" style="top:-50px;left:5px;animation-delay:0.3s"></div>
+        <div class="think-bubble tb-1" style="top:-20px;right:-20px;animation-delay:0.6s"></div>
+        <div class="think-bubble tb-4" style="top:-45px;right:-10px;animation-delay:0.9s"></div>
+        <div class="think-bubble tb-5" style="top:-55px;left:20px;animation-delay:1.2s"></div>
+        <div class="think-bubble tb-2" style="top:-10px;left:-35px;animation-delay:1.5s"></div>
+        <div class="think-bubble tb-3" style="top:-60px;left:-10px;animation-delay:1.8s"></div>
+      </div>
+
+      <!-- Large purple glow behind avatar -->
+      <div style="position:absolute;bottom:20%;left:30%;width:250px;height:250px;border-radius:50%;background:radial-gradient(circle,rgba(107,76,247,0.08),transparent 70%);animation:rec-pulse 3s infinite;pointer-events:none"></div>
+
+      <!-- 3D Timer large -->
+      <div class="timer-3d" style="top:25%;left:50%;transform:translateX(-50%)">
+        <div class="timer-val" style="font-size:42px;text-shadow:0 0 30px rgba(167,139,250,0.5)">12.7s</div>
+        <div class="timer-label" style="font-size:10px">GPT-4o Vision · analyzing complex scene</div>
+        <div style="display:flex;gap:4px;justify-content:center;margin-top:8px"><span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:td 1.2s infinite"></span><span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:td 1.2s infinite 0.15s"></span><span style="width:6px;height:6px;border-radius:50%;background:#a78bfa;animation:td 1.2s infinite 0.3s"></span></div>
+      </div>
+
+      <!-- No timeout badge -->
+      <div class="hud-float" style="bottom:10%;left:50%;transform:translateX(-50%);padding:6px 14px">
+        <div style="font-size:8px;color:#4ade80;font-weight:600;display:flex;align-items:center;gap:4px">✓ No timeout — waiting for VLM response</div>
+        <div style="font-size:7px;color:#777;margin-top:2px">PodGab pattern: visual feedback, patient wait</div>
+      </div>
+
+      <!-- State -->
+      <div class="state-float" style="top:12%;left:50%;transform:translateX(-50%)">
+        <span class="sf-dot sf-done">✓ CAPTURE</span>
+        <span class="sf-dot sf-done">✓ SEND</span>
+        <span class="sf-dot sf-active">● VLM ANALYZING</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EC-4: Request Spam (FLAT) ==================== -->
+<div class="sec" id="ec4">
+  <div class="sh"><span class="st t-ec">EC-4</span><div><h2>Request Spam Prevention</h2><div class="se">Edge Case — PTT disabled</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#6b7280,#4b5563)">🚫</div><div><h3>Button Disabled During Processing</h3><div class="su">interactable.enabled = false</div></div></div>
+    <div class="ptt-flat-disabled">
+      <div><div class="ptt-gray">🎙️</div><div style="font-size:8px;color:#f87171;text-align:center;margin-top:4px;font-weight:600">DISABLED</div></div>
+      <div style="flex:1">
+        <div class="proc-bar"><div class="proc-spin"></div>Processing — PTT + Vision disabled</div>
+        <div style="font-size:9px;color:#888;margin-top:8px;line-height:1.5">Buttons re-enable when pipeline returns to <span style="color:#4ade80">Ready</span>. Prevents duplicate requests and audio overlap.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== EC-5: Network Failure (FLAT) ==================== -->
+<div class="sec" id="ec5">
+  <div class="sh"><span class="st t-ec">EC-5</span><div><h2>Network Failure & Recovery</h2><div class="se">Edge Case — No auto provider switch</div></div></div>
+  <div class="p">
+    <div class="ph"><div class="ic" style="background:linear-gradient(135deg,#f87171,#ef4444)">🌐</div><div><h3>Network Error</h3><div class="su">Notification + retry · NO auto switch</div></div></div>
+    <div class="err"><div class="err-h">🔴 Network Error — LLM (GPT-4o)</div><div class="err-d">Cannot reach provider API</div><div class="err-detail">NetworkError: ERR_CONNECTION_REFUSED at api.openai.com:443</div><div class="err-btns"><button class="eb eb-r">↻ Retry</button><button class="eb eb-d">Dismiss</button></div></div>
+    <div class="ec-scenario">
+      <div class="ec-label">⚠️ NO automatic provider switch</div>
+      <div class="ec-desc">System does <strong>NOT</strong> try Cloud 2 or Local automatically.</div>
+      <div class="ec-visual">
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+          <div style="flex:1;min-width:140px"><div style="font-size:9px;color:#f87171;font-weight:600;margin-bottom:4px">1. See error notification</div><div style="font-size:9px;color:#fbbf24;font-weight:600;margin-bottom:4px">2. Optionally tap Retry</div><div style="font-size:9px;color:#4ade80;font-weight:600">3. Manually switch in Settings</div></div>
+          <div style="padding:8px 12px;border-radius:8px;background:rgba(74,108,247,0.05);border:1px solid rgba(74,108,247,0.1)"><div style="font-size:7px;color:#6b7aff;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">LLM Provider</div><div style="font-size:9px;color:#f87171;text-decoration:line-through">GPT-4o</div><div style="font-size:9px;color:#888">Claude 3.5</div><div style="font-size:9px;color:#888">Llama 3</div><div style="font-size:7px;color:#fbbf24;margin-top:4px">↑ Manual selection</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:60px"></div>
+</body>
+</html>
