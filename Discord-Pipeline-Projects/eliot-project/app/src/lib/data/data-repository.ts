@@ -520,10 +520,12 @@ function extractTraitsFromRows(
         traits.push({ traitType: 'pelagic_juvenile_behavior', value: 1, unit: '', source, doi, metadata });
       }
     }
-    // Larval Growth Database
+    // Larval Growth Database (age-at-length scatter data)
     else if (filename.includes('larval_growth')) {
       addTrait(traits, 'larval_length', r(row).LENGTH, 'mm', source, doi, metadata);
       addTrait(traits, 'larval_age', r(row).AGE, 'days', source, doi, metadata);
+      // Virtual trait for sidebar filter: species has age-at-length data
+      traits.push({ traitType: 'larval_age_at_length', value: 1, unit: '', source, doi, metadata });
     }
 
     // Add traits to species

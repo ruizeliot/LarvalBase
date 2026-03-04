@@ -25,8 +25,8 @@ export const TRAIT_GROUPS: TraitGroup[] = [
   {
     name: "Larval Growth",
     traits: [
-      "larval_length",
-      "larval_age",
+      "larval_age_at_length",
+      "growth_model",
     ],
   },
   {
@@ -127,6 +127,8 @@ export function formatTraitName(trait: string): string {
   if (trait === 'has_images') return 'All';
   if (trait === 'has_images_sure') return 'Sure ID';
   if (trait === 'has_images_unsure') return 'Unsure ID';
+  if (trait === 'larval_age_at_length') return 'Age-at-length';
+  if (trait === 'growth_model') return 'Growth model';
   if (trait === 'critical_swimming_speed') return 'Critical Swimming Speed (Absolute)';
   if (trait === 'critical_swimming_speed_rel') return 'Critical Swimming Speed (Relative)';
   if (trait === 'in_situ_swimming_speed') return 'In Situ Swimming Speed (Absolute)';

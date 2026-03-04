@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { getAllSpeciesWithTaxonomy } from '@/lib/services/species.service';
 import { getSpeciesWithImages, getSpeciesWithSureImages, getSpeciesWithUnsureImages } from '@/lib/data/image-registry';
+import { getSpeciesWithGrowthModels } from '@/lib/services/growth.service';
 
 export async function GET() {
   try {
-    const [data, speciesWithImages, speciesWithSure, speciesWithUnsure] = await Promise.all([
+    const [data, speciesWithImages, speciesWithSure, speciesWithUnsure, speciesWithGrowthModels] = await Promise.all([
       getAllSpeciesWithTaxonomy(),
       getSpeciesWithImages(),
       getSpeciesWithSureImages(),
       getSpeciesWithUnsureImages(),
+      getSpeciesWithGrowthModels(),
     ]);
 
     // Convert species array to API response format, including traits
@@ -18,6 +20,7 @@ export async function GET() {
       const hasImages = speciesWithImages.has(s.validName);
       const hasImagesSure = speciesWithSure.has(s.validName);
       const hasImagesUnsure = speciesWithUnsure.has(s.validName);
+      const hasGrowthModel = speciesWithGrowthModels.has(s.validName);
 
       return {
         id: s.id,
@@ -34,6 +37,7 @@ export async function GET() {
         hasImages,
         hasImagesSure,
         hasImagesUnsure,
+        hasGrowthModel,
       };
     });
 

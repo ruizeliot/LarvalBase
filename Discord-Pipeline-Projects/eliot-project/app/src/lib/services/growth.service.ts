@@ -119,6 +119,14 @@ export async function loadGrowthModels(): Promise<GrowthModel[]> {
 }
 
 /**
+ * Get set of species names that have growth model data.
+ */
+export async function getSpeciesWithGrowthModels(): Promise<Set<string>> {
+  const models = await loadGrowthModels();
+  return new Set(models.map(m => m.speciesName));
+}
+
+/**
  * Get growth models for a specific species.
  */
 export async function getGrowthModelsForSpecies(

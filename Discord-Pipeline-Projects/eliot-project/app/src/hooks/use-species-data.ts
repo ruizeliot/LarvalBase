@@ -25,6 +25,7 @@ interface ApiSpeciesItem {
   hasImages?: boolean;
   hasImagesSure?: boolean;
   hasImagesUnsure?: boolean;
+  hasGrowthModel?: boolean;
 }
 
 interface SpeciesDataState {
@@ -91,6 +92,10 @@ export function useSpeciesData(): SpeciesDataState {
           }
           if (sp.hasImagesUnsure) {
             traits.push({ traitType: 'has_images_unsure', value: 1, unit: '', source: null, doi: null });
+          }
+          // Growth model virtual trait
+          if (sp.hasGrowthModel) {
+            traits.push({ traitType: 'growth_model', value: 1, unit: '', source: null, doi: null });
           }
           if (traits.length > 0) {
             traitsBySpecies.set(sp.id, traits);
