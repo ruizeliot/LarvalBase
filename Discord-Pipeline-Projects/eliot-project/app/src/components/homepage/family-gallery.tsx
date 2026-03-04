@@ -211,9 +211,12 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
                 </h4>
                 <button
                   className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
-                  onClick={() => onSelectSpecies?.(sp.speciesName)}
+                  onClick={() => {
+                    window.scrollTo({ top: 0 });
+                    onSelectSpecies?.(sp.speciesName);
+                  }}
                 >
-                  See dispersive traits →
+                  See dispersal traits →
                 </button>
               </div>
               <ImageGrid
