@@ -96,16 +96,13 @@ export default function Home() {
               </p>
             </div>
 
-            {/* RIGHT column: mandala image + caption */}
-            <div className="space-y-2">
+            {/* RIGHT column: mandala image */}
+            <div>
               <img
                 src="/mandala.png"
                 alt="Mandala of fish larvae diversity"
                 className="w-full rounded-lg"
               />
-              <p className="text-xs text-muted-foreground leading-snug">
-                This mandala provides a brief overview of the great taxonomical (22 out of &gt;300 species) and morphological diversity of fishes during or shortly after metamorphosis sampled in two different oceans. Here are names from species represented, belonging to 15 different families, by columns (top to bottom from left to right): <em>Bryx dunckeri</em> (Guadeloupe), <em>Petroscirtes mitratus</em> (Maldives), <em>Parapercis hexophtalma</em> (Maldives), <em>Abudefduf vaigiensis</em> (Maldives), <em>Chaetodon striatus</em> (Guadeloupe), <em>Cirrhilabrus exquisitus</em> (Maldives), <em>Pomacentrus pavo</em> (Maldives), <em>Scarus rubroviolaceus</em> (Maldives), <em>Halichoeres hortulanus</em> (Maldives), <em>Paraluteres prionurus</em> (Maldives), <em>Conger conger</em> (Mediterranean Sea), <em>Bothus ocellatus</em> (Guadeloupe), <em>Enneapterygius abeli</em> (Maldives), <em>Scorpaena plumieri</em> (Guadeloupe), <em>Acanthostracion quadricornis</em> (Guadeloupe), <em>Ophichthus cylindroideus</em> (Guadeloupe), <em>Macropharyngodon bipartitus</em> (Maldives), <em>Monacanthus ciliatus</em> (Guadeloupe), <em>Chromis viridis</em> (Maldives), <em>Stegastes bipartitus</em> (Guadeloupe), <em>Halichoeres leucoxanthus</em> (Maldives), <em>Canthidermis maculata</em> (Guadeloupe). Some fish also come with their parasites such as cnidarian polyps (<em>Larsonia</em>/<em>Hydrichthys</em> sp.) on <em>Chaetodon striatus</em> or blood-sucking crustaceans (<em>Caligus</em> sp.) on <em>Canthidermis maculata</em>.
-              </p>
             </div>
           </div>
 
