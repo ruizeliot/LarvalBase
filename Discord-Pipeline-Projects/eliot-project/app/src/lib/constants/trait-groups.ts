@@ -97,8 +97,6 @@ export const TRAIT_GROUPS: TraitGroup[] = [
       "vertical_distribution",
       "vertical_day_depth",
       "vertical_night_depth",
-      "vertical_day",
-      "vertical_night",
     ],
   },
   {
