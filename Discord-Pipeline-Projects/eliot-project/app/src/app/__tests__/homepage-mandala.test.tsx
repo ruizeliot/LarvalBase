@@ -39,11 +39,11 @@ describe('Homepage mandala image', () => {
     expect(img).toHaveAttribute('src', '/mandala.png');
   });
 
-  it('should have a caption with italic scientific names', () => {
+  it('should not display the mandala caption (removed per QA)', () => {
     render(<Home />);
-    // Check caption contains key species names (some appear multiple times)
-    expect(screen.getAllByText(/Bryx dunckeri/).length).toBeGreaterThan(0);
-    expect(screen.getAllByText(/Canthidermis maculata/).length).toBeGreaterThan(0);
+    // Caption was removed — species names should not appear
+    expect(screen.queryByText(/Bryx dunckeri/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/Canthidermis maculata/)).not.toBeInTheDocument();
   });
 
   it('should display the new research description text', () => {

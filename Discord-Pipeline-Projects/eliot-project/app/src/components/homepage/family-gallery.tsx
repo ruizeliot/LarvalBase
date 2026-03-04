@@ -43,7 +43,7 @@ interface FamilyGalleryProps {
  * Structure per genus:
  *   - Genus header (blue #619CFF)
  *   - Genus-level images (if any)
- *   - Species subsections (green #00BA38) with "See dispersive traits" link
+ *   - Species subsections (green #00BA38) with "See dispersal traits" link
  * Family-level images at bottom (red #F8766D)
  * No names below pictures.
  */

@@ -179,7 +179,7 @@ describe('BUG 2: FamilyGallery component', () => {
     });
   });
 
-  it('should show "See dispersive traits" link in lightbox that calls onSelectSpecies', async () => {
+  it('should show "See dispersal traits" link in lightbox that calls onSelectSpecies', async () => {
     const onSelectSpecies = vi.fn();
     render(
       <FamilyGallery family="Acanthuridae" onBack={vi.fn()} onSelectSpecies={onSelectSpecies} />
@@ -194,12 +194,12 @@ describe('BUG 2: FamilyGallery component', () => {
     const galleryImage = images.find(img => img.closest('.cursor-pointer'));
     fireEvent.click(galleryImage!.closest('.cursor-pointer')!);
 
-    // Lightbox should show "See dispersive traits" link
+    // Lightbox should show "See dispersal traits" link
     await waitFor(() => {
-      expect(screen.getByText(/see dispersive traits/i)).toBeInTheDocument();
+      expect(screen.getByText(/see dispersal traits/i)).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByText(/see dispersive traits/i));
+    fireEvent.click(screen.getByText(/see dispersal traits/i));
     expect(onSelectSpecies).toHaveBeenCalledWith('Acanthurus triostegus');
   });
 });
