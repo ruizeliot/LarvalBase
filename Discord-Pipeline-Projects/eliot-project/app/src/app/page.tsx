@@ -40,6 +40,8 @@ function HomepageSkeleton() {
 export default function Home() {
   const [selectedSpecies, setSelectedSpecies] = useState<SelectedSpecies | null>(null);
   const [selectedFamily, setSelectedFamily] = useState<string | null>(null);
+  // Track where user came from when viewing a species (for back button)
+  const [cameFromFamily, setCameFromFamily] = useState<string | null>(null);
   const [filteredSpeciesNames, setFilteredSpeciesNames] = useState<Set<string> | null>(null);
   const { barplotStats, imageStats, publicationYears, familyPhotos } = useHomepageStats();
 
@@ -50,14 +52,32 @@ export default function Home() {
   // Selecting a species from the gallery
   const handleGallerySpeciesSelect = (name: string) => {
     const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    setCameFromFamily(selectedFamily);
     setSelectedFamily(null);
     setSelectedSpecies({ id: slug, scientificName: name });
   };
 
+  // Back handler for species detail page
+  const handleSpeciesBack = useCallback(() => {
+    if (cameFromFamily) {
+      setSelectedSpecies(null);
+      setSelectedFamily(cameFromFamily);
+      setCameFromFamily(null);
+    } else {
+      setSelectedSpecies(null);
+      setCameFromFamily(null);
+    }
+    window.scrollTo({ top: 0 });
+  }, [cameFromFamily]);
+
   return (
-    <MainLayout sidebar={<AppSidebar onSelectSpecies={setSelectedSpecies} onFilteredSpeciesChange={handleFilteredSpeciesChange} />}>
+    <MainLayout sidebar={<AppSidebar onSelectSpecies={(sp) => { setCameFromFamily(null); setSelectedSpecies(sp); }} onFilteredSpeciesChange={handleFilteredSpeciesChange} />}>
       {selectedSpecies ? (
-        <SpeciesDetail speciesId={selectedSpecies.id} />
+        <SpeciesDetail
+          speciesId={selectedSpecies.id}
+          onBack={handleSpeciesBack}
+          backLabel={cameFromFamily ? `Back to family gallery` : `Back to homepage`}
+        />
       ) : selectedFamily ? (
         <Suspense fallback={<HomepageSkeleton />}>
           <FamilyGallery
@@ -123,6 +143,7 @@ export default function Home() {
               onSelectFamily={setSelectedFamily}
               onSelectSpecies={(name) => {
                 const slug = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                setCameFromFamily(null);
                 setSelectedSpecies({ id: slug, scientificName: name });
               }}
             />

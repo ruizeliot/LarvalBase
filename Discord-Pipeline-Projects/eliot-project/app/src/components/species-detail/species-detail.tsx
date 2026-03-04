@@ -16,6 +16,7 @@ import { RaftingPanel } from "./rafting-panel";
 import { useRafting } from "@/hooks/use-rafting";
 import { SectionExportButtons } from "./section-export-buttons";
 import { isAllEggsSpherical } from "./egg-spherical-helper";
+import { ArrowLeft } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -31,6 +32,10 @@ import type { ComparisonStats } from "@/lib/types/species.types";
 export interface SpeciesDetailProps {
   /** Species ID to display */
   speciesId: string;
+  /** Back navigation callback */
+  onBack?: () => void;
+  /** Back button label (e.g. "Back to family gallery" or "Back to homepage") */
+  backLabel?: string;
 }
 
 // DISPLAY_GROUPS and TRAIT_UNITS imported from species-detail-config.ts
@@ -104,7 +109,7 @@ function SpeciesDetailError({ error }: { error: string }) {
  * - ReferencesSection: Clickable DOI links for citations
  * - RawDataModal: Modal showing raw measurements for a trait
  */
-export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
+export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailProps) {
   const { data, isLoading, error, recordCount, studyCount, locations, references } =
     useSpeciesDetail(speciesId);
 
@@ -223,6 +228,16 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
 
   return (
     <div className="space-y-8">
+      {/* Back button */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> {backLabel || "Back"}
+        </button>
+      )}
+
       {/* Species Header */}
       <SpeciesHeader
         speciesId={speciesId}
