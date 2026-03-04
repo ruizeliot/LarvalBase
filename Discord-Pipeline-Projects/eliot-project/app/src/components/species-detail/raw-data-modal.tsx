@@ -369,28 +369,24 @@ const RAFTING_BEHAVIOR_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
   { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
 ], []);
 
-/** Vertical Distribution table columns */
+/** Vertical Distribution table columns — matches fixes-round3.md spec exactly */
 export const VERTICAL_DISTRIBUTION_COLUMNS: TraitColumnDef[] = [
   { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
   { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "LATITUDE", label: "Latitude", description: "Latitude coordinates", csvField: "LATITUDE" },
-  { key: "LONGITUDE", label: "Longitude", description: "Longitude coordinates", csvField: "LONGITUDE" },
   { key: "GEAR", label: "Gear", description: "Sampling gear used", csvField: "GEAR" },
   { key: "PERIOD", label: "Period", description: "Sampling period (Day/Night)", csvField: "PERIOD" },
   { key: "ZONE", label: "Zone", description: "Sampling zone", csvField: "ZONE" },
   { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
-  { key: "POSITION_ISLAND", label: "Position Island", description: "Position relative to island", csvField: "POSITION_ISLAND" },
-  { key: "FILTERED_VOLUME", label: "Filtered Volume", description: "Volume of water filtered", csvField: "FILTERED_VOLUME" },
-  { key: "BOTTOM_DEPTH", label: "Bottom Depth", description: "Bottom depth (m)", csvField: "BOTTOM_DEPTH" },
-  { key: "DEPTH_INTERVAL_CONSIDERED", label: "Depth Interval", description: "Depth interval considered", csvField: "DEPTH_INTERVAL_CONSIDERED" },
-  { key: "N_CAPTURE", label: "N Capture", description: "Number of captures", csvField: "N_CAPTURE" },
-  { key: "MIN_DEPTH_CAPTURE", label: "Min Depth Capture", description: "Minimum depth of capture (m)", csvField: "MIN_DEPTH_CAPTURE" },
-  { key: "MAX_DEPTH_CAPTURE", label: "Max Depth Capture", description: "Maximum depth of capture (m)", csvField: "MAX_DEPTH_CAPTURE" },
-  { key: "WEIGHTED_MEAN_DEPTH_CAPTURE", label: "Weighted Mean Depth", description: "Weighted mean depth of capture (m)", csvField: "WEIGHTED_MEAN_DEPTH_CAPTURE" },
-  { key: "WEIGHTED_SD_DEPTH_CAPTURE", label: "Weighted SD Depth", description: "Weighted SD of depth capture (m)", csvField: "WEIGHTED_SD_DEPTH_CAPTURE" },
-  { key: "WEIGHTING_DETAILS", label: "Weighting Details", description: "Details of weighting method", csvField: "WEIGHTING_DETAILS" },
-  { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
-  { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
+  { key: "POSITION_ISLAND", label: "Island position", description: "Position relative to island", csvField: "POSITION_ISLAND" },
+  { key: "DEPTH_INTERVAL_CONSIDERED", label: "Depth fished", description: "Depth interval considered", csvField: "DEPTH_INTERVAL_CONSIDERED" },
+  { key: "N_CAPTURE", label: "N", description: "Number of captures", csvField: "N_CAPTURE" },
+  { key: "WEIGHTED_MEAN_DEPTH_CAPTURE", label: "Mean", description: "Weighted mean depth of capture (m)", csvField: "WEIGHTED_MEAN_DEPTH_CAPTURE" },
+  { key: "MIN_DEPTH_CAPTURE", label: "Min", description: "Minimum depth of capture (m)", csvField: "MIN_DEPTH_CAPTURE" },
+  { key: "MAX_DEPTH_CAPTURE", label: "Max", description: "Maximum depth of capture (m)", csvField: "MAX_DEPTH_CAPTURE" },
+  { key: "WEIGHTED_SD_DEPTH_CAPTURE", label: "SD", description: "Weighted SD of depth capture (m)", csvField: "WEIGHTED_SD_DEPTH_CAPTURE" },
+  { key: "WEIGHTING_DETAILS", label: "Weighting", description: "Details of weighting method", csvField: "WEIGHTING_DETAILS" },
+  { key: "EXT_REF", label: "External references", description: "External reference identifier", csvField: "EXT_REF" },
+  { key: "REFERENCE", label: "Main reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
 
 /** Critical Swimming Speed (Absolute) table columns */
@@ -535,6 +531,8 @@ const TRAIT_SPECIFIC_COLUMNS: Record<string, TraitColumnDef[]> = {
   settlement_size: SETTLEMENT_SIZE_COLUMNS,
   // Active Behaviors
   vertical_distribution: VERTICAL_DISTRIBUTION_COLUMNS,
+  vertical_day_depth: VERTICAL_DISTRIBUTION_COLUMNS,
+  vertical_night_depth: VERTICAL_DISTRIBUTION_COLUMNS,
   critical_swimming_speed: CRITICAL_SWIMMING_ABS_COLUMNS,
   critical_swimming_speed_rel: CRITICAL_SWIMMING_REL_COLUMNS,
   in_situ_swimming_speed: IN_SITU_SWIMMING_ABS_COLUMNS,
