@@ -119,54 +119,9 @@ export function TraitCard({
               <div className="text-sm text-muted-foreground mt-1">{unit}</div>
             </>
           ) : (
-            // Try to show genus, family, or order average as fallback (only if >1 species)
-            (() => {
-              const fallbackGenus = genusStats?.stats?.mean;
-              const fallbackFamily = familyStats?.stats?.mean;
-              const fallbackOrder = orderStats?.stats?.mean;
-
-              if (fallbackGenus !== null && fallbackGenus !== undefined && (genusStats?.speciesCount ?? 0) > 1) {
-                return (
-                  <>
-                    <span className="text-2xl font-mono text-muted-foreground">
-                      ~{formatNumber(fallbackGenus, 2)}
-                    </span>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {unit} <span className="text-xs italic">(genus average, n<sub>sp</sub> = {genusStats?.speciesCount})</span>
-                    </div>
-                  </>
-                );
-              }
-              if (fallbackFamily !== null && fallbackFamily !== undefined && (familyStats?.speciesCount ?? 0) > 1) {
-                return (
-                  <>
-                    <span className="text-2xl font-mono text-muted-foreground">
-                      ~{formatNumber(fallbackFamily, 2)}
-                    </span>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {unit} <span className="text-xs italic">(family average, n<sub>sp</sub> = {familyStats?.speciesCount})</span>
-                    </div>
-                  </>
-                );
-              }
-              if (fallbackOrder !== null && fallbackOrder !== undefined && (orderStats?.speciesCount ?? 0) > 1) {
-                return (
-                  <>
-                    <span className="text-2xl font-mono text-muted-foreground">
-                      ~{formatNumber(fallbackOrder, 2)}
-                    </span>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {unit} <span className="text-xs italic">(order average, n<sub>sp</sub> = {orderStats?.speciesCount})</span>
-                    </div>
-                  </>
-                );
-              }
-              return (
-                <span className="text-lg text-muted-foreground italic">
-                  No known values
-                </span>
-              );
-            })()
+            <span className="text-lg text-muted-foreground italic">
+              No known values
+            </span>
           )}
         </div>
 

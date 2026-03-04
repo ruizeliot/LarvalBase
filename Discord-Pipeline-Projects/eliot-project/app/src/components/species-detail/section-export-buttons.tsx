@@ -14,7 +14,7 @@ interface SectionExportButtonsProps {
   traitKeys: string[];
 }
 
-type ExportLevel = "species" | "genus" | "family";
+type ExportLevel = "species" | "genus" | "family" | "order";
 
 /**
  * Three export buttons (Species/Genus/Family) for a trait section.
@@ -102,6 +102,16 @@ export function SectionExportButtons({
         >
           <Download className="h-3 w-3 mr-1" />
           Family
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleExport("order")}
+          disabled={loadingLevel !== null}
+          className="text-xs h-7 px-2"
+        >
+          <Download className="h-3 w-3 mr-1" />
+          Order
         </Button>
       </div>
 

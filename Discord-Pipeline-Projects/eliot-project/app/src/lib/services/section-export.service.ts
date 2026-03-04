@@ -814,7 +814,7 @@ function unionFillRows(rows: Array<Record<string, unknown>>): Array<Record<strin
 export async function getSectionExportData(
   speciesId: string,
   traitKeys: string[],
-  level: 'species' | 'genus' | 'family'
+  level: 'species' | 'genus' | 'family' | 'order'
 ): Promise<Array<Record<string, unknown>> | null> {
   const data = await getOrLoadData();
 
@@ -832,6 +832,8 @@ export async function getSectionExportData(
       if (level === 'genus' && sp.genus === species.genus) {
         targetSpeciesIds.push(id);
       } else if (level === 'family' && sp.family === species.family) {
+        targetSpeciesIds.push(id);
+      } else if (level === 'order' && sp.order === species.order) {
         targetSpeciesIds.push(id);
       }
     }

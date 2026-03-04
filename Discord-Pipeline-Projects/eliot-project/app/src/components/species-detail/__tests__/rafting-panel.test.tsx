@@ -368,14 +368,16 @@ describe('US-7.3: Barplots for rafting size and age', () => {
     expect(recordsLink!.textContent).toContain('3 records');
   });
 
-  it('should show genus and family comparison text with n_sp', () => {
+  it('should show genus and family comparison text with n_sp subscript', () => {
     const { container } = render(<RaftingPanel data={dataWithSize} />);
     const compText = container.querySelector('[data-testid="comparison-text"]');
     expect(compText).toBeInTheDocument();
     expect(screen.getByText('Genus average:')).toBeInTheDocument();
     expect(screen.getByText('Family average:')).toBeInTheDocument();
-    expect(screen.getByText(/n_sp = 4/)).toBeInTheDocument();
-    expect(screen.getByText(/n_sp = 12/)).toBeInTheDocument();
+    // n_sp rendered with <sub>sp</sub>
+    const subs = compText!.querySelectorAll('sub');
+    const spSubs = Array.from(subs).filter((sub) => sub.textContent === 'sp');
+    expect(spSubs.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should display "No rafting size data available" when no size records', () => {

@@ -7,7 +7,7 @@ import { render } from '@testing-library/react';
 import { TraitCard } from '../trait-card';
 
 describe('n_sp subscript rendering', () => {
-  it('should render n_sp with <sub> tag in genus average fallback', () => {
+  it('should show "No known values" when species has no data even if genus stats available', () => {
     const { container } = render(
       <TraitCard
         label="Settlement Age"
@@ -27,10 +27,8 @@ describe('n_sp subscript rendering', () => {
       />
     );
 
-    // Should contain <sub>sp</sub> element
-    const subs = container.querySelectorAll('sub');
-    const spSub = Array.from(subs).find((sub) => sub.textContent === 'sp');
-    expect(spSub).toBeTruthy();
+    // Should show "No known values" instead of genus average fallback
+    expect(container.textContent).toContain('No known values');
   });
 
   it('should render n_sp with <sub> tag in comparison stats row', () => {

@@ -25,6 +25,10 @@ interface SpeciesImageGalleryProps {
   images: SpeciesImage[];
   /** Species name for accessibility */
   speciesName: string;
+  /** Whether to hide the caption below images (when rendered externally) */
+  hideCaption?: boolean;
+  /** Callback when current image index changes */
+  onCurrentIndexChange?: (index: number) => void;
 }
 
 /**
@@ -84,7 +88,7 @@ function SpeciesImageWithFallback({
   );
 }
 
-export function SpeciesImageGallery({ images, speciesName }: SpeciesImageGalleryProps) {
+export function SpeciesImageGallery({ images, speciesName, hideCaption, onCurrentIndexChange }: SpeciesImageGalleryProps) {
   const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
   const [count, setCount] = useState(0);
@@ -95,12 +99,16 @@ export function SpeciesImageGallery({ images, speciesName }: SpeciesImageGallery
     if (!api) return;
 
     setCount(api.scrollSnapList().length);
-    setCurrent(api.selectedScrollSnap());
+    const idx = api.selectedScrollSnap();
+    setCurrent(idx);
+    onCurrentIndexChange?.(idx);
 
     api.on('select', () => {
-      setCurrent(api.selectedScrollSnap());
+      const newIdx = api.selectedScrollSnap();
+      setCurrent(newIdx);
+      onCurrentIndexChange?.(newIdx);
     });
-  }, [api]);
+  }, [api, onCurrentIndexChange]);
 
   const openLightbox = (index: number) => {
     setLightboxIndex(index);
@@ -131,12 +139,14 @@ export function SpeciesImageGallery({ images, speciesName }: SpeciesImageGallery
               onClick={() => openLightbox(0)}
             />
           </div>
-          <ImageCaption
-            author={image.author}
-            displayAuthor={image.displayAuthor}
-            uncertain={image.uncertain}
-            sourceDescription={image.sourceDescription}
-          />
+          {!hideCaption && (
+            <ImageCaption
+              author={image.author}
+              displayAuthor={image.displayAuthor}
+              uncertain={image.uncertain}
+              sourceDescription={image.sourceDescription}
+            />
+          )}
         </div>
         <ImageLightbox
           images={images}
@@ -166,11 +176,13 @@ export function SpeciesImageGallery({ images, speciesName }: SpeciesImageGallery
                       onClick={() => openLightbox(index)}
                     />
                   </div>
-                  <ImageCaption 
-                    author={image.author} 
-                    displayAuthor={image.displayAuthor}
-                    uncertain={image.uncertain} 
-                  />
+                  {!hideCaption && (
+                    <ImageCaption
+                      author={image.author}
+                      displayAuthor={image.displayAuthor}
+                      uncertain={image.uncertain}
+                    />
+                  )}
                 </CarouselItem>
               );
             })}

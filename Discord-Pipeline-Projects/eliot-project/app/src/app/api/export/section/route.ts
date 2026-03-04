@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const speciesId = url.searchParams.get('speciesId');
-    const level = url.searchParams.get('level') as 'species' | 'genus' | 'family';
+    const level = url.searchParams.get('level') as 'species' | 'genus' | 'family' | 'order';
     const traitsParam = url.searchParams.get('traits');
 
     if (!speciesId || !level || !traitsParam) {
@@ -21,9 +21,9 @@ export async function GET(request: Request) {
       );
     }
 
-    if (!['species', 'genus', 'family'].includes(level)) {
+    if (!['species', 'genus', 'family', 'order'].includes(level)) {
       return NextResponse.json(
-        { error: 'level must be species, genus, or family' },
+        { error: 'level must be species, genus, family, or order' },
         { status: 400 }
       );
     }

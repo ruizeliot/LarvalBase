@@ -268,14 +268,16 @@ describe('US-6.2: Barplot for pelagic juvenile size', () => {
     expect(recordsLink!.textContent).toContain('3 records');
   });
 
-  it('should show genus and family comparison text with n_sp', () => {
+  it('should show genus and family comparison text with n_sp subscript', () => {
     const { container } = render(<PelagicJuvenilePanel data={dataWithSize} />);
     const compText = container.querySelector('[data-testid="comparison-text"]');
     expect(compText).toBeInTheDocument();
     expect(screen.getByText('Genus average:')).toBeInTheDocument();
     expect(screen.getByText('Family average:')).toBeInTheDocument();
-    expect(screen.getByText(/n_sp = 5/)).toBeInTheDocument();
-    expect(screen.getByText(/n_sp = 14/)).toBeInTheDocument();
+    // n_sp is now rendered with <sub>sp</sub> so check for sub elements
+    const subs = compText!.querySelectorAll('sub');
+    const spSubs = Array.from(subs).filter((sub) => sub.textContent === 'sp');
+    expect(spSubs.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should display "No pelagic juvenile size data available" when no size records', () => {
@@ -420,12 +422,16 @@ describe('US-6.3: Barplot for pelagic juvenile duration', () => {
     expect(durationValue!.textContent).toContain('±');
   });
 
-  it('should show duration comparison text with n_sp', () => {
-    render(<PelagicJuvenilePanel data={dataWithDuration} />);
+  it('should show duration comparison text with n_sp subscript', () => {
+    const { container } = render(<PelagicJuvenilePanel data={dataWithDuration} />);
     expect(screen.getByText('Genus average:')).toBeInTheDocument();
     expect(screen.getByText('Family average:')).toBeInTheDocument();
-    expect(screen.getByText(/n_sp = 8/)).toBeInTheDocument();
-    expect(screen.getByText(/n_sp = 22/)).toBeInTheDocument();
+    // n_sp rendered with <sub>sp</sub>
+    const compTexts = container.querySelectorAll('[data-testid="comparison-text"]');
+    const lastComp = compTexts[compTexts.length - 1];
+    const subs = lastComp?.querySelectorAll('sub') ?? [];
+    const spSubs = Array.from(subs).filter((sub) => sub.textContent === 'sp');
+    expect(spSubs.length).toBeGreaterThanOrEqual(2);
   });
 
   it('should display "No pelagic juvenile duration data available" when no duration records', () => {

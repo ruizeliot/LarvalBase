@@ -560,7 +560,7 @@ function NumericTraitPanel({
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Genus average:</span>
                 <span className="font-mono">
-                  {comparisons.genus.mean.toFixed(2)} {unit} (n_sp = {comparisons.genus.speciesCount})
+                  {comparisons.genus.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.genus.speciesCount})
                 </span>
               </div>
             )}
@@ -568,7 +568,7 @@ function NumericTraitPanel({
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Family average:</span>
                 <span className="font-mono">
-                  {comparisons.family.mean.toFixed(2)} {unit} (n_sp = {comparisons.family.speciesCount})
+                  {comparisons.family.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.family.speciesCount})
                 </span>
               </div>
             )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useCallback } from "react";
 import { SpeciesImageGallery } from "./species-image-gallery";
 import { FamilyIcon } from "./family-icon";
 import { useSpeciesImages } from "@/hooks/use-species-images";
@@ -39,15 +40,27 @@ export function SpeciesHeader({
   studyCount,
 }: SpeciesHeaderProps) {
   const { images, isLoading } = useSpeciesImages(speciesId);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const handleImageIndexChange = useCallback((index: number) => {
+    setCurrentImageIndex(index);
+  }, []);
+
+  const currentImage = images[currentImageIndex];
 
   return (
     <div className="flex gap-6">
       {/* Image gallery or skeleton */}
-      <div className="flex-shrink-0 w-[200px]">
+      <div className="flex-shrink-0 w-[400px]">
         {isLoading ? (
           <Skeleton className="w-full aspect-[4/3] rounded-lg" />
         ) : (
-          <SpeciesImageGallery images={images} speciesName={scientificName} />
+          <SpeciesImageGallery
+            images={images}
+            speciesName={scientificName}
+            hideCaption
+            onCurrentIndexChange={handleImageIndexChange}
+          />
         )}
       </div>
 
@@ -84,6 +97,26 @@ export function SpeciesHeader({
               <span className="font-mono font-bold">{studyCount}</span> stud
               {studyCount !== 1 ? "ies" : "y"}
             </span>
+          </div>
+        )}
+
+        {/* Photo credit — left-aligned below stats */}
+        {currentImage && (
+          <div className="text-sm text-muted-foreground">
+            <span>Photo: {currentImage.displayAuthor}</span>
+            {currentImage.uncertain ? (
+              <span className="text-red-500 font-medium ml-2">(Unsure ID)</span>
+            ) : (
+              <span className="text-green-500 font-medium ml-2">(Sure ID)</span>
+            )}
+            {currentImage.sourceDescription && (
+              <span className="text-xs opacity-75 ml-2">Source: {currentImage.sourceDescription}</span>
+            )}
+            {images.length > 1 && (
+              <span className="text-xs opacity-75 ml-2">
+                {currentImageIndex + 1} / {images.length}
+              </span>
+            )}
           </div>
         )}
 
