@@ -235,7 +235,7 @@ function LeafletMap({ locations }: LeafletMapProps) {
       const bounds = L.latLngBounds(
         locations.map((loc) => [loc.latitude, loc.longitude] as L.LatLngTuple)
       );
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 10 });
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
     }
 
     mapRef.current = map;
