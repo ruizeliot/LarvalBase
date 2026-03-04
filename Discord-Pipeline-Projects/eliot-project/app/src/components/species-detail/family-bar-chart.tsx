@@ -159,9 +159,8 @@ export function FamilyBarChart({
           <CartesianGrid
             horizontal={false}
             vertical={true}
-            stroke="hsl(var(--border))"
+            stroke="#cccccc"
             strokeDasharray="3 3"
-            strokeOpacity={0.5}
           />
           <XAxis
             type="number"
