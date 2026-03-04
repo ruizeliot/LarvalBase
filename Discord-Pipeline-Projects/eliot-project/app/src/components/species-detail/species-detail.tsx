@@ -24,6 +24,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { formatTraitName } from "@/lib/constants/trait-groups";
 import { DISPLAY_GROUPS, TRAIT_UNITS } from "./species-detail-config";
 import { getSectionIcon } from "@/lib/constants/section-icons";
+import { SettlementSamplingIcon } from "./settlement-sampling-icon";
 import type { ComparisonStats } from "@/lib/types/species.types";
 
 /**
@@ -296,13 +297,7 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
                         style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
                         title="Settlement-stage sampling locations"
                       >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={getSectionIcon("Settlement-stage sampling locations")}
-                          alt="Settlement-stage sampling locations icon"
-                          width={44}
-                          height={44}
-                        />
+                        <SettlementSamplingIcon size={44} />
                       </div>
                       <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
                     </div>
