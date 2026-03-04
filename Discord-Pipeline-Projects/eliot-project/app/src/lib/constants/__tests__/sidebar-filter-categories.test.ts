@@ -15,10 +15,13 @@ describe('sidebar filter categories', () => {
     expect(pj?.traits).toContain('pelagic_juvenile_behavior');
   });
 
-  it('should have vertical_day and vertical_night in Vertical Position group', () => {
+  it('should have depth traits but NOT vertical_day/vertical_night in Vertical Position group', () => {
     const vp = TRAIT_GROUPS.find((g) => g.name === 'Vertical Position');
-    expect(vp?.traits).toContain('vertical_day');
-    expect(vp?.traits).toContain('vertical_night');
+    expect(vp?.traits).toContain('vertical_distribution');
+    expect(vp?.traits).toContain('vertical_day_depth');
+    expect(vp?.traits).toContain('vertical_night_depth');
+    expect(vp?.traits).not.toContain('vertical_day');
+    expect(vp?.traits).not.toContain('vertical_night');
   });
 
   it('should have egg_position, egg_shape, egg_oil_globules in Egg & Incubation group', () => {
