@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useSpeciesDetail } from "@/hooks/use-species-detail";
-import { useRawData } from "@/hooks/use-raw-data";
 import { SpeciesHeader } from "./species-header";
 import { TraitGroup, type TraitData } from "./trait-group";
 import { CollectionMap } from "./collection-map";
 import { ReferencesSection } from "./references-section";
 import { RawDataModal } from "./raw-data-modal";
 import { SpeciesGrowthChart } from "./species-growth-chart";
-import { ExportButton } from "@/components/export/export-button";
 import { EggQualitativePanel } from "./egg-qualitative-panel";
 import { useEggQualitative } from "@/hooks/use-egg-qualitative";
 import { PelagicJuvenilePanel } from "./pelagic-juvenile-panel";
@@ -110,9 +108,6 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
   const { data, isLoading, error, recordCount, studyCount, locations, references } =
     useSpeciesDetail(speciesId);
 
-  // Fetch all raw data for export (no trait type filter)
-  const { data: allRawData } = useRawData(speciesId, undefined, true);
-
   // Fetch qualitative egg data (US-3.1)
   const { data: eggQualitativeData } = useEggQualitative(speciesId);
 
@@ -169,17 +164,6 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
     setSelectedTrait({ traitType, traitName });
     setModalOpen(true);
   }, []);
-
-  // Prepare export data for all traits
-  const allTraitsExportData = useMemo(() => {
-    return allRawData.map((measurement) => ({
-      Trait_Type: measurement.traitType,
-      Value: measurement.value,
-      Unit: measurement.unit,
-      Reference: measurement.source || "",
-      DOI: measurement.doi || "",
-    }));
-  }, [allRawData]);
 
   // Loading state
   if (isLoading) {
@@ -249,17 +233,6 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
         recordCount={recordCount}
         studyCount={studyCount}
       />
-
-      {/* Export All Traits Button */}
-      <div className="flex justify-end">
-        <ExportButton
-          data={allTraitsExportData}
-          filename={`${data.species.scientificName.toLowerCase().replace(/\s+/g, "-")}-all-traits`}
-          label="Export All Traits"
-          variant="outline"
-          size="sm"
-        />
-      </div>
 
       {/* Growth Curves Chart - At the top, before traits */}
       <SpeciesGrowthChart
