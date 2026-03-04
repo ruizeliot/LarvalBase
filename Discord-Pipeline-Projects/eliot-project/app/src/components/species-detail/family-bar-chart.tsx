@@ -1,6 +1,6 @@
 'use client';
 
-import { Bar, BarChart, XAxis, YAxis, Cell } from 'recharts';
+import { Bar, BarChart, XAxis, YAxis, Cell, CartesianGrid } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -156,6 +156,13 @@ export function FamilyBarChart({
           layout="vertical"
           margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
         >
+          <CartesianGrid
+            horizontal={false}
+            vertical={true}
+            stroke="hsl(var(--border))"
+            strokeDasharray="3 3"
+            strokeOpacity={0.5}
+          />
           <XAxis
             type="number"
             domain={xDomain}
