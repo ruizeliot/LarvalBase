@@ -17,6 +17,7 @@ import { usePelagicJuvenile } from "@/hooks/use-pelagic-juvenile";
 import { RaftingPanel } from "./rafting-panel";
 import { useRafting } from "@/hooks/use-rafting";
 import { SectionExportButtons } from "./section-export-buttons";
+import { isAllEggsSpherical } from "./egg-spherical-helper";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -195,15 +196,9 @@ export function SpeciesDetail({ speciesId }: SpeciesDetailProps) {
   }
 
   // Check if all eggs are spherical (for egg width/diameter logic)
-  const allEggsSpherical = (() => {
-    if (!eggQualitativeData) return false;
-    const shapeData = (eggQualitativeData as unknown as Record<string, unknown>).EGG_SHAPE;
-    if (!shapeData || !Array.isArray(shapeData)) return false;
-    // Check frequency data: all entries must be "Spherical" (case-insensitive)
-    const entries = shapeData as Array<{ category: string; count: number }>;
-    if (entries.length === 0) return false;
-    return entries.every((e) => e.category.toLowerCase() === 'spherical');
-  })();
+  // egg_width data only exists when EGG_W_MEAN differs from EGG_L_MEAN (see data-repository.ts)
+  const hasEggWidthData = data ? (data.traits['egg_width']?.n ?? 0) > 0 : false;
+  const allEggsSpherical = isAllEggsSpherical(eggQualitativeData ?? null, hasEggWidthData);
 
   // Map API traits to display groups
   // Show ALL trait categories, with "No known values" for traits without data

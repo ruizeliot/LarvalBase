@@ -1,48 +1,75 @@
 /**
  * Tests for egg width/length display logic.
- * When all eggs are spherical, show "Egg Diameter" instead of "Egg Length"
- * and hide "Egg Width" panel entirely.
+ * When all eggs are spherical AND no egg_width data differs from egg_diameter,
+ * show single "Egg Diameter" instead of "Egg Length" + "Egg Width".
  */
 import { describe, it, expect } from 'vitest';
+import { isAllEggsSpherical } from '../egg-spherical-helper';
+import type { EggQualitativeData } from '../egg-qualitative-panel';
 
-describe('egg width spherical logic', () => {
-  it('should detect all-spherical eggs from frequency data', () => {
-    const shapeData = [
-      { category: 'Spherical', count: 15 },
-    ];
-    const allSpherical = shapeData.every(
-      (e) => e.category.toLowerCase() === 'spherical'
-    );
-    expect(allSpherical).toBe(true);
+function makeEggData(shapeValues: string[]): EggQualitativeData {
+  const frequencies = shapeValues.reduce((acc, v) => {
+    const existing = acc.find((e) => e.value === v);
+    if (existing) existing.count++;
+    else acc.push({ value: v, count: 1 });
+    return acc;
+  }, [] as Array<{ value: string; count: number }>);
+
+  return {
+    level: 'species',
+    levelName: 'Test species',
+    traits: {
+      EGG_LOCATION: [],
+      EGG_DETAILS: [],
+      EGG_SHAPE: frequencies,
+      NB_OIL_GLOBULE: [],
+    },
+  };
+}
+
+describe('egg spherical detection (isAllEggsSpherical)', () => {
+  it('should return true when all shapes are spherical', () => {
+    const data = makeEggData(['Spherical', 'Spherical', 'Spherical']);
+    expect(isAllEggsSpherical(data, false)).toBe(true);
   });
 
-  it('should detect non-spherical eggs when mixed shapes exist', () => {
-    const shapeData = [
-      { category: 'Spherical', count: 10 },
-      { category: 'Ovoid', count: 3 },
-    ];
-    const allSpherical = shapeData.every(
-      (e) => e.category.toLowerCase() === 'spherical'
-    );
-    expect(allSpherical).toBe(false);
+  it('should return false when mixed shapes exist', () => {
+    const data = makeEggData(['Spherical', 'Ovoid']);
+    expect(isAllEggsSpherical(data, false)).toBe(false);
   });
 
-  it('should not be spherical when only non-spherical shapes exist', () => {
-    const shapeData = [
-      { category: 'Ellipsoid', count: 5 },
-    ];
-    const allSpherical = shapeData.every(
-      (e) => e.category.toLowerCase() === 'spherical'
-    );
-    expect(allSpherical).toBe(false);
+  it('should return false when only non-spherical shapes', () => {
+    const data = makeEggData(['Ellipsoid']);
+    expect(isAllEggsSpherical(data, false)).toBe(false);
   });
 
-  it('should hide egg_width trait when all spherical', () => {
+  it('should return false when no qualitative data', () => {
+    expect(isAllEggsSpherical(null, false)).toBe(false);
+  });
+
+  it('should return false when EGG_SHAPE is empty', () => {
+    const data = makeEggData([]);
+    expect(isAllEggsSpherical(data, false)).toBe(false);
+  });
+
+  it('should return false when egg_width data exists even if all spherical', () => {
+    const data = makeEggData(['Spherical']);
+    // hasEggWidthData=true means EGG_W_MEAN differs from EGG_L_MEAN
+    expect(isAllEggsSpherical(data, true)).toBe(false);
+  });
+
+  it('should be case-insensitive for spherical check', () => {
+    const data = makeEggData(['spherical', 'SPHERICAL']);
+    expect(isAllEggsSpherical(data, false)).toBe(true);
+  });
+});
+
+describe('egg trait filtering', () => {
+  it('should hide egg_width and rename egg_diameter when all spherical', () => {
     const traits = ['egg_diameter', 'egg_width', 'egg_volume'];
     const allEggsSpherical = true;
     const filtered = traits.filter((t) => !(allEggsSpherical && t === 'egg_width'));
     expect(filtered).toEqual(['egg_diameter', 'egg_volume']);
-    expect(filtered).not.toContain('egg_width');
   });
 
   it('should keep egg_width when not all spherical', () => {
