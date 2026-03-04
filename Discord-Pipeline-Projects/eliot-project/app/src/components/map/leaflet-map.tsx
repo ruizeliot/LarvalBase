@@ -235,7 +235,10 @@ function LeafletMap({ locations }: LeafletMapProps) {
       const bounds = L.latLngBounds(
         locations.map((loc) => [loc.latitude, loc.longitude] as L.LatLngTuple)
       );
-      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 12 });
+      // Single point: zoom out to show whole ocean region (e.g. Hawaii → Pacific)
+      // Multiple points: zoom in to show detail
+      const zoom = locations.length === 1 ? 3 : 12;
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: zoom });
     }
 
     mapRef.current = map;
