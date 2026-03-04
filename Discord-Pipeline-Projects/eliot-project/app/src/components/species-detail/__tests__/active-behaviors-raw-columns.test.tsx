@@ -44,10 +44,11 @@ describe('Active Behaviors trait-specific column definitions', () => {
     });
 
     it.each([
-      'LOCATION', 'LATITUDE', 'LONGITUDE', 'GEAR', 'PERIOD', 'ZONE',
-      'STAGE', 'POSITION_ISLAND', 'FILTERED_VOLUME', 'BOTTOM_DEPTH',
-      'DEPTH_INTERVAL_CONSIDERED', 'N_CAPTURE', 'MIN_DEPTH_CAPTURE',
-      'MAX_DEPTH_CAPTURE', 'WEIGHTING_DETAILS',
+      'LOCATION', 'GEAR', 'PERIOD', 'ZONE',
+      'STAGE', 'POSITION_ISLAND',
+      'DEPTH_INTERVAL_CONSIDERED', 'N_CAPTURE',
+      'WEIGHTED_MEAN_DEPTH_CAPTURE', 'MIN_DEPTH_CAPTURE',
+      'MAX_DEPTH_CAPTURE', 'WEIGHTED_SD_DEPTH_CAPTURE', 'WEIGHTING_DETAILS',
     ])('should include %s column', (field) => {
       expect(colKeys).toContain(field);
     });
@@ -63,8 +64,8 @@ describe('Active Behaviors trait-specific column definitions', () => {
       expect(refCol.linkField).toBe('LINK');
     });
 
-    it('should have 20 columns total', () => {
-      expect(cols.length).toBe(20);
+    it('should have 16 columns total', () => {
+      expect(cols.length).toBe(16);
     });
   });
 
@@ -215,20 +216,18 @@ describe('Active Behaviors raw data modal rendering', () => {
       />
     );
 
-    // Check trait-specific column headers
+    // Check trait-specific column headers (updated per fixes-round3.md spec)
     expect(screen.getByText('Name')).toBeInTheDocument();
     expect(screen.getByText('Location')).toBeInTheDocument();
-    expect(screen.getByText('Latitude')).toBeInTheDocument();
-    expect(screen.getByText('Longitude')).toBeInTheDocument();
     expect(screen.getByText('Gear')).toBeInTheDocument();
     expect(screen.getByText('Period')).toBeInTheDocument();
     expect(screen.getByText('Zone')).toBeInTheDocument();
-    expect(screen.getByText('Bottom Depth')).toBeInTheDocument();
-    expect(screen.getByText('N Capture')).toBeInTheDocument();
-    expect(screen.getByText('Min Depth Capture')).toBeInTheDocument();
-    expect(screen.getByText('Max Depth Capture')).toBeInTheDocument();
-    expect(screen.getByText('Weighting Details')).toBeInTheDocument();
-    expect(screen.getByText('Main Reference')).toBeInTheDocument();
+    expect(screen.getByText('Depth fished')).toBeInTheDocument();
+    expect(screen.getByText('N')).toBeInTheDocument();
+    expect(screen.getByText('Min')).toBeInTheDocument();
+    expect(screen.getByText('Max')).toBeInTheDocument();
+    expect(screen.getByText('Weighting')).toBeInTheDocument();
+    expect(screen.getByText('Main reference')).toBeInTheDocument();
 
     // Check data values are rendered
     expect(screen.getByText('Gulf of Aqaba')).toBeInTheDocument();
