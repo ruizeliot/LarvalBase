@@ -155,12 +155,24 @@ function extractSpeciesFromRows(rows: SpeciesRow[]): Map<string, Species> {
 
   for (const row of rows) {
     // Handle different column name formats (uppercase takes priority for settlement data)
-    const validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
-    if (!validName) continue;
+    let validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
 
     // Skip excluded families (non-fish taxonomy errors)
     const family = row.FAMILY ?? row.Family ?? '';
     if (isExcludedFamily(family)) continue;
+
+    // Handle genus/family level rows (RANK != Species, VALID_NAME is NA)
+    const rank = String((row as Record<string, unknown>).RANK ?? '').trim();
+    if (!validName || validName === 'NA') {
+      const genus = row.GENUS ?? row.Genus ?? '';
+      if (rank === 'Genus' && genus && genus !== 'NA') {
+        validName = `${genus} sp.`;
+      } else if ((rank === 'Family' || rank === 'Subfamily') && family && family !== 'NA') {
+        validName = `${family} und.`;
+      }
+    }
+
+    if (!validName || validName === 'NA') continue;
 
     const id = slugify(validName);
     if (species.has(id)) continue; // Skip duplicates
@@ -294,14 +306,14 @@ function extractTraitsFromRows(
     let validName = row.VALID_NAME ?? row.Valid_name ?? row.validname ?? '';
     const rank = String((row as Record<string, unknown>).RANK ?? '').trim();
 
-    // For genus/family level rows (VALID_NAME is NA), use genus/family name
-    if ((!validName || validName === 'NA') && filename.includes('vertical_position')) {
+    // For genus/family level rows (VALID_NAME is NA), use "GENUS sp." / "FAMILY und." labels
+    if (!validName || validName === 'NA') {
       const genus = String((row as Record<string, unknown>).GENUS ?? '').trim();
       const family = (row as Record<string, unknown>).FAMILY as string ?? '';
       if (rank === 'Genus' && genus && genus !== 'NA') {
-        validName = genus; // Will be stored under genus name as synthetic species
+        validName = `${genus} sp.`;
       } else if ((rank === 'Family' || rank === 'Subfamily') && family && family !== 'NA') {
-        validName = family;
+        validName = `${family} und.`;
       }
     }
 
