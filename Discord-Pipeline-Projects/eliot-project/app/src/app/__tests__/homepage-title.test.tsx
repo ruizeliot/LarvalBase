@@ -36,7 +36,8 @@ describe('US-2.1: New LarvalBase Title', () => {
   it('should display the full 2026 publication title', () => {
     render(<Home />);
 
-    expect(screen.getByText(/LarvalBase/)).toBeInTheDocument();
+    // "LarvalBase" appears in title and body text, so use getAllByText
+    expect(screen.getAllByText(/LarvalBase/).length).toBeGreaterThan(0);
     expect(
       screen.getByText(/Global pelagic dispersal traits databases for early-life stages of marine fishes/)
     ).toBeInTheDocument();

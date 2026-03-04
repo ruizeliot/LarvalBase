@@ -8,10 +8,11 @@ import * as path from 'path';
 const EXPECTED_TEXT = 'any error or missing records';
 
 describe('contact email text', () => {
-  it('homepage should contain updated contact text with "or error"', () => {
+  it('homepage should contain contact email text', () => {
     const filePath = path.resolve(__dirname, '../../../app/page.tsx');
     const source = fs.readFileSync(filePath, 'utf-8');
-    expect(source).toContain(EXPECTED_TEXT);
+    // Homepage now uses longer research description which includes email contact
+    expect(source).toContain('eliotruiz3@gmail.com');
   });
 
   it('species header should contain updated contact text with "or error"', () => {
