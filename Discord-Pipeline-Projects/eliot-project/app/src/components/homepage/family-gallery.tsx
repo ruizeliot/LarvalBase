@@ -176,6 +176,15 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         {family} — Photo Gallery
       </h2>
 
+      {/* Contact text for identification errors */}
+      <p className="text-sm text-muted-foreground italic">
+        Please send an email to{" "}
+        <a href="mailto:eliotruiz3@gmail.com" className="text-blue-400 hover:underline not-italic">
+          eliotruiz3@gmail.com
+        </a>{" "}
+        if you are aware of any identification error or species-level identification for unsure ID, or if one of the images displayed is yours and you would like it to be removed from this website.
+      </p>
+
       {(filteredData.genusSections ?? []).length === 0 && (filteredData.familyImages ?? []).length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>
       )}
