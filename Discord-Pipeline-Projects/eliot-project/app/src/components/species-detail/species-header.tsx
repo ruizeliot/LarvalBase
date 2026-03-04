@@ -100,26 +100,6 @@ export function SpeciesHeader({
           </div>
         )}
 
-        {/* Photo credit — left-aligned below stats */}
-        {currentImage && (
-          <div className="text-sm text-muted-foreground">
-            <span>Photo: {currentImage.displayAuthor}</span>
-            {currentImage.uncertain ? (
-              <span className="text-red-500 font-medium ml-2">(Unsure ID)</span>
-            ) : (
-              <span className="text-green-500 font-medium ml-2">(Sure ID)</span>
-            )}
-            {currentImage.sourceDescription && (
-              <span className="text-xs opacity-75 ml-2">Source: {currentImage.sourceDescription}</span>
-            )}
-            {images.length > 1 && (
-              <span className="text-xs opacity-75 ml-2">
-                {currentImageIndex + 1} / {images.length}
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Contact email notice */}
         <p className="text-xs italic text-muted-foreground leading-snug mt-1">
           Please send an email to{" "}
@@ -129,6 +109,30 @@ export function SpeciesHeader({
           if you are aware of any error or missing records, or if one of the
           images displayed is yours and you would like it to be removed from this website.
         </p>
+
+        {/* Photo credit — below contact email */}
+        {currentImage && (
+          <div className="text-sm text-muted-foreground">
+            <div>
+              <span>Photo: {currentImage.displayAuthor}</span>
+              {currentImage.uncertain ? (
+                <span className="text-red-500 font-medium ml-2">(Unsure ID)</span>
+              ) : (
+                <span className="text-green-500 font-medium ml-2">(Sure ID)</span>
+              )}
+              {images.length > 1 && (
+                <span className="text-xs opacity-75 ml-2">
+                  {currentImageIndex + 1} / {images.length}
+                </span>
+              )}
+            </div>
+            {currentImage.sourceDescription && (
+              <div className="text-xs opacity-75">
+                Source: {currentImage.sourceDescription}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
