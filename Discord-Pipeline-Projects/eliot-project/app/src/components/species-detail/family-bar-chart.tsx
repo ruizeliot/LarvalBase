@@ -112,6 +112,12 @@ export function FamilyBarChart({
   // Sort by decreasing mean value (highest at top)
   const sortedData = [...data].sort((a, b) => b.meanValue - a.meanValue);
 
+  // For depth traits (all negative values), domain = [dataMin, 0] so 0 is on the right
+  const allNegative = sortedData.length > 0 && sortedData.every(d => d.meanValue < 0);
+  const xDomain: [number | string, number | string] = allNegative
+    ? ['dataMin', 0]
+    : [0, 'dataMax'];
+
   // Prepare chart data with two-line display names
   const chartData = sortedData.map((d) => ({
     ...d,
@@ -152,7 +158,7 @@ export function FamilyBarChart({
         >
           <XAxis
             type="number"
-            domain={[0, 'dataMax']}
+            domain={xDomain}
             tickLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
             tickSize={6}
             axisLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
