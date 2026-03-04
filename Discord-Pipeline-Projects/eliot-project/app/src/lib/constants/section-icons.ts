@@ -21,7 +21,7 @@ export const SECTION_ICONS: Record<string, string> = {
   'Flexion Stage': '/icons/sections/Flexion Stage.svg',
   'Metamorphosis': '/icons/sections/Metamorphosis.svg',
   'Settlement': '/icons/sections/Settlement.svg',
-  'Settlement-stage sampling locations': '/icons/sections/Settlement-stage sampling locations.svg',
+  'Settlement-stage sampling locations': '/icons/sections/Settlement-stage%20sampling%20locations.svg',
 
   // Sections with dedicated SVGs
   'Active Behaviors': '/icons/sections/Active Behaviors.svg',
