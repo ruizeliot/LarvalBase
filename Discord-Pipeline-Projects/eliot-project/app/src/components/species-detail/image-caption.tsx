@@ -42,7 +42,10 @@ export function ImageCaption({ displayAuthor, uncertain, scale, link }: ImageCap
         </span>
       </div>
       {scale !== undefined && (
-        <span className="text-xs italic opacity-75">
+        <span
+          className="text-xs italic"
+          style={{ color: scale ? 'rgba(0, 186, 56, 0.5)' : 'rgba(248, 118, 109, 0.5)' }}
+        >
           {scale
             ? 'Specimen size or scale available in the source'
             : 'Specimen size or scale unavailable in the source'}
@@ -51,14 +54,16 @@ export function ImageCaption({ displayAuthor, uncertain, scale, link }: ImageCap
       <div>
         {uncertain ? (
           <span
-            className="text-red-500 font-medium"
+            className="font-medium"
+            style={{ color: '#F8766D' }}
             title="Species identification is uncertain"
           >
             (Unsure ID)
           </span>
         ) : (
           <span
-            className="text-green-500 font-medium"
+            className="font-medium"
+            style={{ color: '#00BA38' }}
             title="Species identification is confirmed"
           >
             (Sure ID)

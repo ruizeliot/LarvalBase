@@ -41,7 +41,7 @@ const mockImage: SpeciesImage = {
   path: 'Polynesia',
   filename: 'test-image.jpg',
   sourceDescription: '',
-  priority: 3,
+  priority: 4,
   speciesName: 'Chromis viridis',
   family: 'Pomacentridae',
   order: 'Perciformes',

@@ -22,7 +22,7 @@ describe('Image caption author tiers', () => {
     }
   });
 
-  it('should classify other authors as tier 3', () => {
-    expect(getAuthorTier('Random Author')).toBe(3);
+  it('should classify other authors as tier 4', () => {
+    expect(getAuthorTier('Random Author')).toBe(4);
   });
 });

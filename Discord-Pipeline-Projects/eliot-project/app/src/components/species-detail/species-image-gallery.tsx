@@ -324,16 +324,19 @@ function ImageLightbox({
               )}
             </p>
             {image.scale !== undefined && (
-              <p className="text-xs italic opacity-75">
+              <p
+                className="text-xs italic"
+                style={{ color: image.scale ? 'rgba(0, 186, 56, 0.5)' : 'rgba(248, 118, 109, 0.5)' }}
+              >
                 {image.scale
                   ? 'Specimen size or scale available in the source'
                   : 'Specimen size or scale unavailable in the source'}
               </p>
             )}
             {image.uncertain ? (
-              <p className="text-red-400 text-sm">(Unsure ID)</p>
+              <p className="text-sm" style={{ color: '#F8766D' }}>(Unsure ID)</p>
             ) : (
-              <p className="text-green-400 text-sm">(Sure ID)</p>
+              <p className="text-sm" style={{ color: '#00BA38' }}>(Sure ID)</p>
             )}
             {images.length > 1 && (
               <p className="text-xs opacity-75 mt-1">

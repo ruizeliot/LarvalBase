@@ -5,7 +5,7 @@ import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
 import { loadImageRegistry } from '@/lib/data/image-registry';
 import { buildImageUrl } from '@/lib/utils/encode-image-path';
-import { BLACKWATER_AUTHORS } from '@/lib/types/image.types';
+import { BLACKWATER_AUTHORS, SECONDARY_AUTHORS, TERTIARY_AUTHORS } from '@/lib/types/image.types';
 
 /**
  * Count images per family from a metadata file.
@@ -112,10 +112,10 @@ export async function GET() {
 
     // Collect thumbnail candidates per family from ALL metadata sources
     // (species-level, genus-level, AND family-level images)
-    type Candidate = { imageUrl: string; brightness: number; uncertain: boolean; imgPath: string; filename: string; author: string };
+    type Candidate = { imageUrl: string; brightness: number; uncertain: boolean; imgPath: string; filename: string; author: string; level: 'species' | 'genus' | 'family' };
     const familyCandidates = new Map<string, Candidate[]>();
 
-    const addCandidate = (family: string, imgPath: string, filename: string, uncertain: boolean, author: string) => {
+    const addCandidate = (family: string, imgPath: string, filename: string, uncertain: boolean, author: string, level: 'species' | 'genus' | 'family' = 'species') => {
       const relPath = `${imgPath}/${filename}`;
       const brightness = darknessByPath.get(relPath) ?? 999;
       const candidates = familyCandidates.get(family) ?? [];
@@ -126,6 +126,7 @@ export async function GET() {
         imgPath,
         filename,
         author,
+        level,
       });
       familyCandidates.set(family, candidates);
     };
@@ -140,7 +141,8 @@ export async function GET() {
 
     // 2. Also parse fam_ids and gen_ids metadata for additional blackwater candidates
     // (some families only have BW images at genus/family level, not species level)
-    for (const metaFile of ['fam_ids_pics_metadata.txt', 'gen_ids_pics_metadata.txt']) {
+    for (const metaFile of ['fam_ids_pics_metadata.txt', 'gen_ids_pics_metadata.txt'] as const) {
+      const metaLevel: 'species' | 'genus' | 'family' = metaFile.startsWith('fam_') ? 'family' : 'genus';
       try {
         let content = await fs.readFile(path.join(imagesDir, metaFile), 'utf-8');
         const lines = content.split('\n');
@@ -172,7 +174,7 @@ export async function GET() {
             const uncertain = (row.UNCERTAIN || '').replace(/^"|"$/g, '') === 'TRUE';
             const rowAuthor = (row.AUTHOR || '').replace(/^"|"$/g, '');
             if (family && imgPath && fileName) {
-              addCandidate(family, imgPath, fileName, uncertain, rowAuthor);
+              addCandidate(family, imgPath, fileName, uncertain, rowAuthor, metaLevel);
             }
           },
         });
@@ -182,19 +184,34 @@ export async function GET() {
     }
 
     // Select best valid thumbnail per family:
-    // Priority: 1. Blackwater author + certain (darkest first)
-    //           2. Other certain (darkest first)
-    //           3. Uncertain images (darkest first)
+    // Priority: 1. Blackwater + species-level + sure ID (darkest first)
+    //           2. Secondary authors + sure ID (darkest first)
+    //           3. Tertiary authors + sure ID (darkest first)
+    //           4. Other authors + sure ID (darkest first)
+    //           5. Uncertain images (same tier ordering)
     const familyImageMap = new Map<string, string>();
+
+    function getAuthorTierForSort(author: string): number {
+      if (BLACKWATER_AUTHORS.has(author)) return 1;
+      if (SECONDARY_AUTHORS.has(author)) return 2;
+      if (TERTIARY_AUTHORS.has(author)) return 3;
+      return 4;
+    }
+
     for (const [family, candidates] of familyCandidates) {
       candidates.sort((a, b) => {
-        const aIsBw = BLACKWATER_AUTHORS.has(a.author);
-        const bIsBw = BLACKWATER_AUTHORS.has(b.author);
-        // Blackwater always first
-        if (aIsBw !== bIsBw) return aIsBw ? -1 : 1;
-        // Within same group, certain before uncertain
+        // Species-level preferred over genus/family level
+        const levelOrder = { species: 0, genus: 1, family: 2 };
+        const aLevel = levelOrder[a.level] ?? 2;
+        const bLevel = levelOrder[b.level] ?? 2;
+        if (aLevel !== bLevel) return aLevel - bLevel;
+        // Certain before uncertain
         if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;
-        // Within same certainty, darkest first
+        // Author tier (blackwater > secondary > tertiary > other)
+        const aTier = getAuthorTierForSort(a.author);
+        const bTier = getAuthorTierForSort(b.author);
+        if (aTier !== bTier) return aTier - bTier;
+        // Within same tier+certainty, darkest first
         return a.brightness - b.brightness;
       });
       for (const candidate of candidates) {

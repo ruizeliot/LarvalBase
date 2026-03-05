@@ -30,12 +30,14 @@ export const BLACKWATER_AUTHORS = new Set([
   'Whitestone (2026) - Instagram page',
   'Zhang F. (2026) - Instagram page',
   'Zhang J. (2026) - Instagram page',
+  'BW Cozumel (2026) - Instagram page',
 ]);
 
 /**
- * Literature/BOLD authors — second priority after blackwater.
+ * Secondary authors — second priority after blackwater.
+ * Includes Literature/BOLD and specific research authors.
  */
-export const LITERATURE_AUTHORS = new Set([
+export const SECONDARY_AUTHORS = new Set([
   'Collet et al. (2015) - BOLD project',
   'Jaonalison et al. (2018) - BOLD project',
   'Jaonalison et al. (2015) - BOLD project',
@@ -45,6 +47,23 @@ export const LITERATURE_AUTHORS = new Set([
   'Johnson et al. (2025) - Journal of the Ocean Science Foundation',
   'Baldwin et al. (2009) - Zootaxa',
   'Baldwin et al. (2011) - Zootaxa',
+  // Also match em-dash variants
+  'Baldwin et al. (2009) – Zootaxa',
+  'Baldwin et al. (2011) – Zootaxa',
+]);
+
+/** @deprecated Use SECONDARY_AUTHORS instead */
+export const LITERATURE_AUTHORS = SECONDARY_AUTHORS;
+
+/**
+ * Tertiary authors — third priority after secondary.
+ */
+export const TERTIARY_AUTHORS = new Set([
+  'Chatagnon & Aimar (2015) - Book',
+  'Chatagnon & Aimar (2015) – Book',
+  'Current study (ADLIFISH 1)',
+  'Current Study',
+  'Current study (IchthyoGwada)',
 ]);
 
 /**
@@ -54,8 +73,9 @@ export const LITERATURE_AUTHORS = new Set([
  */
 export function getAuthorTier(author: string): number {
   if (BLACKWATER_AUTHORS.has(author)) return 1;
-  if (LITERATURE_AUTHORS.has(author)) return 2;
-  return 3;
+  if (SECONDARY_AUTHORS.has(author)) return 2;
+  if (TERTIARY_AUTHORS.has(author)) return 3;
+  return 4;
 }
 
 /**
