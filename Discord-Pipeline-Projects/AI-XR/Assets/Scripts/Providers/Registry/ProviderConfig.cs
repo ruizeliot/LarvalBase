@@ -19,6 +19,12 @@ namespace AIXR.Providers.Registry
         public BrickConfig TTS = new();
         public BrickConfig Vision = new();
 
+        /// <summary>
+        /// Incarnation mode stored as int for serialization.
+        /// 0=Avatar, 1=Orbe, 2=Invisible. Default: 1 (Orbe).
+        /// </summary>
+        public int IncarnationModeIndex = 1;
+
         [NonSerialized] private string _basePath;
 
         public ProviderConfig() : this(Application.streamingAssetsPath) { }
@@ -105,6 +111,23 @@ namespace AIXR.Providers.Registry
         public void UpdateSlotLatency(BrickType brick, SlotType slot, int latencyMs)
         {
             GetSlotConfig(brick, slot).LastLatencyMs = latencyMs;
+        }
+
+        /// <summary>
+        /// Get the persisted incarnation mode.
+        /// Uses AIXR.Incarnation.IncarnationMode enum values (0=Avatar, 1=Orbe, 2=Invisible).
+        /// </summary>
+        public AIXR.Incarnation.IncarnationMode GetIncarnationMode()
+        {
+            return (AIXR.Incarnation.IncarnationMode)Math.Clamp(IncarnationModeIndex, 0, 2);
+        }
+
+        /// <summary>
+        /// Set the incarnation mode for persistence.
+        /// </summary>
+        public void SetIncarnationMode(AIXR.Incarnation.IncarnationMode mode)
+        {
+            IncarnationModeIndex = (int)mode;
         }
 
         public void Save()
