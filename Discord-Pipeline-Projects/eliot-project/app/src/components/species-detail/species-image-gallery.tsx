@@ -144,7 +144,8 @@ export function SpeciesImageGallery({ images, speciesName, hideCaption, onCurren
               author={image.author}
               displayAuthor={image.displayAuthor}
               uncertain={image.uncertain}
-              sourceDescription={image.sourceDescription}
+              scale={image.scale}
+              link={image.link}
             />
           )}
         </div>
@@ -181,6 +182,8 @@ export function SpeciesImageGallery({ images, speciesName, hideCaption, onCurren
                       author={image.author}
                       displayAuthor={image.displayAuthor}
                       uncertain={image.uncertain}
+                      scale={image.scale}
+                      link={image.link}
                     />
                   )}
                 </CarouselItem>
@@ -306,11 +309,27 @@ function ImageLightbox({
           <div className="text-center">
             <p className="font-medium italic">{speciesName}</p>
             <p className="text-sm opacity-90">
-              Photo: {image.displayAuthor}
-              {image.sourceDescription && (
-                <span className="opacity-75"> · {image.sourceDescription}</span>
+              Picture source:{' '}
+              {image.link ? (
+                <a
+                  href={image.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  {image.displayAuthor}
+                </a>
+              ) : (
+                image.displayAuthor
               )}
             </p>
+            {image.scale !== undefined && (
+              <p className="text-xs italic opacity-75">
+                {image.scale
+                  ? 'Specimen size or scale available in the source'
+                  : 'Specimen size or scale unavailable in the source'}
+              </p>
+            )}
             {image.uncertain ? (
               <p className="text-red-400 text-sm">(Unsure ID)</p>
             ) : (

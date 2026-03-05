@@ -1,52 +1,28 @@
 /**
- * Tests for US-5.3: Fix captions for Polynesia, Maldives, classified_bw.
+ * Tests for image caption display with new format.
  *
- * PRD Section 3.4: Fix missing captions for images from:
- * - images/Polynesia → "CRIOBE field collection"
- * - images/Maldives → "ADLIFISH survey"
- * - classified_bw_images_species → "Blackwater"
+ * New format:
+ * - "Picture source: AUTHOR" (with hyperlink if LINK available)
+ * - Scale info in italic
+ * - Sure/Unsure ID indicator
  */
 import { describe, it, expect } from 'vitest';
-import { getSourceDescription } from '@/lib/types/image.types';
+import { BLACKWATER_AUTHORS, LITERATURE_AUTHORS, getAuthorTier } from '@/lib/types/image.types';
 
-describe('US-5.3: Image caption fixes', () => {
-  it('should return proper source description for Polynesia path', () => {
-    const desc = getSourceDescription('Polynesia');
-    expect(desc).toBe('Polynesia — CRIOBE field collection');
+describe('Image caption author tiers', () => {
+  it('should classify blackwater authors as tier 1', () => {
+    for (const author of BLACKWATER_AUTHORS) {
+      expect(getAuthorTier(author)).toBe(1);
+    }
   });
 
-  it('should return proper source description for Maldives path', () => {
-    const desc = getSourceDescription('Maldives');
-    expect(desc).toBe('Maldives — ADLIFISH survey');
+  it('should classify literature authors as tier 2', () => {
+    for (const author of LITERATURE_AUTHORS) {
+      expect(getAuthorTier(author)).toBe(2);
+    }
   });
 
-  it('should return proper source description for classified_bw_images_species path', () => {
-    const desc = getSourceDescription('classified_bw_images_species');
-    expect(desc).toBe('Blackwater');
-  });
-
-  it('should return proper source description for Madagascar - Reunion path', () => {
-    const desc = getSourceDescription('Madagascar - Reunion');
-    expect(desc).toBe('Madagascar — Ocea Consult–IHSM');
-  });
-
-  it('should return proper source description for Guadeloupe paths', () => {
-    expect(getSourceDescription('Guadeloupe')).toBe('Guadeloupe — IchthyoGwada');
-    expect(getSourceDescription('Guadeloupe - Amelia')).toBe('Guadeloupe — Amelia Chatagnon');
-  });
-
-  it('should return proper source description for Vietnam path', () => {
-    const desc = getSourceDescription('Vietnam');
-    expect(desc).toBe('Vietnam — Pham & Durand');
-  });
-
-  it('should return proper source description for Fisher path', () => {
-    const desc = getSourceDescription('Fisher');
-    expect(desc).toBe('Fisher et al. 2022');
-  });
-
-  it('should return the path itself for unknown paths', () => {
-    const desc = getSourceDescription('unknown/path');
-    expect(desc).toBe('unknown/path');
+  it('should classify other authors as tier 3', () => {
+    expect(getAuthorTier('Random Author')).toBe(3);
   });
 });

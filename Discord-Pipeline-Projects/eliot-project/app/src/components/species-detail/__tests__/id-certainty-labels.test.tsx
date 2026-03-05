@@ -2,7 +2,7 @@
  * Tests for species ID certainty labels.
  *
  * User QA feedback: certain ID should show green label,
- * uncertain ID should show red label (was yellow before).
+ * uncertain ID should show red label.
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -12,10 +12,9 @@ describe('Species ID certainty labels', () => {
   it('should show green "Sure ID" label when uncertain=false', () => {
     render(
       <ImageCaption
-        author="Blackwater"
-        displayAuthor="Frank Baensch"
+        author="Bartick (2026) - Instagram page"
+        displayAuthor="Bartick (2026) - Instagram page"
         uncertain={false}
-        sourceDescription="Blackwater"
       />
     );
 
@@ -27,10 +26,9 @@ describe('Species ID certainty labels', () => {
   it('should show red "Unsure ID" label when uncertain=true', () => {
     render(
       <ImageCaption
-        author="CRIOBE"
-        displayAuthor="CRIOBE"
+        author="Some Author"
+        displayAuthor="Some Author"
         uncertain={true}
-        sourceDescription="Polynesia — CRIOBE field collection"
       />
     );
 
@@ -39,21 +37,42 @@ describe('Species ID certainty labels', () => {
     expect(label.className).toContain('text-red');
   });
 
-  it('should render certainty label below the Photo author line', () => {
-    const { container } = render(
+  it('should show "Picture source:" format', () => {
+    render(
       <ImageCaption
-        author="Blackwater"
-        displayAuthor="Frank Baensch"
+        author="Bartick (2026) - Instagram page"
+        displayAuthor="Bartick (2026) - Instagram page"
         uncertain={false}
-        sourceDescription="Blackwater"
+        link="https://example.com"
       />
     );
 
-    // The caption should be a flex column — Photo author on one line, certainty below
-    const photoLine = screen.getByText(/Photo: Frank Baensch/);
-    const certaintyLabel = screen.getByText('(Sure ID)');
+    expect(screen.getByText(/Picture source:/)).toBeDefined();
+  });
 
-    // They should be in separate parent elements (not siblings in same flex row)
-    expect(photoLine.parentElement).not.toBe(certaintyLabel.parentElement);
+  it('should show scale info when provided', () => {
+    render(
+      <ImageCaption
+        author="Test Author"
+        displayAuthor="Test Author"
+        uncertain={false}
+        scale={true}
+      />
+    );
+
+    expect(screen.getByText(/Specimen size or scale available/)).toBeDefined();
+  });
+
+  it('should show scale unavailable when scale=false', () => {
+    render(
+      <ImageCaption
+        author="Test Author"
+        displayAuthor="Test Author"
+        uncertain={false}
+        scale={false}
+      />
+    );
+
+    expect(screen.getByText(/Specimen size or scale unavailable/)).toBeDefined();
   });
 });

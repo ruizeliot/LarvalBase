@@ -5,7 +5,6 @@ import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { SpeciesDetail } from "@/components/species-detail/species-detail";
 import { useHomepageStats } from "@/hooks/use-homepage-stats";
-import { SpeciesListExport } from "@/components/homepage/species-list-export";
 
 // Lazy load heavy homepage components to reduce initial bundle
 const TraitBarplots = lazy(() =>
@@ -149,10 +148,6 @@ export default function Home() {
             />
           </Suspense>
 
-          {/* Export Species List button */}
-          <div className="flex justify-center pt-4">
-            <SpeciesListExport />
-          </div>
         </div>
       )}
     </MainLayout>

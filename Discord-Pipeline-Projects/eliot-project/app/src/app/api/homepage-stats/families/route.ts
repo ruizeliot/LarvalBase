@@ -5,6 +5,7 @@ import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
 import { loadImageRegistry } from '@/lib/data/image-registry';
 import { buildImageUrl } from '@/lib/utils/encode-image-path';
+import { BLACKWATER_AUTHORS } from '@/lib/types/image.types';
 
 /**
  * Count images per family from a metadata file.
@@ -89,61 +90,121 @@ export async function GET() {
       familyImageCount.set(family, (familyImageCount.get(family) ?? 0) + count);
     }
 
-    // Load set of 0-byte image paths to skip broken thumbnails
-    const zeroBytePaths = new Set<string>();
+    // Load image darkness values (mean brightness, lower = darker = blackwater)
+    const darknessByPath = new Map<string, number>();
     try {
-      const zbContent = await fs.readFile(
-        path.join(process.cwd(), 'zero-byte-images.txt'),
-        'utf-16le'
+      const darknessContent = await fs.readFile(
+        path.join(imagesDir, 'image_darkness.txt'),
+        'utf-8'
       );
-      for (const line of zbContent.split('\n')) {
-        const trimmed = line.replace(/^\uFEFF/, '').trim();
-        if (trimmed) zeroBytePaths.add(trimmed);
+      for (const line of darknessContent.split('\n').slice(1)) { // skip header
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        const tabIdx = trimmed.lastIndexOf('\t');
+        if (tabIdx === -1) continue;
+        const imgPath = trimmed.slice(0, tabIdx);
+        const brightness = parseFloat(trimmed.slice(tabIdx + 1));
+        if (!isNaN(brightness)) darknessByPath.set(imgPath, brightness);
       }
     } catch {
-      // zero-byte list not available — skip
+      // darkness file not available — fall back to path-based detection
     }
 
-    // Collect thumbnail candidates per family, detect blackwater by PATH
-    const familyCandidates = new Map<string, { imageUrl: string; score: number; imgPath: string; filename: string }[]>();
+    // Collect thumbnail candidates per family from ALL metadata sources
+    // (species-level, genus-level, AND family-level images)
+    type Candidate = { imageUrl: string; brightness: number; uncertain: boolean; imgPath: string; filename: string; author: string };
+    const familyCandidates = new Map<string, Candidate[]>();
+
+    const addCandidate = (family: string, imgPath: string, filename: string, uncertain: boolean, author: string) => {
+      const relPath = `${imgPath}/${filename}`;
+      const brightness = darknessByPath.get(relPath) ?? 999;
+      const candidates = familyCandidates.get(family) ?? [];
+      candidates.push({
+        imageUrl: buildImageUrl(imgPath, filename),
+        brightness,
+        uncertain,
+        imgPath,
+        filename,
+        author,
+      });
+      familyCandidates.set(family, candidates);
+    };
+
+    // 1. Species-level images (from image registry)
     for (const images of imageRegistry.imagesBySpecies.values()) {
       for (const img of images) {
         if (!img.family) continue;
-        // Detect blackwater by path (classified_bw), not author name
-        const isBlackwater = img.path.includes('classified_bw');
-        // Score: 0 = certain BW (best), 1 = uncertain BW, 2 = certain other, 3 = uncertain other
-        const score = (isBlackwater && !img.uncertain) ? 0
-          : (isBlackwater && img.uncertain) ? 1
-          : !img.uncertain ? 2
-          : 3;
-        const candidates = familyCandidates.get(img.family) ?? [];
-        candidates.push({
-          imageUrl: buildImageUrl(img.path, img.filename),
-          score,
-          imgPath: img.path,
-          filename: img.filename,
-        });
-        familyCandidates.set(img.family, candidates);
+        addCandidate(img.family, img.path, img.filename, img.uncertain, img.author);
       }
     }
 
-    // Select best valid thumbnail per family, skipping 0-byte images
+    // 2. Also parse fam_ids and gen_ids metadata for additional blackwater candidates
+    // (some families only have BW images at genus/family level, not species level)
+    for (const metaFile of ['fam_ids_pics_metadata.txt', 'gen_ids_pics_metadata.txt']) {
+      try {
+        let content = await fs.readFile(path.join(imagesDir, metaFile), 'utf-8');
+        const lines = content.split('\n');
+        if (lines.length < 2) continue;
+
+        // Detect row-number offset
+        const headerFields = lines[0].split('@').length;
+        let offset = 0;
+        for (let i = 1; i < Math.min(lines.length, 5); i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+          if (line.split('@').length > headerFields) offset = 1;
+          break;
+        }
+        if (offset === 1) {
+          lines[0] = '""@' + lines[0];
+          content = lines.join('\n');
+        }
+
+        Papa.parse(content, {
+          delimiter: '@',
+          header: true,
+          skipEmptyLines: true,
+          step: (result: { data: Record<string, string> }) => {
+            const row = result.data;
+            const family = (row.FAMILY || '').replace(/^"|"$/g, '');
+            const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '');
+            const fileName = (row.FILE_NAME || '').replace(/^"|"$/g, '');
+            const uncertain = (row.UNCERTAIN || '').replace(/^"|"$/g, '') === 'TRUE';
+            const rowAuthor = (row.AUTHOR || '').replace(/^"|"$/g, '');
+            if (family && imgPath && fileName) {
+              addCandidate(family, imgPath, fileName, uncertain, rowAuthor);
+            }
+          },
+        });
+      } catch {
+        // skip if file not found
+      }
+    }
+
+    // Select best valid thumbnail per family:
+    // Priority: 1. Blackwater author + certain (darkest first)
+    //           2. Other certain (darkest first)
+    //           3. Uncertain images (darkest first)
     const familyImageMap = new Map<string, string>();
     for (const [family, candidates] of familyCandidates) {
-      candidates.sort((a, b) => a.score - b.score);
+      candidates.sort((a, b) => {
+        const aIsBw = BLACKWATER_AUTHORS.has(a.author);
+        const bIsBw = BLACKWATER_AUTHORS.has(b.author);
+        // Blackwater always first
+        if (aIsBw !== bIsBw) return aIsBw ? -1 : 1;
+        // Within same group, certain before uncertain
+        if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;
+        // Within same certainty, darkest first
+        return a.brightness - b.brightness;
+      });
       for (const candidate of candidates) {
-        // Skip 0-byte images (check against known list)
-        const fullRelative = `${candidate.imgPath}/${candidate.filename}`;
-        if (zeroBytePaths.has(fullRelative)) continue;
-        // Also verify file exists for blackwater candidates
-        if (candidate.imgPath.includes('classified_bw')) {
-          try {
-            const filePath = path.join(imagesDir, candidate.imgPath, candidate.filename);
-            const stat = await fs.stat(filePath);
-            if (stat.size === 0) continue;
-          } catch {
-            continue; // file doesn't exist
-          }
+        // Verify file exists and is non-empty
+        try {
+          const filePath = path.join(imagesDir, candidate.imgPath, candidate.filename);
+          const stat = await fs.stat(filePath);
+          if (stat.size === 0) continue;
+        } catch {
+          continue;
         }
         familyImageMap.set(family, candidate.imageUrl);
         break;
@@ -195,7 +256,7 @@ export async function GET() {
 
     return NextResponse.json(
       { families },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+      { headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' } }
     );
   } catch (error) {
     console.error('Error loading family data:', error);

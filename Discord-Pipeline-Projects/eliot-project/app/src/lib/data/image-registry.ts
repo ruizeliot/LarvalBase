@@ -11,7 +11,6 @@ import Papa from 'papaparse';
 import {
   ImageMetadataSchema,
   getAuthorPriority,
-  getSourceDescription,
   extractBlackwaterPhotographer,
   type ImageRegistry,
   type SpeciesImage,
@@ -40,9 +39,28 @@ function getFamilySvgDir(): string {
  */
 async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
   const metadataPath = path.join(getImagesDir(), 'sp_ids_pics_metadata.txt');
-  const content = await fs.readFile(metadataPath, 'utf-8');
+  let content = await fs.readFile(metadataPath, 'utf-8');
 
   const imagesBySpecies = new Map<string, SpeciesImage[]>();
+
+  // Detect row-number column offset
+  const lines = content.split('\n');
+  if (lines.length >= 2) {
+    const headerFields = lines[0].split('@').length;
+    for (let i = 1; i < Math.min(lines.length, 5); i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const dataFields = line.split('@').length;
+      if (dataFields === headerFields + 1) {
+        lines[0] = '""@' + lines[0];
+        content = lines.join('\n');
+      }
+      break;
+    }
+  }
+
+  // Image to exclude per task requirement
+  const EXCLUDED_FILENAME = 'Sure ID - Halieutichthys aculeatus - pancake batfish - Gabriel Jensen - 2025-07-04_03-51-42_1';
 
   Papa.parse(content, {
     delimiter: '@',
@@ -52,13 +70,17 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
       try {
         const parsed = ImageMetadataSchema.parse(result.data);
 
-        // Extract relative path from full path (remove "images/" prefix)
+        // Filter out excluded image
+        if (parsed.FILE_NAME.includes(EXCLUDED_FILENAME)) return;
+
+        // Extract relative path from full path (remove "images/" prefix if present)
         const relativePath = parsed.PATH.replace(/^images\//, '');
 
-        // Get display author - parse from filename for Blackwater images
-        const displayAuthor = parsed.AUTHOR === 'Blackwater'
-          ? extractBlackwaterPhotographer(parsed.FILE_NAME)
-          : parsed.AUTHOR;
+        // Get display author — use raw AUTHOR field directly
+        const displayAuthor = parsed.AUTHOR;
+
+        // Parse LINK — treat "NA" as undefined
+        const link = parsed.LINK && parsed.LINK !== 'NA' ? parsed.LINK : undefined;
 
         const image: SpeciesImage = {
           author: parsed.AUTHOR,
@@ -66,11 +88,13 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
           uncertain: parsed.UNCERTAIN,
           path: relativePath,
           filename: parsed.FILE_NAME,
-          sourceDescription: getSourceDescription(relativePath),
+          sourceDescription: '',
           priority: getAuthorPriority(parsed.AUTHOR),
           speciesName: parsed.VALID_NAME,
           family: parsed.FAMILY,
           order: parsed.ORDER,
+          scale: parsed.SCALE,
+          link,
         };
 
         // Add to species map
@@ -86,12 +110,20 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
     },
   });
 
-  // Sort each species' images by priority (ascending = highest priority first),
-  // then certain (uncertain=false) before uncertain (uncertain=true)
+  // Sort each species' images:
+  // 1. Blackwater + Sure ID first
+  // 2. Literature/BOLD + Sure ID second
+  // 3. Other + Sure ID third
+  // 4. Uncertain images last (same tier ordering within)
   for (const [species, images] of imagesBySpecies) {
     images.sort((a, b) => {
+      // Certain before uncertain
+      const certA = a.uncertain ? 1 : 0;
+      const certB = b.uncertain ? 1 : 0;
+      if (certA !== certB) return certA - certB;
+      // Within same certainty, sort by priority tier
       if (a.priority !== b.priority) return a.priority - b.priority;
-      return (a.uncertain ? 1 : 0) - (b.uncertain ? 1 : 0);
+      return 0;
     });
     imagesBySpecies.set(species, images);
   }

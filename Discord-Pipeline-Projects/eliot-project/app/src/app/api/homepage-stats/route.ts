@@ -208,7 +208,7 @@ export async function GET() {
     // Sort by record count descending
     stats.sort((a, b) => b.records - a.records);
 
-    // Count colored pictures (images) at all taxonomy levels
+    // Count colored pictures (images) from ALL three metadata files
     let imageStats = null;
     try {
       const imageRegistry = await loadImageRegistry();
@@ -218,18 +218,17 @@ export async function GET() {
       const imageOrders = new Set<string>();
       let totalImages = 0;
 
+      // 1. Species-level images from registry
       for (const [, images] of imageRegistry.imagesBySpecies) {
         totalImages += images.length;
         for (const img of images) {
           if (img.speciesName) {
             imageSpecies.add(img.speciesName);
-            // Extract genus from species name (first word)
             const genus = img.speciesName.split(' ')[0];
             if (genus) imageGenera.add(genus);
           }
           if (img.family) {
             imageFamilies.add(img.family);
-            // Find order for this family
             for (const sp of data.species.values()) {
               if (sp.family === img.family) {
                 imageOrders.add(sp.order);
@@ -237,6 +236,45 @@ export async function GET() {
               }
             }
           }
+        }
+      }
+
+      // 2. Genus-level and family-level images from their metadata files
+      const imagesDir = path.join(process.cwd(), 'images');
+      for (const metaFile of ['gen_ids_pics_metadata.txt', 'fam_ids_pics_metadata.txt']) {
+        try {
+          let content = await fs.readFile(path.join(imagesDir, metaFile), 'utf-8');
+          const lines = content.split('\n');
+          if (lines.length >= 2) {
+            const headerFields = lines[0].split('@').length;
+            for (let i = 1; i < Math.min(lines.length, 5); i++) {
+              const line = lines[i].trim();
+              if (!line) continue;
+              if (line.split('@').length > headerFields) {
+                lines[0] = '""@' + lines[0];
+                content = lines.join('\n');
+              }
+              break;
+            }
+          }
+
+          Papa.parse(content, {
+            delimiter: '@',
+            header: true,
+            skipEmptyLines: true,
+            step: (result) => {
+              const row = result.data as Record<string, string>;
+              totalImages++;
+              const family = (row.FAMILY || '').replace(/^"|"$/g, '');
+              const genus = (row.GENUS || '').replace(/^"|"$/g, '');
+              const order = (row.ORDER || '').replace(/^"|"$/g, '');
+              if (family) imageFamilies.add(family);
+              if (genus) imageGenera.add(genus);
+              if (order) imageOrders.add(order);
+            },
+          });
+        } catch {
+          // file not found — skip
         }
       }
 

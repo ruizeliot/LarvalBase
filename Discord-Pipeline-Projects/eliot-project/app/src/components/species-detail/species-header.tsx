@@ -114,7 +114,21 @@ export function SpeciesHeader({
         {currentImage && (
           <div className="text-sm text-muted-foreground">
             <div>
-              <span>Photo: {currentImage.displayAuthor}</span>
+              <span>
+                Picture source:{' '}
+                {currentImage.link ? (
+                  <a
+                    href={currentImage.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline"
+                  >
+                    {currentImage.displayAuthor}
+                  </a>
+                ) : (
+                  currentImage.displayAuthor
+                )}
+              </span>
               {currentImage.uncertain ? (
                 <span className="text-red-500 font-medium ml-2">(Unsure ID)</span>
               ) : (
@@ -126,9 +140,11 @@ export function SpeciesHeader({
                 </span>
               )}
             </div>
-            {currentImage.sourceDescription && (
-              <div className="text-xs opacity-75">
-                Source: {currentImage.sourceDescription}
+            {currentImage.scale !== undefined && (
+              <div className="text-xs italic opacity-75">
+                {currentImage.scale
+                  ? 'Specimen size or scale available in the source'
+                  : 'Specimen size or scale unavailable in the source'}
               </div>
             )}
           </div>

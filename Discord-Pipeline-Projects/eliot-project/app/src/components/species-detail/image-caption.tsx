@@ -1,36 +1,53 @@
 /**
- * ImageCaption displays photographer credit, certainty indicator, and source.
+ * ImageCaption displays picture source with author link and scale info.
  *
- * Implements:
- * - IMG-03: Image caption shows author name
- * - IMG-04: Image caption shows certainty indicator
- * - NEW: Shows source (Blackwater, CRIOBE, etc.) with full attribution
+ * Format:
+ * - "Picture source: AUTHOR" (AUTHOR as hyperlink if LINK available)
+ * - Scale info in italic below
  */
 
 interface ImageCaptionProps {
   /** Raw author/source name */
   author: string;
-  /** Display name for photographer (parsed for Blackwater) */
+  /** Display name for photographer */
   displayAuthor: string;
   /** Whether species identification is uncertain */
   uncertain: boolean;
-  /** Human-readable source description (e.g., "Polynesia — CRIOBE field collection") */
+  /** Human-readable source description (legacy, unused) */
   sourceDescription?: string;
+  /** Whether scale/specimen size is available */
+  scale?: boolean;
+  /** URL link for the author/source */
+  link?: string;
 }
 
-/**
- * Caption component for species images.
- * Shows photographer name, source, and uncertainty indicator.
- */
-export function ImageCaption({ author, displayAuthor, uncertain, sourceDescription }: ImageCaptionProps) {
-  // Show source separately if different from display author
-  const showSource = author !== displayAuthor;
-
+export function ImageCaption({ displayAuthor, uncertain, scale, link }: ImageCaptionProps) {
   return (
     <div className="flex flex-col items-center gap-1 text-sm text-muted-foreground mt-2">
       <div className="flex items-center">
-        <span>Photo: {displayAuthor}</span>
+        <span>
+          Picture source:{' '}
+          {link ? (
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-400 hover:underline"
+            >
+              {displayAuthor}
+            </a>
+          ) : (
+            displayAuthor
+          )}
+        </span>
       </div>
+      {scale !== undefined && (
+        <span className="text-xs italic opacity-75">
+          {scale
+            ? 'Specimen size or scale available in the source'
+            : 'Specimen size or scale unavailable in the source'}
+        </span>
+      )}
       <div>
         {uncertain ? (
           <span
@@ -48,11 +65,6 @@ export function ImageCaption({ author, displayAuthor, uncertain, sourceDescripti
           </span>
         )}
       </div>
-      {sourceDescription ? (
-        <span className="text-xs opacity-75">Source: {sourceDescription}</span>
-      ) : showSource ? (
-        <span className="text-xs opacity-75">Source: {author}</span>
-      ) : null}
     </div>
   );
 }

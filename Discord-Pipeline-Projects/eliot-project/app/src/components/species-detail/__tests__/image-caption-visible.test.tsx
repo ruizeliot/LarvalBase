@@ -40,11 +40,13 @@ const mockImage: SpeciesImage = {
   uncertain: false,
   path: 'Polynesia',
   filename: 'test-image.jpg',
-  sourceDescription: 'Polynesia — CRIOBE field collection',
-  priority: 5,
+  sourceDescription: '',
+  priority: 3,
   speciesName: 'Chromis viridis',
   family: 'Pomacentridae',
   order: 'Perciformes',
+  scale: true,
+  link: 'https://example.com',
 };
 
 describe('US-5.4: Captions visible without dezooming', () => {
@@ -70,13 +72,14 @@ describe('US-5.4: Captions visible without dezooming', () => {
     expect(caption?.textContent).toContain('CRIOBE');
   });
 
-  it('should show sourceDescription in caption', () => {
+  it('should show "Picture source:" format in caption', () => {
     const { container } = render(
       <SpeciesImageGallery images={[mockImage]} speciesName="Chromis viridis" />
     );
 
-    // Caption should contain the source description
-    expect(container.textContent).toContain('Polynesia — CRIOBE field collection');
+    // Caption should contain "Picture source:" and author name
+    expect(container.textContent).toContain('Picture source:');
+    expect(container.textContent).toContain('CRIOBE');
   });
 
   it('single image should use constrained aspect ratio (4/3)', () => {

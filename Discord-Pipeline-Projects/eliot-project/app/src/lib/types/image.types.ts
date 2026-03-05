@@ -8,30 +8,63 @@
 import { z } from 'zod';
 
 /**
- * Author priority order per IMG-02 requirement.
- * Lower number = higher priority (displayed first).
+ * Blackwater photographer authors — highest priority for thumbnails and display.
  */
-export const AUTHOR_PRIORITY: Record<string, number> = {
-  'Blackwater': 1,
-  'Ocea Consult - IHSM': 2,
-  'IchthyoGwada': 3,
-  'ADLIFISH 1': 4,
-  'CRIOBE': 5,
-  'Pham & Durand, 2017': 6,
-  'Amelia Chatagnon': 7,
-  'Fisher et al. 2022': 8,
-};
+export const BLACKWATER_AUTHORS = new Set([
+  'Baensch (2026) - Website',
+  'Bartick (2026) - Instagram page',
+  'Besson (2026) - Instagram page',
+  'Collins (2026) - Instagram page',
+  'DeLoach (2026) - Instagram page',
+  'Gug (2026) - Instagram page',
+  'Ianiello (2026) - Website',
+  'Jensen (2026) - Instagram page',
+  'Kovacs (2026) - Instagram page',
+  'Mazda (2026) - Instagram page',
+  'Mears (2026) - Website',
+  'Meldonian (2026) - Website',
+  'Millisen (2026) - Instagram page',
+  'Minemizu (2026) - Instagram page',
+  'Valencia (2026) - Instagram page',
+  'Various authors (2026) - Blackwater Facebook group',
+  'Whitestone (2026) - Instagram page',
+  'Zhang F. (2026) - Instagram page',
+  'Zhang J. (2026) - Instagram page',
+]);
 
-/** Default priority for unknown authors */
-export const DEFAULT_PRIORITY = 99;
+/**
+ * Literature/BOLD authors — second priority after blackwater.
+ */
+export const LITERATURE_AUTHORS = new Set([
+  'Collet et al. (2015) - BOLD project',
+  'Jaonalison et al. (2018) - BOLD project',
+  'Jaonalison et al. (2015) - BOLD project',
+  'CLIP-OI (2020) - SWIO ID key',
+  'Collet et al. (2013) - Book',
+  'Baldwin (2013) - Zoological Journal of the Linnean Society',
+  'Johnson et al. (2025) - Journal of the Ocean Science Foundation',
+  'Baldwin et al. (2009) - Zootaxa',
+  'Baldwin et al. (2011) - Zootaxa',
+]);
+
+/**
+ * Author priority order for species page image sorting.
+ * Lower number = higher priority (displayed first).
+ * Within each tier, certain (uncertain=false) images come before uncertain.
+ */
+export function getAuthorTier(author: string): number {
+  if (BLACKWATER_AUTHORS.has(author)) return 1;
+  if (LITERATURE_AUTHORS.has(author)) return 2;
+  return 3;
+}
 
 /**
  * Schema for parsing image metadata CSV rows.
- * Note: First column is row number (unnamed empty string key), second is AUTHOR.
- * The actual CSV header starts with "" for the row number column.
+ * Supports both old format (with row-number prefix) and new VPS format.
+ * New VPS format columns: ORDER, FAMILY, GENUS, VALID_NAME, ORIGINAL_NAME, UNCERTAIN, SCALE, AUTHOR, PATH, FILE_NAME, LINK
  */
 export const ImageMetadataSchema = z.object({
-  // Row number column (header is empty string "")
+  // Row number column (header is empty string "") — old format only
   '': z.string().optional(),
   AUTHOR: z.string(),
   UNCERTAIN: z
@@ -43,6 +76,13 @@ export const ImageMetadataSchema = z.object({
   VALID_NAME: z.string(),
   PATH: z.string(),
   FILE_NAME: z.string(),
+  // New columns
+  ORIGINAL_NAME: z.string().optional(),
+  SCALE: z
+    .union([z.literal('TRUE'), z.literal('FALSE'), z.string()])
+    .transform((v) => v === 'TRUE')
+    .optional(),
+  LINK: z.string().optional(),
 });
 
 export type ImageMetadataRow = z.infer<typeof ImageMetadataSchema>;
@@ -63,7 +103,7 @@ export interface SpeciesImage {
   filename: string;
   /** Human-readable source description for captions */
   sourceDescription: string;
-  /** Computed priority (lower = more preferred) */
+  /** Computed priority tier (1=blackwater, 2=literature, 3=other) */
   priority: number;
   /** Full species name (VALID_NAME) */
   speciesName: string;
@@ -71,6 +111,10 @@ export interface SpeciesImage {
   family: string;
   /** Taxonomic order */
   order: string;
+  /** Whether scale/specimen size is available in source */
+  scale?: boolean;
+  /** URL link for the author/source */
+  link?: string;
 }
 
 /**
@@ -103,32 +147,8 @@ export interface ImageRegistry {
 }
 
 /**
- * Get author priority (lower = higher priority).
- * Unknown authors get DEFAULT_PRIORITY (99).
+ * Get author priority tier (lower = higher priority).
  */
 export function getAuthorPriority(author: string): number {
-  return AUTHOR_PRIORITY[author] ?? DEFAULT_PRIORITY;
-}
-
-/**
- * Map of image directory paths to human-readable source descriptions.
- * Used for caption display (US-5.3).
- */
-const PATH_SOURCE_DESCRIPTIONS: Record<string, string> = {
-  'Polynesia': 'Polynesia — CRIOBE field collection',
-  'Maldives': 'Maldives — ADLIFISH survey',
-  'classified_bw_images_species': 'Blackwater',
-  'Madagascar - Reunion': 'Madagascar — Ocea Consult–IHSM',
-  'Guadeloupe': 'Guadeloupe — IchthyoGwada',
-  'Guadeloupe - Amelia': 'Guadeloupe — Amelia Chatagnon',
-  'Vietnam': 'Vietnam — Pham & Durand',
-  'Fisher': 'Fisher et al. 2022',
-};
-
-/**
- * Get a human-readable source description for an image path.
- * Falls back to the raw path if no mapping exists.
- */
-export function getSourceDescription(imagePath: string): string {
-  return PATH_SOURCE_DESCRIPTIONS[imagePath] ?? imagePath;
+  return getAuthorTier(author);
 }
