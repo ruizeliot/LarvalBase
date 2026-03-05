@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-XR Companion — App Mockup</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0a0a1a; color: #e0e0e0; height: 100vh; display: flex; flex-direction: column; }
+header { background: #12122a; padding: 16px 24px; border-bottom: 1px solid #2a2a4a; flex-shrink: 0; }
+header h1 { font-size: 20px; color: #a78bfa; }
+header p { font-size: 13px; color: #888; margin-top: 4px; }
+.container { display: flex; flex: 1; overflow: hidden; }
+nav { width: 240px; background: #0f0f24; border-right: 1px solid #2a2a4a; overflow-y: auto; flex-shrink: 0; padding: 8px 0; }
+nav button { display: block; width: 100%; text-align: left; padding: 12px 20px; background: none; border: none; color: #ccc; font-size: 14px; cursor: pointer; transition: background 0.15s; border-left: 3px solid transparent; }
+nav button:hover { background: #1a1a3a; }
+nav button.active { background: #1a1a3a; border-left-color: #a78bfa; color: #a78bfa; font-weight: 600; }
+main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.tab-content { flex: 1; display: none; overflow: hidden; }
+.tab-content.active { display: flex; flex-direction: column; }
+.tab-content iframe { flex: 1; border: none; width: 100%; }
+.placeholder { flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+.placeholder-box { background: #1a1a3a; border: 2px dashed #3a3a5a; border-radius: 12px; padding: 48px; max-width: 600px; }
+.placeholder-box h2 { color: #a78bfa; margin-bottom: 12px; font-size: 22px; }
+.placeholder-box p { color: #888; line-height: 1.6; margin-bottom: 8px; }
+.placeholder-box .stories { text-align: left; margin-top: 16px; padding: 16px; background: #12122a; border-radius: 8px; font-size: 13px; }
+.placeholder-box .stories li { margin-bottom: 6px; color: #aaa; }
+.epic-badge { display: inline-block; background: #2d1b69; color: #a78bfa; padding: 2px 8px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+</style>
+</head>
+<body>
+<header>
+<h1>AI-XR Companion</h1>
+<p>Mixed Reality AI assistant for Meta Quest 3 — Voice pipeline, Vision on-demand, 3 incarnation modes</p>
+</header>
+<div class="container">
+<nav id="nav">
+<button class="active" data-tab="overview">Overview</button>
+<button data-tab="epic1">Epic 1 — Setup & MCP</button>
+<button data-tab="epic2">Epic 2 — Provider System</button>
+<button data-tab="epic3">Epic 3 — Voice Pipeline</button>
+<button data-tab="epic4">Epic 4 — Incarnation</button>
+<button data-tab="epic5">Epic 5 — Vision</button>
+<button data-tab="epic6">Epic 6 — XR Spatial</button>
+<button data-tab="epic7">Epic 7 — Settings UI</button>
+<button data-tab="epic8">Epic 8 — Debug</button>
+</nav>
+<main>
+
+<div class="tab-content active" id="tab-overview">
+<div class="placeholder">
+<div class="placeholder-box" style="max-width:800px;">
+<h2>AI-XR Companion — Overview</h2>
+<p>8 epics, 41 core user stories + 35 edge cases = 76 total stories</p>
+<p style="margin-top:16px;color:#a78bfa;">Build Order</p>
+<pre style="text-align:left;background:#12122a;padding:16px;border-radius:8px;margin-top:8px;font-family:monospace;font-size:13px;color:#ccc;">
+Epic 1 (Setup & MCP)
+  |
+Epic 2 (Provider System)
+  |
+Epic 3 (Voice Pipeline)
+  |
+  +--------+--------+
+  |        |        |
+Epic 4   Epic 5   Epic 6
+(Incarn) (Vision) (XR)
+  |        |        |
+  +--------+--------+
+           |
+     Epic 7 (Settings)
+           |
+     Epic 8 (Debug)
+</pre>
+<p style="margin-top:16px;font-size:13px;">Stack: Unity 6, URP 17, Meta OpenXR 2.0.1, Quest 3/3S</p>
+<p style="font-size:13px;">Architecture: Hybrid MCP (editor) + HTTP API (runtime)</p>
+<p style="font-size:13px;">Fork base: PodGab (Mines d'Albi)</p>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic1">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 1 — Project Setup & MCP Integration</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-1 to US-6):</strong>
+<ul>
+<li>US-1: Unity 6 project config (URP 17, OpenXR 2.0.1, ARM64)</li>
+<li>US-2: unity-mcp editor panel integration</li>
+<li>US-3: Hierarchy & Unity commands via MCP</li>
+<li>US-4: Connection status indicator + error messages</li>
+<li>US-5: #if UNITY_EDITOR guards for runtime builds</li>
+<li>US-6: Config persistence via StreamingAssets</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic2">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 2 — Provider System & Error Handling</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-7 to US-12, US-37):</strong>
+<ul>
+<li>US-7: 4 bricks x 3 slots, manual selection</li>
+<li>US-8: Per-provider status (connected/disconnected/latency)</li>
+<li>US-9: Error popup with Retry/Dismiss</li>
+<li>US-10: Auto-disable when all slots fail</li>
+<li>US-11: Network cutoff (BRICK_NETWORK error)</li>
+<li>US-12: Config persistence in ai-xr-config.json</li>
+<li>US-37: Re-enable disabled slot after fix</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic3">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 3 — Voice Pipeline STT->LLM->TTS</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-13 to US-18, US-38):</strong>
+<ul>
+<li>US-13: PTT (trigger/pinch) -> full pipeline</li>
+<li>US-14: 5 color-coded feedback states</li>
+<li>US-15: Sliding window context (N=5)</li>
+<li>US-16: PTT locked during processing</li>
+<li>US-17: Ignore recordings &lt; 0.5s</li>
+<li>US-18: Per-stage elapsed timer</li>
+<li>US-38: Cancel pipeline mid-processing</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic4">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 4 — Incarnation System</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-19 to US-21):</strong>
+<ul>
+<li>US-19: 3 modes — Avatar RPM (.glb + OVRLipSync), Orbe (shader + particles), Invisible (HUD + transcript)</li>
+<li>US-20: 5-state reaction matrix per mode</li>
+<li>US-21: 0.3s fade transition, pipeline preserved</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic5">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 5 — Vision On-Demand</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-22 to US-24, US-39):</strong>
+<ul>
+<li>US-22: Y/palm -> capture -> VLM -> voice description</li>
+<li>US-23: Viewfinder (crosshair + brackets) + flash</li>
+<li>US-24: Floating text + TTS + 5s cooldown ring</li>
+<li>US-39: Cancel vision analysis mid-process</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic6">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 6 — XR Integration & Spatial</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-25 to US-30):</strong>
+<ul>
+<li>US-25: Passthrough MR, incarnation at 2m</li>
+<li>US-26: Grab & drag repositioning</li>
+<li>US-27: Billboard Y-axis (always faces user)</li>
+<li>US-28: Spatial audio 3D (HRTF, rolloff)</li>
+<li>US-29: World anchor in PlayerPrefs</li>
+<li>US-30: Guardian boundary pause/resume</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic7">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 7 — Settings UI XR</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-31 to US-33):</strong>
+<ul>
+<li>US-31: Open/close via thumbstick/palm-up, 0.2s fade</li>
+<li>US-32: Tag-along 1.5m, 5 tabs navigation</li>
+<li>US-33: Spatial controls (pinch, drag, scroll, raycast)</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+<div class="tab-content" id="tab-epic8">
+<div class="placeholder">
+<div class="placeholder-box">
+<h2>Epic 8 — Debug & Monitoring</h2>
+<p>Mockup not yet available for this section</p>
+<p style="font-size:12px;color:#666;">The original mockup was posted as a Discord attachment (CDN URL expired). No local copy in mockups/ directory.</p>
+<div class="stories"><strong>User Stories (US-34 to US-36, US-40, US-41):</strong>
+<ul>
+<li>US-34: Toggle overlay (double grip 2s)</li>
+<li>US-35: Runtime HUD (state, latency, providers, logs, perf)</li>
+<li>US-36: Export JSON to /sdcard/</li>
+<li>US-40: Cancel pipeline (stop recording + TTS)</li>
+<li>US-41: Clear debug logs</li>
+</ul></div>
+</div>
+</div>
+</div>
+
+</main>
+</div>
+
+<script>
+document.querySelectorAll('nav button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
