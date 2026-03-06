@@ -27,7 +27,7 @@ export function ImageSourcesSection({ images }: ImageSourcesSectionProps) {
             alt="Image sources icon"
             width={36}
             height={36}
-            style={{ filter: 'brightness(0) invert(1)' }}
+            style={{ filter: 'brightness(0)' }}
           />
         </div>
         <h2 className="text-lg font-semibold">Image sources</h2>

@@ -259,19 +259,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMovePan}
         >
-          {/* Land masses */}
-          {landData?.features.map((feature, i) => (
-            <path
-              key={`land-${i}`}
-              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
-              fill="#888888"
-              stroke="rgba(120,120,120,0.5)"
-              strokeWidth={0.3}
-              pointerEvents="none"
-            />
-          ))}
-
-          {/* Province polygons ON TOP of land */}
+          {/* Province polygons (below land) */}
           {geoData.features.map((feature, i) => {
             const provinceName = feature.properties.PROVINCE;
             const info = getProvinceInfo(provinceName);
@@ -282,14 +270,14 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             const canonicalName = isPresent
               ? (provinceNormMap.get(normalizeProvince(provinceName)) ?? provinceName)
               : provinceName;
-            const fill = isPresent ? (provinceColorMap.get(canonicalName) ?? "none") : "none";
+            const fill = isPresent ? (provinceColorMap.get(canonicalName) ?? "#1a1a2e") : "#1a1a2e";
 
             return (
               <path
                 key={i}
                 d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
                 fill={fill}
-                fillOpacity={isPresent ? (isSelected ? 0.9 : 0.75) : 0}
+                fillOpacity={isPresent ? (isSelected ? 0.9 : 0.75) : 1}
                 stroke={
                   isSelected
                     ? "rgba(255,255,0,1)"
@@ -297,9 +285,9 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
                       ? "rgba(255,255,255,1)"
                       : isPresent
                         ? "rgba(255,255,255,0.8)"
-                        : "rgba(255,255,255,0.1)"
+                        : "none"
                 }
-                strokeWidth={isSelected ? 2 : isHovered ? 1.5 : isPresent ? 1 : 0.2}
+                strokeWidth={isSelected ? 2 : isHovered ? 1.5 : isPresent ? 1 : 0}
                 pointerEvents="all"
                 style={{ cursor: isPresent ? "pointer" : "default" }}
                 onClick={() => handleProvinceClick(provinceName)}
@@ -308,6 +296,18 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
               />
             );
           })}
+
+          {/* Land masses ON TOP — white continents overlaying provinces */}
+          {landData?.features.map((feature, i) => (
+            <path
+              key={`land-${i}`}
+              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
+              fill="#ffffff"
+              stroke="rgba(200,200,200,0.5)"
+              strokeWidth={0.3}
+              pointerEvents="none"
+            />
+          ))}
         </svg>
 
         {/* Tooltip */}
