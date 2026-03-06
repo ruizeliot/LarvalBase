@@ -11,8 +11,8 @@ import { loadImageRegistry } from '@/lib/data/image-registry';
  */
 const TRAIT_DISPLAY_NAMES: Record<string, string> = {
   egg_database: 'Egg traits',
-  hatching_size: 'Hatching size',
-  incubation: 'Incubation',
+  hatching_size: 'Hatching/parturition size',
+  incubation: 'Incubation/gestation',
   first_feeding_age: 'First feeding age',
   first_feeding_size: 'First feeding size',
   flexion_age: 'Flexion age',

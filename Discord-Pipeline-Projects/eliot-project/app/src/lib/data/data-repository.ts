@@ -381,7 +381,7 @@ function extractTraitsFromRows(
         traits.push({ traitType: 'egg_oil_globules', value: 1, unit: '', source, doi, metadata });
       }
     }
-    // Hatching Size Database
+    // Hatching/parturition Size Database
     else if (filename.includes('hatching_size')) {
       const hatchMeta = metadataWithMinMaxConf(metadata, r(row), 'HATCHING_SIZE_MIN', 'HATCHING_SIZE_MAX', 'HATCHING_SIZE_CONF', 'HATCHING_SIZE_CONF_TYPE');
       addTrait(traits, 'hatching_size', r(row).HATCHING_SIZE_MEAN, 'mm', source, doi, hatchMeta);

@@ -135,6 +135,8 @@ export function formatTraitName(trait: string): string {
   if (trait === 'egg_width') return 'Egg Width';
   if (trait === 'egg_position') return 'Egg Position';
   if (trait === 'egg_shape') return 'Egg Shape';
+  if (trait === 'hatching_size') return 'Hatching/parturition Size';
+  if (trait === 'incubation_duration') return 'Incubation/gestation Duration';
   if (trait === 'egg_oil_globules') return 'Oil Globules Number';
   if (trait === 'vertical_day') return 'Day';
   if (trait === 'vertical_night') return 'Night';

@@ -65,7 +65,7 @@ describe('Records table measurement columns', () => {
     speciesId: 'amphiprion-ocellaris',
     speciesName: 'Amphiprion ocellaris',
     traitType: 'hatching_size',
-    traitName: 'Hatching Size',
+    traitName: 'Hatching/parturition Size',
   };
 
   it('should show Mean column header in trait-specific records table', () => {

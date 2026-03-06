@@ -193,7 +193,7 @@ function buildIncubationRow(
     EGG_DETAILS: 'NA',
     EGG_SHAPE: 'NA',
     NB_OIL_GLOBULE: 'NA',
-    TYPE: 'Incubation duration',
+    TYPE: 'Incubation/gestation duration',
     MEAN: trait.value ?? 'NA',
     MIN: trait.metadata?.minValue ?? 'NA',
     MAX: trait.metadata?.maxValue ?? 'NA',
