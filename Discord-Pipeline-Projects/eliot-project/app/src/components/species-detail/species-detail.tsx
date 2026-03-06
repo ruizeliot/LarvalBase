@@ -6,6 +6,7 @@ import { SpeciesHeader } from "./species-header";
 import { TraitGroup, type TraitData } from "./trait-group";
 import { CollectionMap } from "./collection-map";
 import { ReferencesSection } from "./references-section";
+import { ImageSourcesSection } from "./image-sources-section";
 import { RawDataModal } from "./raw-data-modal";
 import { SpeciesGrowthChart } from "./species-growth-chart";
 import { EggQualitativePanel } from "./egg-qualitative-panel";
@@ -16,6 +17,7 @@ import { RaftingPanel } from "./rafting-panel";
 import { useRafting } from "@/hooks/use-rafting";
 import { SectionExportButtons } from "./section-export-buttons";
 import { isAllEggsSpherical } from "./egg-spherical-helper";
+import { useSpeciesImages } from "@/hooks/use-species-images";
 import { ArrowLeft } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -121,6 +123,9 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
 
   // Fetch rafting data (Epic 7)
   const { data: raftingData } = useRafting(speciesId);
+
+  // Fetch species images for Image Sources section
+  const { images: speciesImages } = useSpeciesImages(speciesId);
 
   // Modal state for raw data display
   const [modalOpen, setModalOpen] = useState(false);
@@ -369,6 +374,9 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
 
       {/* References Section */}
       <ReferencesSection references={references} />
+
+      {/* Image Sources Section */}
+      <ImageSourcesSection images={speciesImages} />
 
       {/* Raw Data Modal */}
       {selectedTrait && (

@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { SpeciesImageGallery } from "./species-image-gallery";
+import { SpeciesProvinceMap } from "./species-province-map";
 import { FamilyIcon } from "./family-icon";
 import { useSpeciesImages } from "@/hooks/use-species-images";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -141,7 +142,10 @@ export function SpeciesHeader({
               )}
             </div>
             {currentImage.scale !== undefined && (
-              <div className="text-xs italic opacity-75">
+              <div
+                className="text-xs italic"
+                style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}
+              >
                 {currentImage.scale
                   ? 'Specimen size or scale available in the source'
                   : 'Specimen size or scale unavailable in the source'}
@@ -149,6 +153,11 @@ export function SpeciesHeader({
             )}
           </div>
         )}
+      </div>
+
+      {/* Species distribution mini-map */}
+      <div className="flex-shrink-0 w-[350px]">
+        <SpeciesProvinceMap speciesId={speciesId} />
       </div>
     </div>
   );
