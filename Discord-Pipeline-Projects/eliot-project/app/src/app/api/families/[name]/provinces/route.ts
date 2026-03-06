@@ -9,45 +9,9 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
+import { ALL_PROVINCES, buildCsvToProvinceMap } from '@/lib/constants/provinces';
 
-/** Province names in the shapefile (canonical names) */
-const SHAPEFILE_PROVINCES = [
-  'Agulhas Current', 'Antarctic', 'Antarctic Polar Front', 'Arctic',
-  'Benguela Current', 'Black Sea', 'California Current', 'Canary Current',
-  'Eastern Tropical Pacific', 'Equatorial Atlantic', 'Equatorial Pacific',
-  'Guinea Current', 'Gulf Stream', 'Humboldt Current', 'Indian Ocean Gyre',
-  'Indian Ocean Monsoon Gyre', 'Indonesian Through-Flow', 'Inter American Seas',
-  'Kuroshio', 'Leeuwin Current', 'Malvinas Current', 'Mediterranean',
-  'Non-gyral Southwest Pacific', 'North Atlantic Transitional',
-  'North Central Atlantic Gyre', 'North Central Pacific Gyre',
-  'North Pacific Transitional', 'Red Sea', 'Sea of Japan/East Sea',
-  'Somali Current', 'South Central Atlantic Gyre', 'South Central Pacific Gyre',
-  'South China Sea', 'Subantarctic', 'Subarctic Atlantic', 'Subarctic Pacific',
-  'Subtropical Convergence',
-];
-
-/**
- * Map CSV column names to canonical shapefile province names.
- * The CSV has duplicate columns with different spellings (e.g., "Indonesian Through Flow"
- * and "Indonesian Through-Flow"). We map both to the shapefile canonical name.
- */
-const CSV_TO_PROVINCE: Record<string, string> = {};
-
-// Direct matches (most columns)
-for (const p of SHAPEFILE_PROVINCES) {
-  CSV_TO_PROVINCE[p] = p;
-}
-
-// Aliases: CSV variant -> canonical shapefile name
-CSV_TO_PROVINCE['Indonesian Through Flow'] = 'Indonesian Through-Flow';
-CSV_TO_PROVINCE['Non gyral Southwest Pacific'] = 'Non-gyral Southwest Pacific';
-CSV_TO_PROVINCE['Sea of Japan East Sea'] = 'Sea of Japan/East Sea';
-CSV_TO_PROVINCE['Somali Arabian'] = 'Somali Current';
-CSV_TO_PROVINCE['Somali/Arabian'] = 'Somali Current';
-
-// Additional CSV columns that map to ecoregion-level names (not provinces)
-// These are individual ecoregions from the MEOW system — we skip them
-// since they don't correspond to our 37 province polygons.
+const CSV_TO_PROVINCE = buildCsvToProvinceMap();
 
 /** Cache for province data */
 let provinceDataCache: Map<string, Map<string, string[]>> | null = null;
@@ -116,7 +80,7 @@ export async function GET(
 
     // Build response: { provinceName: { count, species[] } }
     const provinces: Record<string, { count: number; species: string[] }> = {};
-    for (const provinceName of SHAPEFILE_PROVINCES) {
+    for (const provinceName of ALL_PROVINCES) {
       const species = provinceMap.get(provinceName) ?? [];
       if (species.length > 0) {
         provinces[provinceName] = { count: species.length, species };

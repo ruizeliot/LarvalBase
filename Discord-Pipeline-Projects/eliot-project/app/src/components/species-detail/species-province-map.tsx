@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { geoPath, geoGraticule, type GeoPermissibleObjects } from "d3-geo";
-// @ts-expect-error d3-geo-projection has no type declarations
-import { geoRobinson } from "d3-geo-projection";
+import { geoPath, geoIdentity } from "d3-geo";
 
 /** Categorical color palette for provinces */
 const PROVINCE_COLORS = [
@@ -15,6 +13,11 @@ const PROVINCE_COLORS = [
   '#386cb0','#f0f9e8','#d95f02','#7570b3','#e7298a','#66a61e',
   '#e6ab02',
 ];
+
+/** Normalize province name for matching */
+function normalizeProvince(name: string): string {
+  return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();
+}
 
 interface GeoFeature {
   type: string;
@@ -37,6 +40,10 @@ interface SpeciesProvinceMapProps {
   speciesId: string;
 }
 
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 450;
+const MAX_ZOOM = 6;
+
 export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
@@ -46,22 +53,18 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
 
   // Zoom/pan state (button-only, no scroll)
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 900, h: 450 });
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
   const [autoZoomApplied, setAutoZoomApplied] = useState(false);
 
-  const BASE_WIDTH = 900;
-  const BASE_HEIGHT = 450;
-  const MAX_ZOOM = 6;
-
   useEffect(() => {
-    fetch("/data/spalding_provinces.geojson", { cache: "force-cache" })
+    fetch("/data/robinson_provinces.geojson", { cache: "force-cache" })
       .then((r) => r.json())
       .then(setGeoData)
       .catch(console.error);
 
-    fetch("/data/gshhs_coastline.geojson", { cache: "force-cache" })
+    fetch("/data/robinson_coastline.geojson", { cache: "force-cache" })
       .then((r) => r.json())
       .then(setLandData)
       .catch(console.error);
@@ -75,44 +78,56 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
       .catch(console.error);
   }, [speciesId]);
 
-  const projection = useMemo(
-    () =>
-      geoRobinson()
-        .scale(150)
-        .translate([BASE_WIDTH / 2, BASE_HEIGHT / 2])
-        .precision(0.1),
-    []
+  // Use geoIdentity with fitSize for pre-projected Robinson data
+  const projection = useMemo(() => {
+    if (!geoData) return null;
+    return geoIdentity()
+      .reflectY(true)
+      .fitSize([BASE_WIDTH, BASE_HEIGHT], geoData as unknown as GeoJSON.FeatureCollection);
+  }, [geoData]);
+
+  const pathGenerator = useMemo(
+    () => projection ? geoPath().projection(projection) : null,
+    [projection]
   );
 
-  const pathGenerator = useMemo(() => geoPath().projection(projection), [projection]);
-  const graticule = useMemo(() => geoGraticule().step([30, 30])(), []);
+  // Build normalized name set for matching
+  const presentProvinces = useMemo(() => {
+    if (!provinceData) return new Set<string>();
+    return new Set(provinceData.provinces);
+  }, [provinceData]);
 
-  const presentProvinces = useMemo(
-    () => new Set(provinceData?.provinces ?? []),
-    [provinceData]
-  );
+  // Match feature province name to data (handles normalization)
+  const isProvincePresent = useCallback((featureName: string): boolean => {
+    if (presentProvinces.has(featureName)) return true;
+    const norm = normalizeProvince(featureName);
+    for (const p of presentProvinces) {
+      if (normalizeProvince(p) === norm) return true;
+    }
+    return false;
+  }, [presentProvinces]);
 
   // Assign categorical colors to present provinces
   const provinceColorMap = useMemo(() => {
     const map = new Map<string, string>();
     const sorted = [...presentProvinces].sort();
     sorted.forEach((name, i) => {
-      map.set(name, PROVINCE_COLORS[i % PROVINCE_COLORS.length]);
+      map.set(normalizeProvince(name), PROVINCE_COLORS[i % PROVINCE_COLORS.length]);
     });
     return map;
   }, [presentProvinces]);
 
+  function getColor(featureName: string): string {
+    return provinceColorMap.get(normalizeProvince(featureName)) ?? "none";
+  }
+
   // Auto-zoom to species region
   useEffect(() => {
-    if (!geoData || !provinceData || presentProvinces.size === 0 || autoZoomApplied) return;
+    if (!geoData || !provinceData || !pathGenerator || presentProvinces.size === 0 || autoZoomApplied) return;
 
-    // Find bounding box of all present province features
-    const presentFeatures = geoData.features.filter(
-      (f) => presentProvinces.has(f.properties.PROVINCE)
-    );
+    const presentFeatures = geoData.features.filter(f => isProvincePresent(f.properties.PROVINCE));
     if (presentFeatures.length === 0) return;
 
-    // Compute bounding box in projected coordinates
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const feature of presentFeatures) {
       const bounds = pathGenerator.bounds(feature.geometry as GeoJSON.Geometry);
@@ -122,7 +137,6 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
       if (bounds[1][1] > maxY) maxY = bounds[1][1];
     }
 
-    // Add padding (20%)
     const bw = maxX - minX;
     const bh = maxY - minY;
     const pad = 0.2;
@@ -131,7 +145,6 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     const vw = bw * (1 + 2 * pad);
     const vh = bh * (1 + 2 * pad);
 
-    // Maintain aspect ratio
     const aspect = BASE_WIDTH / BASE_HEIGHT;
     let finalW = vw;
     let finalH = vh;
@@ -141,13 +154,11 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
       finalW = vh * aspect;
     }
 
-    // Don't zoom in more than MAX_ZOOM
     const minW = BASE_WIDTH / MAX_ZOOM;
     if (finalW < minW) {
       finalW = minW;
       finalH = finalW / aspect;
     }
-    // Don't zoom out past full view
     if (finalW > BASE_WIDTH) {
       finalW = BASE_WIDTH;
       finalH = BASE_HEIGHT;
@@ -163,7 +174,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
       h: finalH,
     });
     setAutoZoomApplied(true);
-  }, [geoData, provinceData, presentProvinces, autoZoomApplied, pathGenerator]);
+  }, [geoData, provinceData, presentProvinces, autoZoomApplied, pathGenerator, isProvincePresent]);
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -205,19 +216,19 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     [isPanning]
   );
 
-  if (!geoData || !provinceData) {
+  if (!geoData || !provinceData || !pathGenerator) {
     return (
       <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg animate-pulse" />
     );
   }
 
   // Clean up source: deduplicate comma-separated entries
-  const cleanSource = useMemo(() => {
+  const cleanSource = (() => {
     const raw = provinceData.source || "";
     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
     const unique = [...new Set(parts)];
     return unique.join(", ");
-  }, [provinceData.source]);
+  })();
 
   return (
     <div className="space-y-1">
@@ -230,27 +241,11 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
           ref={svgRef}
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
           className="w-full"
-          style={{ cursor: isPanning ? "grabbing" : "grab" }}
+          style={{ cursor: isPanning ? "grabbing" : "grab", background: "#1a1a2e" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMovePan}
         >
-          {/* Ocean */}
-          <path
-            d={pathGenerator({ type: "Sphere" } as unknown as GeoPermissibleObjects) || ""}
-            fill="#1a1a2e"
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth={0.5}
-          />
-
-          {/* Graticule */}
-          <path
-            d={pathGenerator(graticule) || ""}
-            fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth={0.5}
-          />
-
-          {/* Land masses — rendered BEFORE provinces */}
+          {/* Land masses */}
           {landData?.features.map((feature, i) => (
             <path
               key={`land-${i}`}
@@ -262,13 +257,13 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
             />
           ))}
 
-          {/* Province polygons — ON TOP of land */}
+          {/* Province polygons ON TOP of land */}
           {geoData.features.map((feature, i) => {
             const provinceName = feature.properties.PROVINCE;
-            const isPresent = presentProvinces.has(provinceName);
+            const isPresent = isProvincePresent(provinceName);
             const isHovered = hoveredProvince === provinceName;
 
-            const fill = isPresent ? (provinceColorMap.get(provinceName) ?? "none") : "none";
+            const fill = isPresent ? getColor(provinceName) : "none";
 
             return (
               <path
@@ -304,12 +299,12 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
           >
             <div className="font-medium">{hoveredProvince}</div>
             <div className="text-white/70">
-              {presentProvinces.has(hoveredProvince) ? "Present" : "Absent"}
+              {isProvincePresent(hoveredProvince) ? "Present" : "Absent"}
             </div>
           </div>
         )}
 
-        {/* Zoom controls (button only, no scroll zoom) */}
+        {/* Zoom controls */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button
             className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
@@ -350,9 +345,11 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
       </div>
 
       {/* Source line */}
-      <div className="text-xs text-muted-foreground">
-        Source: {cleanSource}
-      </div>
+      {cleanSource && (
+        <div className="text-xs text-muted-foreground">
+          Source: {cleanSource}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,9 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { geoPath, geoGraticule, type GeoPermissibleObjects } from "d3-geo";
-// @ts-expect-error d3-geo-projection has no type declarations
-import { geoRobinson } from "d3-geo-projection";
+import { geoPath, geoIdentity } from "d3-geo";
 
 /** Categorical color palette for provinces */
 const PROVINCE_COLORS = [
@@ -40,147 +38,111 @@ interface GeoFeatureCollection {
   features: GeoFeature[];
 }
 
-interface ProvinceResponse {
+interface ProvinceApiResponse {
   family: string;
   provinces: Record<string, ProvinceData>;
   totalSpecies: number;
 }
 
+const BASE_WIDTH = 900;
+const BASE_HEIGHT = 450;
+const MAX_ZOOM = 6;
+
+/** Normalize province name for matching */
+function normalizeProvince(name: string): string {
+  return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();
+}
+
 export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: ProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
-  const [provinceData, setProvinceData] = useState<ProvinceResponse | null>(null);
-  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [provinceData, setProvinceData] = useState<ProvinceApiResponse | null>(null);
   const [hoveredProvince, setHoveredProvince] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
-  // Zoom/pan state (button-only zoom, no scroll)
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 900, h: 450 });
+  // Zoom/pan state
+  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
 
-  const BASE_WIDTH = 900;
-  const BASE_HEIGHT = 450;
-  const MAX_ZOOM = 8;
-
-  // Load GeoJSON, land, and province data
+  // Load pre-projected Robinson GeoJSON
   useEffect(() => {
-    fetch("/data/spalding_provinces.geojson", { cache: "force-cache" })
+    fetch("/data/robinson_provinces.geojson", { cache: "force-cache" })
       .then((r) => r.json())
       .then(setGeoData)
       .catch(console.error);
 
-    fetch("/data/gshhs_coastline.geojson", { cache: "force-cache" })
+    fetch("/data/robinson_coastline.geojson", { cache: "force-cache" })
       .then((r) => r.json())
       .then(setLandData)
       .catch(console.error);
   }, []);
 
+  // Fetch family province data
   useEffect(() => {
+    setSelectedProvince(null);
+    onFilterSpecies?.(null);
+    setViewBox({ x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT });
+
     fetch(`/api/families/${encodeURIComponent(family)}/provinces`)
       .then((r) => r.json())
       .then(setProvinceData)
       .catch(console.error);
   }, [family]);
 
-  // Reset selection when family changes
-  useEffect(() => {
-    setSelectedProvince(null);
-    onFilterSpecies?.(null);
-    setViewBox({ x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT });
-  }, [family]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Use geoIdentity with fitSize for pre-projected data
+  const projection = useMemo(() => {
+    if (!geoData) return null;
+    return geoIdentity()
+      .reflectY(true)
+      .fitSize([BASE_WIDTH, BASE_HEIGHT], geoData as unknown as GeoJSON.FeatureCollection);
+  }, [geoData]);
 
-  // Robinson projection
-  const projection = useMemo(
-    () =>
-      geoRobinson()
-        .scale(150)
-        .translate([BASE_WIDTH / 2, BASE_HEIGHT / 2])
-        .precision(0.1),
-    []
+  const pathGenerator = useMemo(
+    () => projection ? geoPath().projection(projection) : null,
+    [projection]
   );
 
-  const pathGenerator = useMemo(() => geoPath().projection(projection), [projection]);
-  const graticule = useMemo(() => geoGraticule().step([30, 30])(), []);
+  // Build province name matching map (normalized shapefile name -> canonical name)
+  const provinceNormMap = useMemo(() => {
+    if (!provinceData) return new Map<string, string>();
+    const map = new Map<string, string>();
+    for (const pName of Object.keys(provinceData.provinces)) {
+      map.set(normalizeProvince(pName), pName);
+    }
+    return map;
+  }, [provinceData]);
 
-  // Build sorted list of provinces that have species (count > 0)
-  const provincesWithData = useMemo(() => {
+  // Province data lookup by feature name
+  const getProvinceInfo = useCallback((featureName: string): ProvinceData | null => {
+    if (!provinceData) return null;
+    // Direct match first
+    if (provinceData.provinces[featureName]) return provinceData.provinces[featureName];
+    // Normalized match
+    const canonical = provinceNormMap.get(normalizeProvince(featureName));
+    if (canonical) return provinceData.provinces[canonical] ?? null;
+    return null;
+  }, [provinceData, provinceNormMap]);
+
+  // Sorted list of provinces with species (for dropdown)
+  const sortedProvinces = useMemo(() => {
     if (!provinceData) return [];
     return Object.entries(provinceData.provinces)
-      .filter(([, d]) => d.count > 0)
+      .filter(([, data]) => data.count > 0)
       .sort(([a], [b]) => a.localeCompare(b));
   }, [provinceData]);
 
-  // Assign categorical colors to provinces with data
+  // Assign categorical colors to present provinces
   const provinceColorMap = useMemo(() => {
     const map = new Map<string, string>();
-    provincesWithData.forEach(([name], i) => {
+    sortedProvinces.forEach(([name], i) => {
       map.set(name, PROVINCE_COLORS[i % PROVINCE_COLORS.length]);
     });
     return map;
-  }, [provincesWithData]);
+  }, [sortedProvinces]);
 
-  // Province names sorted for dropdown
-  const sortedProvinceNames = useMemo(() => {
-    if (!geoData) return [];
-    return geoData.features
-      .map((f) => f.properties.PROVINCE)
-      .filter((v, i, arr) => arr.indexOf(v) === i)
-      .sort();
-  }, [geoData]);
-
-  const handleProvinceClick = useCallback(
-    (provinceName: string) => {
-      if (selectedProvince === provinceName) {
-        setSelectedProvince(null);
-        onFilterSpecies?.(null);
-      } else {
-        setSelectedProvince(provinceName);
-        const speciesInProvince = provinceData?.provinces[provinceName]?.species ?? [];
-        onFilterSpecies?.(new Set(speciesInProvince));
-      }
-    },
-    [selectedProvince, provinceData, onFilterSpecies]
-  );
-
-  const handleDropdownChange = useCallback(
-    (e: React.ChangeEvent<HTMLSelectElement>) => {
-      const val = e.target.value;
-      if (val === "") {
-        setSelectedProvince(null);
-        onFilterSpecies?.(null);
-      } else {
-        setSelectedProvince(val);
-        const speciesInProvince = provinceData?.provinces[val]?.species ?? [];
-        onFilterSpecies?.(new Set(speciesInProvince));
-      }
-    },
-    [provinceData, onFilterSpecies]
-  );
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent, provinceName: string) => {
-      if (isPanning) return;
-      const svgRect = svgRef.current?.getBoundingClientRect();
-      if (svgRect) {
-        setTooltipPos({
-          x: e.clientX - svgRect.left,
-          y: e.clientY - svgRect.top,
-        });
-      }
-      setHoveredProvince(provinceName);
-    },
-    [isPanning]
-  );
-
-  const handleMouseLeave = useCallback(() => {
-    setHoveredProvince(null);
-    setTooltipPos(null);
-  }, []);
-
-  // Pan
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button !== 0) return;
@@ -206,91 +168,98 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
     panStart.current = null;
   }, []);
 
-  if (!geoData || !provinceData) {
+  const handleMouseMoveTooltip = useCallback(
+    (e: React.MouseEvent, provinceName: string) => {
+      if (isPanning) return;
+      const svgRect = svgRef.current?.getBoundingClientRect();
+      if (svgRect) {
+        setTooltipPos({
+          x: e.clientX - svgRect.left,
+          y: e.clientY - svgRect.top,
+        });
+      }
+      setHoveredProvince(provinceName);
+    },
+    [isPanning]
+  );
+
+  const handleProvinceClick = useCallback(
+    (provinceName: string) => {
+      const info = getProvinceInfo(provinceName);
+      if (!info || info.count === 0) return;
+
+      if (selectedProvince === provinceName) {
+        setSelectedProvince(null);
+        onFilterSpecies?.(null);
+      } else {
+        setSelectedProvince(provinceName);
+        onFilterSpecies?.(new Set(info.species));
+      }
+    },
+    [selectedProvince, getProvinceInfo, onFilterSpecies]
+  );
+
+  if (!geoData || !provinceData || !pathGenerator) {
     return (
-      <div className="w-full h-[300px] bg-[#1a1a2e] rounded-lg animate-pulse flex items-center justify-center">
-        <span className="text-muted-foreground text-sm">Loading distribution map...</span>
-      </div>
+      <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg animate-pulse" />
     );
   }
 
-  const hoveredData = hoveredProvince ? provinceData.provinces[hoveredProvince] : null;
-
-  // Compute dropdown counts: species with images if available, else total
-  const getDropdownCount = (provinceName: string): number => {
-    const data = provinceData.provinces[provinceName];
-    if (!data) return 0;
-    if (speciesWithImages) {
-      return data.species.filter((sp) => speciesWithImages.has(sp)).length;
-    }
-    return data.count;
-  };
-
   return (
-    <div className="relative w-full">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-medium text-muted-foreground">
-          Species distribution by marine province
-          {selectedProvince && (
-            <button
-              className="ml-2 text-xs text-blue-400 hover:text-blue-300"
-              onClick={() => {
-                setSelectedProvince(null);
-                onFilterSpecies?.(null);
-              }}
-            >
-              (clear filter)
-            </button>
-          )}
-        </h3>
-        {/* Province dropdown */}
+    <div className="space-y-3">
+      {/* Dropdown selector */}
+      <div className="flex gap-2 items-center">
         <select
-          className="text-xs bg-card border border-border rounded px-2 py-1 text-foreground max-w-[220px]"
-          value={selectedProvince ?? ""}
-          onChange={handleDropdownChange}
+          className="flex-1 bg-card border border-border rounded px-3 py-1.5 text-sm"
+          value={selectedProvince || ""}
+          onChange={(e) => {
+            const val = e.target.value || null;
+            setSelectedProvince(val);
+            if (val) {
+              const info = getProvinceInfo(val);
+              if (info) onFilterSpecies?.(new Set(info.species));
+            } else {
+              onFilterSpecies?.(null);
+            }
+          }}
         >
-          <option value="">All provinces</option>
-          {sortedProvinceNames.map((name) => {
-            const count = getDropdownCount(name);
+          <option value="">All provinces ({sortedProvinces.reduce((sum, [, d]) => sum + d.count, 0)} species)</option>
+          {sortedProvinces.map(([name, data]) => {
+            const withImagesCount = speciesWithImages
+              ? data.species.filter(s => speciesWithImages.has(s)).length
+              : null;
             return (
               <option key={name} value={name}>
-                {name} ({count} spp.)
+                {name} ({data.count} species{withImagesCount !== null ? `, ${withImagesCount} with images` : ''})
               </option>
             );
           })}
         </select>
+        {selectedProvince && (
+          <button
+            className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded"
+            onClick={() => { setSelectedProvince(null); onFilterSpecies?.(null); }}
+          >
+            Clear
+          </button>
+        )}
       </div>
+
+      {/* Map */}
       <div
-        ref={containerRef}
         className="relative overflow-hidden rounded-lg border border-border/50"
         onMouseUp={handleMouseUp}
-        onMouseLeave={() => { handleMouseUp(); handleMouseLeave(); }}
+        onMouseLeave={() => { handleMouseUp(); setHoveredProvince(null); setTooltipPos(null); }}
       >
         <svg
           ref={svgRef}
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
           className="w-full"
-          style={{ maxHeight: "400px", cursor: isPanning ? "grabbing" : "grab" }}
+          style={{ cursor: isPanning ? "grabbing" : "grab", background: "#1a1a2e" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMovePan}
         >
-          {/* Ocean background (sphere) */}
-          <path
-            d={pathGenerator({ type: "Sphere" } as unknown as GeoPermissibleObjects) || ""}
-            fill="#1a1a2e"
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth={0.5}
-          />
-
-          {/* Graticule */}
-          <path
-            d={pathGenerator(graticule) || ""}
-            fill="none"
-            stroke="rgba(255,255,255,0.06)"
-            strokeWidth={0.5}
-          />
-
-          {/* Land masses (GSHHS coastline) — rendered BEFORE provinces */}
+          {/* Land masses */}
           {landData?.features.map((feature, i) => (
             <path
               key={`land-${i}`}
@@ -302,43 +271,40 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             />
           ))}
 
-          {/* Province polygons — ON TOP of land */}
+          {/* Province polygons ON TOP of land */}
           {geoData.features.map((feature, i) => {
             const provinceName = feature.properties.PROVINCE;
-            const data = provinceData.provinces[provinceName];
-            const count = data?.count ?? 0;
-            const isSelected = selectedProvince === provinceName;
+            const info = getProvinceInfo(provinceName);
+            const isPresent = info !== null && info.count > 0;
             const isHovered = hoveredProvince === provinceName;
+            const isSelected = selectedProvince === provinceName;
 
-            const fill = count > 0 ? (provinceColorMap.get(provinceName) ?? "none") : "none";
+            const canonicalName = isPresent
+              ? (provinceNormMap.get(normalizeProvince(provinceName)) ?? provinceName)
+              : provinceName;
+            const fill = isPresent ? (provinceColorMap.get(canonicalName) ?? "none") : "none";
 
             return (
               <path
                 key={i}
                 d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
                 fill={fill}
-                fillOpacity={count === 0 ? 0 : 0.75}
+                fillOpacity={isPresent ? (isSelected ? 0.9 : 0.75) : 0}
                 stroke={
                   isSelected
-                    ? "#60a5fa"
+                    ? "rgba(255,255,0,1)"
                     : isHovered
                       ? "rgba(255,255,255,1)"
-                      : count > 0
+                      : isPresent
                         ? "rgba(255,255,255,0.8)"
-                        : "rgba(255,255,255,0.15)"
+                        : "rgba(255,255,255,0.1)"
                 }
-                strokeWidth={isSelected ? 2 : isHovered ? 1.5 : count > 0 ? 1 : 0.3}
-                style={{ cursor: count > 0 ? "pointer" : "grab" }}
+                strokeWidth={isSelected ? 2 : isHovered ? 1.5 : isPresent ? 1 : 0.2}
                 pointerEvents="all"
-                onClick={(e) => {
-                  if (isPanning) return;
-                  if (count > 0) {
-                    e.stopPropagation();
-                    handleProvinceClick(provinceName);
-                  }
-                }}
-                onMouseMove={(e) => handleMouseMove(e, provinceName)}
-                onMouseLeave={handleMouseLeave}
+                style={{ cursor: isPresent ? "pointer" : "default" }}
+                onClick={() => handleProvinceClick(provinceName)}
+                onMouseMove={(e) => handleMouseMoveTooltip(e, provinceName)}
+                onMouseLeave={() => { setHoveredProvince(null); setTooltipPos(null); }}
               />
             );
           })}
@@ -350,18 +316,21 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             className="absolute pointer-events-none bg-black/90 border border-white/20 rounded px-2 py-1 text-xs text-white z-10"
             style={{
               left: tooltipPos.x + 10,
-              top: tooltipPos.y - 30,
-              transform: tooltipPos.x > 600 ? "translateX(-110%)" : undefined,
+              top: tooltipPos.y - 25,
+              transform: tooltipPos.x > 400 ? "translateX(-110%)" : undefined,
             }}
           >
             <div className="font-medium">{hoveredProvince}</div>
-            <div className="text-white/70">
-              {hoveredData ? `${hoveredData.count} species` : "No species"}
-            </div>
+            {(() => {
+              const info = getProvinceInfo(hoveredProvince);
+              return info && info.count > 0
+                ? <div className="text-white/70">{info.count} species</div>
+                : <div className="text-white/50">No species</div>;
+            })()}
           </div>
         )}
 
-        {/* Zoom controls (button only, no scroll zoom) */}
+        {/* Zoom controls */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button
             className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
@@ -400,12 +369,6 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
           </button>
         </div>
       </div>
-
-      {selectedProvince && (
-        <p className="text-xs text-blue-400 mt-1">
-          Filtered: {selectedProvince} ({provinceData.provinces[selectedProvince]?.count ?? 0} species)
-        </p>
-      )}
     </div>
   );
 }
