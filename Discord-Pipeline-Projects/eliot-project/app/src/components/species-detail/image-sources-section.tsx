@@ -27,6 +27,7 @@ export function ImageSourcesSection({ images }: ImageSourcesSectionProps) {
             alt="Image sources icon"
             width={36}
             height={36}
+            style={{ filter: 'brightness(0) invert(1)' }}
           />
         </div>
         <h2 className="text-lg font-semibold">Image sources</h2>
@@ -34,16 +35,7 @@ export function ImageSourcesSection({ images }: ImageSourcesSectionProps) {
 
       <ul className="space-y-2">
         {images.map((img, index) => (
-          <li key={index} className="text-sm flex items-start gap-2">
-            {/* Small icon */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/image-icon.svg"
-              alt=""
-              width={16}
-              height={16}
-              className="shrink-0 mt-0.5 opacity-50"
-            />
+          <li key={index} className="text-sm">
             <span>
               {img.displayAuthor}
               {img.link && (

@@ -54,6 +54,20 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [provinceFilter, setProvinceFilter] = useState<Set<string> | null>(null);
 
+  // Compute set of species names that have images
+  const speciesWithImageNames = useMemo((): Set<string> | null => {
+    if (!data) return null;
+    const names = new Set<string>();
+    for (const genus of (data.genusSections ?? [])) {
+      for (const sp of genus.speciesSubsections) {
+        if (sp.images.length > 0) {
+          names.add(sp.speciesName);
+        }
+      }
+    }
+    return names;
+  }, [data]);
+
   // Combine sidebar trait filter and province map filter
   const combinedFilter = useMemo((): Set<string> | null => {
     if (!filteredSpeciesNames && !provinceFilter) return null;
@@ -201,7 +215,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
       </p>
 
       {/* Province distribution map */}
-      <ProvinceMap family={family} onFilterSpecies={setProvinceFilter} />
+      <ProvinceMap family={family} onFilterSpecies={setProvinceFilter} speciesWithImages={speciesWithImageNames} />
 
       {(filteredData.genusSections ?? []).length === 0 && (filteredData.familyImages ?? []).length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>

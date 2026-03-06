@@ -35,16 +35,16 @@ CSV_TO_PROVINCE['Sea of Japan East Sea'] = 'Sea of Japan/East Sea';
 CSV_TO_PROVINCE['Somali Arabian'] = 'Somali Current';
 CSV_TO_PROVINCE['Somali/Arabian'] = 'Somali Current';
 
-/** Cache: species name -> province names */
-let speciesProvinceCache: Map<string, string[]> | null = null;
+/** Cache: species name -> { provinces, source } */
+let speciesProvinceCache: Map<string, { provinces: string[]; source: string }> | null = null;
 
-async function loadSpeciesProvinces(): Promise<Map<string, string[]>> {
+async function loadSpeciesProvinces(): Promise<Map<string, { provinces: string[]; source: string }>> {
   if (speciesProvinceCache) return speciesProvinceCache;
 
   const csvPath = path.join(process.cwd(), 'data', 'species_provinces_spalding.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
-  const result = new Map<string, string[]>();
+  const result = new Map<string, { provinces: string[]; source: string }>();
 
   Papa.parse(content, {
     header: true,
@@ -53,6 +53,12 @@ async function loadSpeciesProvinces(): Promise<Map<string, string[]>> {
       const data = row.data as Record<string, string>;
       const speciesName = (data.VALID_NAME || '').replace(/^"|"$/g, '');
       if (!speciesName) return;
+
+      // Read SOURCE column and deduplicate
+      const rawSource = (data.SOURCE || '').replace(/^"|"$/g, '');
+      const sourceParts = rawSource.split(',').map((s) => s.trim()).filter(Boolean);
+      const uniqueSources = [...new Set(sourceParts)];
+      const source = uniqueSources.join(', ');
 
       const provinces: string[] = [];
       for (const [csvCol, provinceName] of Object.entries(CSV_TO_PROVINCE)) {
@@ -63,7 +69,7 @@ async function loadSpeciesProvinces(): Promise<Map<string, string[]>> {
       }
 
       if (provinces.length > 0) {
-        result.set(speciesName, provinces);
+        result.set(speciesName, { provinces, source });
       }
     },
   });
@@ -85,12 +91,14 @@ export async function GET(
     }
 
     const allProvinces = await loadSpeciesProvinces();
-    const provinces = allProvinces.get(species.validName) ?? [];
+    const entry = allProvinces.get(species.validName);
+    const provinces = entry?.provinces ?? [];
+    const source = entry?.source ?? '';
 
     return NextResponse.json({
       speciesName: species.validName,
       provinces,
-      source: 'FishBase / Spalding et al. (2012)',
+      source,
     }, {
       headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
     });

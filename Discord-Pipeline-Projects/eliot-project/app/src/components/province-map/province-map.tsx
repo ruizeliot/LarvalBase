@@ -5,6 +5,17 @@ import { geoPath, geoGraticule, type GeoPermissibleObjects } from "d3-geo";
 // @ts-expect-error d3-geo-projection has no type declarations
 import { geoRobinson } from "d3-geo-projection";
 
+/** Categorical color palette for provinces */
+const PROVINCE_COLORS = [
+  '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
+  '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
+  '#a6cee3','#fb9a99','#fdbf6f','#cab2d6','#ff7f00','#b2df8a',
+  '#e31a1c','#33a02c','#1f78b4','#6a3d9a','#b15928','#ffff99',
+  '#f0027f','#bf5b17','#666666','#7fc97f','#beaed4','#fdc086',
+  '#386cb0','#f0f9e8','#d95f02','#7570b3','#e7298a','#66a61e',
+  '#e6ab02',
+];
+
 interface ProvinceData {
   count: number;
   species: string[];
@@ -14,6 +25,8 @@ interface ProvinceMapProps {
   family: string;
   /** Called when user clicks a province — passes species names in that province, or null to clear */
   onFilterSpecies?: (speciesNames: Set<string> | null) => void;
+  /** Set of species names that have images (for dropdown count) */
+  speciesWithImages?: Set<string> | null;
 }
 
 interface GeoFeature {
@@ -33,7 +46,7 @@ interface ProvinceResponse {
   totalSpecies: number;
 }
 
-export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
+export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: ProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<ProvinceResponse | null>(null);
@@ -43,14 +56,13 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Zoom/pan state
+  // Zoom/pan state (button-only zoom, no scroll)
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 900, h: 450 });
   const [isPanning, setIsPanning] = useState(false);
   const panStart = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
 
   const BASE_WIDTH = 900;
   const BASE_HEIGHT = 450;
-  const MIN_ZOOM = 1;
   const MAX_ZOOM = 8;
 
   // Load GeoJSON, land, and province data
@@ -93,41 +105,22 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
   const pathGenerator = useMemo(() => geoPath().projection(projection), [projection]);
   const graticule = useMemo(() => geoGraticule().step([30, 30])(), []);
 
-  // Color scale — linear scale adapted to this family's min/max
-  const { minCount, maxCount } = useMemo(() => {
-    if (!provinceData) return { minCount: 0, maxCount: 1 };
-    const counts = Object.values(provinceData.provinces)
-      .map((p) => p.count)
-      .filter((c) => c > 0);
-    if (counts.length === 0) return { minCount: 0, maxCount: 1 };
-    return {
-      minCount: Math.min(...counts),
-      maxCount: Math.max(...counts),
-    };
+  // Build sorted list of provinces that have species (count > 0)
+  const provincesWithData = useMemo(() => {
+    if (!provinceData) return [];
+    return Object.entries(provinceData.provinces)
+      .filter(([, d]) => d.count > 0)
+      .sort(([a], [b]) => a.localeCompare(b));
   }, [provinceData]);
 
-  // Blue-to-red color scale for province counts
-  const colorScale = useCallback(
-    (count: number): string => {
-      if (count === 0) return "none";
-      if (maxCount === minCount) return "#4393c3"; // single value = medium blue
-      const t = (count - minCount) / (maxCount - minCount);
-      // Interpolate: light blue (#92c5de) -> medium blue (#4393c3) -> dark blue (#2166ac) -> orange (#f4a582) -> red (#d6604d)
-      const colors = ["#92c5de", "#4393c3", "#2166ac", "#f4a582", "#d6604d"];
-      const idx = t * (colors.length - 1);
-      const lo = Math.floor(idx);
-      const hi = Math.min(lo + 1, colors.length - 1);
-      const frac = idx - lo;
-      // Simple hex interpolation
-      const c1 = hexToRgb(colors[lo]);
-      const c2 = hexToRgb(colors[hi]);
-      const r = Math.round(c1.r + (c2.r - c1.r) * frac);
-      const g = Math.round(c1.g + (c2.g - c1.g) * frac);
-      const b = Math.round(c1.b + (c2.b - c1.b) * frac);
-      return `rgb(${r},${g},${b})`;
-    },
-    [minCount, maxCount]
-  );
+  // Assign categorical colors to provinces with data
+  const provinceColorMap = useMemo(() => {
+    const map = new Map<string, string>();
+    provincesWithData.forEach(([name], i) => {
+      map.set(name, PROVINCE_COLORS[i % PROVINCE_COLORS.length]);
+    });
+    return map;
+  }, [provincesWithData]);
 
   // Province names sorted for dropdown
   const sortedProvinceNames = useMemo(() => {
@@ -187,28 +180,6 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
     setTooltipPos(null);
   }, []);
 
-  // Wheel zoom
-  const handleWheel = useCallback(
-    (e: React.WheelEvent) => {
-      e.preventDefault();
-      const svgRect = svgRef.current?.getBoundingClientRect();
-      if (!svgRect) return;
-
-      const zoomFactor = e.deltaY < 0 ? 0.85 : 1.18;
-      const newW = Math.max(BASE_WIDTH / MAX_ZOOM, Math.min(BASE_WIDTH / MIN_ZOOM, viewBox.w * zoomFactor));
-      const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
-
-      // Zoom toward cursor
-      const mx = ((e.clientX - svgRect.left) / svgRect.width) * viewBox.w + viewBox.x;
-      const my = ((e.clientY - svgRect.top) / svgRect.height) * viewBox.h + viewBox.y;
-      const newX = mx - ((e.clientX - svgRect.left) / svgRect.width) * newW;
-      const newY = my - ((e.clientY - svgRect.top) / svgRect.height) * newH;
-
-      setViewBox({ x: newX, y: newY, w: newW, h: newH });
-    },
-    [viewBox]
-  );
-
   // Pan
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -245,6 +216,16 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
 
   const hoveredData = hoveredProvince ? provinceData.provinces[hoveredProvince] : null;
 
+  // Compute dropdown counts: species with images if available, else total
+  const getDropdownCount = (provinceName: string): number => {
+    const data = provinceData.provinces[provinceName];
+    if (!data) return 0;
+    if (speciesWithImages) {
+      return data.species.filter((sp) => speciesWithImages.has(sp)).length;
+    }
+    return data.count;
+  };
+
   return (
     <div className="relative w-full">
       <div className="flex items-center justify-between mb-2">
@@ -270,8 +251,7 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
         >
           <option value="">All provinces</option>
           {sortedProvinceNames.map((name) => {
-            const data = provinceData.provinces[name];
-            const count = data?.count ?? 0;
+            const count = getDropdownCount(name);
             return (
               <option key={name} value={name}>
                 {name} ({count} spp.)
@@ -291,7 +271,6 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
           viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
           className="w-full"
           style={{ maxHeight: "400px", cursor: isPanning ? "grabbing" : "grab" }}
-          onWheel={handleWheel}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMovePan}
         >
@@ -311,7 +290,19 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
             strokeWidth={0.5}
           />
 
-          {/* Province polygons */}
+          {/* Land masses (GSHHS coastline) — rendered BEFORE provinces */}
+          {landData?.features.map((feature, i) => (
+            <path
+              key={`land-${i}`}
+              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
+              fill="#888888"
+              stroke="rgba(120,120,120,0.5)"
+              strokeWidth={0.3}
+              pointerEvents="none"
+            />
+          ))}
+
+          {/* Province polygons — ON TOP of land */}
           {geoData.features.map((feature, i) => {
             const provinceName = feature.properties.PROVINCE;
             const data = provinceData.provinces[provinceName];
@@ -319,7 +310,7 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
             const isSelected = selectedProvince === provinceName;
             const isHovered = hoveredProvince === provinceName;
 
-            const fill = colorScale(count);
+            const fill = count > 0 ? (provinceColorMap.get(provinceName) ?? "none") : "none";
 
             return (
               <path
@@ -331,15 +322,16 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
                   isSelected
                     ? "#60a5fa"
                     : isHovered
-                      ? "rgba(255,255,255,0.8)"
-                      : "rgba(200,200,200,0.25)"
+                      ? "rgba(255,255,255,1)"
+                      : count > 0
+                        ? "rgba(255,255,255,0.8)"
+                        : "rgba(255,255,255,0.15)"
                 }
-                strokeWidth={isSelected ? 1.5 : isHovered ? 1 : 0.3}
+                strokeWidth={isSelected ? 2 : isHovered ? 1.5 : count > 0 ? 1 : 0.3}
                 style={{ cursor: count > 0 ? "pointer" : "grab" }}
                 pointerEvents="all"
                 onClick={(e) => {
                   if (isPanning) return;
-                  // Only fire click if mouse didn't move much (not a pan)
                   if (count > 0) {
                     e.stopPropagation();
                     handleProvinceClick(provinceName);
@@ -350,18 +342,6 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
               />
             );
           })}
-
-          {/* Land masses (GSHHS coastline) */}
-          {landData?.features.map((feature, i) => (
-            <path
-              key={`land-${i}`}
-              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
-              fill="#e8e8e8"
-              stroke="rgba(180,180,180,0.5)"
-              strokeWidth={0.3}
-              pointerEvents="none"
-            />
-          ))}
         </svg>
 
         {/* Tooltip */}
@@ -381,22 +361,7 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
           </div>
         )}
 
-        {/* Color legend */}
-        {maxCount > 0 && (
-          <div className="absolute bottom-2 right-2 flex items-center gap-1 text-[10px] text-white/60 bg-black/50 rounded px-1.5 py-0.5">
-            <span>{minCount}</span>
-            <div
-              className="w-20 h-2 rounded-sm"
-              style={{
-                background: `linear-gradient(to right, ${colorScale(minCount)}, ${colorScale(Math.round((minCount + maxCount) / 2))}, ${colorScale(maxCount)})`,
-              }}
-            />
-            <span>{maxCount}</span>
-            <span className="ml-1">spp.</span>
-          </div>
-        )}
-
-        {/* Zoom controls */}
+        {/* Zoom controls (button only, no scroll zoom) */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button
             className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
@@ -443,11 +408,4 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
       )}
     </div>
   );
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) }
-    : { r: 0, g: 0, b: 0 };
 }
