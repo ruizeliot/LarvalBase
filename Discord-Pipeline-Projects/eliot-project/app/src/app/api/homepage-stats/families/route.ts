@@ -184,12 +184,17 @@ export async function GET() {
     }
 
     // Select best valid thumbnail per family:
-    // Priority: 1. Blackwater + species-level + sure ID (darkest first)
-    //           2. Secondary authors + sure ID (darkest first)
-    //           3. Tertiary authors + sure ID (darkest first)
-    //           4. Other authors + sure ID (darkest first)
-    //           5. Uncertain images (same tier ordering)
+    // Priority groups (dark = brightness < 80):
+    //   1. Species-level + dark + blackwater author
+    //   2. Species-level + dark + priority author
+    //   3. Genus/family-level + dark (any author) — better than light species
+    //   4. Species-level + blackwater + any brightness
+    //   5. Species-level + priority + any brightness
+    //   6. Genus/family-level + any brightness
+    //   7. Everything else
+    // Within each group: certain > uncertain, BW authors first, then darkest
     const familyImageMap = new Map<string, string>();
+    const DARK_THRESHOLD = 80;
 
     function getAuthorTierForSort(author: string): number {
       if (BLACKWATER_AUTHORS.has(author)) return 1;
@@ -203,26 +208,33 @@ export async function GET() {
       return /\bBW\b/i.test(author);
     }
 
+    function getPriorityGroup(c: Candidate): number {
+      const isDark = c.brightness < DARK_THRESHOLD;
+      const authorTier = getAuthorTierForSort(c.author);
+      const isSpecies = c.level === 'species';
+
+      if (isSpecies && isDark && authorTier === 1) return 1;
+      if (isSpecies && isDark && authorTier <= 3) return 2;
+      if (!isSpecies && isDark) return 3;
+      if (isSpecies && authorTier === 1) return 4;
+      if (isSpecies && authorTier <= 3) return 5;
+      if (!isSpecies) return 6;
+      return 7;
+    }
+
     for (const [family, candidates] of familyCandidates) {
       candidates.sort((a, b) => {
         // Certain before uncertain
         if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;
-        // Species-level preferred over genus/family level
-        const levelOrder = { species: 0, genus: 1, family: 2 };
-        const aLevel = levelOrder[a.level] ?? 2;
-        const bLevel = levelOrder[b.level] ?? 2;
-        if (aLevel !== bLevel) return aLevel - bLevel;
-        // Author tier (blackwater > secondary > tertiary > other)
-        const aTier = getAuthorTierForSort(a.author);
-        const bTier = getAuthorTierForSort(b.author);
-        if (aTier !== bTier) return aTier - bTier;
-        // Within blackwater tier, prefer "BW" authors (black backgrounds)
-        if (aTier === 1 && bTier === 1) {
-          const aBW = isBWAuthor(a.author);
-          const bBW = isBWAuthor(b.author);
-          if (aBW !== bBW) return aBW ? -1 : 1;
-        }
-        // Within same tier+certainty, darkest first (lowest brightness)
+        // Priority group
+        const aGroup = getPriorityGroup(a);
+        const bGroup = getPriorityGroup(b);
+        if (aGroup !== bGroup) return aGroup - bGroup;
+        // Within same group, prefer BW authors
+        const aBW = isBWAuthor(a.author);
+        const bBW = isBWAuthor(b.author);
+        if (aBW !== bBW) return aBW ? -1 : 1;
+        // Within same group, darkest first (lowest brightness)
         return a.brightness - b.brightness;
       });
       for (const candidate of candidates) {
