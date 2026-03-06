@@ -326,7 +326,7 @@ function ImageLightbox({
             {image.scale !== undefined && (
               <p
                 className="text-xs italic"
-                style={{ color: image.scale ? 'rgba(0, 186, 56, 0.5)' : 'rgba(248, 118, 109, 0.5)' }}
+                style={{ color: image.scale ? '#00BA38' : '#F8766D' }}
               >
                 {image.scale
                   ? 'Specimen size or scale available in the source'

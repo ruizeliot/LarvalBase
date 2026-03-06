@@ -48,15 +48,15 @@ function transformToArboristData(node: TaxonomyNodeJSON, parentFamilyName?: stri
 function FamilySilhouette({ family, className = '' }: { family: string; className?: string }) {
   const [err, setErr] = useState(false);
   if (err) {
-    return <span className={`inline-block w-4 h-4 rounded-full bg-amber-400/40 shrink-0 ${className}`} />;
+    return <span className={`inline-block w-6 h-6 rounded-full bg-amber-400/40 shrink-0 ${className}`} />;
   }
   return (
     /* eslint-disable-next-line @next/next/no-img-element */
     <img
       src={`/family-icons/${family}.svg`}
       alt=""
-      width={16}
-      height={16}
+      width={24}
+      height={24}
       className={`shrink-0 object-contain ${className}`}
       style={{ filter: 'brightness(0) invert(1)' }}
       onError={() => setErr(true)}

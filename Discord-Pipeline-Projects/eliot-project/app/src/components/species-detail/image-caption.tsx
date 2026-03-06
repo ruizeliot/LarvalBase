@@ -44,7 +44,7 @@ export function ImageCaption({ displayAuthor, uncertain, scale, link }: ImageCap
       {scale !== undefined && (
         <span
           className="text-xs italic"
-          style={{ color: scale ? 'rgba(0, 186, 56, 0.5)' : 'rgba(248, 118, 109, 0.5)' }}
+          style={{ color: scale ? '#00BA38' : '#F8766D' }}
         >
           {scale
             ? 'Specimen size or scale available in the source'

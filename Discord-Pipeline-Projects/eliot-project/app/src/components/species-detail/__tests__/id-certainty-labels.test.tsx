@@ -3,8 +3,8 @@
  *
  * - Sure ID: green #00BA38
  * - Unsure ID: red #F8766D
- * - Scale TRUE: green 50% transparency rgba(0, 186, 56, 0.5)
- * - Scale FALSE: red 50% transparency rgba(248, 118, 109, 0.5)
+ * - Scale TRUE: green full opacity #00BA38
+ * - Scale FALSE: red full opacity #F8766D
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
@@ -65,7 +65,7 @@ describe('Species ID certainty labels', () => {
 
     const scaleEl = screen.getByText(/Specimen size or scale available/);
     expect(scaleEl).toBeDefined();
-    expect(scaleEl.style.color).toBe('rgba(0, 186, 56, 0.5)');
+    expect(scaleEl.style.color).toBe('rgb(0, 186, 56)');
   });
 
   it('should show red scale text when scale=false', () => {
@@ -80,7 +80,7 @@ describe('Species ID certainty labels', () => {
 
     const scaleEl = screen.getByText(/Specimen size or scale unavailable/);
     expect(scaleEl).toBeDefined();
-    expect(scaleEl.style.color).toBe('rgba(248, 118, 109, 0.5)');
+    expect(scaleEl.style.color).toBe('rgb(248, 118, 109)');
   });
 
   it('should not show scale info when scale is undefined', () => {

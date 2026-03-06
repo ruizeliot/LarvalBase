@@ -198,20 +198,31 @@ export async function GET() {
       return 4;
     }
 
+    // "BW" authors tend to have truly black backgrounds (highest priority within blackwater)
+    function isBWAuthor(author: string): boolean {
+      return /\bBW\b/i.test(author);
+    }
+
     for (const [family, candidates] of familyCandidates) {
       candidates.sort((a, b) => {
+        // Certain before uncertain
+        if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;
         // Species-level preferred over genus/family level
         const levelOrder = { species: 0, genus: 1, family: 2 };
         const aLevel = levelOrder[a.level] ?? 2;
         const bLevel = levelOrder[b.level] ?? 2;
         if (aLevel !== bLevel) return aLevel - bLevel;
-        // Certain before uncertain
-        if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;
         // Author tier (blackwater > secondary > tertiary > other)
         const aTier = getAuthorTierForSort(a.author);
         const bTier = getAuthorTierForSort(b.author);
         if (aTier !== bTier) return aTier - bTier;
-        // Within same tier+certainty, darkest first
+        // Within blackwater tier, prefer "BW" authors (black backgrounds)
+        if (aTier === 1 && bTier === 1) {
+          const aBW = isBWAuthor(a.author);
+          const bBW = isBWAuthor(b.author);
+          if (aBW !== bBW) return aBW ? -1 : 1;
+        }
+        // Within same tier+certainty, darkest first (lowest brightness)
         return a.brightness - b.brightness;
       });
       for (const candidate of candidates) {
