@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { geoPath, geoGraticule } from "d3-geo";
+import { geoPath, geoGraticule, type GeoPermissibleObjects } from "d3-geo";
 // @ts-expect-error d3-geo-projection has no type declarations
 import { geoRobinson } from "d3-geo-projection";
-import { scaleSequential } from "d3-scale";
+import { scaleSqrt } from "d3-scale";
 import { interpolateYlOrRd } from "d3-scale-chromatic";
 
 interface ProvinceData {
@@ -37,6 +37,7 @@ interface ProvinceResponse {
 
 export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
+  const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<ProvinceResponse | null>(null);
   const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
   const [hoveredProvince, setHoveredProvince] = useState<string | null>(null);
@@ -46,11 +47,16 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
   const WIDTH = 900;
   const HEIGHT = 450;
 
-  // Load GeoJSON and province data
+  // Load GeoJSON, land, and province data
   useEffect(() => {
     fetch("/data/spalding_provinces.geojson", { cache: "force-cache" })
       .then((r) => r.json())
       .then(setGeoData)
+      .catch(console.error);
+
+    fetch("/data/gshhs_coastline.geojson", { cache: "force-cache" })
+      .then((r) => r.json())
+      .then(setLandData)
       .catch(console.error);
   }, []);
 
@@ -80,7 +86,7 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
   const pathGenerator = useMemo(() => geoPath().projection(projection), [projection]);
   const graticule = useMemo(() => geoGraticule().step([30, 30])(), []);
 
-  // Color scale
+  // Color scale — use sqrt scale so low counts are still visible
   const maxCount = useMemo(() => {
     if (!provinceData) return 1;
     const counts = Object.values(provinceData.provinces).map((p) => p.count);
@@ -88,7 +94,9 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
   }, [provinceData]);
 
   const colorScale = useMemo(
-    () => scaleSequential(interpolateYlOrRd).domain([0, maxCount]),
+    () => scaleSqrt<string>()
+      .domain([1, maxCount])
+      .range(["#fee08b", "#d73027"]),
     [maxCount]
   );
 
@@ -156,9 +164,17 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
         <svg
           ref={svgRef}
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="w-full bg-[#1a1a2e]"
+          className="w-full"
           style={{ maxHeight: "400px" }}
         >
+          {/* Ocean background (sphere) */}
+          <path
+            d={pathGenerator({ type: "Sphere" } as unknown as GeoPermissibleObjects) || ""}
+            fill="#1a1a2e"
+            stroke="rgba(255,255,255,0.15)"
+            strokeWidth={0.5}
+          />
+
           {/* Graticule */}
           <path
             d={pathGenerator(graticule) || ""}
@@ -167,7 +183,7 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
             strokeWidth={0.5}
           />
 
-          {/* Land outline (from province polygons merged) */}
+          {/* Province polygons — rendered BEFORE land so land sits on top visually for coastlines */}
           {geoData.features.map((feature, i) => {
             const provinceName = feature.properties.PROVINCE;
             const data = provinceData.provinces[provinceName];
@@ -175,33 +191,45 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
             const isSelected = selectedProvince === provinceName;
             const isHovered = hoveredProvince === provinceName;
 
-            let fill: string;
-            if (count === 0) {
-              fill = "rgba(255,255,255,0.05)";
-            } else {
-              fill = colorScale(count) as unknown as string;
-            }
+            // 0-count provinces are fully transparent
+            const fill = count === 0 ? "none" : colorScale(count);
 
             return (
               <path
                 key={i}
                 d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
                 fill={fill}
+                fillOpacity={count === 0 ? 0 : 0.8}
                 stroke={
                   isSelected
                     ? "#60a5fa"
                     : isHovered
                       ? "rgba(255,255,255,0.8)"
-                      : "rgba(255,255,255,0.15)"
+                      : count > 0
+                        ? "rgba(255,255,255,0.2)"
+                        : "rgba(255,255,255,0.06)"
                 }
                 strokeWidth={isSelected ? 1.5 : isHovered ? 1 : 0.3}
                 style={{ cursor: count > 0 ? "pointer" : "default" }}
+                pointerEvents="all"
                 onClick={() => count > 0 && handleProvinceClick(provinceName)}
                 onMouseMove={(e) => handleMouseMove(e, provinceName)}
                 onMouseLeave={handleMouseLeave}
               />
             );
           })}
+
+          {/* Land masses (GSHHS coastline) — on top of provinces, no pointer events */}
+          {landData?.features.map((feature, i) => (
+            <path
+              key={`land-${i}`}
+              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
+              fill="#e8e8e8"
+              stroke="rgba(180,180,180,0.5)"
+              strokeWidth={0.3}
+              pointerEvents="none"
+            />
+          ))}
         </svg>
 
         {/* Tooltip */}
@@ -224,11 +252,11 @@ export function ProvinceMap({ family, onFilterSpecies }: ProvinceMapProps) {
         {/* Color legend */}
         {maxCount > 0 && (
           <div className="absolute bottom-2 right-2 flex items-center gap-1 text-[10px] text-white/60 bg-black/50 rounded px-1.5 py-0.5">
-            <span>0</span>
+            <span>1</span>
             <div
               className="w-20 h-2 rounded-sm"
               style={{
-                background: `linear-gradient(to right, ${colorScale(0)}, ${colorScale(maxCount / 2)}, ${colorScale(maxCount)})`,
+                background: `linear-gradient(to right, ${colorScale(1)}, ${colorScale(Math.sqrt(maxCount))}, ${colorScale(maxCount)})`,
               }}
             />
             <span>{maxCount}</span>
