@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
 import Image from "next/image";
+import { ProvinceMap } from "@/components/province-map/province-map";
 
 interface GalleryImage {
   imageUrl: string;
@@ -51,24 +52,38 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
   const [data, setData] = useState<GalleryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+  const [provinceFilter, setProvinceFilter] = useState<Set<string> | null>(null);
 
-  // Filter species subsections when sidebar trait filters are active
+  // Combine sidebar trait filter and province map filter
+  const combinedFilter = useMemo((): Set<string> | null => {
+    if (!filteredSpeciesNames && !provinceFilter) return null;
+    if (filteredSpeciesNames && !provinceFilter) return filteredSpeciesNames;
+    if (!filteredSpeciesNames && provinceFilter) return provinceFilter;
+    // Both active: intersection
+    const result = new Set<string>();
+    for (const name of filteredSpeciesNames!) {
+      if (provinceFilter!.has(name)) result.add(name);
+    }
+    return result;
+  }, [filteredSpeciesNames, provinceFilter]);
+
+  // Filter species subsections when sidebar trait filters or province filter are active
   const filteredData = useMemo((): GalleryData | null => {
     if (!data) return null;
     // No filter active → show everything
-    if (!filteredSpeciesNames) return data;
+    if (!combinedFilter) return data;
     // Filter species subsections; keep genus/family images always
     const genusSections = (data.genusSections ?? [])
       .map((genus) => ({
         ...genus,
         speciesSubsections: genus.speciesSubsections.filter(
-          (sp) => filteredSpeciesNames.has(sp.speciesName)
+          (sp) => combinedFilter.has(sp.speciesName)
         ),
       }))
       // Keep genus section if it has genus-level images OR remaining species
       .filter((genus) => genus.genusImages.length > 0 || genus.speciesSubsections.length > 0);
     return { ...data, genusSections };
-  }, [data, filteredSpeciesNames]);
+  }, [data, combinedFilter]);
 
   // Flatten all images for lightbox navigation + compute index map (uses filtered data)
   const { allImages, indexMap } = useMemo(() => {
@@ -184,6 +199,9 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         </a>{" "}
         if you are aware of any identification error or species-level identification for unsure ID, or if one of the images displayed is yours and you would like it to be removed from this website.
       </p>
+
+      {/* Province distribution map */}
+      <ProvinceMap family={family} onFilterSpecies={setProvinceFilter} />
 
       {(filteredData.genusSections ?? []).length === 0 && (filteredData.familyImages ?? []).length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>
