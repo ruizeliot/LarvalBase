@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useContext } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { FamilyBarChart } from "./family-bar-chart";
 import type { TaxonomyStats, FamilyBarChartEntry } from "@/lib/types/species.types";
+import { SectionComparisonContext } from "./trait-group";
 
 /**
  * Props for the TraitCard component.
@@ -91,7 +92,7 @@ export function TraitCard({
   familyChartTaxonomyName,
   currentSpeciesId,
 }: TraitCardProps) {
-  const [showComparison, setShowComparison] = useState(false);
+  const showComparison = useContext(SectionComparisonContext);
   const hasData = mean !== null;
   const showRange = min !== null && max !== null && min !== max;
 
@@ -192,28 +193,17 @@ export function TraitCard({
           </div>
         )}
 
-        {/* Family/Genus Bar Chart — hidden by default, toggle button */}
-        {hasChart && (
+        {/* Family/Genus Bar Chart — controlled by section-level toggle */}
+        {hasChart && showComparison && (
           <div className="mt-4 pt-4 border-t">
-            <button
-              type="button"
-              onClick={() => setShowComparison(!showComparison)}
-              className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors w-full text-center"
-            >
-              {showComparison ? "Click to hide comparison" : "Click to show comparison between taxa"}
-            </button>
-            {showComparison && (
-              <div className="mt-3">
-                <FamilyBarChart
-                  data={familyChartData!}
-                  currentSpeciesId={currentSpeciesId!}
-                  unit={unit}
-                  traitLabel={label}
-                  comparisonType={familyChartComparisonType}
-                  taxonomyName={familyChartTaxonomyName}
-                />
-              </div>
-            )}
+            <FamilyBarChart
+              data={familyChartData!}
+              currentSpeciesId={currentSpeciesId!}
+              unit={unit}
+              traitLabel={label}
+              comparisonType={familyChartComparisonType}
+              taxonomyName={familyChartTaxonomyName}
+            />
           </div>
         )}
       </CardContent>

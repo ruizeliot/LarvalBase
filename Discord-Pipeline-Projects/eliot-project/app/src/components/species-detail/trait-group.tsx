@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, createContext, useContext } from "react";
 import { TraitCard } from "./trait-card";
 import type { LarvalStage } from "./stage-icon";
 import { SectionExportButtons } from "./section-export-buttons";
 import { getSectionIcon } from "@/lib/constants/section-icons";
 import type { ComparisonStats, FamilyBarChartData, FamilyBarChartEntry } from "@/lib/types/species.types";
 import { EggQualitativePanel, type EggQualitativeData } from "./egg-qualitative-panel";
+
+/** Context to share section-level comparison toggle with TraitCards */
+export const SectionComparisonContext = createContext(false);
 
 /**
  * Trait data for a single trait in the group.
@@ -68,6 +71,9 @@ export function TraitGroup({
   // Get trait keys for this group
   const traitKeys = useMemo(() => traits.map((t) => t.traitKey), [traits]);
 
+  // Section-level comparison toggle (one button for entire section)
+  const [showSectionComparison, setShowSectionComparison] = useState(false);
+
   // State for family/genus chart data per trait (includes comparison type)
   const [familyCharts, setFamilyCharts] = useState<Map<string, FamilyBarChartData>>(new Map());
 
@@ -101,6 +107,20 @@ export function TraitGroup({
     fetchFamilyCharts();
   }, [speciesId, traits]);
 
+  // Check if any trait in this section has chart data worth showing
+  const sectionHasCharts = useMemo(() => {
+    for (const trait of traits) {
+      const chartData = familyCharts.get(trait.traitKey);
+      if (chartData?.species && chartData.species.length > 0) {
+        // Check it's not just the current species alone
+        if (!(chartData.species.length === 1 && chartData.species[0].speciesId === speciesId)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, [traits, familyCharts, speciesId]);
+
   // Return null only if no trait definitions exist for this group
   // (Groups with traits but no data will show "No known values" cards)
   if (traits.length === 0) {
@@ -126,6 +146,16 @@ export function TraitGroup({
             />
           </div>
           <h2 className="text-lg font-semibold">{title}</h2>
+          {/* Section-level comparison toggle button */}
+          {sectionHasCharts && (
+            <button
+              type="button"
+              onClick={() => setShowSectionComparison(!showSectionComparison)}
+              className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+            >
+              {showSectionComparison ? "Hide comparisons" : "Show comparisons between taxa"}
+            </button>
+          )}
         </div>
         {speciesId && (
           <SectionExportButtons
@@ -142,34 +172,36 @@ export function TraitGroup({
       )}
 
       {/* Responsive grid of trait cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {traits.map((trait) => {
-          const traitComparisons = comparisons?.get(trait.traitKey);
-          const chartData = familyCharts.get(trait.traitKey);
-          return (
-            <TraitCard
-              key={trait.name}
-              label={trait.name}
-              mean={trait.stats.mean}
-              sd={trait.stats.sd}
-              min={trait.stats.min}
-              max={trait.stats.max}
-              unit={trait.unit}
-              n={trait.stats.n}
-              onRecordsClick={
-                onRecordsClick ? () => onRecordsClick(trait.traitKey, trait.name) : undefined
-              }
-              genusStats={traitComparisons?.genus}
-              familyStats={traitComparisons?.family}
-              orderStats={traitComparisons?.order}
-              familyChartData={chartData?.species}
-              familyChartComparisonType={chartData?.comparisonType}
-              familyChartTaxonomyName={chartData?.taxonomyName}
-              currentSpeciesId={speciesId}
-            />
-          );
-        })}
-      </div>
+      <SectionComparisonContext.Provider value={showSectionComparison}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {traits.map((trait) => {
+            const traitComparisons = comparisons?.get(trait.traitKey);
+            const chartData = familyCharts.get(trait.traitKey);
+            return (
+              <TraitCard
+                key={trait.name}
+                label={trait.name}
+                mean={trait.stats.mean}
+                sd={trait.stats.sd}
+                min={trait.stats.min}
+                max={trait.stats.max}
+                unit={trait.unit}
+                n={trait.stats.n}
+                onRecordsClick={
+                  onRecordsClick ? () => onRecordsClick(trait.traitKey, trait.name) : undefined
+                }
+                genusStats={traitComparisons?.genus}
+                familyStats={traitComparisons?.family}
+                orderStats={traitComparisons?.order}
+                familyChartData={chartData?.species}
+                familyChartComparisonType={chartData?.comparisonType}
+                familyChartTaxonomyName={chartData?.taxonomyName}
+                currentSpeciesId={speciesId}
+              />
+            );
+          })}
+        </div>
+      </SectionComparisonContext.Provider>
     </div>
   );
 }

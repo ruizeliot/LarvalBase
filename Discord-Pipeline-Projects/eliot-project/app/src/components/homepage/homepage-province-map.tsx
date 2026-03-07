@@ -307,14 +307,19 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
     applyTransform(gRef.current, transformRef.current);
   }, []);
 
-  // Max percentage for legend scaling
-  const maxPercentage = useMemo(() => {
-    if (!provinceData) return 100;
+  // Min/Max percentage for legend scaling (relative scale)
+  const { minPercentage, maxPercentage } = useMemo(() => {
+    if (!provinceData) return { minPercentage: 0, maxPercentage: 100 };
+    let min = Infinity;
     let max = 0;
     for (const data of Object.values(provinceData)) {
-      if (data.percentage > max) max = data.percentage;
+      if (data.percentage > 0) {
+        if (data.percentage < min) min = data.percentage;
+        if (data.percentage > max) max = data.percentage;
+      }
     }
-    return Math.max(max, 1);
+    if (min === Infinity) min = 0;
+    return { minPercentage: min, maxPercentage: Math.max(max, 1) };
   }, [provinceData]);
 
   if (!geoData || !pathGenerator) {
@@ -387,9 +392,10 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
               const isSelected = selectedProvince === provinceName;
               const pct = info?.percentage ?? 0;
 
-              // Normalize percentage to maxPercentage so colors use full scale range
-              const normalizedPct = maxPercentage > 0 ? (pct / maxPercentage) * 100 : 0;
-              const fill = hasData ? getPercentageColor(normalizedPct, colorPalette) : "transparent";
+              // Normalize percentage to min-max range so colors use full scale
+              const range = maxPercentage - minPercentage;
+              const normalizedPct = range > 0 ? ((pct - minPercentage) / range) * 100 : 50;
+              const fill = hasData ? getPercentageColor(Math.max(normalizedPct, 1), colorPalette) : "transparent";
 
               return (
                 <path
@@ -461,15 +467,15 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
         {/* Zoom controls */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button
-            className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
+            className="w-6 h-6 bg-white hover:bg-white/80 text-black rounded text-sm flex items-center justify-center"
             onClick={() => zoomBy(1.33)}
           >+</button>
           <button
-            className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
+            className="w-6 h-6 bg-white hover:bg-white/80 text-black rounded text-sm flex items-center justify-center"
             onClick={() => zoomBy(0.75)}
           >−</button>
           <button
-            className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-[9px] flex items-center justify-center"
+            className="w-6 h-6 bg-white hover:bg-white/80 text-black rounded text-[9px] flex items-center justify-center"
             title="Reset zoom"
             onClick={resetZoom}
           >&#x21BA;</button>
@@ -477,11 +483,11 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
 
         {/* Color legend */}
         <div className="absolute bottom-2 left-2 bg-black/70 rounded px-2 py-1 flex items-center gap-1.5">
-          <span className="text-[9px] text-white/60">0%</span>
+          <span className="text-[9px] text-white/60">{minPercentage.toFixed(1)}%</span>
           <div className="w-24 h-2.5 rounded-sm" style={{
             background: `linear-gradient(to right, ${getPercentageColor(1, colorPalette)}, ${getPercentageColor(25, colorPalette)}, ${getPercentageColor(50, colorPalette)}, ${getPercentageColor(75, colorPalette)}, ${getPercentageColor(100, colorPalette)})`
           }} />
-          <span className="text-[9px] text-white/60">{maxPercentage.toFixed(0)}%</span>
+          <span className="text-[9px] text-white/60">{maxPercentage.toFixed(1)}%</span>
         </div>
       </div>
     </div>

@@ -458,19 +458,19 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
         {/* Zoom controls */}
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button
-            className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
+            className="w-6 h-6 bg-white hover:bg-white/80 text-black rounded text-sm flex items-center justify-center"
             onClick={() => zoomBy(1.33)}
           >
             +
           </button>
           <button
-            className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
+            className="w-6 h-6 bg-white hover:bg-white/80 text-black rounded text-sm flex items-center justify-center"
             onClick={() => zoomBy(0.75)}
           >
             −
           </button>
           <button
-            className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-[9px] flex items-center justify-center"
+            className="w-6 h-6 bg-white hover:bg-white/80 text-black rounded text-[9px] flex items-center justify-center"
             title="Reset zoom"
             onClick={resetZoom}
           >

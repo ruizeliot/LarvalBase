@@ -138,14 +138,13 @@ export function SpeciesHeader({
               )}
             </div>
             {currentImage.scale !== undefined && (
-              <div
-                className="text-xs italic"
-                style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}
-              >
+              <div className="text-sm text-muted-foreground">
                 Specimen length:{' '}
-                {currentImage.scale
-                  ? 'Specimen size or scale available in the source'
-                  : 'Specimen size or scale unavailable in the source'}
+                <span style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}>
+                  {currentImage.scale
+                    ? 'Size/scale available'
+                    : 'Size/scale unavailable'}
+                </span>
               </div>
             )}
           </div>
@@ -155,7 +154,7 @@ export function SpeciesHeader({
       {/* Species distribution mini-map — same height as picture panel */}
       <div className="flex-shrink-0 w-[300px] flex flex-col">
         <h3 className="text-xs font-semibold text-muted-foreground mb-1 text-center">
-          Distribution in Marine Ecoregions (MEOW) and Pelagic Provinces (PPOW)
+          Distribution of adults in Marine Ecoregions (MEOW) and Pelagic Provinces (PPOW)
         </h3>
         <div className="flex-1">
           <SpeciesProvinceMap speciesId={speciesId} />
