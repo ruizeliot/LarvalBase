@@ -7,6 +7,8 @@ import { SectionExportButtons } from "./section-export-buttons";
 import { getSectionIcon } from "@/lib/constants/section-icons";
 import type { ComparisonStats, FamilyBarChartData, FamilyBarChartEntry } from "@/lib/types/species.types";
 import { EggQualitativePanel, type EggQualitativeData } from "./egg-qualitative-panel";
+import { SectionTooltip } from "./section-tooltip";
+import { SECTION_TOOLTIPS, TRAIT_TOOLTIPS } from "@/lib/constants/section-tooltips";
 
 /** Context to share section-level comparison toggle with TraitCards */
 export const SectionComparisonContext = createContext(false);
@@ -146,6 +148,9 @@ export function TraitGroup({
             />
           </div>
           <h2 className="text-lg font-semibold">{title}</h2>
+          {SECTION_TOOLTIPS[title] && (
+            <SectionTooltip text={SECTION_TOOLTIPS[title]} />
+          )}
           {/* Section-level comparison toggle button */}
           {sectionHasCharts && (
             <button
@@ -180,6 +185,7 @@ export function TraitGroup({
             return (
               <TraitCard
                 key={trait.name}
+                traitKey={trait.traitKey}
                 label={trait.name}
                 mean={trait.stats.mean}
                 sd={trait.stats.sd}

@@ -527,10 +527,41 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
         </div>
       </div>
 
-      {/* Source line */}
+      {/* Source line with hyperlinks */}
       {cleanSource && (
         <div className="text-xs text-muted-foreground">
-          Source: {cleanSource}
+          Source (2026):{' '}
+          {(() => {
+            const sourceLinks: Record<string, string> = {
+              'iNaturalist': 'https://www.inaturalist.org/observations',
+              'IUCN': 'https://www.iucnredlist.org/resources/spatial-data-download',
+              'iDigBio': 'https://portal.idigbio.org/',
+              'OBIS': 'https://obis.org/search/',
+              'GBIF': 'https://www.gbif.org/',
+              'FishBase': 'https://www.fishbase.se/search.php',
+            };
+            const parts = cleanSource.split(',').map(s => s.trim()).filter(Boolean);
+            return parts.map((part, i) => {
+              const url = sourceLinks[part];
+              return (
+                <span key={part}>
+                  {i > 0 && ', '}
+                  {url ? (
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-400 hover:underline"
+                    >
+                      {part}
+                    </a>
+                  ) : (
+                    part
+                  )}
+                </span>
+              );
+            });
+          })()}
         </div>
       )}
     </div>

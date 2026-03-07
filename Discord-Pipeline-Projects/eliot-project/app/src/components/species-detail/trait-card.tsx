@@ -6,11 +6,15 @@ import { cn } from "@/lib/utils";
 import { FamilyBarChart } from "./family-bar-chart";
 import type { TaxonomyStats, FamilyBarChartEntry } from "@/lib/types/species.types";
 import { SectionComparisonContext } from "./trait-group";
+import { SectionTooltip } from "./section-tooltip";
+import { TRAIT_TOOLTIPS } from "@/lib/constants/section-tooltips";
 
 /**
  * Props for the TraitCard component.
  */
 export interface TraitCardProps {
+  /** Trait key for tooltip lookup */
+  traitKey?: string;
   /** Trait name displayed as label */
   label: string;
   /** Arithmetic mean of measurements, null if no data */
@@ -88,6 +92,7 @@ function formatComparison(
  * - Link: N records clickable
  */
 export function TraitCard({
+  traitKey,
   label,
   mean,
   sd,
@@ -118,8 +123,11 @@ export function TraitCard({
     <Card className="bg-card">
       <CardContent className="p-4">
         {/* Label */}
-        <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+        <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide flex items-center gap-1">
           {label}
+          {traitKey && TRAIT_TOOLTIPS[traitKey] && (
+            <SectionTooltip text={TRAIT_TOOLTIPS[traitKey]} />
+          )}
         </div>
 
         {/* Value + Stats row: main value LEFT, summary stats RIGHT */}

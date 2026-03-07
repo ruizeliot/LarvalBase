@@ -26,6 +26,8 @@ import { formatTraitName } from "@/lib/constants/trait-groups";
 import { DISPLAY_GROUPS, TRAIT_UNITS } from "./species-detail-config";
 import { getSectionIcon } from "@/lib/constants/section-icons";
 import { SettlementSamplingIcon } from "./settlement-sampling-icon";
+import { SectionTooltip } from "./section-tooltip";
+import { SECTION_TOOLTIPS } from "@/lib/constants/section-tooltips";
 import type { ComparisonStats } from "@/lib/types/species.types";
 
 /**
@@ -321,6 +323,9 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                             />
                           </div>
                           <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
+                          {SECTION_TOOLTIPS['Pelagic Juvenile'] && (
+                            <SectionTooltip text={SECTION_TOOLTIPS['Pelagic Juvenile']} />
+                          )}
                           {(pelagicJuvenileData.sizeBarChart?.entries?.length || pelagicJuvenileData.durationBarChart?.entries?.length) && (
                             <button
                               type="button"
@@ -360,6 +365,9 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                             />
                           </div>
                           <h2 className="text-lg font-semibold">Rafting</h2>
+                          {SECTION_TOOLTIPS['Rafting'] && (
+                            <SectionTooltip text={SECTION_TOOLTIPS['Rafting']} />
+                          )}
                           {raftingData.sizeBarChart?.entries?.length && (
                             <button
                               type="button"

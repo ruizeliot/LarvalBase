@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { SpeciesImageGallery } from "./species-image-gallery";
 import { SpeciesProvinceMap } from "./species-province-map";
 import { FamilyIcon } from "./family-icon";
@@ -42,6 +42,16 @@ export function SpeciesHeader({
 }: SpeciesHeaderProps) {
   const { images, isLoading } = useSpeciesImages(speciesId);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [commonNames, setCommonNames] = useState<string[]>([]);
+
+  // Fetch common names
+  useEffect(() => {
+    if (!speciesId) return;
+    fetch(`/api/species/${encodeURIComponent(speciesId)}/common-names?lang=English`)
+      .then(r => r.json())
+      .then(data => setCommonNames(data.names || []))
+      .catch(() => setCommonNames([]));
+  }, [speciesId]);
 
   const handleImageIndexChange = useCallback((index: number) => {
     setCurrentImageIndex(index);
@@ -86,6 +96,14 @@ export function SpeciesHeader({
             </div>
           </div>
         </div>
+
+        {/* Common names row — only show if names available */}
+        {commonNames.length > 0 && (
+          <div className="text-sm text-muted-foreground">
+            <span className="font-medium">Common name:</span>{' '}
+            {commonNames.join(', ')}
+          </div>
+        )}
 
         {/* Stats line — only show if species has data records */}
         {recordCount > 0 && (
@@ -140,7 +158,7 @@ export function SpeciesHeader({
             {currentImage.scale !== undefined && (
               <div className="text-sm text-muted-foreground">
                 Specimen length:{' '}
-                <span style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}>
+                <span className="font-medium" style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}>
                   {currentImage.scale
                     ? 'Size/scale available'
                     : 'Size/scale unavailable'}
