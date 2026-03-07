@@ -30,10 +30,10 @@ let cachedTraitData: Map<string, Set<string>> | null = null;
 let cachedFamilyData: ProvinceMapData | null = null;
 
 /**
- * Load all species province totals from spalding_provinces_all_species_032026.csv
+ * Load all species province totals from spalding_provinces_species_032026.csv
  */
 async function loadAllSpeciesProvinces(): Promise<Map<string, number>> {
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_all_species_032026.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_species_032026.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   const totals = new Map<string, number>();
@@ -57,10 +57,10 @@ async function loadAllSpeciesProvinces(): Promise<Map<string, number>> {
 }
 
 /**
- * Load LarvalBase species province data from spalding_provinces_species_larvalbase_032026.csv
+ * Load LarvalBase species province data from species_provinces_spalding.csv
  */
 async function loadLarvalBaseProvinces(): Promise<Map<string, string[]>> {
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_species_larvalbase_032026.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'species_provinces_spalding.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   const provinceSpecies = new Map<string, string[]>();
@@ -118,14 +118,14 @@ async function loadProvinceMapData(): Promise<ProvinceMapData> {
 
 /**
  * Load families province data for families mode.
- * Uses spalding_provinces_families_032026.csv for total families per province,
+ * Uses spalding_provinces_families.csv for total families per province,
  * and derives LarvalBase families from species data.
  */
 async function loadFamilyProvinceData(): Promise<ProvinceMapData> {
   if (cachedFamilyData) return cachedFamilyData;
 
   // Load total families per province from families CSV
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_families_032026.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_families.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   const totalFamilies = new Map<string, number>();

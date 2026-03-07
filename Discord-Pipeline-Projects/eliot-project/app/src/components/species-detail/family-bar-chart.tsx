@@ -8,6 +8,7 @@ import {
   type ChartConfig,
 } from '@/components/ui/chart';
 import type { FamilyBarChartEntry } from '@/lib/types/species.types';
+import { useI18n } from '@/lib/i18n/i18n-context';
 
 interface FamilyBarChartProps {
   /** Per-species mean data for the family/genus */
@@ -135,6 +136,7 @@ export function FamilyBarChart({
   // - ORDER comparison: #C77CFF (purple)
   // - FAMILY comparison: #F8766D (coral red)
   // - GENUS comparison: #619CFF (blue)
+  const { t } = useI18n();
   const currentSpeciesColor = '#7CAE00';
   const otherSpeciesColor = comparisonType === 'genus' ? '#619CFF' : comparisonType === 'order' ? '#C77CFF' : '#F8766D';
 
@@ -143,7 +145,7 @@ export function FamilyBarChart({
       {/* Chart title */}
       <div className="text-sm font-medium text-center uppercase tracking-wide"
            style={{ color: otherSpeciesColor }}>
-        {comparisonType === 'genus' ? 'Genus Comparison' : comparisonType === 'order' ? 'Order Comparison' : 'Family Comparison'}
+        {comparisonType === 'genus' ? t('genus_comparison') : comparisonType === 'order' ? t('order_comparison') : t('family_comparison')}
         {taxonomyName && <span className="font-normal ml-1">({taxonomyName})</span>}
       </div>
       

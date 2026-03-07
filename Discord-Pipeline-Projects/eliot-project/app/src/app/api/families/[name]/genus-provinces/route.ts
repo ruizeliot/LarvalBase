@@ -1,16 +1,16 @@
 /**
  * API route to get genus-level province presence for a family.
  *
- * Uses spalding_provinces_genera_032026.csv.
+ * Uses spalding_provinces_genera.csv.
  * Returns: { genera: { [genus]: province[] } }
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
-import { buildDotCsvToProvinceMap, getProvincesFromDotRow } from '@/lib/constants/provinces';
+import { buildCsvToProvinceMap } from '@/lib/constants/provinces';
 
-const DOT_MAP = buildDotCsvToProvinceMap();
+const CSV_TO_PROVINCE = buildCsvToProvinceMap();
 
 /** Cache: family -> { genus -> provinces[] } */
 let genusProvinceCache: Map<string, Map<string, string[]>> | null = null;
@@ -18,7 +18,7 @@ let genusProvinceCache: Map<string, Map<string, string[]>> | null = null;
 async function loadGenusProvinces(): Promise<Map<string, Map<string, string[]>>> {
   if (genusProvinceCache) return genusProvinceCache;
 
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_genera_032026.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_genera.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   const result = new Map<string, Map<string, string[]>>();
@@ -32,7 +32,14 @@ async function loadGenusProvinces(): Promise<Map<string, Map<string, string[]>>>
       const genus = (data.GENUS || '').replace(/^"|"$/g, '');
       if (!family || !genus) return;
 
-      const provinces = getProvincesFromDotRow(data, DOT_MAP);
+      const provinces = new Set<string>();
+      for (const [csvCol, provinceName] of Object.entries(CSV_TO_PROVINCE)) {
+        if (provinceName === 'NA') continue;
+        const val = (data[csvCol] || '').replace(/^"|"$/g, '').toUpperCase();
+        if (val === 'TRUE') {
+          provinces.add(provinceName);
+        }
+      }
       if (provinces.size === 0) return;
 
       if (!result.has(family)) result.set(family, new Map());

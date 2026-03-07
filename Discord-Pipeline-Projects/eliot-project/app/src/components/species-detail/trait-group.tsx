@@ -9,6 +9,7 @@ import type { ComparisonStats, FamilyBarChartData, FamilyBarChartEntry } from "@
 import { EggQualitativePanel, type EggQualitativeData } from "./egg-qualitative-panel";
 import { SectionTooltip } from "./section-tooltip";
 import { SECTION_TOOLTIPS, TRAIT_TOOLTIPS } from "@/lib/constants/section-tooltips";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 /** Context to share section-level comparison toggle with TraitCards */
 export const SectionComparisonContext = createContext(false);
@@ -70,6 +71,8 @@ export function TraitGroup({
   comparisons,
   eggQualitativeData,
 }: TraitGroupProps) {
+  const { t: i18nT, tSection, tTrait, tSectionTooltip } = useI18n();
+
   // Get trait keys for this group
   const traitKeys = useMemo(() => traits.map((t) => t.traitKey), [traits]);
 
@@ -110,6 +113,7 @@ export function TraitGroup({
   }, [speciesId, traits]);
 
   // Check if any trait in this section has chart data worth showing
+  // Checks both main chart (family/genus) AND order chart fallback
   const sectionHasCharts = useMemo(() => {
     for (const trait of traits) {
       const chartData = familyCharts.get(trait.traitKey);
@@ -118,6 +122,10 @@ export function TraitGroup({
         if (!(chartData.species.length === 1 && chartData.species[0].speciesId === speciesId)) {
           return true;
         }
+      }
+      // Also check order chart fallback
+      if (chartData?.orderChart?.species && chartData.orderChart.species.length > 0) {
+        return true;
       }
     }
     return false;
@@ -147,9 +155,9 @@ export function TraitGroup({
               height={44}
             />
           </div>
-          <h2 className="text-lg font-semibold">{title}</h2>
+          <h2 className="text-lg font-semibold">{tSection(title)}</h2>
           {SECTION_TOOLTIPS[title] && (
-            <SectionTooltip text={SECTION_TOOLTIPS[title]} />
+            <SectionTooltip text={tSectionTooltip(title) || SECTION_TOOLTIPS[title]} />
           )}
           {/* Section-level comparison toggle button */}
           {sectionHasCharts && (
@@ -158,7 +166,7 @@ export function TraitGroup({
               onClick={() => setShowSectionComparison(!showSectionComparison)}
               className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
             >
-              {showSectionComparison ? "Hide comparisons" : "Show comparisons between taxa"}
+              {showSectionComparison ? i18nT('hide_comparisons') : i18nT('show_comparisons')}
             </button>
           )}
         </div>

@@ -8,6 +8,7 @@ import type { TaxonomyStats, FamilyBarChartEntry } from "@/lib/types/species.typ
 import { SectionComparisonContext } from "./trait-group";
 import { SectionTooltip } from "./section-tooltip";
 import { TRAIT_TOOLTIPS } from "@/lib/constants/section-tooltips";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 /**
  * Props for the TraitCard component.
@@ -112,6 +113,7 @@ export function TraitCard({
   orderChartTaxonomyName,
 }: TraitCardProps) {
   const showComparison = useContext(SectionComparisonContext);
+  const { t } = useI18n();
   const hasData = mean !== null;
   const showRange = min !== null && max !== null && min !== max;
 
@@ -150,7 +152,7 @@ export function TraitCard({
               </>
             ) : (
               <span className="text-lg text-muted-foreground italic">
-                No known values
+                {t('no_known_values')}
               </span>
             )}
           </div>
@@ -191,19 +193,19 @@ export function TraitCard({
           <div className="mt-3 pt-3 border-t space-y-1">
             {genusStats !== undefined && genusStats !== null && (genusStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
-                <span className="text-muted-foreground">Genus average:</span>
+                <span className="text-muted-foreground">{t('genus_average')}:</span>
                 <span className="font-mono">{formatComparison(genusStats, unit)}</span>
               </div>
             )}
             {familyStats !== undefined && familyStats !== null && (familyStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
-                <span className="text-muted-foreground">Family average:</span>
+                <span className="text-muted-foreground">{t('family_average')}:</span>
                 <span className="font-mono">{formatComparison(familyStats, unit)}</span>
               </div>
             )}
             {orderStats !== undefined && orderStats !== null && (orderStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
-                <span className="text-muted-foreground">Order average:</span>
+                <span className="text-muted-foreground">{t('order_average')}:</span>
                 <span className="font-mono">{formatComparison(orderStats, unit)}</span>
               </div>
             )}

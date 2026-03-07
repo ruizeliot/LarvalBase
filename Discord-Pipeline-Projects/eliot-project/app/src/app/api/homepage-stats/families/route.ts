@@ -200,14 +200,14 @@ export async function GET() {
       // Round 10 Fix 8: 14 family thumbnail upgrades
       'Xiphiidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Xiphias gladius - xiphias gladius - Steven Kovacs - 2017-07-07_17-22-17_1.jpg' },
       'Diodontidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Diodon holocanthus - diodon_holocanthus - Ryo Minemizu - 2022-04-25_12-00-11_1.jpg' },
-      'Myctophidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Dasyscopelus asper - myctophum asperum - Ryo Minemizu - 2021-02-09_12-00-44_1.jpg' },
+      'Myctophidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Myctophidae - myctophidae - Chris Gug - 2025-12-14_11-37-14_1.jpg' },
       'Chiasmodontidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Chiasmodon niger - black swallower - Ryo Minemizu - 2019-03-11_11-42-55_1.jpg' },
       'Carangidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Carangidae - carangidae - Linda Ianiello - Jack-Carangidae-Family-08282017_026_1.jpg' },
       'Pomacentridae': { path: 'classified_bw_images_species', filename: 'Sure ID - Dascyllus trimaculatus - dascyllus trimaculatus - Ryo Minemizu - 2019-07-27_16-44-49_1.jpg' },
-      'Labridae': { path: 'classified_bw_images_species', filename: 'Sure ID - Doratonotus megalepis - doratonotus megalepis - Suzan Meldonian - Dwarf-wrasse-larva-5-12-17-5706_1.jpg' },
+      'Labridae': { path: 'classified_bw_images_species', filename: 'Sure ID - Thalassoma bifasciatum - thalassoma bifasciatum - Linda Ianiello - -Larva-Bluehead-Thalassoma-bifasciatum-09032016_082_1.jpg' },
       'Apogonidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Apogonidae - apogonidae - Linda Ianiello - Cardinalfish-Larva-Apogonidae-Family-08172019_058_1.jpg' },
       'Blenniidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Blenniidae - blenny - Steven Kovacs - 2021-06-30_17-58-32_1.jpg' },
-      'Ostraciidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Lactoria cornuta - lactoria cornuta - Jeff Millisen - 2019-04-16_21-27-22_1.jpg' },
+      'Ostraciidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Lactoria fornasini - lactoria_fornasini - Ryo Minemizu - 2021-06-24_12-00-08_1.jpg' },
       'Gigantactinidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Gigantactis vanhoeffeni - gigantactis vanhoeffeni - Facebook BW - post_10163446820113797_1.jpg' },
     };
 

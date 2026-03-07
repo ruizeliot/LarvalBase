@@ -1,7 +1,7 @@
 /**
  * API route to get Spalding province presence for a species.
  *
- * Uses spalding_provinces_species_larvalbase_032026.csv.
+ * Uses species_provinces_spalding.csv.
  * Returns list of province names where the species is found (TRUE in CSV).
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -19,7 +19,7 @@ let speciesProvinceCache: Map<string, { provinces: string[]; source: string }> |
 async function loadSpeciesProvinces(): Promise<Map<string, { provinces: string[]; source: string }>> {
   if (speciesProvinceCache) return speciesProvinceCache;
 
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_species_larvalbase_032026.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'species_provinces_spalding.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   const result = new Map<string, { provinces: string[]; source: string }>();

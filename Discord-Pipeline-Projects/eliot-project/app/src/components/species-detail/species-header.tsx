@@ -7,6 +7,7 @@ import { FamilyIcon } from "./family-icon";
 import { useSpeciesImages } from "@/hooks/use-species-images";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cleanOrderName } from "@/lib/utils/clean-order-name";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 /**
  * Props for the SpeciesHeader component.
@@ -43,15 +44,16 @@ export function SpeciesHeader({
   const { images, isLoading } = useSpeciesImages(speciesId);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [commonNames, setCommonNames] = useState<string[]>([]);
+  const { t, commonNamesLang } = useI18n();
 
-  // Fetch common names
+  // Fetch common names in current language
   useEffect(() => {
     if (!speciesId) return;
-    fetch(`/api/species/${encodeURIComponent(speciesId)}/common-names?lang=English`)
+    fetch(`/api/species/${encodeURIComponent(speciesId)}/common-names?lang=${encodeURIComponent(commonNamesLang)}`)
       .then(r => r.json())
       .then(data => setCommonNames(data.names || []))
       .catch(() => setCommonNames([]));
-  }, [speciesId]);
+  }, [speciesId, commonNamesLang]);
 
   const handleImageIndexChange = useCallback((index: number) => {
     setCurrentImageIndex(index);
@@ -100,7 +102,7 @@ export function SpeciesHeader({
         {/* Common names row — only show if names available */}
         {commonNames.length > 0 && (
           <div className="text-sm text-muted-foreground">
-            <span className="font-medium">Common name:</span>{' '}
+            <span className="font-medium">{t('common_name')}:</span>{' '}
             {commonNames.join(', ')}
           </div>
         )}
@@ -109,31 +111,30 @@ export function SpeciesHeader({
         {recordCount > 0 && (
           <div className="flex gap-4 text-sm items-center">
             <span>
-              <span className="font-mono font-bold">{recordCount}</span> record
-              {recordCount !== 1 ? "s" : ""}
+              <span className="font-mono font-bold">{recordCount}</span>{' '}
+              {recordCount !== 1 ? t('records') : t('record')}
             </span>
             <span>
-              <span className="font-mono font-bold">{studyCount}</span> stud
-              {studyCount !== 1 ? "ies" : "y"}
+              <span className="font-mono font-bold">{studyCount}</span>{' '}
+              {studyCount !== 1 ? t('studies') : t('study')}
             </span>
           </div>
         )}
 
         {/* Contact email notice */}
         <p className="text-xs italic text-muted-foreground leading-snug mt-1">
-          Please send an email to{" "}
+          {t('contact_email').split('{email}')[0]}
           <a href="mailto:eliotruiz3@gmail.com" className="text-primary hover:underline">
             eliotruiz3@gmail.com
-          </a>{" "}
-          if you are aware of any error or missing records, or if one of the
-          images displayed is yours and you would like it to be removed from this website.
+          </a>
+          {t('contact_email').split('{email}')[1]}
         </p>
 
         {/* Photo credit — below contact email */}
         {currentImage && (
           <div className="text-sm text-muted-foreground space-y-1">
             <div>
-              Picture source:{' '}
+              {t('picture_source')}:{' '}
               {currentImage.link ? (
                 <a
                   href={currentImage.link}
@@ -148,20 +149,20 @@ export function SpeciesHeader({
               )}
             </div>
             <div>
-              Identification certainty:{' '}
+              {t('identification_certainty')}:{' '}
               {currentImage.uncertain ? (
-                <span className="text-red-500 font-medium">Unsure</span>
+                <span className="text-red-500 font-medium">{t('unsure')}</span>
               ) : (
-                <span className="text-green-500 font-medium">Sure</span>
+                <span className="text-green-500 font-medium">{t('sure')}</span>
               )}
             </div>
             {currentImage.scale !== undefined && (
               <div className="text-sm text-muted-foreground">
-                Specimen length:{' '}
+                {t('specimen_length')}:{' '}
                 <span className="font-medium" style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}>
                   {currentImage.scale
-                    ? 'Size/scale available'
-                    : 'Size/scale unavailable'}
+                    ? t('size_scale_available')
+                    : t('size_scale_unavailable')}
                 </span>
               </div>
             )}
@@ -172,7 +173,7 @@ export function SpeciesHeader({
       {/* Species distribution mini-map — same height as picture panel */}
       <div className="flex-shrink-0 w-[300px] flex flex-col">
         <h3 className="text-xs font-semibold text-muted-foreground mb-1 text-center">
-          Distribution of adults in Marine Ecoregions (MEOW) and Pelagic Provinces (PPOW)
+          {t('distribution_title')}
         </h3>
         <div className="flex-1">
           <SpeciesProvinceMap speciesId={speciesId} />

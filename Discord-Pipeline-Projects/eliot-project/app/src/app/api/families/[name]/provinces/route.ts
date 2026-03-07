@@ -1,7 +1,7 @@
 /**
  * API route to get Spalding province species counts for a family.
  *
- * Uses spalding_provinces_species_larvalbase_032026.csv (7,075 LarvalBase species).
+ * Uses species_provinces_spalding.csv (7,075 LarvalBase species).
  * Returns per-province counts + species lists for filtering.
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -22,7 +22,7 @@ let provinceDataCache: Map<string, Map<string, string[]>> | null = null;
 async function loadProvinceData(): Promise<Map<string, Map<string, string[]>>> {
   if (provinceDataCache) return provinceDataCache;
 
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_species_larvalbase_032026.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'species_provinces_spalding.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   // Get species -> family mapping
