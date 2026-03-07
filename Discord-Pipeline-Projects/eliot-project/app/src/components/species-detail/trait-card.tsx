@@ -122,40 +122,33 @@ export function TraitCard({
           {label}
         </div>
 
-        {/* Value: mean +/- SD or fallback to genus/family/order average */}
-        <div className="mt-2">
-          {hasData ? (
-            <>
-              <span className="text-2xl font-bold font-mono">
-                {formatNumber(mean, 2)}
-                {sd !== null && (
-                  <span className="text-lg font-normal">
-                    {" \u00B1 "}
-                    {formatNumber(sd, 2)}
-                  </span>
-                )}
+        {/* Value + Stats row: main value LEFT, summary stats RIGHT */}
+        <div className="mt-2 flex items-start justify-between">
+          {/* Left side: main value */}
+          <div>
+            {hasData ? (
+              <>
+                <span className="text-2xl font-bold font-mono">
+                  {formatNumber(mean, 2)}
+                  {sd !== null && (
+                    <span className="text-lg font-normal">
+                      {" \u00B1 "}
+                      {formatNumber(sd, 2)}
+                    </span>
+                  )}
+                </span>
+                {/* Unit */}
+                <div className="text-sm text-muted-foreground mt-1">{unit}</div>
+              </>
+            ) : (
+              <span className="text-lg text-muted-foreground italic">
+                No known values
               </span>
-              {/* Unit */}
-              <div className="text-sm text-muted-foreground mt-1">{unit}</div>
-            </>
-          ) : (
-            <span className="text-lg text-muted-foreground italic">
-              No known values
-            </span>
-          )}
-        </div>
-
-        {/* Range/Records row: left side empty, right side has Min/Max/records */}
-        <div
-          className={cn(
-            "mt-3 pt-3 border-t flex items-start justify-between",
-            "text-sm"
-          )}
-        >
-          <div>&nbsp;</div>
+            )}
+          </div>
 
           {/* Right side: Min, Max, records */}
-          <div className="text-right space-y-0.5">
+          <div className="text-right text-sm space-y-0.5">
             {showRange && (
               <>
                 <div className="text-white">Min: {formatNumber(min, 1)}</div>
