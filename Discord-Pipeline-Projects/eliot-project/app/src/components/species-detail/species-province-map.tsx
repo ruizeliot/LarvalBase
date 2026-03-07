@@ -19,17 +19,22 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 /**
- * Generate unique province colors using golden ratio hue distribution.
- * Produces muted, harmonious colors with varied saturation/lightness.
+ * Generate vivid, distinct province colors using golden ratio hue distribution.
+ * Uses 5 saturation/lightness groups for maximum visual variety.
  */
 function generateProvinceColors(count: number): string[] {
   const GOLDEN_RATIO = 0.618033988749895;
   const colors: string[] = [];
+  const groups: [number, number][] = [
+    [70, 50], // vivid mid
+    [60, 55], // rich light
+    [75, 45], // saturated dark
+    [55, 58], // soft bright
+    [65, 48], // deep mid
+  ];
   for (let i = 0; i < count; i++) {
     const hue = ((i * GOLDEN_RATIO) % 1.0) * 360;
-    const group = i % 3;
-    const sat = group === 0 ? 42 : group === 1 ? 55 : 32;
-    const lit = group === 0 ? 52 : group === 1 ? 42 : 62;
+    const [sat, lit] = groups[i % groups.length];
     colors.push(hslToHex(hue, sat, lit));
   }
   return colors;

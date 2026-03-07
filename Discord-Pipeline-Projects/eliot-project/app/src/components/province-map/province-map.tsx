@@ -19,17 +19,22 @@ function hslToHex(h: number, s: number, l: number): string {
 }
 
 /**
- * Generate unique province colors using golden ratio hue distribution.
- * Produces muted, harmonious colors with varied saturation/lightness.
+ * Generate vivid, distinct province colors using golden ratio hue distribution.
+ * Uses 5 saturation/lightness groups for maximum visual variety.
  */
 function generateProvinceColors(count: number): string[] {
   const GOLDEN_RATIO = 0.618033988749895;
   const colors: string[] = [];
+  const groups: [number, number][] = [
+    [70, 50], // vivid mid
+    [60, 55], // rich light
+    [75, 45], // saturated dark
+    [55, 58], // soft bright
+    [65, 48], // deep mid
+  ];
   for (let i = 0; i < count; i++) {
     const hue = ((i * GOLDEN_RATIO) % 1.0) * 360;
-    const group = i % 3;
-    const sat = group === 0 ? 42 : group === 1 ? 55 : 32;
-    const lit = group === 0 ? 52 : group === 1 ? 42 : 62;
+    const [sat, lit] = groups[i % groups.length];
     colors.push(hslToHex(hue, sat, lit));
   }
   return colors;
@@ -279,17 +284,11 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
     return info.species.filter(s => speciesWithImages.has(s)).length;
   }, [speciesWithImages]);
 
-  // Has images? Used for determining if province is "present" (colored)
-  const provinceHasImages = useCallback((featureName: string): boolean => {
-    if (!speciesWithImages) {
-      // If no image info available, fall back to species count
-      const info = getProvinceInfo(featureName);
-      return info !== null && info.count > 0;
-    }
+  // Province has species? Used for determining if province is "present" (colored)
+  const provinceHasSpecies = useCallback((featureName: string): boolean => {
     const info = getProvinceInfo(featureName);
-    if (!info) return false;
-    return info.species.some(s => speciesWithImages.has(s));
-  }, [getProvinceInfo, speciesWithImages]);
+    return info !== null && info.count > 0;
+  }, [getProvinceInfo]);
 
   const sortedProvinces = useMemo(() => {
     if (!provinceData) return [];
@@ -305,9 +304,9 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
   }, [geoData]);
 
   const provinceColorMap = useMemo(() => {
-    // Get all province names that have species with images
+    // Get all province names that have any species
     const presentProvinces = sortedProvinces
-      .filter(([name]) => provinceHasImages(name))
+      .filter(([name]) => provinceHasSpecies(name))
       .map(([name]) => name);
 
     // Also include all GeoJSON province names for adjacency context
@@ -319,7 +318,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
     // but we only display colors for present ones
     const allNames = [...new Set([...allGeoNames, ...presentProvinces])];
     return graphColorProvinces(allNames, adjacencyGraph, PROVINCE_PALETTE);
-  }, [sortedProvinces, adjacencyGraph, geoData, provinceHasImages]);
+  }, [sortedProvinces, adjacencyGraph, geoData, provinceHasSpecies]);
 
   // Sync external province selection (from sidebar checkboxes)
   useEffect(() => {
@@ -492,32 +491,32 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
           <g ref={gRef} transform="translate(0,0) scale(1)">
             {/* Province polygons (below land) */}
             {provincePaths.map(({ name: provinceName, d }, i) => {
-              const hasImages = provinceHasImages(provinceName);
+              const hasSpecies = provinceHasSpecies(provinceName);
               const isHovered = hoveredProvince === provinceName;
               const isSelected = selectedProvince === provinceName ||
                 (externalSelectedProvinces?.has(provinceName) ?? false);
 
-              const fill = hasImages ? (provinceColorMap.get(provinceName) ?? BG_COLOR) : BG_COLOR;
+              const fill = hasSpecies ? (provinceColorMap.get(provinceName) ?? BG_COLOR) : BG_COLOR;
 
               return (
                 <path
                   key={i}
                   d={d}
                   fill={fill}
-                  fillOpacity={hasImages ? (isSelected ? 0.9 : 0.75) : 1}
+                  fillOpacity={hasSpecies ? (isSelected ? 0.9 : 0.75) : 1}
                   stroke={
                     isSelected
                       ? "rgba(255,255,0,1)"
                       : isHovered
                         ? "rgba(255,255,255,1)"
-                        : hasImages
+                        : hasSpecies
                           ? "rgba(255,255,255,0.8)"
                           : "none"
                   }
-                  strokeWidth={isSelected ? 2.5 : isHovered ? 2 : hasImages ? 1.2 : 0}
+                  strokeWidth={isSelected ? 2.5 : isHovered ? 2 : hasSpecies ? 1.2 : 0}
                   vectorEffect="non-scaling-stroke"
                   pointerEvents="all"
-                  style={{ cursor: hasImages ? "pointer" : "default" }}
+                  style={{ cursor: hasSpecies ? "pointer" : "default" }}
                   onClick={() => handleProvinceClick(provinceName)}
                   onMouseMove={(e) => handleMouseMoveTooltip(e, provinceName)}
                   onMouseLeave={() => { setHoveredProvince(null); setTooltipPos(null); }}
