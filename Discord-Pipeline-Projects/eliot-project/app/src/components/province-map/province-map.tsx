@@ -3,14 +3,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
 
-const PROVINCE_COLORS = [
+const CATEGORICAL_PALETTE = [
   '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
   '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
-  '#a6cee3','#fb9a99','#fdbf6f','#cab2d6','#ff7f00','#b2df8a',
-  '#e31a1c','#33a02c','#1f78b4','#6a3d9a','#b15928','#ffff99',
-  '#f0027f','#bf5b17','#666666','#7fc97f','#beaed4','#fdc086',
-  '#386cb0','#f0f9e8','#d95f02','#7570b3','#e7298a','#66a61e',
-  '#e6ab02',
 ];
 
 interface ProvinceData {
@@ -22,6 +17,8 @@ interface ProvinceMapProps {
   family: string;
   onFilterSpecies?: (speciesNames: Set<string> | null) => void;
   speciesWithImages?: Set<string> | null;
+  onSelectedProvincesChange?: (provinces: Set<string> | null) => void;
+  externalSelectedProvinces?: Set<string> | null;
 }
 
 interface GeoFeature {
@@ -45,12 +42,13 @@ const BASE_WIDTH = 900;
 const BASE_HEIGHT = 450;
 const MAX_ZOOM = 6;
 const VIEWBOX = `0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`;
+const BG_COLOR = "#000000";
 
 function normalizeProvince(name: string): string {
   return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();
 }
 
-/** Apply transform to <g> element directly — no React re-render */
+/** Apply transform to <g> element directly -- no React re-render */
 function applyTransform(
   gEl: SVGGElement | null,
   t: { x: number; y: number; scale: number }
@@ -62,7 +60,95 @@ function applyTransform(
   gEl.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
 }
 
-export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: ProvinceMapProps) {
+/**
+ * Extract all coordinate pairs from a GeoJSON geometry, rounded to 1 decimal.
+ * Used to build adjacency graph between provinces.
+ */
+function extractCoordKeys(geometry: GeoJSON.Geometry): Set<string> {
+  const keys = new Set<string>();
+  function walk(coords: unknown) {
+    if (!Array.isArray(coords)) return;
+    if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      keys.add(`${Math.round(coords[0] * 10)},${Math.round(coords[1] * 10)}`);
+      return;
+    }
+    for (const c of coords) walk(c);
+  }
+  if ('coordinates' in geometry) walk((geometry as { coordinates: unknown }).coordinates);
+  if (geometry.type === 'GeometryCollection' && 'geometries' in geometry) {
+    for (const g of (geometry as GeoJSON.GeometryCollection).geometries) {
+      const sub = extractCoordKeys(g);
+      sub.forEach(k => keys.add(k));
+    }
+  }
+  return keys;
+}
+
+/**
+ * Build adjacency graph from GeoJSON features by checking shared boundary coordinates.
+ * Returns Map: province name -> Set of neighbor province names.
+ */
+function buildAdjacencyGraph(features: GeoFeature[]): Map<string, Set<string>> {
+  const adj = new Map<string, Set<string>>();
+  // coordIndex: coordinate key -> list of province names that use it
+  const coordIndex = new Map<string, string[]>();
+
+  for (const f of features) {
+    const name = f.properties?.PROVINCE;
+    if (!name || !f.geometry) continue;
+    if (!adj.has(name)) adj.set(name, new Set());
+
+    const keys = extractCoordKeys(f.geometry);
+    for (const k of keys) {
+      const existing = coordIndex.get(k);
+      if (existing) {
+        for (const neighbor of existing) {
+          if (neighbor !== name) {
+            adj.get(name)!.add(neighbor);
+            adj.get(neighbor)!.add(name);
+          }
+        }
+        existing.push(name);
+      } else {
+        coordIndex.set(k, [name]);
+      }
+    }
+  }
+
+  return adj;
+}
+
+/**
+ * Greedy graph-coloring: assign each province the first color from palette
+ * not used by any neighbor.
+ */
+function graphColorProvinces(
+  provinceNames: string[],
+  adjacency: Map<string, Set<string>>,
+  palette: string[]
+): Map<string, string> {
+  const colorMap = new Map<string, string>();
+  for (const name of provinceNames) {
+    const neighbors = adjacency.get(name) ?? new Set();
+    const usedColors = new Set<string>();
+    for (const n of neighbors) {
+      const c = colorMap.get(n);
+      if (c) usedColors.add(c);
+    }
+    // Pick first unused color
+    let assigned = palette[0];
+    for (const c of palette) {
+      if (!usedColors.has(c)) {
+        assigned = c;
+        break;
+      }
+    }
+    colorMap.set(name, assigned);
+  }
+  return colorMap;
+}
+
+export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSelectedProvincesChange, externalSelectedProvinces }: ProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<ProvinceApiResponse | null>(null);
@@ -94,6 +180,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
   useEffect(() => {
     setSelectedProvince(null);
     onFilterSpecies?.(null);
+    onSelectedProvincesChange?.(null);
     transformRef.current = { x: 0, y: 0, scale: 1 };
     applyTransform(gRef.current, transformRef.current);
 
@@ -157,6 +244,24 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
     return null;
   }, [provinceData, provinceNormMap]);
 
+  // Count species with images per province
+  const getImageCount = useCallback((info: ProvinceData | null): number => {
+    if (!info || !speciesWithImages) return 0;
+    return info.species.filter(s => speciesWithImages.has(s)).length;
+  }, [speciesWithImages]);
+
+  // Has images? Used for determining if province is "present" (colored)
+  const provinceHasImages = useCallback((featureName: string): boolean => {
+    if (!speciesWithImages) {
+      // If no image info available, fall back to species count
+      const info = getProvinceInfo(featureName);
+      return info !== null && info.count > 0;
+    }
+    const info = getProvinceInfo(featureName);
+    if (!info) return false;
+    return info.species.some(s => speciesWithImages.has(s));
+  }, [getProvinceInfo, speciesWithImages]);
+
   const sortedProvinces = useMemo(() => {
     if (!provinceData) return [];
     return Object.entries(provinceData.provinces)
@@ -164,13 +269,53 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
       .sort(([a], [b]) => a.localeCompare(b));
   }, [provinceData]);
 
+  // Build adjacency graph and apply graph-coloring
+  const adjacencyGraph = useMemo(() => {
+    if (!geoData) return new Map<string, Set<string>>();
+    return buildAdjacencyGraph(geoData.features);
+  }, [geoData]);
+
   const provinceColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    sortedProvinces.forEach(([name], i) => {
-      map.set(name, PROVINCE_COLORS[i % PROVINCE_COLORS.length]);
-    });
-    return map;
-  }, [sortedProvinces]);
+    // Get all province names that have species with images
+    const presentProvinces = sortedProvinces
+      .filter(([name]) => provinceHasImages(name))
+      .map(([name]) => name);
+
+    // Also include all GeoJSON province names for adjacency context
+    const allGeoNames = geoData
+      ? [...new Set(geoData.features.map(f => f.properties?.PROVINCE).filter(Boolean))]
+      : [];
+
+    // Graph-color ALL provinces (for proper neighbor differentiation),
+    // but we only display colors for present ones
+    const allNames = [...new Set([...allGeoNames, ...presentProvinces])];
+    return graphColorProvinces(allNames, adjacencyGraph, CATEGORICAL_PALETTE);
+  }, [sortedProvinces, adjacencyGraph, geoData, provinceHasImages]);
+
+  // Sync external province selection (from sidebar checkboxes)
+  useEffect(() => {
+    if (externalSelectedProvinces === undefined) return;
+    if (externalSelectedProvinces === null) {
+      if (selectedProvince !== null) {
+        setSelectedProvince(null);
+        onFilterSpecies?.(null);
+      }
+    } else if (externalSelectedProvinces.size === 1) {
+      const name = [...externalSelectedProvinces][0];
+      setSelectedProvince(name);
+      const info = getProvinceInfo(name);
+      if (info) onFilterSpecies?.(new Set(info.species));
+    } else if (externalSelectedProvinces.size > 1) {
+      // Multi-select: merge species from all selected provinces
+      setSelectedProvince(null); // can't highlight one on map
+      const allSpecies = new Set<string>();
+      for (const name of externalSelectedProvinces) {
+        const info = getProvinceInfo(name);
+        if (info) info.species.forEach(s => allSpecies.add(s));
+      }
+      onFilterSpecies?.(allSpecies.size > 0 ? allSpecies : null);
+    }
+  }, [externalSelectedProvinces]);
 
   // --- Zoom/Pan handlers (ref-based, no React re-renders during interaction) ---
 
@@ -227,12 +372,14 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
       if (selectedProvince === provinceName) {
         setSelectedProvince(null);
         onFilterSpecies?.(null);
+        onSelectedProvincesChange?.(null);
       } else {
         setSelectedProvince(provinceName);
         onFilterSpecies?.(new Set(info.species));
+        onSelectedProvincesChange?.(new Set([provinceName]));
       }
     },
-    [selectedProvince, getProvinceInfo, onFilterSpecies]
+    [selectedProvince, getProvinceInfo, onFilterSpecies, onSelectedProvincesChange]
   );
 
   const zoomBy = useCallback((factor: number) => {
@@ -253,7 +400,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
 
   if (!geoData || !provinceData || !pathGenerator) {
     return (
-      <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg animate-pulse" />
+      <div className="w-full aspect-[2/1] bg-black rounded-lg animate-pulse" />
     );
   }
 
@@ -270,8 +417,10 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             if (val) {
               const info = getProvinceInfo(val);
               if (info) onFilterSpecies?.(new Set(info.species));
+              onSelectedProvincesChange?.(new Set([val]));
             } else {
               onFilterSpecies?.(null);
+              onSelectedProvincesChange?.(null);
             }
           }}
         >
@@ -290,7 +439,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
         {selectedProvince && (
           <button
             className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded"
-            onClick={() => { setSelectedProvince(null); onFilterSpecies?.(null); }}
+            onClick={() => { setSelectedProvince(null); onFilterSpecies?.(null); onSelectedProvincesChange?.(null); }}
           >
             Clear
           </button>
@@ -307,42 +456,39 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
           ref={svgRef}
           viewBox={VIEWBOX}
           className="w-full"
-          style={{ cursor: isPanning ? "grabbing" : "grab", background: "#1a1a2e" }}
+          style={{ cursor: isPanning ? "grabbing" : "grab", background: BG_COLOR }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
         >
           <g ref={gRef} transform="translate(0,0) scale(1)">
             {/* Province polygons (below land) */}
             {provincePaths.map(({ name: provinceName, d }, i) => {
-              const info = getProvinceInfo(provinceName);
-              const isPresent = info !== null && info.count > 0;
+              const hasImages = provinceHasImages(provinceName);
               const isHovered = hoveredProvince === provinceName;
-              const isSelected = selectedProvince === provinceName;
+              const isSelected = selectedProvince === provinceName ||
+                (externalSelectedProvinces?.has(provinceName) ?? false);
 
-              const canonicalName = isPresent
-                ? (provinceNormMap.get(normalizeProvince(provinceName)) ?? provinceName)
-                : provinceName;
-              const fill = isPresent ? (provinceColorMap.get(canonicalName) ?? "#1a1a2e") : "#1a1a2e";
+              const fill = hasImages ? (provinceColorMap.get(provinceName) ?? BG_COLOR) : BG_COLOR;
 
               return (
                 <path
                   key={i}
                   d={d}
                   fill={fill}
-                  fillOpacity={isPresent ? (isSelected ? 0.9 : 0.75) : 1}
+                  fillOpacity={hasImages ? (isSelected ? 0.9 : 0.75) : 1}
                   stroke={
                     isSelected
                       ? "rgba(255,255,0,1)"
                       : isHovered
                         ? "rgba(255,255,255,1)"
-                        : isPresent
+                        : hasImages
                           ? "rgba(255,255,255,0.8)"
                           : "none"
                   }
-                  strokeWidth={isSelected ? 2 : isHovered ? 1.5 : isPresent ? 1 : 0}
+                  strokeWidth={isSelected ? 2 : isHovered ? 1.5 : hasImages ? 1 : 0}
                   vectorEffect="non-scaling-stroke"
                   pointerEvents="all"
-                  style={{ cursor: isPresent ? "pointer" : "default" }}
+                  style={{ cursor: hasImages ? "pointer" : "default" }}
                   onClick={() => handleProvinceClick(provinceName)}
                   onMouseMove={(e) => handleMouseMoveTooltip(e, provinceName)}
                   onMouseLeave={() => { setHoveredProvince(null); setTooltipPos(null); }}
@@ -350,7 +496,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
               );
             })}
 
-            {/* Land masses ON TOP — white continents overlaying provinces */}
+            {/* Land masses ON TOP -- white continents overlaying provinces */}
             {landPaths.map((d, i) => (
               <path
                 key={`land-${i}`}
@@ -378,9 +524,15 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             <div className="font-medium">{hoveredProvince}</div>
             {(() => {
               const info = getProvinceInfo(hoveredProvince);
-              return info && info.count > 0
-                ? <div className="text-white/70">{info.count} species</div>
-                : <div className="text-white/50">No species</div>;
+              if (!info || info.count === 0) {
+                return <div className="text-white/50">No species</div>;
+              }
+              const imgCount = getImageCount(info);
+              return (
+                <div className="text-white/70">
+                  {info.count} species{speciesWithImages ? `, ${imgCount} with images` : ''}
+                </div>
+              );
             })()}
           </div>
         )}
@@ -404,7 +556,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             title="Reset zoom"
             onClick={resetZoom}
           >
-            ↺
+            &#x21BA;
           </button>
         </div>
       </div>
