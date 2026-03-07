@@ -169,7 +169,7 @@ export default function Home() {
                 {t('homepage_description_2')}
               </p>
               <p className="text-xs text-muted-foreground leading-snug mt-3">
-                LarvalBase was further enriched by an additional 9,357 colored pictures of post-flexion and early juveniles of 1,929 species obtained from 196 sources. Various growth rate models from 47 original references and 90 populations are also now newly displayed, along with age-at-length data. Finally, expert-based distribution areas (IUCN or literature analyses) or currated occurrences (OBIS, GBIF, VertNet, iDigBio and iNaturalist) of adults, depending on availability, were acquired for 17,279 marine fish species, to allow filtering families, genera and species by Marine Ecoregions (Spalding et al., 2007) or Pelagic Provinces (Spalding et al., 2012) of the world.
+                {t('homepage_description_3')}
               </p>
               <p className="text-xs text-muted-foreground leading-snug mt-3">
                 {t('homepage_cite')}
