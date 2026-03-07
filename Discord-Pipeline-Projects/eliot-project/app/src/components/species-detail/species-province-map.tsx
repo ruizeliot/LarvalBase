@@ -3,34 +3,39 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
 
-const BASE_PALETTE = [
-  '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
-  '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
-  '#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
-  '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928',
-];
-
-function hexToRgb(hex: string): [number, number, number] {
-  const h = hex.replace('#', '');
-  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
-}
-function rgbToHex(r: number, g: number, b: number): string {
-  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
-}
-function lighten(hex: string, f: number): string {
-  const [r,g,b] = hexToRgb(hex);
-  return rgbToHex(r+(255-r)*f, g+(255-g)*f, b+(255-b)*f);
-}
-function darken(hex: string, f: number): string {
-  const [r,g,b] = hexToRgb(hex);
-  return rgbToHex(r*(1-f), g*(1-f), b*(1-f));
+/**
+ * Convert HSL to hex color string.
+ */
+function hslToHex(h: number, s: number, l: number): string {
+  s /= 100;
+  l /= 100;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+    return Math.round(255 * color).toString(16).padStart(2, '0');
+  };
+  return `#${f(0)}${f(8)}${f(4)}`;
 }
 
-const PROVINCE_COLORS = [
-  ...BASE_PALETTE,
-  ...BASE_PALETTE.map(c => lighten(c, 0.35)),
-  ...BASE_PALETTE.map(c => darken(c, 0.35)),
-];
+/**
+ * Generate unique province colors using golden ratio hue distribution.
+ * Produces muted, harmonious colors with varied saturation/lightness.
+ */
+function generateProvinceColors(count: number): string[] {
+  const GOLDEN_RATIO = 0.618033988749895;
+  const colors: string[] = [];
+  for (let i = 0; i < count; i++) {
+    const hue = ((i * GOLDEN_RATIO) % 1.0) * 360;
+    const group = i % 3;
+    const sat = group === 0 ? 42 : group === 1 ? 55 : 32;
+    const lit = group === 0 ? 52 : group === 1 ? 42 : 62;
+    colors.push(hslToHex(hue, sat, lit));
+  }
+  return colors;
+}
+
+const PROVINCE_COLORS = generateProvinceColors(60);
 
 function normalizeProvince(name: string): string {
   return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();

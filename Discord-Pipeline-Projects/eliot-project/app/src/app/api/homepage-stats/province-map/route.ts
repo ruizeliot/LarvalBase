@@ -223,6 +223,47 @@ export async function GET(request: NextRequest) {
     // Families mode: show percentage of families per province
     if (mode === 'families') {
       const familyData = await loadFamilyProvinceData();
+
+      // Apply trait filter if specified
+      if (trait && trait !== 'all') {
+        const traitData = await loadTraitData();
+        const traitSpecies = traitData.get(trait);
+
+        if (!traitSpecies) {
+          return NextResponse.json({ provinces: {} });
+        }
+
+        // Build species->family lookup
+        const speciesData = await getOrLoadData();
+        const speciesFamilyMap = new Map<string, string>();
+        for (const [, spInfo] of speciesData.species) {
+          speciesFamilyMap.set(spInfo.validName, spInfo.family);
+        }
+
+        const filteredProvinces: ProvinceMapData['provinces'] = {};
+        for (const [name, data] of Object.entries(familyData.provinces)) {
+          const filteredSpecies = data.species.filter(s => traitSpecies.has(s));
+          if (filteredSpecies.length === 0) continue;
+
+          const families = new Set<string>();
+          for (const sp of filteredSpecies) {
+            const fam = speciesFamilyMap.get(sp);
+            if (fam) families.add(fam);
+          }
+
+          filteredProvinces[name] = {
+            larvalbaseCount: families.size,
+            totalCount: data.totalCount,
+            percentage: data.totalCount > 0 ? (families.size / data.totalCount) * 100 : 0,
+            species: filteredSpecies,
+          };
+        }
+
+        return NextResponse.json({ provinces: filteredProvinces }, {
+          headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+        });
+      }
+
       return NextResponse.json(familyData, {
         headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
       });
