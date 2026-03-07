@@ -42,6 +42,48 @@ function generateProvinceColors(count: number): string[] {
 
 const PROVINCE_PALETTE = generateProvinceColors(60);
 
+/**
+ * Assign each province a UNIQUE color by sorted index.
+ * Post-process: if two adjacent provinces have similar hues, swap one with a non-adjacent province.
+ */
+function assignUniqueColors(
+  provinceNames: string[],
+  adjacency: Map<string, Set<string>>,
+  palette: string[]
+): Map<string, string> {
+  const sorted = [...provinceNames].sort((a, b) => a.localeCompare(b));
+  const colorMap = new Map<string, string>();
+  for (let i = 0; i < sorted.length; i++) {
+    colorMap.set(sorted[i], palette[i % palette.length]);
+  }
+  // Post-process: check adjacent provinces for similar colors and swap
+  for (const name of sorted) {
+    const neighbors = adjacency.get(name) ?? new Set();
+    const myIdx = sorted.indexOf(name);
+    for (const neighbor of neighbors) {
+      const neighborIdx = sorted.indexOf(neighbor);
+      if (neighborIdx < 0) continue;
+      // If indices are close (colors will be adjacent in palette), swap with a distant non-neighbor
+      if (Math.abs((myIdx % palette.length) - (neighborIdx % palette.length)) <= 1) {
+        // Find a non-adjacent province to swap with
+        for (let j = sorted.length - 1; j >= 0; j--) {
+          const candidate = sorted[j];
+          if (candidate === name || candidate === neighbor) continue;
+          const candidateNeighbors = adjacency.get(candidate) ?? new Set();
+          if (!candidateNeighbors.has(name) && !neighbors.has(candidate)) {
+            // Swap colors
+            const tmp = colorMap.get(name)!;
+            colorMap.set(name, colorMap.get(candidate)!);
+            colorMap.set(candidate, tmp);
+            break;
+          }
+        }
+      }
+    }
+  }
+  return colorMap;
+}
+
 interface ProvinceData {
   count: number;
   species: string[];
@@ -304,21 +346,14 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
   }, [geoData]);
 
   const provinceColorMap = useMemo(() => {
-    // Get all province names that have any species
-    const presentProvinces = sortedProvinces
-      .filter(([name]) => provinceHasSpecies(name))
-      .map(([name]) => name);
-
-    // Also include all GeoJSON province names for adjacency context
+    // Get all province names from GeoJSON for full adjacency context
     const allGeoNames = geoData
       ? [...new Set(geoData.features.map(f => f.properties?.PROVINCE).filter(Boolean))]
       : [];
 
-    // Graph-color ALL provinces (for proper neighbor differentiation),
-    // but we only display colors for present ones
-    const allNames = [...new Set([...allGeoNames, ...presentProvinces])];
-    return graphColorProvinces(allNames, adjacencyGraph, PROVINCE_PALETTE);
-  }, [sortedProvinces, adjacencyGraph, geoData, provinceHasSpecies]);
+    // Assign each province a UNIQUE color by index (no graph coloring)
+    return assignUniqueColors(allGeoNames as string[], adjacencyGraph, PROVINCE_PALETTE);
+  }, [adjacencyGraph, geoData]);
 
   // Sync external province selection (from sidebar checkboxes)
   useEffect(() => {

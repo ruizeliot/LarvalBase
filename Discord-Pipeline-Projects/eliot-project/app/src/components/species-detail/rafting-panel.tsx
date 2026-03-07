@@ -148,6 +148,7 @@ export interface RaftingData {
 
 interface RaftingPanelProps {
   data: RaftingData;
+  showComparison?: boolean;
 }
 
 /**
@@ -473,6 +474,7 @@ function NumericTraitPanel({
   barChartData,
   currentSpeciesId,
   traitType,
+  showComparison,
 }: {
   label: string;
   stats: RaftingStats;
@@ -482,6 +484,7 @@ function NumericTraitPanel({
   barChartData?: BarChartData | null;
   currentSpeciesId?: string;
   traitType: 'size' | 'age';
+  showComparison?: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const hasData = stats.mean !== null;
@@ -527,7 +530,7 @@ function NumericTraitPanel({
         </div>
 
         <div className="mt-3 pt-3 border-t flex items-center justify-between text-sm">
-          <div className="text-muted-foreground">
+          <div className={showRange ? "text-white" : "text-muted-foreground"}>
             {showRange ? (
               <>Range: {stats.min!.toFixed(1)} - {stats.max!.toFixed(1)}</>
             ) : (
@@ -575,7 +578,7 @@ function NumericTraitPanel({
           </div>
         )}
 
-        {barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
+        {showComparison && barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={barChartData.entries}
@@ -746,7 +749,7 @@ function AgeQualitativeCard({ data }: { data: RaftingData }) {
  * 2. Size: mean ± SD, range, N records link, genus/family comparisons, bar chart
  * 3. Age: qualitative panel with horizontal barplots
  */
-export function RaftingPanel({ data }: RaftingPanelProps) {
+export function RaftingPanel({ data, showComparison }: RaftingPanelProps) {
   return (
     <div data-testid="rafting-panel" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <QualitativeCard data={data} />
@@ -759,6 +762,7 @@ export function RaftingPanel({ data }: RaftingPanelProps) {
         barChartData={data.sizeBarChart}
         currentSpeciesId={data.currentSpeciesId}
         traitType="size"
+        showComparison={showComparison}
       />
       <AgeQualitativeCard data={data} />
     </div>

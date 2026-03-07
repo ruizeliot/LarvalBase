@@ -444,6 +444,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
               src={allImages[lightboxIndex].imageUrl}
               alt={allImages[lightboxIndex].species || family}
               className="max-w-full max-h-[75vh] object-contain"
+              onContextMenu={(e) => e.preventDefault()}
             />
             <div className="mt-2 text-white text-center">
               <p className="text-sm text-white/60">
@@ -500,6 +501,7 @@ function ImageGrid({
               loading="lazy"
               decoding="async"
               className="w-full h-full object-contain"
+              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         </div>

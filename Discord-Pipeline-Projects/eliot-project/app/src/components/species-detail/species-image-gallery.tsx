@@ -78,6 +78,7 @@ function SpeciesImageWithFallback({
         sizes="(max-width: 768px) 100vw, 400px"
         unoptimized
         onError={() => setHasError(true)}
+        onContextMenu={(e) => e.preventDefault()}
       />
       {showZoomHint && (
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -301,6 +302,7 @@ function ImageLightbox({
             src={imageSrc}
             alt={`${speciesName} - photo by ${image.displayAuthor}`}
             className="max-w-full max-h-full object-contain"
+            onContextMenu={(e) => e.preventDefault()}
           />
         </div>
 

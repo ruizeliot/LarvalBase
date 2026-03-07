@@ -68,6 +68,7 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
                   loading="lazy"
                   decoding="async"
                   className="w-full h-full object-contain"
+                  onContextMenu={(e) => e.preventDefault()}
                 />
               ) : (
                 '🐟'

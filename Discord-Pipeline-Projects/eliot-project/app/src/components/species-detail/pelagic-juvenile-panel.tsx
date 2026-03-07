@@ -126,6 +126,7 @@ export interface PelagicJuvenileData {
 
 interface PelagicJuvenilePanelProps {
   data: PelagicJuvenileData;
+  showComparison?: boolean;
 }
 
 /**
@@ -396,6 +397,7 @@ function NumericTraitPanel({
   barChartData,
   currentSpeciesId,
   traitType,
+  showComparison,
 }: {
   label: string;
   stats: PelagicJuvenileStats;
@@ -405,6 +407,7 @@ function NumericTraitPanel({
   barChartData?: BarChartData | null;
   currentSpeciesId?: string;
   traitType: 'size' | 'duration';
+  showComparison?: boolean;
 }) {
   const [modalOpen, setModalOpen] = useState(false);
   const hasData = stats.mean !== null;
@@ -453,7 +456,7 @@ function NumericTraitPanel({
 
         {/* Range and Records row */}
         <div className="mt-3 pt-3 border-t flex items-center justify-between text-sm">
-          <div className="text-muted-foreground">
+          <div className={showRange ? "text-white" : "text-muted-foreground"}>
             {showRange ? (
               <>Range: {stats.min!.toFixed(1)} - {stats.max!.toFixed(1)}</>
             ) : (
@@ -499,11 +502,14 @@ function NumericTraitPanel({
                 </span>
               </div>
             )}
+            {comparisons.species === null && !comparisons.genus && !comparisons.family && (
+              <div className="text-sm text-muted-foreground italic">No comparison data available</div>
+            )}
           </div>
         )}
 
-        {/* Family/genus bar chart comparison */}
-        {barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
+        {/* Family/genus bar chart comparison — controlled by section-level toggle */}
+        {showComparison && barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={barChartData.entries}
@@ -538,7 +544,7 @@ function NumericTraitPanel({
  * 2. Size: mean ± SD, range, N records link, genus/family comparisons, dot-strip chart
  * 3. Duration: same layout as size panel
  */
-export function PelagicJuvenilePanel({ data }: PelagicJuvenilePanelProps) {
+export function PelagicJuvenilePanel({ data, showComparison }: PelagicJuvenilePanelProps) {
   return (
     <div data-testid="pelagic-juvenile-panel" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       <QualitativeCard data={data} />
@@ -551,6 +557,7 @@ export function PelagicJuvenilePanel({ data }: PelagicJuvenilePanelProps) {
         barChartData={data.sizeBarChart}
         currentSpeciesId={data.currentSpeciesId}
         traitType="size"
+        showComparison={showComparison}
       />
       <NumericTraitPanel
         label="Pelagic Juvenile Duration"
@@ -561,6 +568,7 @@ export function PelagicJuvenilePanel({ data }: PelagicJuvenilePanelProps) {
         barChartData={data.durationBarChart}
         currentSpeciesId={data.currentSpeciesId}
         traitType="duration"
+        showComparison={showComparison}
       />
     </div>
   );

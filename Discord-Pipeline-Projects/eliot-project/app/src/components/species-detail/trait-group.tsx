@@ -197,6 +197,8 @@ export function TraitGroup({
                 familyChartComparisonType={chartData?.comparisonType}
                 familyChartTaxonomyName={chartData?.taxonomyName}
                 currentSpeciesId={speciesId}
+                orderChartData={chartData?.orderChart?.species}
+                orderChartTaxonomyName={chartData?.orderChart?.taxonomyName}
               />
             );
           })}

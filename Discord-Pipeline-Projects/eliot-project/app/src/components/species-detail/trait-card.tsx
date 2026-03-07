@@ -35,12 +35,16 @@ export interface TraitCardProps {
   orderStats?: TaxonomyStats | null;
   /** Optional family bar chart data */
   familyChartData?: FamilyBarChartEntry[] | null;
-  /** Comparison type for the chart ('family' or 'genus') */
-  familyChartComparisonType?: 'family' | 'genus';
+  /** Comparison type for the chart ('family', 'genus', or 'order') */
+  familyChartComparisonType?: 'family' | 'genus' | 'order';
   /** Taxonomy name for the chart (family or genus name) */
   familyChartTaxonomyName?: string;
   /** Current species ID for highlighting in chart */
   currentSpeciesId?: string;
+  /** Optional order-level bar chart data */
+  orderChartData?: FamilyBarChartEntry[] | null;
+  /** Order taxonomy name for order chart */
+  orderChartTaxonomyName?: string;
 }
 
 /**
@@ -53,16 +57,24 @@ function formatNumber(value: number | null, decimals: number): string {
 }
 
 /**
- * Format comparison value with sample size annotation.
+ * Format comparison value with sample size annotation and optional sd.
  * Returns "-" if no stats available.
- * Format: "0.89 mm (n_sp = 9)" with "sp" as subscript
+ * Format: "0.89 ± 0.12 mm (n_sp = 9)" with "sp" as subscript
+ * sd shown only when speciesCount >= 3
  */
 function formatComparison(
   stats: TaxonomyStats | null | undefined,
   unit: string
 ): React.ReactNode {
   if (!stats || stats.stats.mean === null) return "-";
-  return <>{stats.stats.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {stats.speciesCount})</>;
+  const showSd = stats.speciesCount >= 3 && stats.stats.sd !== null;
+  return (
+    <>
+      {stats.stats.mean.toFixed(2)}
+      {showSd && <> {"\u00B1"} {stats.stats.sd!.toFixed(2)}</>}
+      {" "}{unit} (n<sub>sp</sub> = {stats.speciesCount})
+    </>
+  );
 }
 
 /**
@@ -91,6 +103,8 @@ export function TraitCard({
   familyChartComparisonType,
   familyChartTaxonomyName,
   currentSpeciesId,
+  orderChartData,
+  orderChartTaxonomyName,
 }: TraitCardProps) {
   const showComparison = useContext(SectionComparisonContext);
   const hasData = mean !== null;
@@ -139,7 +153,7 @@ export function TraitCard({
           )}
         >
           {/* Range */}
-          <div className="text-muted-foreground">
+          <div className={showRange ? "text-white" : "text-muted-foreground"}>
             {showRange ? (
               <>
                 Range: {formatNumber(min, 1)} - {formatNumber(max, 1)}
@@ -203,6 +217,19 @@ export function TraitCard({
               traitLabel={label}
               comparisonType={familyChartComparisonType}
               taxonomyName={familyChartTaxonomyName}
+            />
+          </div>
+        )}
+        {/* Order Bar Chart — below genus/family chart */}
+        {showComparison && orderChartData && orderChartData.length > 0 && currentSpeciesId && (
+          <div className="mt-4 pt-4 border-t">
+            <FamilyBarChart
+              data={orderChartData}
+              currentSpeciesId={currentSpeciesId}
+              unit={unit}
+              traitLabel={label}
+              comparisonType="order"
+              taxonomyName={orderChartTaxonomyName}
             />
           </div>
         )}

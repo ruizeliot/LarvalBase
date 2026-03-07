@@ -407,6 +407,78 @@ export async function getGenusAveragedFamilyData(
 }
 
 /**
+ * Get per-species means for all species in an order for bar chart display.
+ * Shows genus averages (one bar per genus) to keep charts readable.
+ */
+export async function getOrderBarChartData(
+  orderName: string,
+  traitType: string
+): Promise<FamilyBarChartData | null> {
+  const cacheKey = `orderChart:${orderName}:${traitType}`;
+
+  const cached = familyChartCache.get(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  const data = await getOrLoadData();
+
+  // Find all species in this order
+  const speciesInOrder: Species[] = [];
+  for (const species of data.species.values()) {
+    if (species.order === orderName) {
+      speciesInOrder.push(species);
+    }
+  }
+
+  if (speciesInOrder.length === 0) {
+    return null;
+  }
+
+  // Group by family and compute family averages (one bar per family)
+  const familyMeans = new Map<string, number[]>();
+
+  for (const species of speciesInOrder) {
+    const traits = data.traitsBySpecies.get(species.id) || [];
+    const values = traits
+      .filter(
+        (t: TraitData) =>
+          t.traitType === traitType && t.value !== null && t.value !== undefined
+      )
+      .map((t: TraitData) => t.value as number);
+
+    if (values.length > 0) {
+      const speciesMean = mean(values);
+      const existing = familyMeans.get(species.family) || [];
+      existing.push(speciesMean);
+      familyMeans.set(species.family, existing);
+    }
+  }
+
+  if (familyMeans.size === 0) {
+    return null;
+  }
+
+  const familyData: FamilyBarChartEntry[] = [];
+  for (const [familyName, speciesMeans] of familyMeans) {
+    familyData.push({
+      speciesId: `family:${familyName}`,
+      speciesName: familyName,
+      meanValue: mean(speciesMeans),
+    });
+  }
+
+  const result: FamilyBarChartData = {
+    familyName: orderName,
+    traitType,
+    species: familyData,
+  };
+
+  familyChartCache.set(cacheKey, result);
+  return result;
+}
+
+/**
  * Clear the aggregation cache.
  *
  * Use when underlying data changes and cached aggregations

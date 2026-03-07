@@ -18,8 +18,8 @@ interface FamilyBarChartProps {
   unit: string;
   /** Trait label for tooltip */
   traitLabel: string;
-  /** Comparison type: 'family' or 'genus' */
-  comparisonType?: 'family' | 'genus';
+  /** Comparison type: 'family', 'genus', or 'order' */
+  comparisonType?: 'family' | 'genus' | 'order';
   /** Taxonomy name (family or genus name) */
   taxonomyName?: string;
 }
@@ -132,17 +132,18 @@ export function FamilyBarChart({
 
   // Colors as specified:
   // - Current species: #00BA38 (green)
-  // - GENUS comparison: #619CFF (blue) - always
-  // - FAMILY comparison: #F8766D (coral red) - always
-  const currentSpeciesColor = '#00BA38'; // Green for current species
-  const otherSpeciesColor = comparisonType === 'genus' ? '#619CFF' : '#F8766D'; // Blue for genus, Red for family
+  // - GENUS comparison: #619CFF (blue)
+  // - FAMILY comparison: #F8766D (coral red)
+  // - ORDER comparison: #9B59B6 (purple)
+  const currentSpeciesColor = '#00BA38';
+  const otherSpeciesColor = comparisonType === 'genus' ? '#619CFF' : comparisonType === 'order' ? '#9B59B6' : '#F8766D';
 
   return (
     <div className="space-y-2">
-      {/* Chart title — blue for genus, red for family, no species count */}
+      {/* Chart title */}
       <div className="text-sm font-medium text-center uppercase tracking-wide"
            style={{ color: otherSpeciesColor }}>
-        {comparisonType === 'genus' ? 'Genus Comparison' : 'Family Comparison'}
+        {comparisonType === 'genus' ? 'Genus Comparison' : comparisonType === 'order' ? 'Order Comparison' : 'Family Comparison'}
         {taxonomyName && <span className="font-normal ml-1">({taxonomyName})</span>}
       </div>
       

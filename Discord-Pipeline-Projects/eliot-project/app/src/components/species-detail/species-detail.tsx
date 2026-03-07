@@ -134,6 +134,10 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
     traitName: string;
   } | null>(null);
 
+  // Comparison toggles for Pelagic Juvenile and Rafting sections
+  const [showPelagicComparison, setShowPelagicComparison] = useState(false);
+  const [showRaftingComparison, setShowRaftingComparison] = useState(false);
+
   // State for comparison stats (genus/family/order averages)
   const [comparisons, setComparisons] = useState<Map<string, ComparisonStats>>(new Map());
 
@@ -141,16 +145,16 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
   useEffect(() => {
     if (!data) return;
 
-    // Get unique trait types that have data
-    const traitTypesWithData = Object.keys(data.traits);
-    if (traitTypesWithData.length === 0) return;
+    // Get ALL trait types from display groups (not just those with species data)
+    const allTraitTypes = DISPLAY_GROUPS.flatMap(g => g.traits);
+    if (allTraitTypes.length === 0) return;
 
     // Fetch comparisons for all trait types in parallel
     async function fetchAllComparisons() {
       const results = new Map<string, ComparisonStats>();
 
       await Promise.all(
-        traitTypesWithData.map(async (trait) => {
+        allTraitTypes.map(async (trait) => {
           try {
             const res = await fetch(`/api/species/${speciesId}/comparisons?trait=${trait}`);
             if (res.ok) {
@@ -317,6 +321,15 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                             />
                           </div>
                           <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
+                          {(pelagicJuvenileData.sizeBarChart?.entries?.length || pelagicJuvenileData.durationBarChart?.entries?.length) && (
+                            <button
+                              type="button"
+                              onClick={() => setShowPelagicComparison(!showPelagicComparison)}
+                              className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+                            >
+                              {showPelagicComparison ? "Hide comparisons" : "Show comparisons between taxa"}
+                            </button>
+                          )}
                         </div>
                         <SectionExportButtons
                           speciesId={speciesId}
@@ -324,7 +337,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                           traitKeys={['pelagic_juvenile_size', 'pelagic_juvenile_duration']}
                         />
                       </div>
-                      <PelagicJuvenilePanel data={pelagicJuvenileData} />
+                      <PelagicJuvenilePanel data={pelagicJuvenileData} showComparison={showPelagicComparison} />
                     </div>
                   )}
 
@@ -347,6 +360,15 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                             />
                           </div>
                           <h2 className="text-lg font-semibold">Rafting</h2>
+                          {raftingData.sizeBarChart?.entries?.length && (
+                            <button
+                              type="button"
+                              onClick={() => setShowRaftingComparison(!showRaftingComparison)}
+                              className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+                            >
+                              {showRaftingComparison ? "Hide comparisons" : "Show comparisons between taxa"}
+                            </button>
+                          )}
                         </div>
                         <SectionExportButtons
                           speciesId={speciesId}
@@ -354,7 +376,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                           traitKeys={['rafting_behavior', 'rafting_size']}
                         />
                       </div>
-                      <RaftingPanel data={raftingData} />
+                      <RaftingPanel data={raftingData} showComparison={showRaftingComparison} />
                     </div>
                   )}
                 </>

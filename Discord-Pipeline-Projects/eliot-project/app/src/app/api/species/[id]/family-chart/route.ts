@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getFamilyBarChartData, getGenusBarChartData, getGenusAveragedFamilyData } from '@/lib/services/aggregation.service';
+import { getFamilyBarChartData, getGenusBarChartData, getGenusAveragedFamilyData, getOrderBarChartData } from '@/lib/services/aggregation.service';
 import { getOrLoadData } from '@/lib/data/data-repository';
 
 export async function GET(
@@ -32,7 +32,18 @@ export async function GET(
     // Get family bar chart data
     const familyData = await getFamilyBarChartData(species.family, trait);
 
+    // Also fetch order-level chart data (family averages within the order)
+    const orderData = await getOrderBarChartData(species.order, trait);
+
     if (!familyData) {
+      // Fallback: if no family data, try order-level chart
+      if (orderData && orderData.species.length > 1) {
+        return NextResponse.json({
+          ...orderData,
+          comparisonType: 'order',
+          taxonomyName: species.order,
+        });
+      }
       return NextResponse.json(
         { error: 'No family data found for this trait' },
         { status: 404 }
@@ -48,6 +59,11 @@ export async function GET(
           ...genusData,
           comparisonType: 'genus',
           taxonomyName: species.genus,
+          orderChart: orderData && orderData.species.length > 1 ? {
+            species: orderData.species,
+            comparisonType: 'order',
+            taxonomyName: species.order,
+          } : undefined,
         });
       }
       // Fallback: if genus has only 1 species, show genus averages for the family
@@ -57,6 +73,11 @@ export async function GET(
           ...genusAvgData,
           comparisonType: 'family',
           taxonomyName: species.family,
+          orderChart: orderData && orderData.species.length > 1 ? {
+            species: orderData.species,
+            comparisonType: 'order',
+            taxonomyName: species.order,
+          } : undefined,
         });
       }
     }
@@ -67,6 +88,11 @@ export async function GET(
       ...familyData,
       comparisonType: 'family',
       taxonomyName: species.family,
+      orderChart: orderData && orderData.species.length > 1 ? {
+        species: orderData.species,
+        comparisonType: 'order',
+        taxonomyName: species.order,
+      } : undefined,
     });
   } catch (error) {
     console.error('Error loading family chart data:', error);

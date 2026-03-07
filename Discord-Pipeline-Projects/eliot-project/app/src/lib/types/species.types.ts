@@ -182,11 +182,18 @@ export interface FamilyBarChartData {
   /** Per-species mean values, unsorted (sorting done in component) */
   species: FamilyBarChartEntry[];
 
-  /** Comparison type: 'family' or 'genus' (from API) */
-  comparisonType?: 'family' | 'genus';
+  /** Comparison type: 'family', 'genus', or 'order' (from API) */
+  comparisonType?: 'family' | 'genus' | 'order';
 
-  /** Taxonomy name (family or genus name, from API) */
+  /** Taxonomy name (family, genus, or order name, from API) */
   taxonomyName?: string;
+
+  /** Optional order-level chart data (family averages within order) */
+  orderChart?: {
+    species: FamilyBarChartEntry[];
+    comparisonType: 'order';
+    taxonomyName: string;
+  };
 }
 
 /**
