@@ -13,15 +13,20 @@ function safeViewBox(vb: { x: number; y: number; w: number; h: number }, fallbac
 
 /** Error boundary to prevent map crashes from killing the page */
 class MapErrorBoundary extends React.Component<
-  { children: React.ReactNode },
+  { children: React.ReactNode; resetKey?: string },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode }) {
+  constructor(props: { children: React.ReactNode; resetKey?: string }) {
     super(props);
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() {
     return { hasError: true };
+  }
+  componentDidUpdate(prevProps: { resetKey?: string }) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
   componentDidCatch(error: Error) {
     console.error("SpeciesProvinceMap error:", error);
@@ -81,7 +86,7 @@ const MAX_ZOOM = 6;
 
 export function SpeciesProvinceMap(props: SpeciesProvinceMapProps) {
   return (
-    <MapErrorBoundary>
+    <MapErrorBoundary resetKey={props.speciesId}>
       <SpeciesProvinceMapInner {...props} />
     </MapErrorBoundary>
   );

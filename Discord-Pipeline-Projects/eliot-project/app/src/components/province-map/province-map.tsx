@@ -13,15 +13,20 @@ function safeViewBox(vb: { x: number; y: number; w: number; h: number }, fallbac
 
 /** Error boundary to prevent map crashes from killing the page */
 class MapErrorBoundary extends React.Component<
-  { children: React.ReactNode; fallback?: React.ReactNode },
+  { children: React.ReactNode; resetKey?: string; fallback?: React.ReactNode },
   { hasError: boolean }
 > {
-  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+  constructor(props: { children: React.ReactNode; resetKey?: string; fallback?: React.ReactNode }) {
     super(props);
     this.state = { hasError: false };
   }
   static getDerivedStateFromError() {
     return { hasError: true };
+  }
+  componentDidUpdate(prevProps: { resetKey?: string }) {
+    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
+      this.setState({ hasError: false });
+    }
   }
   componentDidCatch(error: Error) {
     console.error("ProvinceMap error:", error);
@@ -90,7 +95,7 @@ function normalizeProvince(name: string): string {
 
 export function ProvinceMap(props: ProvinceMapProps) {
   return (
-    <MapErrorBoundary>
+    <MapErrorBoundary resetKey={props.family}>
       <ProvinceMapInner {...props} />
     </MapErrorBoundary>
   );
@@ -273,7 +278,7 @@ function ProvinceMapInner({ family, onFilterSpecies, speciesWithImages }: Provin
             }
           }}
         >
-          <option value="">All provinces ({sortedProvinces.reduce((sum, [, d]) => sum + d.count, 0)} species)</option>
+          <option value="">All provinces ({sortedProvinces.reduce((sum, [, d]) => sum + d.count, 0)} species{speciesWithImages ? `, ${speciesWithImages.size} with images` : ''})</option>
           {sortedProvinces.map(([name, data]) => {
             const withImagesCount = speciesWithImages
               ? data.species.filter(s => speciesWithImages.has(s)).length
