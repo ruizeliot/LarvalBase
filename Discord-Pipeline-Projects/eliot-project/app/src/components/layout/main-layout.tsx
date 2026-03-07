@@ -11,8 +11,8 @@ export function MainLayout({ sidebar, children }: MainLayoutProps) {
   return (
     <SidebarProvider
       style={{
-        "--sidebar-width": "380px",
-        "--sidebar-width-mobile": "380px",
+        "--sidebar-width": "340px",
+        "--sidebar-width-mobile": "340px",
       } as React.CSSProperties}
     >
       {sidebar}

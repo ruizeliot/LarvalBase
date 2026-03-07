@@ -198,7 +198,7 @@ export function TraitCard({
             <button
               type="button"
               onClick={() => setShowComparison(!showComparison)}
-              className="text-xs px-3 py-1.5 rounded bg-muted hover:bg-muted/80 text-muted-foreground transition-colors w-full text-center"
+              className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors w-full text-center"
             >
               {showComparison ? "Click to hide comparison" : "Click to show comparison between taxa"}
             </button>

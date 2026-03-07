@@ -13,6 +13,8 @@ interface GalleryPageProps {
   onSelectFamily: (family: string) => void;
   onSelectSpecies?: (speciesName: string) => void;
   filteredSpeciesNames?: Set<string> | null;
+  /** Notify parent of map-based species filtering (for sidebar sync) */
+  onMapFilterSpecies?: (species: Set<string> | null) => void;
 }
 
 /**
@@ -20,12 +22,13 @@ interface GalleryPageProps {
  * Has a province map on top for filtering.
  * No "Show more" button — shows everything.
  */
-export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesNames }: GalleryPageProps) {
+export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesNames, onMapFilterSpecies }: GalleryPageProps) {
   const [mapFilteredSpecies, setMapFilteredSpecies] = useState<Set<string> | null>(null);
 
   const handleMapFilter = useCallback((species: Set<string> | null) => {
     setMapFilteredSpecies(species);
-  }, []);
+    onMapFilterSpecies?.(species);
+  }, [onMapFilterSpecies]);
 
   // Filter families based on province map + sidebar trait filter
   const visibleFamilies = useMemo(() => {
@@ -66,14 +69,6 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
           ({visibleFamilies.length} families)
         </span>
       </h2>
-
-      <p className="text-sm text-muted-foreground italic">
-        Please send an email to{" "}
-        <a href="mailto:eliotruiz3@gmail.com" className="text-blue-400 hover:underline not-italic">
-          eliotruiz3@gmail.com
-        </a>{" "}
-        if you are aware of any identification error or species-level identification for unsure ID, or if one of the images displayed is yours and you would like it to be removed from this website.
-      </p>
 
       {/* Province map for filtering — families mode */}
       <HomepageProvinceMap onFilterSpecies={handleMapFilter} mode="families" />

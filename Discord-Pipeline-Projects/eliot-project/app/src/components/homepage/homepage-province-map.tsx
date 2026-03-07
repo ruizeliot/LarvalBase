@@ -4,23 +4,41 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { geoPath, geoIdentity } from "d3-geo";
 
 /**
- * YlOrRd color palette for percentage coloring (yellow → orange → red).
+ * YlOrRd color ramp (yellow → orange → red).
  */
-function getPercentageColor(pct: number): string {
+const YLOR_RD_COLORS = [
+  [255, 255, 204],  // light yellow
+  [255, 237, 160],
+  [254, 217, 118],
+  [254, 178, 76],   // orange
+  [253, 141, 60],
+  [252, 78, 42],
+  [227, 26, 28],    // red
+  [177, 0, 38],     // dark red
+];
+
+/**
+ * YlGn color ramp (yellow → green).
+ */
+const YL_GN_COLORS = [
+  [255, 255, 229],  // light yellow
+  [247, 252, 185],
+  [217, 240, 163],
+  [173, 221, 142],
+  [120, 198, 121],  // green
+  [65, 171, 93],
+  [35, 132, 67],
+  [0, 90, 50],      // dark green
+];
+
+/**
+ * Percentage color interpolation with configurable palette.
+ */
+function getPercentageColor(pct: number, palette: number[][] = YLOR_RD_COLORS): string {
   if (pct <= 0) return "transparent";
   // Clamp 0-100
   const t = Math.min(100, Math.max(0, pct)) / 100;
-  // YlOrRd interpolation: yellow → orange → red
-  const colors = [
-    [255, 255, 204],  // light yellow
-    [255, 237, 160],
-    [254, 217, 118],
-    [254, 178, 76],   // orange
-    [253, 141, 60],
-    [252, 78, 42],
-    [227, 26, 28],    // red
-    [177, 0, 38],     // dark red
-  ];
+  const colors = palette;
   const idx = t * (colors.length - 1);
   const lo = Math.floor(idx);
   const hi = Math.min(lo + 1, colors.length - 1);
@@ -99,6 +117,7 @@ interface HomepageProvinceMapProps {
 }
 
 export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: HomepageProvinceMapProps) {
+  const colorPalette = mode === 'families' ? YL_GN_COLORS : YLOR_RD_COLORS;
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<Record<string, ProvinceApiData> | null>(null);
@@ -370,7 +389,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
 
               // Normalize percentage to maxPercentage so colors use full scale range
               const normalizedPct = maxPercentage > 0 ? (pct / maxPercentage) * 100 : 0;
-              const fill = hasData ? getPercentageColor(normalizedPct) : "transparent";
+              const fill = hasData ? getPercentageColor(normalizedPct, colorPalette) : "transparent";
 
               return (
                 <path
@@ -427,11 +446,12 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
             {(() => {
               const info = getProvinceInfo(hoveredProvince);
               if (!info || info.species.length === 0) {
-                return <div className="text-white/50">No species in database</div>;
+                return <div className="text-white/50">{mode === 'families' ? 'No families in database' : 'No species in database'}</div>;
               }
+              const unitLabel = mode === 'families' ? 'families' : 'species';
               return (
                 <div className="text-white/70">
-                  {info.percentage.toFixed(1)}% ({info.larvalbaseCount}/{info.totalCount} species)
+                  {info.percentage.toFixed(1)}% ({info.larvalbaseCount}/{info.totalCount} {unitLabel})
                 </div>
               );
             })()}
@@ -459,7 +479,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
         <div className="absolute bottom-2 left-2 bg-black/70 rounded px-2 py-1 flex items-center gap-1.5">
           <span className="text-[9px] text-white/60">0%</span>
           <div className="w-24 h-2.5 rounded-sm" style={{
-            background: `linear-gradient(to right, ${getPercentageColor(1)}, ${getPercentageColor(25)}, ${getPercentageColor(50)}, ${getPercentageColor(75)}, ${getPercentageColor(100)})`
+            background: `linear-gradient(to right, ${getPercentageColor(1, colorPalette)}, ${getPercentageColor(25, colorPalette)}, ${getPercentageColor(50, colorPalette)}, ${getPercentageColor(75, colorPalette)}, ${getPercentageColor(100, colorPalette)})`
           }} />
           <span className="text-[9px] text-white/60">{maxPercentage.toFixed(0)}%</span>
         </div>

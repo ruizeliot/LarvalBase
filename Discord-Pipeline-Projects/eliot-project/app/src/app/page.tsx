@@ -67,6 +67,7 @@ export default function Home() {
     setCameFromFamily(selectedFamily);
     setCameFromGallery(viewMode === 'all-gallery');
     setSelectedFamily(null);
+    setMapFilteredSpecies(null);
     setViewMode('species');
     setSelectedSpecies({ id: slug, scientificName: name });
   };
@@ -115,6 +116,7 @@ export default function Home() {
             family={selectedFamily}
             onBack={() => {
               setSelectedFamily(null);
+              setMapFilteredSpecies(null);
               if (cameFromGallery) {
                 setViewMode('all-gallery');
               } else {
@@ -125,16 +127,18 @@ export default function Home() {
             onSelectSpecies={handleGallerySpeciesSelect}
             filteredSpeciesNames={filteredSpeciesNames}
             backLabel={cameFromGallery ? "Back to families gallery" : "Back to homepage"}
+            onMapFilterSpecies={handleMapFilterSpecies}
           />
         </Suspense>
       ) : viewMode === 'all-gallery' ? (
         <Suspense fallback={<HomepageSkeleton />}>
           <GalleryPage
             families={familyPhotos}
-            onBack={() => { setViewMode('homepage'); window.scrollTo({ top: 0 }); }}
+            onBack={() => { setViewMode('homepage'); setMapFilteredSpecies(null); window.scrollTo({ top: 0 }); }}
             onSelectFamily={handleGallerySelectFamily}
             onSelectSpecies={handleGallerySpeciesSelect}
             filteredSpeciesNames={filteredSpeciesNames}
+            onMapFilterSpecies={handleMapFilterSpecies}
           />
         </Suspense>
       ) : (
@@ -181,12 +185,12 @@ export default function Home() {
           {/* Gallery button ABOVE the map */}
           <button
             onClick={handleOpenGallery}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-lg border bg-card hover:bg-accent transition-colors text-left"
+            className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-colors text-left"
           >
-            <span className="text-sm font-semibold text-muted-foreground">
+            <span className="text-sm font-semibold text-white">
               Colored pictures of post-flexion and early juvenile stages library ({familyPhotos.length} families)
             </span>
-            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+            <ChevronRight className="h-5 w-5 text-white shrink-0" />
           </button>
 
           {/* Province map */}

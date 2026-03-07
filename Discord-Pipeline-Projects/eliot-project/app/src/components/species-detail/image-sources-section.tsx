@@ -13,6 +13,15 @@ interface ImageSourcesSectionProps {
 export function ImageSourcesSection({ images }: ImageSourcesSectionProps) {
   if (images.length === 0) return null;
 
+  // Deduplicate by author+link combination
+  const seen = new Set<string>();
+  const uniqueImages = images.filter((img) => {
+    const key = `${img.displayAuthor || ''}|${img.link || ''}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
@@ -34,7 +43,7 @@ export function ImageSourcesSection({ images }: ImageSourcesSectionProps) {
       </div>
 
       <ul className="space-y-2">
-        {images.map((img, index) => (
+        {uniqueImages.map((img, index) => (
           <li key={index} className="text-sm">
             <span>
               {img.displayAuthor}

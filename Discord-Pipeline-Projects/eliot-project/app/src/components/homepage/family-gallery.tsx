@@ -39,6 +39,8 @@ interface FamilyGalleryProps {
   filteredSpeciesNames?: Set<string> | null;
   /** Label for the back button */
   backLabel?: string;
+  /** Notify parent of map-based species filtering (for sidebar sync) */
+  onMapFilterSpecies?: (species: Set<string> | null) => void;
 }
 
 /**
@@ -50,11 +52,15 @@ interface FamilyGalleryProps {
  * Family-level images at bottom (red #F8766D)
  * No names below pictures.
  */
-export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpeciesNames, backLabel }: FamilyGalleryProps) {
+export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpeciesNames, backLabel, onMapFilterSpecies }: FamilyGalleryProps) {
   const [data, setData] = useState<GalleryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [provinceFilter, setProvinceFilter] = useState<Set<string> | null>(null);
+  const [provinceFilter, setProvinceFilterRaw] = useState<Set<string> | null>(null);
+  const setProvinceFilter = useCallback((species: Set<string> | null) => {
+    setProvinceFilterRaw(species);
+    onMapFilterSpecies?.(species);
+  }, [onMapFilterSpecies]);
   const [selectedProvinces, setSelectedProvinces] = useState<Set<string> | null>(null);
   const [provinceListExpanded, setProvinceListExpanded] = useState(false);
   const [provinceApiData, setProvinceApiData] = useState<Record<string, { count: number; species: string[] }> | null>(null);

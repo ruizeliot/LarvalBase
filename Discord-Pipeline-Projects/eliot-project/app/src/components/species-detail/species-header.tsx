@@ -50,9 +50,9 @@ export function SpeciesHeader({
   const currentImage = images[currentImageIndex];
 
   return (
-    <div className="flex gap-6 items-end">
+    <div className="flex gap-6 items-stretch">
       {/* Image gallery or skeleton */}
-      <div className="flex-shrink-0 w-[300px]">
+      <div className="flex-shrink-0 w-[300px] flex flex-col">
         {isLoading ? (
           <Skeleton className="w-full aspect-[4/3] rounded-lg" />
         ) : (
@@ -113,27 +113,28 @@ export function SpeciesHeader({
 
         {/* Photo credit — below contact email */}
         {currentImage && (
-          <div className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground space-y-1">
             <div>
-              <span>
-                Picture source:{' '}
-                {currentImage.link ? (
-                  <a
-                    href={currentImage.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-400 hover:underline"
-                  >
-                    {currentImage.displayAuthor}
-                  </a>
-                ) : (
-                  currentImage.displayAuthor
-                )}
-              </span>
-              {currentImage.uncertain ? (
-                <span className="text-red-500 font-medium ml-2">Unsure ID</span>
+              Picture source:{' '}
+              {currentImage.link ? (
+                <a
+                  href={currentImage.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-400 hover:underline"
+                >
+                  {currentImage.displayAuthor}
+                </a>
               ) : (
-                <span className="text-green-500 font-medium ml-2">Sure ID</span>
+                currentImage.displayAuthor
+              )}
+            </div>
+            <div>
+              Identification certainty:{' '}
+              {currentImage.uncertain ? (
+                <span className="text-red-500 font-medium">Unsure</span>
+              ) : (
+                <span className="text-green-500 font-medium">Sure</span>
               )}
             </div>
             {currentImage.scale !== undefined && (
@@ -141,6 +142,7 @@ export function SpeciesHeader({
                 className="text-xs italic"
                 style={{ color: currentImage.scale ? '#00BA38' : '#F8766D' }}
               >
+                Specimen length:{' '}
                 {currentImage.scale
                   ? 'Specimen size or scale available in the source'
                   : 'Specimen size or scale unavailable in the source'}
@@ -150,9 +152,14 @@ export function SpeciesHeader({
         )}
       </div>
 
-      {/* Species distribution mini-map */}
-      <div className="flex-shrink-0 w-[300px]">
-        <SpeciesProvinceMap speciesId={speciesId} />
+      {/* Species distribution mini-map — same height as picture panel */}
+      <div className="flex-shrink-0 w-[300px] flex flex-col">
+        <h3 className="text-xs font-semibold text-muted-foreground mb-1 text-center">
+          Distribution in Marine Ecoregions (MEOW) and Pelagic Provinces (PPOW)
+        </h3>
+        <div className="flex-1">
+          <SpeciesProvinceMap speciesId={speciesId} />
+        </div>
       </div>
     </div>
   );
