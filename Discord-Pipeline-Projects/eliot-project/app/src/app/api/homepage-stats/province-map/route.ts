@@ -12,10 +12,9 @@ import path from 'path';
 import Papa from 'papaparse';
 import { getOrLoadData } from '@/lib/data/data-repository';
 import { loadImageRegistry } from '@/lib/data/image-registry';
-import { buildCsvToProvinceMap, buildDotCsvToProvinceMap, ALL_PROVINCES } from '@/lib/constants/provinces';
+import { buildCsvToProvinceMap, ALL_PROVINCES } from '@/lib/constants/provinces';
 
 const CSV_TO_PROVINCE = buildCsvToProvinceMap();
-const DOT_CSV_TO_PROVINCE = buildDotCsvToProvinceMap();
 
 interface ProvinceMapData {
   provinces: Record<string, {
@@ -135,7 +134,7 @@ async function loadFamilyProvinceData(): Promise<ProvinceMapData> {
     skipEmptyLines: true,
     step: (result) => {
       const row = result.data as Record<string, string>;
-      for (const [csvCol, provinceName] of Object.entries(DOT_CSV_TO_PROVINCE)) {
+      for (const [csvCol, provinceName] of Object.entries(CSV_TO_PROVINCE)) {
         if (provinceName === 'NA') continue;
         const val = (row[csvCol] || '').replace(/^"|"$/g, '').toUpperCase();
         if (val === 'TRUE') {
