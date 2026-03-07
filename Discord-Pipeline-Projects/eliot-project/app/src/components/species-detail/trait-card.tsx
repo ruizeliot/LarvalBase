@@ -145,61 +145,63 @@ export function TraitCard({
           )}
         </div>
 
-        {/* Range and Records row */}
+        {/* Range/Records row: left side empty, right side has Min/Max/records */}
         <div
           className={cn(
-            "mt-3 pt-3 border-t flex items-center justify-between",
+            "mt-3 pt-3 border-t flex items-start justify-between",
             "text-sm"
           )}
         >
-          {/* Range */}
-          <div className={showRange ? "text-white" : "text-muted-foreground"}>
-            {showRange ? (
+          <div>&nbsp;</div>
+
+          {/* Right side: Min, Max, records */}
+          <div className="text-right space-y-0.5">
+            {showRange && (
               <>
-                Range: {formatNumber(min, 1)} - {formatNumber(max, 1)}
+                <div className="text-white">Min: {formatNumber(min, 1)}</div>
+                <div className="text-white">Max: {formatNumber(max, 1)}</div>
               </>
+            )}
+            {/* N records link — grey and non-clickable when 0 */}
+            {n === 0 ? (
+              <div className="text-muted-foreground">
+                0 records
+              </div>
             ) : (
-              <span>&nbsp;</span>
+              <div>
+                <button
+                  type="button"
+                  onClick={onRecordsClick}
+                  disabled={!onRecordsClick}
+                  className={cn(
+                    "text-primary hover:underline",
+                    !onRecordsClick && "cursor-default hover:no-underline"
+                  )}
+                >
+                  {n} record{n !== 1 ? "s" : ""}
+                </button>
+              </div>
             )}
           </div>
-
-          {/* N records link — grey and non-clickable when 0 */}
-          {n === 0 ? (
-            <span className="text-muted-foreground">
-              0 records
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={onRecordsClick}
-              disabled={!onRecordsClick}
-              className={cn(
-                "text-primary hover:underline",
-                !onRecordsClick && "cursor-default hover:no-underline"
-              )}
-            >
-              {n} record{n !== 1 ? "s" : ""}
-            </button>
-          )}
         </div>
 
         {/* Comparison values - only show if any stats provided and speciesCount > 1 */}
         {(genusStats !== undefined || familyStats !== undefined || orderStats !== undefined) && (
           <div className="mt-3 pt-3 border-t space-y-1">
             {genusStats !== undefined && genusStats !== null && (genusStats.speciesCount ?? 0) > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Genus average:</span>
                 <span className="font-mono">{formatComparison(genusStats, unit)}</span>
               </div>
             )}
             {familyStats !== undefined && familyStats !== null && (familyStats.speciesCount ?? 0) > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Family average:</span>
                 <span className="font-mono">{formatComparison(familyStats, unit)}</span>
               </div>
             )}
             {orderStats !== undefined && orderStats !== null && (orderStats.speciesCount ?? 0) > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Order average:</span>
                 <span className="font-mono">{formatComparison(orderStats, unit)}</span>
               </div>

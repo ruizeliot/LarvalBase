@@ -184,7 +184,7 @@ function computeBarChartData(
   rows: Record<string, unknown>[],
   meanCol: string,
   taxonomyName: string,
-  comparisonType: 'family' | 'genus'
+  comparisonType: 'family' | 'genus' | 'order'
 ): BarChartData | null {
   // Group by species
   const speciesMeans = new Map<string, { name: string; values: number[] }>();
@@ -249,8 +249,9 @@ function computeComparisonStats(
   speciesRows: Record<string, unknown>[],
   genusRows: Record<string, unknown>[],
   familyRows: Record<string, unknown>[],
-  meanCol: string
-): { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null } {
+  meanCol: string,
+  orderRows?: Record<string, unknown>[]
+): { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null; order: ComparisonLevel | null } {
   const computeLevel = (rows: Record<string, unknown>[]): ComparisonLevel | null => {
     const values: number[] = [];
     const speciesSet = new Set<string>();
@@ -271,6 +272,7 @@ function computeComparisonStats(
     species: computeLevel(speciesRows),
     genus: computeLevel(genusRows),
     family: computeLevel(familyRows),
+    order: orderRows ? computeLevel(orderRows) : null,
   };
 }
 
@@ -316,6 +318,9 @@ export async function getPelagicJuvenileData(
   );
   const familyRows = rows.filter(
     (r) => String(r['FAMILY'] ?? '').trim() === species.family
+  );
+  const orderRows = rows.filter(
+    (r) => String(r['ORDER'] ?? '').trim() === species.order
   );
 
   // Determine status
@@ -372,12 +377,16 @@ export async function getPelagicJuvenileData(
     if (genusChart) durationBarChart = genusChart;
   }
 
-  // Compute comparison stats for size
+  // Compute order bar charts
+  const sizeOrderBarChart = computeBarChartData(orderRows, 'PELAGIC_JUV_SIZE_MEAN', species.order, 'order');
+  const durationOrderBarChart = computeBarChartData(orderRows, 'PELAGIC_JUV_DURATION_MEAN', species.order, 'order');
+
+  // Compute comparison stats for size (including order)
   const sizeComparisons = computeComparisonStats(
-    speciesRows, genusRows, familyRows, 'PELAGIC_JUV_SIZE_MEAN'
+    speciesRows, genusRows, familyRows, 'PELAGIC_JUV_SIZE_MEAN', orderRows
   );
   const durationComparisons = computeComparisonStats(
-    speciesRows, genusRows, familyRows, 'PELAGIC_JUV_DURATION_MEAN'
+    speciesRows, genusRows, familyRows, 'PELAGIC_JUV_DURATION_MEAN', orderRows
   );
 
   // Determine cascade level
@@ -403,5 +412,7 @@ export async function getPelagicJuvenileData(
     currentSpeciesId: speciesId,
     sizeBarChart,
     durationBarChart,
+    sizeOrderBarChart,
+    durationOrderBarChart,
   };
 }

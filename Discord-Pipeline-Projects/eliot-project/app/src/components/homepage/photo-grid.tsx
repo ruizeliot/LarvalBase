@@ -60,15 +60,17 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
             onClick={() => onSelectFamily?.(fam.family)}
           >
             {/* Image with letterbox/pillarbox (contain + black bg) */}
-            <div className="relative w-full h-32 bg-black flex items-center justify-center text-2xl">
+            <div className="relative w-full h-32 bg-black flex items-center justify-center text-2xl protected-image-wrapper">
               {fam.imageUrl ? (
                 <img
                   src={fam.imageUrl}
                   alt={fam.family}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-contain"
+                  className="w-full h-full object-contain protected-image"
+                  draggable={false}
                   onContextMenu={(e) => e.preventDefault()}
+                  onDragStart={(e) => e.preventDefault()}
                 />
               ) : (
                 '🐟'

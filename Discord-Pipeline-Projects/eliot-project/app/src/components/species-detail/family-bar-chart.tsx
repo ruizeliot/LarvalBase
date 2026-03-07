@@ -131,12 +131,12 @@ export function FamilyBarChart({
   const fontFamily = 'Segoe UI Semilight, Segoe UI, -apple-system, sans-serif';
 
   // Colors as specified:
-  // - Current species: #00BA38 (green)
-  // - GENUS comparison: #619CFF (blue)
+  // - Focal bar (current species): #7CAE00 (green)
+  // - ORDER comparison: #C77CFF (purple)
   // - FAMILY comparison: #F8766D (coral red)
-  // - ORDER comparison: #9B59B6 (purple)
-  const currentSpeciesColor = '#00BA38';
-  const otherSpeciesColor = comparisonType === 'genus' ? '#619CFF' : comparisonType === 'order' ? '#9B59B6' : '#F8766D';
+  // - GENUS comparison: #00BFC4 (teal)
+  const currentSpeciesColor = '#7CAE00';
+  const otherSpeciesColor = comparisonType === 'genus' ? '#00BFC4' : comparisonType === 'order' ? '#C77CFF' : '#F8766D';
 
   return (
     <div className="space-y-2">

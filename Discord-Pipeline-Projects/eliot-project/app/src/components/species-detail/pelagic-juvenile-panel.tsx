@@ -88,7 +88,7 @@ export interface BarChartSpeciesEntry {
  */
 export interface BarChartData {
   entries: BarChartSpeciesEntry[];
-  comparisonType: 'family' | 'genus';
+  comparisonType: 'family' | 'genus' | 'order';
   taxonomyName: string;
 }
 
@@ -112,16 +112,20 @@ export interface PelagicJuvenileData {
       species: ComparisonLevel | null;
       genus: ComparisonLevel | null;
       family: ComparisonLevel | null;
+      order?: ComparisonLevel | null;
     };
     duration: {
       species: ComparisonLevel | null;
       genus: ComparisonLevel | null;
       family: ComparisonLevel | null;
+      order?: ComparisonLevel | null;
     };
   } | null;
   currentSpeciesId?: string;
   sizeBarChart?: BarChartData | null;
   durationBarChart?: BarChartData | null;
+  sizeOrderBarChart?: BarChartData | null;
+  durationOrderBarChart?: BarChartData | null;
 }
 
 interface PelagicJuvenilePanelProps {
@@ -395,6 +399,7 @@ function NumericTraitPanel({
   records,
   comparisons,
   barChartData,
+  orderBarChartData,
   currentSpeciesId,
   traitType,
   showComparison,
@@ -403,8 +408,9 @@ function NumericTraitPanel({
   stats: PelagicJuvenileStats;
   unit: string;
   records: DotStripRecord[];
-  comparisons: { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null } | null;
+  comparisons: { species: ComparisonLevel | null; genus: ComparisonLevel | null; family: ComparisonLevel | null; order?: ComparisonLevel | null } | null;
   barChartData?: BarChartData | null;
+  orderBarChartData?: BarChartData | null;
   currentSpeciesId?: string;
   traitType: 'size' | 'duration';
   showComparison?: boolean;
@@ -454,40 +460,44 @@ function NumericTraitPanel({
           )}
         </div>
 
-        {/* Range and Records row */}
-        <div className="mt-3 pt-3 border-t flex items-center justify-between text-sm">
-          <div className={showRange ? "text-white" : "text-muted-foreground"}>
-            {showRange ? (
-              <>Range: {stats.min!.toFixed(1)} - {stats.max!.toFixed(1)}</>
+        {/* Range/Records row */}
+        <div className="mt-3 pt-3 border-t flex items-start justify-between text-sm">
+          <div>&nbsp;</div>
+          <div className="text-right space-y-0.5">
+            {showRange && (
+              <>
+                <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
+                <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
+              </>
+            )}
+            {stats.n === 0 ? (
+              <div className="text-muted-foreground" data-testid="records-link">
+                0 records
+              </div>
             ) : (
-              <span>&nbsp;</span>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="text-primary hover:underline"
+                  data-testid="records-link"
+                >
+                  {stats.n} record{stats.n !== 1 ? 's' : ''}
+                </button>
+              </div>
             )}
           </div>
-          {/* N records link — grey and non-clickable when 0 */}
-          {stats.n === 0 ? (
-            <span className="text-muted-foreground" data-testid="records-link">
-              0 records
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-primary hover:underline"
-              data-testid="records-link"
-            >
-              {stats.n} record{stats.n !== 1 ? 's' : ''}
-            </button>
-          )}
         </div>
 
-        {/* Genus/Family comparison text — hide when only 1 species known */}
+        {/* Genus/Family/Order comparison text — hide when only 1 species known */}
         {comparisons && (
           (comparisons.genus && comparisons.genus.speciesCount > 1) ||
-          (comparisons.family && comparisons.family.speciesCount > 1)
+          (comparisons.family && comparisons.family.speciesCount > 1) ||
+          (comparisons.order && comparisons.order.speciesCount > 1)
         ) && (
           <div className="mt-3 pt-3 border-t space-y-1" data-testid="comparison-text">
             {comparisons.genus && comparisons.genus.speciesCount > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Genus average:</span>
                 <span className="font-mono">
                   {comparisons.genus.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.genus.speciesCount})
@@ -495,15 +505,20 @@ function NumericTraitPanel({
               </div>
             )}
             {comparisons.family && comparisons.family.speciesCount > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Family average:</span>
                 <span className="font-mono">
                   {comparisons.family.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.family.speciesCount})
                 </span>
               </div>
             )}
-            {comparisons.species === null && !comparisons.genus && !comparisons.family && (
-              <div className="text-sm text-muted-foreground italic">No comparison data available</div>
+            {comparisons.order && comparisons.order.speciesCount > 1 && (
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
+                <span className="text-muted-foreground">Order average:</span>
+                <span className="font-mono">
+                  {comparisons.order.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.order.speciesCount})
+                </span>
+              </div>
             )}
           </div>
         )}
@@ -518,6 +533,19 @@ function NumericTraitPanel({
               traitLabel={label}
               comparisonType={barChartData.comparisonType}
               taxonomyName={barChartData.taxonomyName}
+            />
+          </div>
+        )}
+        {/* Order bar chart comparison */}
+        {showComparison && orderBarChartData && orderBarChartData.entries.length > 0 && currentSpeciesId && (
+          <div className="mt-4 pt-4 border-t">
+            <FamilyBarChart
+              data={orderBarChartData.entries}
+              currentSpeciesId={currentSpeciesId}
+              unit={unit}
+              traitLabel={label}
+              comparisonType="order"
+              taxonomyName={orderBarChartData.taxonomyName}
             />
           </div>
         )}
@@ -555,6 +583,7 @@ export function PelagicJuvenilePanel({ data, showComparison }: PelagicJuvenilePa
         records={data.sizeRecords}
         comparisons={data.comparisonStats?.size ?? null}
         barChartData={data.sizeBarChart}
+        orderBarChartData={data.sizeOrderBarChart}
         currentSpeciesId={data.currentSpeciesId}
         traitType="size"
         showComparison={showComparison}
@@ -566,6 +595,7 @@ export function PelagicJuvenilePanel({ data, showComparison }: PelagicJuvenilePa
         records={data.durationRecords}
         comparisons={data.comparisonStats?.duration ?? null}
         barChartData={data.durationBarChart}
+        orderBarChartData={data.durationOrderBarChart}
         currentSpeciesId={data.currentSpeciesId}
         traitType="duration"
         showComparison={showComparison}

@@ -237,7 +237,7 @@ function computeBarChartData(
   rows: Record<string, unknown>[],
   meanCol: string,
   taxonomyName: string,
-  comparisonType: 'family' | 'genus'
+  comparisonType: 'family' | 'genus' | 'order'
 ): BarChartData | null {
   const speciesMeans = new Map<string, { name: string; values: number[] }>();
 
@@ -300,8 +300,9 @@ function computeComparisonStats(
   speciesRows: Record<string, unknown>[],
   genusRows: Record<string, unknown>[],
   familyRows: Record<string, unknown>[],
-  meanCol: string
-): { species: RaftingComparisonLevel | null; genus: RaftingComparisonLevel | null; family: RaftingComparisonLevel | null } {
+  meanCol: string,
+  orderRows?: Record<string, unknown>[]
+): { species: RaftingComparisonLevel | null; genus: RaftingComparisonLevel | null; family: RaftingComparisonLevel | null; order: RaftingComparisonLevel | null } {
   const computeLevel = (rows: Record<string, unknown>[]): RaftingComparisonLevel | null => {
     const values: number[] = [];
     const speciesSet = new Set<string>();
@@ -322,6 +323,7 @@ function computeComparisonStats(
     species: computeLevel(speciesRows),
     genus: computeLevel(genusRows),
     family: computeLevel(familyRows),
+    order: orderRows ? computeLevel(orderRows) : null,
   };
 }
 
@@ -366,6 +368,9 @@ export async function getRaftingData(
   const familyRows = rows.filter(
     (r) => String(r['FAMILY'] ?? '').trim() === species.family
   );
+  const orderRows = rows.filter(
+    (r) => String(r['ORDER'] ?? '').trim() === species.order
+  );
 
   // Determine status
   const isKnown = speciesRows.length > 0;
@@ -406,9 +411,12 @@ export async function getRaftingData(
     if (genusChart) sizeBarChart = genusChart;
   }
 
+  // Compute order bar chart
+  const sizeOrderBarChart = computeBarChartData(orderRows, 'RAFTING_SIZE_MEAN', species.order, 'order');
+
   // Compute comparison stats
   const sizeComparisons = computeComparisonStats(
-    speciesRows, genusRows, familyRows, 'RAFTING_SIZE_MEAN'
+    speciesRows, genusRows, familyRows, 'RAFTING_SIZE_MEAN', orderRows
   );
 
   // Determine cascade level
@@ -430,11 +438,12 @@ export async function getRaftingData(
     ageStats: { mean: null, sd: null, min: null, max: null, n: 0 },
     comparisonStats: {
       size: sizeComparisons,
-      age: { species: null, genus: null, family: null },
+      age: { species: null, genus: null, family: null, order: null },
     },
     currentSpeciesId: speciesId,
     sizeBarChart,
     ageBarChart: null,
+    sizeOrderBarChart,
     flotsamFrequencies,
     stageFrequencies,
     ageFrequencies,

@@ -443,8 +443,10 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
             <img
               src={allImages[lightboxIndex].imageUrl}
               alt={allImages[lightboxIndex].species || family}
-              className="max-w-full max-h-[75vh] object-contain"
+              className="max-w-full max-h-[75vh] object-contain protected-image"
+              draggable={false}
               onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
             />
             <div className="mt-2 text-white text-center">
               <p className="text-sm text-white/60">
@@ -494,14 +496,16 @@ function ImageGrid({
           title={img.uncertain ? "Unsure ID" : undefined}
           onClick={() => onClickImage(startIndex + i)}
         >
-          <div className="w-full h-28 bg-black">
+          <div className="w-full h-28 bg-black protected-image-wrapper">
             <img
               src={img.imageUrl}
               alt={img.species || img.genus || ""}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-contain"
+              className="w-full h-full object-contain protected-image"
+              draggable={false}
               onContextMenu={(e) => e.preventDefault()}
+              onDragStart={(e) => e.preventDefault()}
             />
           </div>
         </div>

@@ -183,6 +183,22 @@ export async function GET() {
       }
     }
 
+    // Manual thumbnail overrides: dark BG, subject fills frame
+    const THUMBNAIL_OVERRIDES: Record<string, { path: string; filename: string }> = {
+      'Gobiidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Gobiidae - gobiidae - Ryo Minemizu - 2020-08-23_07-47-16_1.jpg' },
+      'Ophidiidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Ophidiidae - cusk eel. - Steven Kovacs - 2023-12-24_13-02-31_1.jpg' },
+      'Holocentridae': { path: 'classified_bw_images_family', filename: 'Sure ID - Holocentridae - holocentridae - Yuichi Mazda - 2022-08-08_00-41-32_1.jpg' },
+      'Epinephelidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Epinephelidae - grouper - Susan Mears - Blackwater-072116-9482-web_1.jpg' },
+      'Scorpaenidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Scorpaenidae - scorpionfish - Steven Kovacs - 2018-08-26_13-58-13_1.jpg' },
+      'Paralichthyidae': { path: 'Larvae literature images database - Renamed', filename: 'Citharichthys macrops - Sure ID - Species level - Vasquez-Yeomans et al. (2011) - MFLS3861+1287589682.jpg.jpg' },
+      'Acanthuridae': { path: 'classified_bw_images_family', filename: 'Sure ID - Acanthuridae - surgeonfish - Suzan Meldonian - Surgeonfish-larva-9-1-18-8510lr_1.jpg' },
+      'Synodontidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Synodontidae - lizardfish - Suzan Meldonian - Lizardfish-larva-7-9-16-706_1.jpg' },
+      'Antennariidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Antennariidae - frogfish - Steven Kovacs - 2021-05-09_18-58-59_1.jpg' },
+      'Peristediidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Peristediidae - #peristediidae - Chris Gug - 2025-06-10_13-09-46_1.jpg' },
+      'Gibberichthyidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Gibberichthys latifrons - gibberichthys_latifrons - Ryo Minemizu - 2025-07-16_09-50-34_1.jpg' },
+      'Brotulidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Brotula multibarbata - brotula multibarbata - Ryo Minemizu - 2019-03-21_01-03-48_1.jpg' },
+    };
+
     // Select best valid thumbnail per family:
     // Priority groups (dark = brightness < 80):
     //   1. Species-level + dark + blackwater author
@@ -222,7 +238,21 @@ export async function GET() {
       return 7;
     }
 
+    // Apply manual overrides first
+    for (const [family, override] of Object.entries(THUMBNAIL_OVERRIDES)) {
+      try {
+        const filePath = path.join(imagesDir, override.path, override.filename);
+        const stat = await fs.stat(filePath);
+        if (stat.size > 0) {
+          familyImageMap.set(family, buildImageUrl(override.path, override.filename));
+        }
+      } catch {
+        // Override image not found — fall through to automatic selection
+      }
+    }
+
     for (const [family, candidates] of familyCandidates) {
+      if (familyImageMap.has(family)) continue; // skip if override already set
       candidates.sort((a, b) => {
         // Certain before uncertain
         if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;

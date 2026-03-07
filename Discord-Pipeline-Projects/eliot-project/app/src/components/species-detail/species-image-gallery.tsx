@@ -66,19 +66,21 @@ function SpeciesImageWithFallback({
   }
 
   return (
-    <div 
-      className="relative w-full h-full cursor-pointer group"
+    <div
+      className="relative w-full h-full cursor-pointer group protected-image-wrapper"
       onClick={onClick}
     >
       <Image
         src={imageSrc}
         alt={`${speciesName} - photo by ${image.displayAuthor}`}
         fill
-        className="object-contain"
+        className="object-contain protected-image"
         sizes="(max-width: 768px) 100vw, 400px"
         unoptimized
+        draggable={false}
         onError={() => setHasError(true)}
         onContextMenu={(e) => e.preventDefault()}
+        onDragStart={(e) => e.preventDefault()}
       />
       {showZoomHint && (
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">

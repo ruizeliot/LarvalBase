@@ -86,7 +86,7 @@ export interface BarChartSpeciesEntry {
  */
 export interface BarChartData {
   entries: BarChartSpeciesEntry[];
-  comparisonType: 'family' | 'genus';
+  comparisonType: 'family' | 'genus' | 'order';
   taxonomyName: string;
 }
 
@@ -130,16 +130,19 @@ export interface RaftingData {
       species: RaftingComparisonLevel | null;
       genus: RaftingComparisonLevel | null;
       family: RaftingComparisonLevel | null;
+      order?: RaftingComparisonLevel | null;
     };
     age: {
       species: RaftingComparisonLevel | null;
       genus: RaftingComparisonLevel | null;
       family: RaftingComparisonLevel | null;
+      order?: RaftingComparisonLevel | null;
     };
   } | null;
   currentSpeciesId?: string;
   sizeBarChart?: BarChartData | null;
   ageBarChart?: BarChartData | null;
+  sizeOrderBarChart?: BarChartData | null;
   flotsamFrequencies?: FrequencyCount[];
   stageFrequencies?: FrequencyCount[];
   ageFrequencies?: FrequencyCount[];
@@ -472,6 +475,7 @@ function NumericTraitPanel({
   records,
   comparisons,
   barChartData,
+  orderBarChartData,
   currentSpeciesId,
   traitType,
   showComparison,
@@ -480,8 +484,9 @@ function NumericTraitPanel({
   stats: RaftingStats;
   unit: string;
   records: RaftingDotStripRecord[];
-  comparisons: { species: RaftingComparisonLevel | null; genus: RaftingComparisonLevel | null; family: RaftingComparisonLevel | null } | null;
+  comparisons: { species: RaftingComparisonLevel | null; genus: RaftingComparisonLevel | null; family: RaftingComparisonLevel | null; order?: RaftingComparisonLevel | null } | null;
   barChartData?: BarChartData | null;
+  orderBarChartData?: BarChartData | null;
   currentSpeciesId?: string;
   traitType: 'size' | 'age';
   showComparison?: boolean;
@@ -529,38 +534,42 @@ function NumericTraitPanel({
           )}
         </div>
 
-        <div className="mt-3 pt-3 border-t flex items-center justify-between text-sm">
-          <div className={showRange ? "text-white" : "text-muted-foreground"}>
-            {showRange ? (
-              <>Range: {stats.min!.toFixed(1)} - {stats.max!.toFixed(1)}</>
+        <div className="mt-3 pt-3 border-t flex items-start justify-between text-sm">
+          <div>&nbsp;</div>
+          <div className="text-right space-y-0.5">
+            {showRange && (
+              <>
+                <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
+                <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
+              </>
+            )}
+            {stats.n === 0 ? (
+              <div className="text-muted-foreground" data-testid="records-link">
+                0 records
+              </div>
             ) : (
-              <span>&nbsp;</span>
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="text-primary hover:underline"
+                  data-testid="records-link"
+                >
+                  {stats.n} record{stats.n !== 1 ? 's' : ''}
+                </button>
+              </div>
             )}
           </div>
-          {/* N records link — grey and non-clickable when 0 */}
-          {stats.n === 0 ? (
-            <span className="text-muted-foreground" data-testid="records-link">
-              0 records
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-primary hover:underline"
-              data-testid="records-link"
-            >
-              {stats.n} record{stats.n !== 1 ? 's' : ''}
-            </button>
-          )}
         </div>
 
         {comparisons && (
           (comparisons.genus && comparisons.genus.speciesCount > 1) ||
-          (comparisons.family && comparisons.family.speciesCount > 1)
+          (comparisons.family && comparisons.family.speciesCount > 1) ||
+          (comparisons.order && comparisons.order.speciesCount > 1)
         ) && (
           <div className="mt-3 pt-3 border-t space-y-1" data-testid="comparison-text">
             {comparisons.genus && comparisons.genus.speciesCount > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Genus average:</span>
                 <span className="font-mono">
                   {comparisons.genus.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.genus.speciesCount})
@@ -568,10 +577,18 @@ function NumericTraitPanel({
               </div>
             )}
             {comparisons.family && comparisons.family.speciesCount > 1 && (
-              <div className="flex justify-between text-sm">
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">Family average:</span>
                 <span className="font-mono">
                   {comparisons.family.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.family.speciesCount})
+                </span>
+              </div>
+            )}
+            {comparisons.order && comparisons.order.speciesCount > 1 && (
+              <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
+                <span className="text-muted-foreground">Order average:</span>
+                <span className="font-mono">
+                  {comparisons.order.mean.toFixed(2)} {unit} (n<sub>sp</sub> = {comparisons.order.speciesCount})
                 </span>
               </div>
             )}
@@ -587,6 +604,18 @@ function NumericTraitPanel({
               traitLabel={label}
               comparisonType={barChartData.comparisonType}
               taxonomyName={barChartData.taxonomyName}
+            />
+          </div>
+        )}
+        {showComparison && orderBarChartData && orderBarChartData.entries.length > 0 && currentSpeciesId && (
+          <div className="mt-4 pt-4 border-t">
+            <FamilyBarChart
+              data={orderBarChartData.entries}
+              currentSpeciesId={currentSpeciesId}
+              unit={unit}
+              traitLabel={label}
+              comparisonType="order"
+              taxonomyName={orderBarChartData.taxonomyName}
             />
           </div>
         )}
@@ -760,6 +789,7 @@ export function RaftingPanel({ data, showComparison }: RaftingPanelProps) {
         records={data.sizeRecords}
         comparisons={data.comparisonStats?.size ?? null}
         barChartData={data.sizeBarChart}
+        orderBarChartData={data.sizeOrderBarChart}
         currentSpeciesId={data.currentSpeciesId}
         traitType="size"
         showComparison={showComparison}
