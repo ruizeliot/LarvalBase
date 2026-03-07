@@ -132,6 +132,12 @@ export function buildCsvToProvinceMap(): Record<string, string> {
   map['St  Helena and Ascension Islands'] = 'St. Helena and Ascension Islands';
   map['Juan Fernandez and Desventuradas'] = 'Juan Fernández and Desventuradas';
 
+  // Red Sea & Mediterranean aliases (CSV names with coastal/offshore qualifiers)
+  map['Red Sea and Gulf of Aden (coastal)'] = 'Red Sea and Gulf of Aden';
+  map['Red Sea (offshore)'] = 'Red Sea';
+  map['Mediterranean Sea (offshore)'] = 'Mediterranean';
+  map['Mediterranean Sea (coastal)'] = 'Mediterranean Sea';
+
   return map;
 }
 
@@ -193,8 +199,8 @@ export function buildDotCsvToProvinceMap(): Record<string, string> {
     'Marquesas': 'Marquesas',
     'Marshall.Gilbert.and.Ellis.Islands': 'Marshall, Gilbert and Ellis Islands',
     'Marshall..Gilbert.and.Ellis.Islands': 'Marshall, Gilbert and Ellis Islands',
-    'Mediterranean.Sea..offshore.': 'Mediterranean Sea',
-    'Mediterranean.Sea..coastal.': 'Mediterranean',
+    'Mediterranean.Sea..offshore.': 'Mediterranean',
+    'Mediterranean.Sea..coastal.': 'Mediterranean Sea',
     'NA.': 'NA',
     'Non.gyral.Southwest.Pacific': 'Non-gyral Southwest Pacific',
     'Non.gyral.Southwest.Pacific.1': 'Non-gyral Southwest Pacific',

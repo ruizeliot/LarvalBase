@@ -58,7 +58,7 @@ export function ImageCaption({ displayAuthor, uncertain, scale, link }: ImageCap
             style={{ color: '#F8766D' }}
             title="Species identification is uncertain"
           >
-            (Unsure ID)
+            Unsure ID
           </span>
         ) : (
           <span
@@ -66,7 +66,7 @@ export function ImageCaption({ displayAuthor, uncertain, scale, link }: ImageCap
             style={{ color: '#00BA38' }}
             title="Species identification is confirmed"
           >
-            (Sure ID)
+            Sure ID
           </span>
         )}
       </div>

@@ -3,14 +3,33 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
 
+const BASE_PALETTE = [
+  '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
+  '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
+  '#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
+  '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928',
+];
+
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function lighten(hex: string, f: number): string {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(r+(255-r)*f, g+(255-g)*f, b+(255-b)*f);
+}
+function darken(hex: string, f: number): string {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(r*(1-f), g*(1-f), b*(1-f));
+}
+
 const PROVINCE_COLORS = [
-  '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4',
-  '#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff',
-  '#9A6324','#800000','#aaffc3','#808000','#ffd8b1','#000075',
-  '#a9a9a9','#e6beff','#fffac8','#ff6347','#00ced1','#7b68ee',
-  '#ff69b4','#20b2aa','#daa520','#8b4513','#00fa9a','#b22222',
-  '#4682b4','#ffa07a','#6b8e23','#cd5c5c','#48d1cc','#c71585',
-  '#db7093',
+  ...BASE_PALETTE,
+  ...BASE_PALETTE.map(c => lighten(c, 0.35)),
+  ...BASE_PALETTE.map(c => darken(c, 0.35)),
 ];
 
 function normalizeProvince(name: string): string {
@@ -53,6 +72,77 @@ function applyTransform(
     t.x = 0; t.y = 0; t.scale = 1;
   }
   gEl.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
+}
+
+/**
+ * Extract coordinate keys from GeoJSON geometry for adjacency detection.
+ */
+function extractCoordKeys(geometry: GeoJSON.Geometry): Set<string> {
+  const keys = new Set<string>();
+  function walk(coords: unknown) {
+    if (!Array.isArray(coords)) return;
+    if (coords.length >= 2 && typeof coords[0] === 'number' && typeof coords[1] === 'number') {
+      keys.add(`${Math.round(coords[0] * 10)},${Math.round(coords[1] * 10)}`);
+      return;
+    }
+    for (const c of coords) walk(c);
+  }
+  if ('coordinates' in geometry) walk((geometry as { coordinates: unknown }).coordinates);
+  if (geometry.type === 'GeometryCollection' && 'geometries' in geometry) {
+    for (const g of (geometry as GeoJSON.GeometryCollection).geometries) {
+      const sub = extractCoordKeys(g);
+      sub.forEach(k => keys.add(k));
+    }
+  }
+  return keys;
+}
+
+function buildAdjacencyGraph(features: GeoFeature[]): Map<string, Set<string>> {
+  const adj = new Map<string, Set<string>>();
+  const coordIndex = new Map<string, string[]>();
+  for (const f of features) {
+    const name = f.properties?.PROVINCE;
+    if (!name || !f.geometry) continue;
+    if (!adj.has(name)) adj.set(name, new Set());
+    const keys = extractCoordKeys(f.geometry);
+    for (const k of keys) {
+      const existing = coordIndex.get(k);
+      if (existing) {
+        for (const neighbor of existing) {
+          if (neighbor !== name) {
+            adj.get(name)!.add(neighbor);
+            adj.get(neighbor)!.add(name);
+          }
+        }
+        existing.push(name);
+      } else {
+        coordIndex.set(k, [name]);
+      }
+    }
+  }
+  return adj;
+}
+
+function graphColorProvinces(
+  provinceNames: string[],
+  adjacency: Map<string, Set<string>>,
+  palette: string[]
+): Map<string, string> {
+  const colorMap = new Map<string, string>();
+  for (const name of provinceNames) {
+    const neighbors = adjacency.get(name) ?? new Set();
+    const usedColors = new Set<string>();
+    for (const n of neighbors) {
+      const c = colorMap.get(n);
+      if (c) usedColors.add(c);
+    }
+    let assigned = palette[0];
+    for (const c of palette) {
+      if (!usedColors.has(c)) { assigned = c; break; }
+    }
+    colorMap.set(name, assigned);
+  }
+  return colorMap;
 }
 
 export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
@@ -143,17 +233,19 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     return false;
   }, [presentProvinces]);
 
+  const adjacencyGraph = useMemo(() => {
+    if (!geoData) return new Map<string, Set<string>>();
+    return buildAdjacencyGraph(geoData.features);
+  }, [geoData]);
+
   const provinceColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    const sorted = [...presentProvinces].sort();
-    sorted.forEach((name, i) => {
-      map.set(normalizeProvince(name), PROVINCE_COLORS[i % PROVINCE_COLORS.length]);
-    });
-    return map;
-  }, [presentProvinces]);
+    if (!geoData) return new Map<string, string>();
+    const allGeoNames = [...new Set(geoData.features.map(f => f.properties?.PROVINCE).filter(Boolean))] as string[];
+    return graphColorProvinces(allGeoNames, adjacencyGraph, PROVINCE_COLORS);
+  }, [geoData, adjacencyGraph]);
 
   function getColor(featureName: string): string {
-    return provinceColorMap.get(normalizeProvince(featureName)) ?? "none";
+    return provinceColorMap.get(featureName) ?? "none";
   }
 
   // Auto-zoom to species region (uses ref-based transform)

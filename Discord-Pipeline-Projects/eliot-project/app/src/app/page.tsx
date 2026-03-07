@@ -102,7 +102,7 @@ export default function Home() {
   }, []);
 
   return (
-    <MainLayout sidebar={<AppSidebar onSelectSpecies={(sp) => { setCameFromFamily(null); setCameFromGallery(false); setViewMode('species'); setSelectedSpecies(sp); }} onFilteredSpeciesChange={handleFilteredSpeciesChange} />}>
+    <MainLayout sidebar={<AppSidebar onSelectSpecies={(sp) => { setCameFromFamily(null); setCameFromGallery(false); setViewMode('species'); setSelectedSpecies(sp); }} onFilteredSpeciesChange={handleFilteredSpeciesChange} mapFilteredSpecies={mapFilteredSpecies} />}>
       {viewMode === 'species' && selectedSpecies ? (
         <SpeciesDetail
           speciesId={selectedSpecies.id}
@@ -124,6 +124,7 @@ export default function Home() {
             }}
             onSelectSpecies={handleGallerySpeciesSelect}
             filteredSpeciesNames={filteredSpeciesNames}
+            backLabel={cameFromGallery ? "Back to families gallery" : "Back to homepage"}
           />
         </Suspense>
       ) : viewMode === 'all-gallery' ? (
@@ -177,7 +178,18 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Province map ABOVE publications */}
+          {/* Gallery button ABOVE the map */}
+          <button
+            onClick={handleOpenGallery}
+            className="w-full flex items-center justify-between px-4 py-3 rounded-lg border bg-card hover:bg-accent transition-colors text-left"
+          >
+            <span className="text-sm font-semibold text-muted-foreground">
+              Colored pictures of post-flexion and early juvenile stages library ({familyPhotos.length} families)
+            </span>
+            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
+          </button>
+
+          {/* Province map */}
           <Suspense fallback={<HomepageSkeleton />}>
             <HomepageProvinceMap onFilterSpecies={handleMapFilterSpecies} />
           </Suspense>
@@ -191,17 +203,6 @@ export default function Home() {
           <Suspense fallback={<HomepageSkeleton />}>
             <HomepageSettlementMap />
           </Suspense>
-
-          {/* Gallery button (replaces inline PhotoGrid) */}
-          <button
-            onClick={handleOpenGallery}
-            className="w-full flex items-center justify-between px-4 py-3 rounded-lg border bg-card hover:bg-accent transition-colors text-left"
-          >
-            <span className="text-sm font-semibold text-muted-foreground">
-              Colored pictures of post-flexion and early juvenile stages library ({familyPhotos.length} families)
-            </span>
-            <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-          </button>
         </div>
       )}
     </MainLayout>

@@ -78,6 +78,8 @@ interface AppSidebarProps {
   onSelectSpecies?: (species: { id: string; scientificName: string }) => void;
   /** Notify parent when trait filters change the set of visible species names. null = no filter active. */
   onFilteredSpeciesChange?: (names: Set<string> | null) => void;
+  /** External filter from map province click. When set, only show species in this set. */
+  mapFilteredSpecies?: Set<string> | null;
 }
 
 /**
@@ -90,7 +92,7 @@ interface AppSidebarProps {
  * - SpeciesSearch receives ALL species (filters internally via cmdk)
  * - Trait filter uses OR logic: species with ANY selected trait type shown
  */
-export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange }: AppSidebarProps) {
+export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilteredSpecies }: AppSidebarProps) {
   // Fetch species and taxonomy data
   const {
     species,
@@ -108,23 +110,29 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange }: AppSide
 
   // Filter species using the dedicated hook (for tree/count display)
   // Single search bar searches within filtered results when filters are active
-  const filteredSpecies = useFilteredSpecies({
+  const traitFilteredSpecies = useFilteredSpecies({
     species,
     searchTerm: debouncedSearch,
     selectedTraits,
     traitsBySpecies,
   });
 
+  // Apply map province filter on top of trait/search filters
+  const filteredSpecies = useMemo(() => {
+    if (!mapFilteredSpecies) return traitFilteredSpecies;
+    return traitFilteredSpecies.filter(sp => mapFilteredSpecies.has(sp.scientificName));
+  }, [traitFilteredSpecies, mapFilteredSpecies]);
+
   // Build filtered taxonomy tree from filtered species
   const filteredTaxonomy = useMemo((): TaxonomyNodeJSON | null => {
     if (!taxonomy) return null;
     // If no filters are active, use the full taxonomy
-    if (selectedTraits.size === 0 && !debouncedSearch.trim()) {
+    if (selectedTraits.size === 0 && !debouncedSearch.trim() && !mapFilteredSpecies) {
       return taxonomy;
     }
     // Build taxonomy from filtered species
     return buildTaxonomyFromSpecies(filteredSpecies);
-  }, [taxonomy, filteredSpecies, selectedTraits, debouncedSearch]);
+  }, [taxonomy, filteredSpecies, selectedTraits, debouncedSearch, mapFilteredSpecies]);
 
   // Notify parent when trait filter changes the visible species set
   useEffect(() => {

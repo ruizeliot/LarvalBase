@@ -94,9 +94,11 @@ function applyTransform(
 
 interface HomepageProvinceMapProps {
   onFilterSpecies?: (species: Set<string> | null) => void;
+  /** When 'families', show percentage of families per province instead of species */
+  mode?: 'species' | 'families';
 }
 
-export function HomepageProvinceMap({ onFilterSpecies }: HomepageProvinceMapProps) {
+export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: HomepageProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<Record<string, ProvinceApiData> | null>(null);
@@ -129,9 +131,11 @@ export function HomepageProvinceMap({ onFilterSpecies }: HomepageProvinceMapProp
   // Load province percentage data
   useEffect(() => {
     setIsLoading(true);
-    const url = selectedTrait === "all"
-      ? "/api/homepage-stats/province-map"
-      : `/api/homepage-stats/province-map?trait=${encodeURIComponent(selectedTrait)}`;
+    const params = new URLSearchParams();
+    if (selectedTrait !== "all") params.set('trait', selectedTrait);
+    if (mode === 'families') params.set('mode', 'families');
+    const qs = params.toString();
+    const url = `/api/homepage-stats/province-map${qs ? `?${qs}` : ''}`;
 
     fetch(url)
       .then((r) => r.json())
@@ -143,7 +147,7 @@ export function HomepageProvinceMap({ onFilterSpecies }: HomepageProvinceMapProp
         console.error("Province map load error:", err);
         setIsLoading(false);
       });
-  }, [selectedTrait]);
+  }, [selectedTrait, mode]);
 
   // Reset selection when trait changes
   useEffect(() => {
@@ -298,7 +302,9 @@ export function HomepageProvinceMap({ onFilterSpecies }: HomepageProvinceMapProp
     return (
       <div className="rounded-lg border bg-card p-4 space-y-4">
         <h3 className="text-sm font-semibold text-muted-foreground">
-          Percentage of species per region in the database (click to filter species)
+          {mode === 'families'
+          ? 'Percentage of families per region in the database (click to filter)'
+          : 'Percentage of species per region in the database (click to filter species)'}
         </h3>
         <div className="w-full aspect-[2/1] bg-[#0D0D0D] rounded-lg animate-pulse" />
       </div>
@@ -308,7 +314,9 @@ export function HomepageProvinceMap({ onFilterSpecies }: HomepageProvinceMapProp
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
       <h3 className="text-sm font-semibold text-muted-foreground">
-        Percentage of species per region in the database (click to filter species)
+        {mode === 'families'
+          ? 'Percentage of families per region in the database (click to filter)'
+          : 'Percentage of species per region in the database (click to filter species)'}
       </h3>
 
       {/* Trait dropdown */}
@@ -360,7 +368,9 @@ export function HomepageProvinceMap({ onFilterSpecies }: HomepageProvinceMapProp
               const isSelected = selectedProvince === provinceName;
               const pct = info?.percentage ?? 0;
 
-              const fill = hasData ? getPercentageColor(pct) : "transparent";
+              // Normalize percentage to maxPercentage so colors use full scale range
+              const normalizedPct = maxPercentage > 0 ? (pct / maxPercentage) * 100 : 0;
+              const fill = hasData ? getPercentageColor(normalizedPct) : "transparent";
 
               return (
                 <path

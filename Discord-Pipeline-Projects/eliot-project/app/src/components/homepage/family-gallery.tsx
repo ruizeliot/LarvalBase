@@ -37,6 +37,8 @@ interface FamilyGalleryProps {
   onSelectSpecies?: (speciesName: string) => void;
   /** When not null, only show species in this set (genus/family images always visible). */
   filteredSpeciesNames?: Set<string> | null;
+  /** Label for the back button */
+  backLabel?: string;
 }
 
 /**
@@ -48,7 +50,7 @@ interface FamilyGalleryProps {
  * Family-level images at bottom (red #F8766D)
  * No names below pictures.
  */
-export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpeciesNames }: FamilyGalleryProps) {
+export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpeciesNames, backLabel }: FamilyGalleryProps) {
   const [data, setData] = useState<GalleryData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -208,7 +210,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
     return (
       <div className="p-6">
         <button onClick={onBack} className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-4">
-          <ArrowLeft className="h-4 w-4" /> Back to homepage
+          <ArrowLeft className="h-4 w-4" /> {backLabel || "Back to homepage"}
         </button>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-48" />
@@ -230,7 +232,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         onClick={onBack}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" /> Back to homepage
+        <ArrowLeft className="h-4 w-4" /> {backLabel || "Back to homepage"}
       </button>
 
       {/* Family title */}

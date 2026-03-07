@@ -3,11 +3,34 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
 
+const BASE_PALETTE = [
+  '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
+  '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
+  '#a6cee3','#1f78b4','#b2df8a','#33a02c','#fb9a99','#e31a1c',
+  '#fdbf6f','#ff7f00','#cab2d6','#6a3d9a','#ffff99','#b15928',
+];
+
+/** Generate lighter/darker variants to extend palette */
+function hexToRgb(hex: string): [number, number, number] {
+  const h = hex.replace('#', '');
+  return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+}
+function rgbToHex(r: number, g: number, b: number): string {
+  return '#' + [r,g,b].map(v => Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function lighten(hex: string, f: number): string {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(r+(255-r)*f, g+(255-g)*f, b+(255-b)*f);
+}
+function darken(hex: string, f: number): string {
+  const [r,g,b] = hexToRgb(hex);
+  return rgbToHex(r*(1-f), g*(1-f), b*(1-f));
+}
+
 const CATEGORICAL_PALETTE = [
-  '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4',
-  '#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff',
-  '#9A6324','#800000','#aaffc3','#808000','#ffd8b1','#000075',
-  '#a9a9a9','#e6beff','#fffac8','#ff6347','#00ced1','#7b68ee',
+  ...BASE_PALETTE,
+  ...BASE_PALETTE.map(c => lighten(c, 0.35)),
+  ...BASE_PALETTE.map(c => darken(c, 0.35)),
 ];
 
 interface ProvinceData {

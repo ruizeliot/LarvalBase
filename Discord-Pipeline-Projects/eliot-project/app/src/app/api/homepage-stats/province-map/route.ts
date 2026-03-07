@@ -28,6 +28,7 @@ interface ProvinceMapData {
 
 let cachedData: ProvinceMapData | null = null;
 let cachedTraitData: Map<string, Set<string>> | null = null;
+let cachedFamilyData: ProvinceMapData | null = null;
 
 /**
  * Load all species province totals from spalding_provinces_all_species_032026.csv
@@ -117,6 +118,70 @@ async function loadProvinceMapData(): Promise<ProvinceMapData> {
 }
 
 /**
+ * Load families province data for families mode.
+ * Uses spalding_provinces_families_032026.csv for total families per province,
+ * and derives LarvalBase families from species data.
+ */
+async function loadFamilyProvinceData(): Promise<ProvinceMapData> {
+  if (cachedFamilyData) return cachedFamilyData;
+
+  // Load total families per province from families CSV
+  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_families_032026.csv');
+  const content = await fs.readFile(csvPath, 'utf-8');
+
+  const totalFamilies = new Map<string, number>();
+  Papa.parse(content, {
+    header: true,
+    skipEmptyLines: true,
+    step: (result) => {
+      const row = result.data as Record<string, string>;
+      for (const [csvCol, provinceName] of Object.entries(DOT_CSV_TO_PROVINCE)) {
+        if (provinceName === 'NA') continue;
+        const val = (row[csvCol] || '').replace(/^"|"$/g, '').toUpperCase();
+        if (val === 'TRUE') {
+          totalFamilies.set(provinceName, (totalFamilies.get(provinceName) ?? 0) + 1);
+        }
+      }
+    },
+  });
+
+  // Derive LarvalBase families per province from species data
+  const speciesMapData = await loadProvinceMapData();
+  const data = await getOrLoadData();
+
+  // Build species -> family mapping
+  const speciesFamilyMap = new Map<string, string>();
+  for (const [, sp] of data.species) {
+    speciesFamilyMap.set(sp.validName, sp.family);
+  }
+
+  const provinces: ProvinceMapData['provinces'] = {};
+  for (const [name, spData] of Object.entries(speciesMapData.provinces)) {
+    // Get unique families from species in this province
+    const families = new Set<string>();
+    const familySpecies: string[] = [];
+    for (const sp of spData.species) {
+      const fam = speciesFamilyMap.get(sp);
+      if (fam) families.add(fam);
+      familySpecies.push(sp);
+    }
+
+    const total = totalFamilies.get(name) ?? 0;
+    if (total === 0 && families.size === 0) continue;
+
+    provinces[name] = {
+      larvalbaseCount: families.size,
+      totalCount: total,
+      percentage: total > 0 ? (families.size / total) * 100 : 0,
+      species: familySpecies,
+    };
+  }
+
+  cachedFamilyData = { provinces };
+  return cachedFamilyData;
+}
+
+/**
  * Load trait data: which species have which traits.
  * Returns Map: traitKey -> Set of species names.
  */
@@ -153,6 +218,16 @@ async function loadTraitData(): Promise<Map<string, Set<string>>> {
 export async function GET(request: NextRequest) {
   try {
     const trait = request.nextUrl.searchParams.get('trait');
+    const mode = request.nextUrl.searchParams.get('mode');
+
+    // Families mode: show percentage of families per province
+    if (mode === 'families') {
+      const familyData = await loadFamilyProvinceData();
+      return NextResponse.json(familyData, {
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+      });
+    }
+
     const mapData = await loadProvinceMapData();
 
     if (trait && trait !== 'all') {

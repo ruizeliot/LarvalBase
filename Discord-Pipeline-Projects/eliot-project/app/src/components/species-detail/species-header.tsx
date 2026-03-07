@@ -50,9 +50,9 @@ export function SpeciesHeader({
   const currentImage = images[currentImageIndex];
 
   return (
-    <div className="flex gap-6">
+    <div className="flex gap-6 items-end">
       {/* Image gallery or skeleton */}
-      <div className="flex-shrink-0 w-[350px]">
+      <div className="flex-shrink-0 w-[300px]">
         {isLoading ? (
           <Skeleton className="w-full aspect-[4/3] rounded-lg" />
         ) : (
@@ -131,14 +131,9 @@ export function SpeciesHeader({
                 )}
               </span>
               {currentImage.uncertain ? (
-                <span className="text-red-500 font-medium ml-2">(Unsure ID)</span>
+                <span className="text-red-500 font-medium ml-2">Unsure ID</span>
               ) : (
-                <span className="text-green-500 font-medium ml-2">(Sure ID)</span>
-              )}
-              {images.length > 1 && (
-                <span className="text-xs opacity-75 ml-2">
-                  {currentImageIndex + 1} / {images.length}
-                </span>
+                <span className="text-green-500 font-medium ml-2">Sure ID</span>
               )}
             </div>
             {currentImage.scale !== undefined && (
@@ -156,7 +151,7 @@ export function SpeciesHeader({
       </div>
 
       {/* Species distribution mini-map */}
-      <div className="flex-shrink-0 w-[350px]">
+      <div className="flex-shrink-0 w-[300px]">
         <SpeciesProvinceMap speciesId={speciesId} />
       </div>
     </div>

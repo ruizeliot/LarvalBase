@@ -75,8 +75,8 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
         if you are aware of any identification error or species-level identification for unsure ID, or if one of the images displayed is yours and you would like it to be removed from this website.
       </p>
 
-      {/* Province map for filtering */}
-      <HomepageProvinceMap onFilterSpecies={handleMapFilter} />
+      {/* Province map for filtering — families mode */}
+      <HomepageProvinceMap onFilterSpecies={handleMapFilter} mode="families" />
 
       {/* All family thumbnails — no pagination */}
       <div className="grid grid-cols-5 gap-2">

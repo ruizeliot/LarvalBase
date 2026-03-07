@@ -334,9 +334,9 @@ function ImageLightbox({
               </p>
             )}
             {image.uncertain ? (
-              <p className="text-sm" style={{ color: '#F8766D' }}>(Unsure ID)</p>
+              <p className="text-sm" style={{ color: '#F8766D' }}>Unsure ID</p>
             ) : (
-              <p className="text-sm" style={{ color: '#00BA38' }}>(Sure ID)</p>
+              <p className="text-sm" style={{ color: '#00BA38' }}>Sure ID</p>
             )}
             {images.length > 1 && (
               <p className="text-xs opacity-75 mt-1">
