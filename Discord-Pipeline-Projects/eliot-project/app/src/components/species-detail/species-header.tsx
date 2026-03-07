@@ -52,7 +52,7 @@ export function SpeciesHeader({
   return (
     <div className="flex gap-6">
       {/* Image gallery or skeleton */}
-      <div className="flex-shrink-0 w-[400px]">
+      <div className="flex-shrink-0 w-[350px]">
         {isLoading ? (
           <Skeleton className="w-full aspect-[4/3] rounded-lg" />
         ) : (
@@ -65,8 +65,8 @@ export function SpeciesHeader({
         )}
       </div>
 
-      {/* Text content */}
-      <div className="flex-1 space-y-2">
+      {/* Text content — centered between panels */}
+      <div className="flex-1 space-y-2 flex flex-col justify-center">
         {/* Scientific name with large family icon */}
         <div className="flex items-center gap-4">
           <FamilyIcon family={family} size={72} className="shrink-0" />

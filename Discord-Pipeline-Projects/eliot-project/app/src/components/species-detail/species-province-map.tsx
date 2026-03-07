@@ -4,13 +4,13 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { geoPath, geoIdentity } from "d3-geo";
 
 const PROVINCE_COLORS = [
-  '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
-  '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
-  '#a6cee3','#fb9a99','#fdbf6f','#cab2d6','#ff7f00','#b2df8a',
-  '#e31a1c','#33a02c','#1f78b4','#6a3d9a','#b15928','#ffff99',
-  '#f0027f','#bf5b17','#666666','#7fc97f','#beaed4','#fdc086',
-  '#386cb0','#f0f9e8','#d95f02','#7570b3','#e7298a','#66a61e',
-  '#e6ab02',
+  '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4',
+  '#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff',
+  '#9A6324','#800000','#aaffc3','#808000','#ffd8b1','#000075',
+  '#a9a9a9','#e6beff','#fffac8','#ff6347','#00ced1','#7b68ee',
+  '#ff69b4','#20b2aa','#daa520','#8b4513','#00fa9a','#b22222',
+  '#4682b4','#ffa07a','#6b8e23','#cd5c5c','#48d1cc','#c71585',
+  '#db7093',
 ];
 
 function normalizeProvince(name: string): string {
@@ -276,7 +276,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
 
   if (!geoData || !provinceData || !pathGenerator) {
     return (
-      <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg animate-pulse" />
+      <div className="w-full aspect-[2/1] bg-[#0D0D0D] rounded-lg animate-pulse" />
     );
   }
 
@@ -298,29 +298,16 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
           ref={svgRef}
           viewBox={VIEWBOX}
           className="w-full"
-          style={{ cursor: isPanning ? "grabbing" : "grab", background: "#1a1a2e" }}
+          style={{ cursor: isPanning ? "grabbing" : "grab", background: "#0D0D0D" }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
         >
           <g ref={gRef} transform="translate(0,0) scale(1)">
-            {/* Land masses */}
-            {landPaths.map((d, i) => (
-              <path
-                key={`land-${i}`}
-                d={d}
-                fill="#888888"
-                stroke="rgba(120,120,120,0.5)"
-                strokeWidth={0.3}
-                vectorEffect="non-scaling-stroke"
-                pointerEvents="none"
-              />
-            ))}
-
-            {/* Province polygons ON TOP of land */}
+            {/* Province polygons (below land) */}
             {provincePaths.map(({ name: provinceName, d }, i) => {
               const isPresent = isProvincePresent(provinceName);
               const isHovered = hoveredProvince === provinceName;
-              const fill = isPresent ? getColor(provinceName) : "none";
+              const fill = isPresent ? getColor(provinceName) : "transparent";
 
               return (
                 <path
@@ -333,9 +320,9 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
                       ? "rgba(255,255,255,1)"
                       : isPresent
                         ? "rgba(255,255,255,0.8)"
-                        : "rgba(255,255,255,0.1)"
+                        : "rgba(255,255,255,0.08)"
                   }
-                  strokeWidth={isHovered ? 1.5 : isPresent ? 1 : 0.2}
+                  strokeWidth={isHovered ? 2 : isPresent ? 1.2 : 0.2}
                   vectorEffect="non-scaling-stroke"
                   pointerEvents="all"
                   onMouseMove={(e) => handleMouseMoveTooltip(e, provinceName)}
@@ -343,6 +330,19 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
                 />
               );
             })}
+
+            {/* Land masses ON TOP — white continents */}
+            {landPaths.map((d, i) => (
+              <path
+                key={`land-${i}`}
+                d={d}
+                fill="#ffffff"
+                stroke="rgba(200,200,200,0.5)"
+                strokeWidth={0.3}
+                vectorEffect="non-scaling-stroke"
+                pointerEvents="none"
+              />
+            ))}
           </g>
         </svg>
 

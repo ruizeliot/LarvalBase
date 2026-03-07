@@ -4,8 +4,10 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import { geoPath, geoIdentity } from "d3-geo";
 
 const CATEGORICAL_PALETTE = [
-  '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
-  '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
+  '#e6194b','#3cb44b','#ffe119','#4363d8','#f58231','#911eb4',
+  '#42d4f4','#f032e6','#bfef45','#fabed4','#469990','#dcbeff',
+  '#9A6324','#800000','#aaffc3','#808000','#ffd8b1','#000075',
+  '#a9a9a9','#e6beff','#fffac8','#ff6347','#00ced1','#7b68ee',
 ];
 
 interface ProvinceData {
@@ -42,7 +44,7 @@ const BASE_WIDTH = 900;
 const BASE_HEIGHT = 450;
 const MAX_ZOOM = 6;
 const VIEWBOX = `0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`;
-const BG_COLOR = "#000000";
+const BG_COLOR = "#0D0D0D";
 
 function normalizeProvince(name: string): string {
   return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();
@@ -485,7 +487,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
                           ? "rgba(255,255,255,0.8)"
                           : "none"
                   }
-                  strokeWidth={isSelected ? 2 : isHovered ? 1.5 : hasImages ? 1 : 0}
+                  strokeWidth={isSelected ? 2.5 : isHovered ? 2 : hasImages ? 1.2 : 0}
                   vectorEffect="non-scaling-stroke"
                   pointerEvents="all"
                   style={{ cursor: hasImages ? "pointer" : "default" }}

@@ -56,6 +56,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
   const [selectedProvinces, setSelectedProvinces] = useState<Set<string> | null>(null);
   const [provinceListExpanded, setProvinceListExpanded] = useState(false);
   const [provinceApiData, setProvinceApiData] = useState<Record<string, { count: number; species: string[] }> | null>(null);
+  const [genusProvinces, setGenusProvinces] = useState<Record<string, string[]> | null>(null);
 
   // Compute set of species names that have images
   const speciesWithImageNames = useMemo((): Set<string> | null => {
@@ -84,23 +85,43 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
     return result;
   }, [filteredSpeciesNames, provinceFilter]);
 
+  // Determine which genera are present in selected provinces
+  const genusFilter = useMemo((): Set<string> | null => {
+    if (!selectedProvinces || selectedProvinces.size === 0 || !genusProvinces) return null;
+    const allowedGenera = new Set<string>();
+    for (const [genus, provinces] of Object.entries(genusProvinces)) {
+      for (const prov of provinces) {
+        if (selectedProvinces.has(prov)) {
+          allowedGenera.add(genus);
+          break;
+        }
+      }
+    }
+    return allowedGenera;
+  }, [selectedProvinces, genusProvinces]);
+
   // Filter species subsections when sidebar trait filters or province filter are active
   const filteredData = useMemo((): GalleryData | null => {
     if (!data) return null;
     // No filter active → show everything
-    if (!combinedFilter) return data;
-    // Filter species subsections; keep genus/family images always
+    if (!combinedFilter && !genusFilter) return data;
+    // Filter genus sections by genus province presence + species by combinedFilter
     const genusSections = (data.genusSections ?? [])
+      .filter((genus) => {
+        // If genus filter active, hide genera not in selected provinces
+        if (genusFilter && !genusFilter.has(genus.genusName)) return false;
+        return true;
+      })
       .map((genus) => ({
         ...genus,
-        speciesSubsections: genus.speciesSubsections.filter(
-          (sp) => combinedFilter.has(sp.speciesName)
-        ),
+        speciesSubsections: combinedFilter
+          ? genus.speciesSubsections.filter((sp) => combinedFilter.has(sp.speciesName))
+          : genus.speciesSubsections,
       }))
       // Keep genus section if it has genus-level images OR remaining species
       .filter((genus) => genus.genusImages.length > 0 || genus.speciesSubsections.length > 0);
     return { ...data, genusSections };
-  }, [data, combinedFilter]);
+  }, [data, combinedFilter, genusFilter]);
 
   // Flatten all images for lightbox navigation + compute index map (uses filtered data)
   const { allImages, indexMap } = useMemo(() => {
@@ -152,6 +173,14 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
       .then(r => r.json())
       .then((json: { provinces: Record<string, { count: number; species: string[] }> }) => {
         setProvinceApiData(json.provinces ?? null);
+      })
+      .catch(console.error);
+
+    // Fetch genus-level province data for genus filtering
+    fetch(`/api/families/${encodeURIComponent(family)}/genus-provinces`)
+      .then(r => r.json())
+      .then((json: { genera: Record<string, string[]> }) => {
+        setGenusProvinces(json.genera ?? null);
       })
       .catch(console.error);
   }, [family]);

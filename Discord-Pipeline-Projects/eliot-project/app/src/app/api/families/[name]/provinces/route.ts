@@ -1,8 +1,8 @@
 /**
  * API route to get Spalding province species counts for a family.
  *
- * Returns per-province counts of how many species from the family are present,
- * plus a mapping of province -> list of species names for filtering.
+ * Uses spalding_provinces_species_larvalbase_032026.csv (7,075 LarvalBase species).
+ * Returns per-province counts + species lists for filtering.
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
@@ -22,7 +22,7 @@ let provinceDataCache: Map<string, Map<string, string[]>> | null = null;
 async function loadProvinceData(): Promise<Map<string, Map<string, string[]>>> {
   if (provinceDataCache) return provinceDataCache;
 
-  const csvPath = path.join(process.cwd(), 'data', 'species_provinces_spalding.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_species_larvalbase_032026.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   // Get species -> family mapping
@@ -32,7 +32,9 @@ async function loadProvinceData(): Promise<Map<string, Map<string, string[]>>> {
     speciesFamilyMap.set(species.validName, species.family);
   }
 
-  // Parse CSV
+  // Parse CSV - new file has VALID_NAME, SP_DB, SOURCE, then province columns
+  // Province columns use proper names with spaces/hyphens (same format as file 1)
+  // But has duplicate columns like "Indonesian Through-Flow" + "Indonesian Through Flow"
   const familyProvinces = new Map<string, Map<string, string[]>>();
 
   Papa.parse(content, {
@@ -50,9 +52,9 @@ async function loadProvinceData(): Promise<Map<string, Map<string, string[]>>> {
       }
       const provinceMap = familyProvinces.get(family)!;
 
-      // Check each province column
+      // Check each province column (OR-merge duplicates)
       for (const [csvCol, provinceName] of Object.entries(CSV_TO_PROVINCE)) {
-        const val = (row[csvCol] || '').replace(/^"|"$/g, '');
+        const val = (row[csvCol] || '').replace(/^"|"$/g, '').toUpperCase();
         if (val === 'TRUE') {
           const list = provinceMap.get(provinceName) ?? [];
           if (!list.includes(speciesName)) {
