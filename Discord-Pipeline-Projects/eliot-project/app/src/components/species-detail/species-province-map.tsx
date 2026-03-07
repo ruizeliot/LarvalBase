@@ -3,47 +3,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
 
-/** Validate viewBox values — prevent NaN/Infinity from corrupting state */
-function safeViewBox(vb: { x: number; y: number; w: number; h: number }, fallback: { x: number; y: number; w: number; h: number }) {
-  if (!Number.isFinite(vb.x) || !Number.isFinite(vb.y) || !Number.isFinite(vb.w) || !Number.isFinite(vb.h) || vb.w <= 0 || vb.h <= 0) {
-    return fallback;
-  }
-  return vb;
-}
-
-/** Error boundary to prevent map crashes from killing the page */
-class MapErrorBoundary extends React.Component<
-  { children: React.ReactNode; resetKey?: string },
-  { hasError: boolean }
-> {
-  constructor(props: { children: React.ReactNode; resetKey?: string }) {
-    super(props);
-    this.state = { hasError: false };
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-  componentDidUpdate(prevProps: { resetKey?: string }) {
-    if (this.state.hasError && prevProps.resetKey !== this.props.resetKey) {
-      this.setState({ hasError: false });
-    }
-  }
-  componentDidCatch(error: Error) {
-    console.error("SpeciesProvinceMap error:", error);
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg flex items-center justify-center text-white/50 text-sm">
-          Map could not be displayed
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-/** Categorical color palette for provinces */
 const PROVINCE_COLORS = [
   '#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
   '#b3de69','#fccde5','#d9d9d9','#bc80bd','#ccebc5','#ffed6f',
@@ -54,7 +13,6 @@ const PROVINCE_COLORS = [
   '#e6ab02',
 ];
 
-/** Normalize province name for matching */
 function normalizeProvince(name: string): string {
   return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();
 }
@@ -83,28 +41,34 @@ interface SpeciesProvinceMapProps {
 const BASE_WIDTH = 900;
 const BASE_HEIGHT = 450;
 const MAX_ZOOM = 6;
+const VIEWBOX = `0 0 ${BASE_WIDTH} ${BASE_HEIGHT}`;
 
-export function SpeciesProvinceMap(props: SpeciesProvinceMapProps) {
-  return (
-    <MapErrorBoundary resetKey={props.speciesId}>
-      <SpeciesProvinceMapInner {...props} />
-    </MapErrorBoundary>
-  );
+/** Apply transform to <g> element directly — no React re-render */
+function applyTransform(
+  gEl: SVGGElement | null,
+  t: { x: number; y: number; scale: number }
+) {
+  if (!gEl) return;
+  if (!Number.isFinite(t.x) || !Number.isFinite(t.y) || !Number.isFinite(t.scale) || t.scale <= 0) {
+    t.x = 0; t.y = 0; t.scale = 1;
+  }
+  gEl.setAttribute('transform', `translate(${t.x},${t.y}) scale(${t.scale})`);
 }
 
-function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
+export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<SpeciesProvinceResponse | null>(null);
   const [hoveredProvince, setHoveredProvince] = useState<string | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
-  const svgRef = useRef<SVGSVGElement>(null);
-
-  // Zoom/pan state (button-only, no scroll)
-  const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT });
   const [isPanning, setIsPanning] = useState(false);
-  const panStart = useRef<{ x: number; y: number; vx: number; vy: number } | null>(null);
-  const [autoZoomApplied, setAutoZoomApplied] = useState(false);
+
+  const svgRef = useRef<SVGSVGElement>(null);
+  const gRef = useRef<SVGGElement>(null);
+  const transformRef = useRef({ x: 0, y: 0, scale: 1 });
+  const isPanningRef = useRef(false);
+  const panStartRef = useRef<{ cx: number; cy: number; tx: number; ty: number } | null>(null);
+  const autoZoomAppliedRef = useRef(false);
 
   useEffect(() => {
     fetch("/data/robinson_provinces.geojson", { cache: "force-cache" })
@@ -119,14 +83,16 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
   }, []);
 
   useEffect(() => {
-    setAutoZoomApplied(false);
+    autoZoomAppliedRef.current = false;
+    transformRef.current = { x: 0, y: 0, scale: 1 };
+    applyTransform(gRef.current, transformRef.current);
+
     fetch(`/api/species/${encodeURIComponent(speciesId)}/provinces`)
       .then((r) => r.json())
       .then(setProvinceData)
       .catch(console.error);
   }, [speciesId]);
 
-  // Use geoIdentity with fitSize for pre-projected Robinson data
   const projection = useMemo(() => {
     if (!geoData) return null;
     return geoIdentity()
@@ -139,13 +105,35 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
     [projection]
   );
 
-  // Build normalized name set for matching
+  // Pre-compute all path strings (only when geo data changes)
+  const provincePaths = useMemo(() => {
+    if (!pathGenerator || !geoData) return [];
+    return geoData.features.map((feature) => {
+      const name = feature.properties?.PROVINCE;
+      if (!name || !feature.geometry) return null;
+      try {
+        const d = pathGenerator(feature.geometry as GeoJSON.Geometry) || "";
+        return d ? { name, d } : null;
+      } catch { return null; }
+    }).filter(Boolean) as { name: string; d: string }[];
+  }, [pathGenerator, geoData]);
+
+  const landPaths = useMemo(() => {
+    if (!pathGenerator || !landData) return [];
+    return landData.features.map((feature) => {
+      if (!feature.geometry) return null;
+      try {
+        const d = pathGenerator(feature.geometry as GeoJSON.Geometry) || "";
+        return d || null;
+      } catch { return null; }
+    }).filter(Boolean) as string[];
+  }, [pathGenerator, landData]);
+
   const presentProvinces = useMemo(() => {
     if (!provinceData) return new Set<string>();
     return new Set(provinceData.provinces);
   }, [provinceData]);
 
-  // Match feature province name to data (handles normalization)
   const isProvincePresent = useCallback((featureName: string): boolean => {
     if (presentProvinces.has(featureName)) return true;
     const norm = normalizeProvince(featureName);
@@ -155,7 +143,6 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
     return false;
   }, [presentProvinces]);
 
-  // Assign categorical colors to present provinces
   const provinceColorMap = useMemo(() => {
     const map = new Map<string, string>();
     const sorted = [...presentProvinces].sort();
@@ -169,9 +156,9 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
     return provinceColorMap.get(normalizeProvince(featureName)) ?? "none";
   }
 
-  // Auto-zoom to species region
+  // Auto-zoom to species region (uses ref-based transform)
   useEffect(() => {
-    if (!geoData || !provinceData || !pathGenerator || presentProvinces.size === 0 || autoZoomApplied) return;
+    if (!geoData || !provinceData || !pathGenerator || presentProvinces.size === 0 || autoZoomAppliedRef.current) return;
 
     const presentFeatures = geoData.features.filter(f => f.properties?.PROVINCE && isProvincePresent(f.properties.PROVINCE));
     if (presentFeatures.length === 0) return;
@@ -208,58 +195,57 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
     }
 
     const minW = BASE_WIDTH / MAX_ZOOM;
-    if (finalW < minW) {
-      finalW = minW;
-      finalH = finalW / aspect;
-    }
-    if (finalW > BASE_WIDTH) {
-      finalW = BASE_WIDTH;
-      finalH = BASE_HEIGHT;
-    }
+    if (finalW < minW) { finalW = minW; finalH = finalW / aspect; }
+    if (finalW > BASE_WIDTH) { finalW = BASE_WIDTH; finalH = BASE_HEIGHT; }
 
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
 
-    setViewBox(safeViewBox({
-      x: cx - finalW / 2,
-      y: cy - finalH / 2,
-      w: finalW,
-      h: finalH,
-    }, defaultVB));
-    setAutoZoomApplied(true);
-  }, [geoData, provinceData, presentProvinces, autoZoomApplied, pathGenerator, isProvincePresent]);
+    // Convert viewBox region to transform: scale = BASE_WIDTH / w, tx = -vx * scale, ty = -vy * scale
+    const scale = BASE_WIDTH / finalW;
+    const tx = -(cx - finalW / 2) * scale;
+    const ty = -(cy - finalH / 2) * scale;
 
-  const defaultVB = { x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT };
+    transformRef.current = { x: tx, y: ty, scale };
+    applyTransform(gRef.current, transformRef.current);
+    autoZoomAppliedRef.current = true;
+  }, [geoData, provinceData, presentProvinces, pathGenerator, isProvincePresent]);
 
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.button !== 0) return;
-      setIsPanning(true);
-      panStart.current = { x: e.clientX, y: e.clientY, vx: viewBox.x, vy: viewBox.y };
-    },
-    [viewBox.x, viewBox.y]
-  );
+  // --- Zoom/Pan handlers (ref-based, no React re-renders during interaction) ---
 
-  const handleMouseMovePan = useCallback(
-    (e: React.MouseEvent) => {
-      if (!isPanning || !panStart.current || !svgRef.current) return;
-      const svgRect = svgRef.current.getBoundingClientRect();
-      if (svgRect.width === 0 || svgRect.height === 0) return;
-      const dx = ((e.clientX - panStart.current.x) / svgRect.width) * viewBox.w;
-      const dy = ((e.clientY - panStart.current.y) / svgRect.height) * viewBox.h;
-      setViewBox((prev) => safeViewBox({ ...prev, x: panStart.current!.vx - dx, y: panStart.current!.vy - dy }, defaultVB));
-    },
-    [isPanning, viewBox.w, viewBox.h]
-  );
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (e.button !== 0) return;
+    isPanningRef.current = true;
+    setIsPanning(true);
+    panStartRef.current = {
+      cx: e.clientX,
+      cy: e.clientY,
+      tx: transformRef.current.x,
+      ty: transformRef.current.y,
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isPanningRef.current || !panStartRef.current || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    if (rect.width === 0) return;
+    const svgScale = BASE_WIDTH / rect.width;
+    const dx = (e.clientX - panStartRef.current.cx) * svgScale;
+    const dy = (e.clientY - panStartRef.current.cy) * svgScale;
+    transformRef.current.x = panStartRef.current.tx + dx;
+    transformRef.current.y = panStartRef.current.ty + dy;
+    applyTransform(gRef.current, transformRef.current);
+  }, []);
 
   const handleMouseUp = useCallback(() => {
+    isPanningRef.current = false;
     setIsPanning(false);
-    panStart.current = null;
+    panStartRef.current = null;
   }, []);
 
   const handleMouseMoveTooltip = useCallback(
     (e: React.MouseEvent, provinceName: string) => {
-      if (isPanning) return;
+      if (isPanningRef.current) return;
       const svgRect = svgRef.current?.getBoundingClientRect();
       if (svgRect) {
         setTooltipPos({
@@ -269,8 +255,24 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
       }
       setHoveredProvince(provinceName);
     },
-    [isPanning]
+    []
   );
+
+  const zoomBy = useCallback((factor: number) => {
+    const t = transformRef.current;
+    const newScale = Math.min(MAX_ZOOM, Math.max(1, t.scale * factor));
+    const cx = BASE_WIDTH / 2;
+    const cy = BASE_HEIGHT / 2;
+    t.x = cx - ((cx - t.x) / t.scale) * newScale;
+    t.y = cy - ((cy - t.y) / t.scale) * newScale;
+    t.scale = newScale;
+    applyTransform(gRef.current, t);
+  }, []);
+
+  const resetZoom = useCallback(() => {
+    transformRef.current = { x: 0, y: 0, scale: 1 };
+    applyTransform(gRef.current, transformRef.current);
+  }, []);
 
   if (!geoData || !provinceData || !pathGenerator) {
     return (
@@ -278,7 +280,6 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
     );
   }
 
-  // Clean up source: deduplicate comma-separated entries
   const cleanSource = (() => {
     const raw = provinceData.source || "";
     const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
@@ -295,64 +296,54 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
       >
         <svg
           ref={svgRef}
-          viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+          viewBox={VIEWBOX}
           className="w-full"
           style={{ cursor: isPanning ? "grabbing" : "grab", background: "#1a1a2e" }}
           onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMovePan}
+          onMouseMove={handleMouseMove}
         >
-          {/* Land masses */}
-          {landData?.features.map((feature, i) => {
-            if (!feature.geometry) return null;
-            let d: string;
-            try { d = pathGenerator(feature.geometry as GeoJSON.Geometry) || ""; } catch { d = ""; }
-            if (!d) return null;
-            return (
+          <g ref={gRef} transform="translate(0,0) scale(1)">
+            {/* Land masses */}
+            {landPaths.map((d, i) => (
               <path
                 key={`land-${i}`}
                 d={d}
                 fill="#888888"
                 stroke="rgba(120,120,120,0.5)"
                 strokeWidth={0.3}
+                vectorEffect="non-scaling-stroke"
                 pointerEvents="none"
               />
-            );
-          })}
+            ))}
 
-          {/* Province polygons ON TOP of land */}
-          {geoData.features.map((feature, i) => {
-            const provinceName = feature.properties?.PROVINCE;
-            if (!provinceName || !feature.geometry) return null;
+            {/* Province polygons ON TOP of land */}
+            {provincePaths.map(({ name: provinceName, d }, i) => {
+              const isPresent = isProvincePresent(provinceName);
+              const isHovered = hoveredProvince === provinceName;
+              const fill = isPresent ? getColor(provinceName) : "none";
 
-            let d: string;
-            try { d = pathGenerator(feature.geometry as GeoJSON.Geometry) || ""; } catch { d = ""; }
-            if (!d) return null;
-
-            const isPresent = isProvincePresent(provinceName);
-            const isHovered = hoveredProvince === provinceName;
-
-            const fill = isPresent ? getColor(provinceName) : "none";
-
-            return (
-              <path
-                key={i}
-                d={d}
-                fill={fill}
-                fillOpacity={isPresent ? 0.75 : 0}
-                stroke={
-                  isHovered
-                    ? "rgba(255,255,255,1)"
-                    : isPresent
-                      ? "rgba(255,255,255,0.8)"
-                      : "rgba(255,255,255,0.1)"
-                }
-                strokeWidth={isHovered ? 1.5 : isPresent ? 1 : 0.2}
-                pointerEvents="all"
-                onMouseMove={(e) => handleMouseMoveTooltip(e, provinceName)}
-                onMouseLeave={() => { setHoveredProvince(null); setTooltipPos(null); }}
-              />
-            );
-          })}
+              return (
+                <path
+                  key={i}
+                  d={d}
+                  fill={fill}
+                  fillOpacity={isPresent ? 0.75 : 0}
+                  stroke={
+                    isHovered
+                      ? "rgba(255,255,255,1)"
+                      : isPresent
+                        ? "rgba(255,255,255,0.8)"
+                        : "rgba(255,255,255,0.1)"
+                  }
+                  strokeWidth={isHovered ? 1.5 : isPresent ? 1 : 0.2}
+                  vectorEffect="non-scaling-stroke"
+                  pointerEvents="all"
+                  onMouseMove={(e) => handleMouseMoveTooltip(e, provinceName)}
+                  onMouseLeave={() => { setHoveredProvince(null); setTooltipPos(null); }}
+                />
+              );
+            })}
+          </g>
         </svg>
 
         {/* Tooltip */}
@@ -376,36 +367,20 @@ function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
         <div className="absolute top-2 right-2 flex flex-col gap-1">
           <button
             className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
-            onClick={() => {
-              setViewBox((prev) => {
-                const newW = Math.max(BASE_WIDTH / MAX_ZOOM, prev.w * 0.75);
-                const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
-                const cx = prev.x + prev.w / 2;
-                const cy = prev.y + prev.h / 2;
-                return safeViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH }, defaultVB);
-              });
-            }}
+            onClick={() => zoomBy(1.33)}
           >
             +
           </button>
           <button
             className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-sm flex items-center justify-center"
-            onClick={() => {
-              setViewBox((prev) => {
-                const newW = Math.min(BASE_WIDTH, prev.w * 1.33);
-                const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
-                const cx = prev.x + prev.w / 2;
-                const cy = prev.y + prev.h / 2;
-                return safeViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH }, defaultVB);
-              });
-            }}
+            onClick={() => zoomBy(0.75)}
           >
             −
           </button>
           <button
             className="w-6 h-6 bg-black/50 hover:bg-black/70 text-white/70 hover:text-white rounded text-[9px] flex items-center justify-center"
             title="Reset zoom"
-            onClick={() => setViewBox({ x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT })}
+            onClick={resetZoom}
           >
             ↺
           </button>
