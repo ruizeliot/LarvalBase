@@ -108,7 +108,7 @@ export default function Home() {
         <SpeciesDetail
           speciesId={selectedSpecies.id}
           onBack={handleSpeciesBack}
-          backLabel={cameFromFamily ? `Back to main gallery` : cameFromGallery ? `Back to gallery` : `Back to homepage`}
+          backLabel={cameFromFamily ? `Back to ${cameFromFamily} gallery` : cameFromGallery ? `Back to main gallery` : `Back to homepage`}
         />
       ) : viewMode === 'family-gallery' && selectedFamily ? (
         <Suspense fallback={<HomepageSkeleton />}>

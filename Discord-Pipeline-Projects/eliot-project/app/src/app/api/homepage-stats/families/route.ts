@@ -197,6 +197,18 @@ export async function GET() {
       'Peristediidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Peristediidae - #peristediidae - Chris Gug - 2025-06-10_13-09-46_1.jpg' },
       'Gibberichthyidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Gibberichthys latifrons - gibberichthys_latifrons - Ryo Minemizu - 2025-07-16_09-50-34_1.jpg' },
       'Brotulidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Brotula multibarbata - brotula multibarbata - Ryo Minemizu - 2019-03-21_01-03-48_1.jpg' },
+      // Round 10 Fix 8: 14 family thumbnail upgrades
+      'Xiphiidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Xiphias gladius - xiphias gladius - Steven Kovacs - 2017-07-07_17-22-17_1.jpg' },
+      'Diodontidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Diodon holocanthus - diodon_holocanthus - Ryo Minemizu - 2022-04-25_12-00-11_1.jpg' },
+      'Myctophidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Myctophidae - myctophidae - Linda Ianiello - Lanternfish-Myctophidae-Family-10142021_038_1.jpg' },
+      'Chiasmodontidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Chiasmodon niger - black swallower - Ryo Minemizu - 2019-03-11_11-42-55_1.jpg' },
+      'Carangidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Carangidae - carangidae - Linda Ianiello - Jack-Carangidae-Family-08282017_026_1.jpg' },
+      'Pomacentridae': { path: 'classified_bw_images_species', filename: 'Sure ID - Amphiprion ocellaris - amphiprion ocellaris - Frank Baensch - 20120819-161100_1.jpg' },
+      'Labridae': { path: 'classified_bw_images_species', filename: 'Sure ID - Bodianus parrae - bodianus parrae - Linda Ianiello - Wrasse-Creole-Family-Labridae-Bodianus-parrae-08262017_023_1.jpg' },
+      'Apogonidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Apogonidae - apogonidae - Linda Ianiello - Cardinalfish-Larva-Apogonidae-Family-08172019_058_1.jpg' },
+      'Blenniidae': { path: 'classified_bw_images_family', filename: 'Sure ID - Blenniidae - blenny - Steven Kovacs - 2021-06-30_17-58-32_1.jpg' },
+      'Ostraciidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Lactoria cornuta - lactoria cornuta - Facebook BW - post_3632248907058382_1.jpg' },
+      'Gigantactinidae': { path: 'classified_bw_images_species', filename: 'Sure ID - Gigantactis vanhoeffeni - gigantactis vanhoeffeni - Facebook BW - post_10163446820113797_1.jpg' },
     };
 
     // Select best valid thumbnail per family:

@@ -44,7 +44,7 @@ async function loadAllSpeciesProvinces(): Promise<Map<string, number>> {
     skipEmptyLines: true,
     step: (result) => {
       const row = result.data as Record<string, string>;
-      for (const [csvCol, provinceName] of Object.entries(DOT_CSV_TO_PROVINCE)) {
+      for (const [csvCol, provinceName] of Object.entries(CSV_TO_PROVINCE)) {
         if (provinceName === 'NA') continue;
         const val = (row[csvCol] || '').replace(/^"|"$/g, '').toUpperCase();
         if (val === 'TRUE') {

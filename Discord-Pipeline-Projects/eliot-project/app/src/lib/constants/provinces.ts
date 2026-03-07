@@ -138,6 +138,15 @@ export function buildCsvToProvinceMap(): Record<string, string> {
   map['Mediterranean Sea (offshore)'] = 'Mediterranean';
   map['Mediterranean Sea (coastal)'] = 'Mediterranean Sea';
 
+  // Agulhas, Antarctic, Subantarctic aliases (coastal/offshore qualifiers)
+  map['Agulhas (coastal)'] = 'Agulhas';
+  map['Agulhas Current (coastal)'] = 'Agulhas Current';
+  map['Antarctic (coastal)'] = 'Antarctic';
+  map['Subantarctic (offshore)'] = 'Subantarctic';
+
+  // Amsterdam & St. Paul variant
+  map['Amsterdam & St. Paul'] = 'Amsterdam-St Paul';
+
   return map;
 }
 

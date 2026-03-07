@@ -97,12 +97,14 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
                 '🐟'
               )}
             </div>
-            <div className="p-1.5 relative">
-              <div className="text-xs font-semibold text-primary truncate">
-                {fam.family}
-              </div>
-              <div className="text-[10px] text-muted-foreground truncate">
-                {cleanOrderName(fam.order)} {fam.imageCount ? `(${fam.imageCount} img)` : ''}
+            <div className="p-1.5 flex items-center justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-semibold text-primary truncate">
+                  {fam.family}
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate">
+                  {cleanOrderName(fam.order)} {fam.imageCount ? `(${fam.imageCount} img)` : ''}
+                </div>
               </div>
               {fam.hasFamilyIcon && (
                 <Image
@@ -110,7 +112,7 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
                   alt=""
                   width={36}
                   height={36}
-                  className="absolute bottom-1 right-1 opacity-70"
+                  className="shrink-0 ml-1 opacity-70"
                   style={{ filter: 'brightness(0) invert(1)' }}
                   unoptimized
                 />

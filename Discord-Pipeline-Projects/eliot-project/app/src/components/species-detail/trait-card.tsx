@@ -222,8 +222,8 @@ export function TraitCard({
             />
           </div>
         )}
-        {/* Order Bar Chart — below genus/family chart */}
-        {showComparison && orderChartData && orderChartData.length > 0 && currentSpeciesId && (
+        {/* Order Bar Chart — only as FALLBACK when no family chart is available */}
+        {showComparison && !hasChart && orderChartData && orderChartData.length > 0 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={orderChartData}
