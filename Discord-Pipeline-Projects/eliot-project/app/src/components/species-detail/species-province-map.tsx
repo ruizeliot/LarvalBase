@@ -1,7 +1,42 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
+
+/** Validate viewBox values — prevent NaN/Infinity from corrupting state */
+function safeViewBox(vb: { x: number; y: number; w: number; h: number }, fallback: { x: number; y: number; w: number; h: number }) {
+  if (!Number.isFinite(vb.x) || !Number.isFinite(vb.y) || !Number.isFinite(vb.w) || !Number.isFinite(vb.h) || vb.w <= 0 || vb.h <= 0) {
+    return fallback;
+  }
+  return vb;
+}
+
+/** Error boundary to prevent map crashes from killing the page */
+class MapErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    console.error("SpeciesProvinceMap error:", error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg flex items-center justify-center text-white/50 text-sm">
+          Map could not be displayed
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /** Categorical color palette for provinces */
 const PROVINCE_COLORS = [
@@ -44,7 +79,15 @@ const BASE_WIDTH = 900;
 const BASE_HEIGHT = 450;
 const MAX_ZOOM = 6;
 
-export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
+export function SpeciesProvinceMap(props: SpeciesProvinceMapProps) {
+  return (
+    <MapErrorBoundary>
+      <SpeciesProvinceMapInner {...props} />
+    </MapErrorBoundary>
+  );
+}
+
+function SpeciesProvinceMapInner({ speciesId }: SpeciesProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<SpeciesProvinceResponse | null>(null);
@@ -125,17 +168,22 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
   useEffect(() => {
     if (!geoData || !provinceData || !pathGenerator || presentProvinces.size === 0 || autoZoomApplied) return;
 
-    const presentFeatures = geoData.features.filter(f => isProvincePresent(f.properties.PROVINCE));
+    const presentFeatures = geoData.features.filter(f => f.properties?.PROVINCE && isProvincePresent(f.properties.PROVINCE));
     if (presentFeatures.length === 0) return;
 
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     for (const feature of presentFeatures) {
-      const bounds = pathGenerator.bounds(feature.geometry as GeoJSON.Geometry);
-      if (bounds[0][0] < minX) minX = bounds[0][0];
-      if (bounds[0][1] < minY) minY = bounds[0][1];
-      if (bounds[1][0] > maxX) maxX = bounds[1][0];
-      if (bounds[1][1] > maxY) maxY = bounds[1][1];
+      if (!feature.geometry) continue;
+      try {
+        const bounds = pathGenerator.bounds(feature.geometry as GeoJSON.Geometry);
+        if (!Number.isFinite(bounds[0][0]) || !Number.isFinite(bounds[0][1]) || !Number.isFinite(bounds[1][0]) || !Number.isFinite(bounds[1][1])) continue;
+        if (bounds[0][0] < minX) minX = bounds[0][0];
+        if (bounds[0][1] < minY) minY = bounds[0][1];
+        if (bounds[1][0] > maxX) maxX = bounds[1][0];
+        if (bounds[1][1] > maxY) maxY = bounds[1][1];
+      } catch { continue; }
     }
+    if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return;
 
     const bw = maxX - minX;
     const bh = maxY - minY;
@@ -167,14 +215,16 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
 
-    setViewBox({
+    setViewBox(safeViewBox({
       x: cx - finalW / 2,
       y: cy - finalH / 2,
       w: finalW,
       h: finalH,
-    });
+    }, defaultVB));
     setAutoZoomApplied(true);
   }, [geoData, provinceData, presentProvinces, autoZoomApplied, pathGenerator, isProvincePresent]);
+
+  const defaultVB = { x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT };
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -189,9 +239,10 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     (e: React.MouseEvent) => {
       if (!isPanning || !panStart.current || !svgRef.current) return;
       const svgRect = svgRef.current.getBoundingClientRect();
+      if (svgRect.width === 0 || svgRect.height === 0) return;
       const dx = ((e.clientX - panStart.current.x) / svgRect.width) * viewBox.w;
       const dy = ((e.clientY - panStart.current.y) / svgRect.height) * viewBox.h;
-      setViewBox((prev) => ({ ...prev, x: panStart.current!.vx - dx, y: panStart.current!.vy - dy }));
+      setViewBox((prev) => safeViewBox({ ...prev, x: panStart.current!.vx - dx, y: panStart.current!.vy - dy }, defaultVB));
     },
     [isPanning, viewBox.w, viewBox.h]
   );
@@ -246,20 +297,32 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
           onMouseMove={handleMouseMovePan}
         >
           {/* Land masses */}
-          {landData?.features.map((feature, i) => (
-            <path
-              key={`land-${i}`}
-              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
-              fill="#888888"
-              stroke="rgba(120,120,120,0.5)"
-              strokeWidth={0.3}
-              pointerEvents="none"
-            />
-          ))}
+          {landData?.features.map((feature, i) => {
+            if (!feature.geometry) return null;
+            let d: string;
+            try { d = pathGenerator(feature.geometry as GeoJSON.Geometry) || ""; } catch { d = ""; }
+            if (!d) return null;
+            return (
+              <path
+                key={`land-${i}`}
+                d={d}
+                fill="#888888"
+                stroke="rgba(120,120,120,0.5)"
+                strokeWidth={0.3}
+                pointerEvents="none"
+              />
+            );
+          })}
 
           {/* Province polygons ON TOP of land */}
           {geoData.features.map((feature, i) => {
-            const provinceName = feature.properties.PROVINCE;
+            const provinceName = feature.properties?.PROVINCE;
+            if (!provinceName || !feature.geometry) return null;
+
+            let d: string;
+            try { d = pathGenerator(feature.geometry as GeoJSON.Geometry) || ""; } catch { d = ""; }
+            if (!d) return null;
+
             const isPresent = isProvincePresent(provinceName);
             const isHovered = hoveredProvince === provinceName;
 
@@ -268,7 +331,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
             return (
               <path
                 key={i}
-                d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
+                d={d}
                 fill={fill}
                 fillOpacity={isPresent ? 0.75 : 0}
                 stroke={
@@ -314,7 +377,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
                 const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
                 const cx = prev.x + prev.w / 2;
                 const cy = prev.y + prev.h / 2;
-                return { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+                return safeViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH }, defaultVB);
               });
             }}
           >
@@ -328,7 +391,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
                 const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
                 const cx = prev.x + prev.w / 2;
                 const cy = prev.y + prev.h / 2;
-                return { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+                return safeViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH }, defaultVB);
               });
             }}
           >

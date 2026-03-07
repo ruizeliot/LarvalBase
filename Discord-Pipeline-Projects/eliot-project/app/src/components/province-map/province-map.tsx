@@ -1,7 +1,42 @@
 "use client";
 
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
+
+/** Validate viewBox values — prevent NaN/Infinity from corrupting state */
+function safeViewBox(vb: { x: number; y: number; w: number; h: number }, fallback: { x: number; y: number; w: number; h: number }) {
+  if (!Number.isFinite(vb.x) || !Number.isFinite(vb.y) || !Number.isFinite(vb.w) || !Number.isFinite(vb.h) || vb.w <= 0 || vb.h <= 0) {
+    return fallback;
+  }
+  return vb;
+}
+
+/** Error boundary to prevent map crashes from killing the page */
+class MapErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  componentDidCatch(error: Error) {
+    console.error("ProvinceMap error:", error);
+  }
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="w-full aspect-[2/1] bg-[#1a1a2e] rounded-lg flex items-center justify-center text-white/50 text-sm">
+          Map could not be displayed
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 /** Categorical color palette for provinces */
 const PROVINCE_COLORS = [
@@ -53,7 +88,15 @@ function normalizeProvince(name: string): string {
   return name.replace(/[-/,.·\u00a0]/g, ' ').replace(/\s+/g, ' ').toLowerCase().trim();
 }
 
-export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: ProvinceMapProps) {
+export function ProvinceMap(props: ProvinceMapProps) {
+  return (
+    <MapErrorBoundary>
+      <ProvinceMapInner {...props} />
+    </MapErrorBoundary>
+  );
+}
+
+function ProvinceMapInner({ family, onFilterSpecies, speciesWithImages }: ProvinceMapProps) {
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
   const [provinceData, setProvinceData] = useState<ProvinceApiResponse | null>(null);
@@ -152,13 +195,16 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
     [viewBox.x, viewBox.y]
   );
 
+  const defaultVB = { x: 0, y: 0, w: BASE_WIDTH, h: BASE_HEIGHT };
+
   const handleMouseMovePan = useCallback(
     (e: React.MouseEvent) => {
       if (!isPanning || !panStart.current || !svgRef.current) return;
       const svgRect = svgRef.current.getBoundingClientRect();
+      if (svgRect.width === 0 || svgRect.height === 0) return;
       const dx = ((e.clientX - panStart.current.x) / svgRect.width) * viewBox.w;
       const dy = ((e.clientY - panStart.current.y) / svgRect.height) * viewBox.h;
-      setViewBox((prev) => ({ ...prev, x: panStart.current!.vx - dx, y: panStart.current!.vy - dy }));
+      setViewBox((prev) => safeViewBox({ ...prev, x: panStart.current!.vx - dx, y: panStart.current!.vy - dy }, defaultVB));
     },
     [isPanning, viewBox.w, viewBox.h]
   );
@@ -185,15 +231,19 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
 
   const handleProvinceClick = useCallback(
     (provinceName: string) => {
-      const info = getProvinceInfo(provinceName);
-      if (!info || info.count === 0) return;
+      try {
+        const info = getProvinceInfo(provinceName);
+        if (!info || info.count === 0) return;
 
-      if (selectedProvince === provinceName) {
-        setSelectedProvince(null);
-        onFilterSpecies?.(null);
-      } else {
-        setSelectedProvince(provinceName);
-        onFilterSpecies?.(new Set(info.species));
+        if (selectedProvince === provinceName) {
+          setSelectedProvince(null);
+          onFilterSpecies?.(null);
+        } else {
+          setSelectedProvince(provinceName);
+          onFilterSpecies?.(new Set(info.species));
+        }
+      } catch (err) {
+        console.error("Province click error:", err);
       }
     },
     [selectedProvince, getProvinceInfo, onFilterSpecies]
@@ -261,7 +311,13 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
         >
           {/* Province polygons (below land) */}
           {geoData.features.map((feature, i) => {
-            const provinceName = feature.properties.PROVINCE;
+            const provinceName = feature.properties?.PROVINCE;
+            if (!provinceName || !feature.geometry) return null;
+
+            let d: string;
+            try { d = pathGenerator(feature.geometry as GeoJSON.Geometry) || ""; } catch { d = ""; }
+            if (!d) return null;
+
             const info = getProvinceInfo(provinceName);
             const isPresent = info !== null && info.count > 0;
             const isHovered = hoveredProvince === provinceName;
@@ -275,7 +331,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
             return (
               <path
                 key={i}
-                d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
+                d={d}
                 fill={fill}
                 fillOpacity={isPresent ? (isSelected ? 0.9 : 0.75) : 1}
                 stroke={
@@ -298,16 +354,22 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
           })}
 
           {/* Land masses ON TOP — white continents overlaying provinces */}
-          {landData?.features.map((feature, i) => (
-            <path
-              key={`land-${i}`}
-              d={pathGenerator(feature.geometry as GeoJSON.Geometry) || ""}
-              fill="#ffffff"
-              stroke="rgba(200,200,200,0.5)"
-              strokeWidth={0.3}
-              pointerEvents="none"
-            />
-          ))}
+          {landData?.features.map((feature, i) => {
+            if (!feature.geometry) return null;
+            let d: string;
+            try { d = pathGenerator(feature.geometry as GeoJSON.Geometry) || ""; } catch { d = ""; }
+            if (!d) return null;
+            return (
+              <path
+                key={`land-${i}`}
+                d={d}
+                fill="#ffffff"
+                stroke="rgba(200,200,200,0.5)"
+                strokeWidth={0.3}
+                pointerEvents="none"
+              />
+            );
+          })}
         </svg>
 
         {/* Tooltip */}
@@ -340,7 +402,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
                 const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
                 const cx = prev.x + prev.w / 2;
                 const cy = prev.y + prev.h / 2;
-                return { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+                return safeViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH }, defaultVB);
               });
             }}
           >
@@ -354,7 +416,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages }: Prov
                 const newH = (newW / BASE_WIDTH) * BASE_HEIGHT;
                 const cx = prev.x + prev.w / 2;
                 const cy = prev.y + prev.h / 2;
-                return { x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH };
+                return safeViewBox({ x: cx - newW / 2, y: cy - newH / 2, w: newW, h: newH }, defaultVB);
               });
             }}
           >
