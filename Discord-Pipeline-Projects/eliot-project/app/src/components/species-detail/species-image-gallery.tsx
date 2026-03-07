@@ -42,15 +42,6 @@ interface SpeciesImageGalleryProps {
 /**
  * Component for displaying an image with error handling.
  */
-/**
- * Extract copyright author name: everything before the first " - " in the AUTHOR field.
- */
-function extractCopyrightAuthor(author: string): string {
-  const idx = author.indexOf(' - ');
-  if (idx > 0) return author.substring(0, idx);
-  return author;
-}
-
 function SpeciesImageWithFallback({
   image,
   speciesName,
@@ -91,10 +82,6 @@ function SpeciesImageWithFallback({
         onContextMenu={(e) => e.preventDefault()}
         onDragStart={(e) => e.preventDefault()}
       />
-      {/* Copyright overlay — upper-right */}
-      <div className="absolute top-1 right-1 px-1.5 py-0.5 bg-black/50 rounded text-[10px] text-white/80 pointer-events-none select-none leading-tight">
-        &copy; {extractCopyrightAuthor(image.author)}
-      </div>
       {showZoomHint && (
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
           <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -319,10 +306,6 @@ function ImageLightbox({
             className="max-w-full max-h-full object-contain"
             onContextMenu={(e) => e.preventDefault()}
           />
-          {/* Copyright overlay — upper-right of image area */}
-          <div className="absolute top-5 right-5 px-2 py-1 bg-black/60 rounded text-xs text-white/80 pointer-events-none select-none">
-            &copy; {extractCopyrightAuthor(image.author)}
-          </div>
         </div>
 
         {/* Caption */}
