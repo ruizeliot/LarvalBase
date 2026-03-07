@@ -19,6 +19,7 @@ import { SectionExportButtons } from "./section-export-buttons";
 import { isAllEggsSpherical } from "./egg-spherical-helper";
 import { useSpeciesImages } from "@/hooks/use-species-images";
 import { ArrowLeft } from "lucide-react";
+import { useI18n } from "@/lib/i18n/i18n-context";
 
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
@@ -114,6 +115,7 @@ function SpeciesDetailError({ error }: { error: string }) {
  * - RawDataModal: Modal showing raw measurements for a trait
  */
 export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailProps) {
+  const { t } = useI18n();
   const { data, isLoading, error, recordCount, studyCount, locations, references } =
     useSpeciesDetail(speciesId);
 
@@ -326,13 +328,13 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                           {SECTION_TOOLTIPS['Pelagic Juvenile'] && (
                             <SectionTooltip text={SECTION_TOOLTIPS['Pelagic Juvenile']} />
                           )}
-                          {(pelagicJuvenileData.sizeBarChart?.entries?.length || pelagicJuvenileData.durationBarChart?.entries?.length) && (
+                          {(pelagicJuvenileData.sizeBarChart?.entries?.length || pelagicJuvenileData.durationBarChart?.entries?.length || pelagicJuvenileData.sizeOrderBarChart?.entries?.length || pelagicJuvenileData.durationOrderBarChart?.entries?.length) && (
                             <button
                               type="button"
                               onClick={() => setShowPelagicComparison(!showPelagicComparison)}
                               className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
                             >
-                              {showPelagicComparison ? "Hide comparisons" : "Show comparisons between taxa"}
+                              {showPelagicComparison ? t('hide_comparisons') : t('show_comparisons')}
                             </button>
                           )}
                         </div>
@@ -368,13 +370,13 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                           {SECTION_TOOLTIPS['Rafting'] && (
                             <SectionTooltip text={SECTION_TOOLTIPS['Rafting']} />
                           )}
-                          {raftingData.sizeBarChart?.entries?.length && (
+                          {(raftingData.sizeBarChart?.entries?.length || raftingData.sizeOrderBarChart?.entries?.length) && (
                             <button
                               type="button"
                               onClick={() => setShowRaftingComparison(!showRaftingComparison)}
                               className="text-xs px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
                             >
-                              {showRaftingComparison ? "Hide comparisons" : "Show comparisons between taxa"}
+                              {showRaftingComparison ? t('hide_comparisons') : t('show_comparisons')}
                             </button>
                           )}
                         </div>

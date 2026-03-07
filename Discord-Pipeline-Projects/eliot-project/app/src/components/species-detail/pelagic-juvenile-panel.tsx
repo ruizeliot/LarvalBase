@@ -536,8 +536,8 @@ function NumericTraitPanel({
             />
           </div>
         )}
-        {/* Order bar chart comparison */}
-        {showComparison && orderBarChartData && orderBarChartData.entries.length > 0 && currentSpeciesId && (
+        {/* Order bar chart as FALLBACK only — never show both */}
+        {showComparison && !(barChartData && barChartData.entries.length > 0) && orderBarChartData && orderBarChartData.entries.length > 0 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={orderBarChartData.entries}

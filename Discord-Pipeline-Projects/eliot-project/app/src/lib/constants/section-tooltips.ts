@@ -1,89 +1,91 @@
 /**
  * Tooltip definitions for section headers and panel-level items.
- * Definitions sourced from https://github.com/ruizeliot/fish_larvae_traits_db
+ * Descriptions based on https://github.com/ruizeliot/fish_larvae_traits_db
  */
 
 /** Section-level tooltip definitions (keyed by section title in DISPLAY_GROUPS) */
 export const SECTION_TOOLTIPS: Record<string, string> = {
   'Egg & Incubation':
-    'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Egg characteristics: position in the water column, shape, dimensions, volume, yolk properties, and oil globule(s). Includes incubation/gestation duration and temperature.',
   'Hatching & Pre-flexion Stage':
-    'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Size of larvae at hatching or parturition, with associated rearing temperature.',
   'Flexion Stage':
-    'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Timing and size at notochord flexion \u2014 upward bending of the notochord during caudal fin ossification. A key larval developmental milestone.',
   'Metamorphosis':
-    'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Timing, duration, and size at metamorphosis \u2014 the larval-to-juvenile transition marked by scale appearance, fin development, and body proportion changes.',
   'Settlement':
-    'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Age and size at settlement \u2014 when pelagic larvae transition to benthic/demersal life, marking the end of pelagic larval duration (PLD).',
   'Vertical Position':
-    'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Larval position in the water column. Important for dispersal as different depths experience different current regimes.',
   'Swimming Speed':
-    'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Swimming performance measured in laboratory (critical speed, Ucrit) and in the field (in situ speed using SCUBA protocols).',
   'Pelagic Juvenile':
-    'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Possibility of extended pelagic phase after settlement in benthic/demersal fishes. Records size and age of wild pelagic juveniles sampled.',
   'Rafting':
-    'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Association of larvae/juveniles with floating objects (Sargassum, debris), which can significantly alter dispersal distance and direction.',
   'Larval Growth':
-    'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+    'Individual age-length/weight measurements across the larval phase, used to estimate growth rates in relation to temperature.',
 };
 
 /** Trait-level tooltip definitions (keyed by trait key in DISPLAY_GROUPS) */
 export const TRAIT_TOOLTIPS: Record<string, string> = {
   // Egg & Incubation
   egg_diameter:
-    'Characteristics of the egg including its position in the water column, shape, size, and volume.',
+    'Egg length (diameter for spherical eggs) in mm. Position in water column: pelagic (floating), benthic (attached to substrate), or brooded (mouth/pouch).',
   egg_width:
-    'Width of non-spherical eggs (mm). Only shown when egg width differs from egg length.',
+    'Width of non-spherical eggs in mm. Only shown when egg shape is non-spherical (width \u2260 length).',
   egg_volume:
-    'Volume of the egg in mm\u00B3, computed from diameter measurements. Spherical eggs use the formula (4/3)\u03C0r\u00B3.',
+    'Egg volume in mm\u00B3. Spherical: (4/3)\u03C0r\u00B3. Non-spherical: (4/3)\u03C0 \u00D7 (L/2) \u00D7 (W/2)\u00B2.',
   yolk_diameter:
-    'The nutrient-rich material inside the egg that nourishes the developing embryo until exogenous feeding begins. Size refers to the yolk diameter (in mm).',
+    'Nutrient-rich material inside the egg nourishing the embryo until exogenous feeding. Size = yolk diameter in mm.',
   oil_globule_size:
-    'A lipid-rich droplet inside the egg that provides energy reserves for developing embryos. Size refers to the diameter of the globule (in mm).',
+    'Lipid-rich droplet(s) inside the egg providing energy reserves. Size = diameter in mm.',
+  oil_globule_number:
+    'Count or range of oil globule(s) in the egg. May change during development (e.g., multiple coalescing into one).',
   incubation_duration:
-    'Duration of egg incubation or gestation (depending on reproduction mode), along with associated water temperature.',
+    'Duration of egg incubation or gestation (depending on reproduction mode), with associated water temperature.',
   // Hatching & Pre-flexion
   hatching_size:
-    'Size of larvae at hatching or parturition (depending on reproduction mode).',
+    'Size of larvae at hatching or parturition, with associated rearing temperature.',
   first_feeding_age:
-    'Timing of first feeding (start of exogenous nutrition) and yolk-sac absorption (complete depletion of egg resources).',
+    'Timing (days post-hatch) at first exogenous feeding \u2014 when larvae start feeding from external sources.',
   first_feeding_size:
-    'Size of larvae at first feeding (start of exogenous nutrition) and yolk-sac absorption (complete depletion of egg resources).',
+    'Size at first exogenous feeding and yolk-sac absorption.',
   yolk_absorption_age:
-    'Timing of yolk-sac absorption \u2014 the complete depletion of egg resources.',
+    'Timing of yolk-sac absorption \u2014 complete depletion of endogenous egg resources.',
   yolk_absorbed_size:
-    'Size of larvae at yolk-sac absorption (complete depletion of egg resources).',
+    'Size at yolk-sac absorption \u2014 complete depletion of endogenous egg resources.',
   // Flexion
   flexion_age:
-    'Timing of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements.',
+    'Timing of notochord flexion \u2014 upward bending of the notochord during caudal fin ossification.',
   flexion_size:
-    'Size of larvae at notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements.',
+    'Size at notochord flexion \u2014 upward bending of the notochord during caudal fin ossification.',
   // Metamorphosis
   metamorphosis_age:
-    'Timing of metamorphosis \u2014 the transition from larval to juvenile stage.',
+    'Timing of metamorphosis \u2014 the larval-to-juvenile transition marked by scale appearance and fin development.',
   metamorphosis_duration:
-    'Duration of metamorphosis \u2014 the transition from larval to juvenile stage.',
+    'Duration of metamorphosis \u2014 the transitional period from larval to juvenile morphology.',
   metamorphosis_size:
-    'Size of larvae at metamorphosis \u2014 the transition from larval to juvenile stage.',
+    'Size at metamorphosis \u2014 the larval-to-juvenile transition marked by scale appearance and fin development.',
   // Settlement
   settlement_age:
-    'Age at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Age at settlement \u2014 when pelagic larvae transition to benthic/demersal life. Marks the end of pelagic larval duration (PLD).',
   settlement_size:
-    'Size at which larvae transition from pelagic to benthic/demersal life (settlement).',
+    'Size at settlement \u2014 when pelagic larvae transition to benthic/demersal life.',
   // Swimming
   critical_swimming_speed:
-    'Critical swimming speed (Ucrit) \u2014 the maximum sustained swimming velocity of larvae, measured in laboratory flume experiments with incrementally increasing water speeds.',
+    'Critical swimming speed (Ucrit) \u2014 maximum sustained velocity measured in laboratory flume experiments with incrementally increasing flow.',
   critical_swimming_speed_rel:
     'Relative critical swimming speed (Ucrit) expressed in body lengths per second (BL/s).',
   in_situ_swimming_speed:
-    'In situ swimming speed \u2014 swimming performance of larvae measured in the field using SCUBA-based protocols where divers follow individual larvae in open water.',
+    'In situ swimming speed \u2014 field-measured performance using SCUBA protocols where divers follow individual larvae in open water.',
   in_situ_swimming_speed_rel:
     'Relative in situ swimming speed expressed in body lengths per second (BL/s).',
   // Vertical position
   vertical_day_depth:
-    'Daytime depth position of larvae in the water column.',
+    'Daytime depth of larvae in the water column.',
   vertical_night_depth:
-    'Nighttime depth position of larvae in the water column.',
+    'Nighttime depth of larvae in the water column.',
   vertical_distribution:
-    'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Larval position in the water column. Important for dispersal as different depths experience different current regimes.',
 };

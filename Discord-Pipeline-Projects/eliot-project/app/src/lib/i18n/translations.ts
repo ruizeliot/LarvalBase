@@ -3,11 +3,19 @@
  * Supports English (en) and French (fr).
  */
 
-export type Language = 'en' | 'fr';
+export type Language = 'en' | 'fr' | 'es' | 'pt' | 'de' | 'ja' | 'zh' | 'hi' | 'ar' | 'ru';
 
 export const LANGUAGES: { code: Language; label: string; flag: string }[] = [
   { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
+  { code: 'fr', label: 'Fran\u00E7ais', flag: '🇫🇷' },
+  { code: 'es', label: 'Espa\u00F1ol', flag: '🇪🇸' },
+  { code: 'pt', label: 'Portugu\u00EAs', flag: '🇧🇷' },
+  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+  { code: 'ja', label: '\u65E5\u672C\u8A9E', flag: '🇯🇵' },
+  { code: 'zh', label: '\u7B80\u4F53\u4E2D\u6587', flag: '🇨🇳' },
+  { code: 'hi', label: '\u0939\u093F\u0928\u094D\u0926\u0940', flag: '🇮🇳' },
+  { code: 'ar', label: '\u0627\u0644\u0639\u0631\u0628\u064A\u0629', flag: '🇸🇦' },
+  { code: 'ru', label: '\u0420\u0443\u0441\u0441\u043A\u0438\u0439', flag: '🇷🇺' },
 ];
 
 type TranslationStrings = {
@@ -349,7 +357,7 @@ const fr: TranslationStrings = {
   source_label: 'Source',
 };
 
-export const translations: Record<Language, TranslationStrings> = { en, fr };
+export const translations: Record<Language, TranslationStrings> = { en, fr, es: en, pt: en, de: en, ja: en, zh: en, hi: en, ar: en, ru: en };
 
 /** Section title mapping for i18n (English title -> translation key) */
 export const SECTION_TITLE_KEYS: Record<string, keyof TranslationStrings> = {
@@ -422,10 +430,114 @@ export const SECTION_TOOLTIP_TRANSLATIONS: Record<Language, Record<string, strin
     'Rafting': 'Association de larves ou juv\u00E9niles avec des objets flottants (ex. sargasses, d\u00E9bris), pouvant influencer significativement la distance et la direction de dispersion.',
     'Larval Growth': 'Enregistrements individuels de mesures \u00E2ge-taille/poids couvrant au moins deux tiers de la phase larvaire, utilis\u00E9s pour estimer les taux de croissance.',
   },
+  es: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  pt: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  de: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  ja: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  zh: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  hi: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  ar: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
+  ru: {
+    'Egg & Incubation': 'Characteristics of the egg including its position in the water column, shape, size, and volume. Also includes information about the yolk and oil globule(s) inside the egg, and the duration of egg incubation or gestation.',
+    'Hatching & Pre-flexion Stage': 'Size of larvae at hatching or parturition, timing and size at first feeding (start of exogenous nutrition), and yolk-sac absorption (complete depletion of egg resources).',
+    'Flexion Stage': 'Timing and size of notochord flexion \u2014 the upward bending of the notochord associated with the ossification of caudal fin elements. This is a key developmental milestone in larval fish development.',
+    'Metamorphosis': 'Timing, duration, and size at metamorphosis \u2014 the transition from larval to juvenile stage, often characterized by the appearance of scales, growth of all fin spines/rays, and changes in body proportions.',
+    'Settlement': 'Age and size at which larvae transition from pelagic to benthic/demersal life (settlement). This marks the end of the pelagic larval duration (PLD).',
+    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
+    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Pelagic Juvenile': 'Duration and characteristics of the pelagic juvenile phase, occurring after settlement but before full recruitment to the adult habitat.',
+    'Rafting': 'Association of larvae or juveniles with floating objects (e.g., Sargassum, debris), which can significantly influence dispersal distance and direction.',
+    'Larval Growth': 'Individual-level records of age-length/weight measurements across at least two-thirds of the larval phase, used to estimate growth rates.',
+  },
 };
 
 /** Common names language mapping: i18n language -> CSV LANGUAGE column value */
 export const COMMON_NAME_LANGUAGE_MAP: Record<Language, string> = {
   en: 'English',
   fr: 'French',
+  es: 'Spanish',
+  pt: 'Portuguese',
+  de: 'German',
+  ja: 'Japanese',
+  zh: 'Chinese',
+  hi: 'Hindi',
+  ar: 'Arabic',
+  ru: 'Russian',
 };

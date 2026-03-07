@@ -97,21 +97,42 @@ export async function GET(
       return NextResponse.json({ names: [] });
     }
 
-    // Count name frequency across sources for relevance
-    const nameFreq = new Map<string, number>();
+    // Relevance scoring: frequency + source authority + name quality
+    const nameScores = new Map<string, { score: number; freq: number; sources: Set<string> }>();
     for (const m of matches) {
       const name = m.commonName.trim();
       if (!name) continue;
       const lower = name.toLowerCase();
-      // Filter out generic names
       if (GENERIC_NAMES.has(lower)) continue;
-      // Filter single-word generic-sounding names (less than 4 chars)
-      nameFreq.set(name, (nameFreq.get(name) || 0) + 1);
+      // Skip very short names (likely abbreviations)
+      if (name.length < 3) continue;
+
+      const existing = nameScores.get(name) || { score: 0, freq: 0, sources: new Set<string>() };
+      existing.freq += 1;
+      if (m.source) existing.sources.add(m.source.toLowerCase());
+      nameScores.set(name, existing);
     }
 
-    // Sort by frequency (most common first), then alphabetically
-    const sorted = [...nameFreq.entries()]
-      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    // Compute final score for each name
+    for (const [name, data] of nameScores) {
+      let score = data.freq * 2; // frequency weight
+      // Authoritative source bonus
+      for (const src of data.sources) {
+        if (src.includes('fishbase') || src.includes('fish base')) score += 5;
+        if (src.includes('fao')) score += 3;
+        if (src.includes('iucn')) score += 2;
+      }
+      // Prefer multi-word descriptive names over single words
+      const words = name.split(/\s+/).length;
+      if (words >= 2) score += 2;
+      // Penalize overly long names (>40 chars)
+      if (name.length > 40) score -= 2;
+      data.score = score;
+    }
+
+    // Sort by score descending, then alphabetically
+    const sorted = [...nameScores.entries()]
+      .sort((a, b) => b[1].score - a[1].score || a[0].localeCompare(b[0]))
       .map(([name]) => name);
 
     // Return at most 3

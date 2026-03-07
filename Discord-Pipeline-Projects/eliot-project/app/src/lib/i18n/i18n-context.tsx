@@ -33,7 +33,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
   // Load from localStorage on mount
   useEffect(() => {
     const saved = localStorage.getItem('larvalbase-lang') as Language | null;
-    if (saved === 'en' || saved === 'fr') {
+    if (['en','fr','es','pt','de','ja','zh','hi','ar','ru'].includes(saved)) {
       setLanguageState(saved);
     }
   }, []);
