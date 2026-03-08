@@ -274,30 +274,33 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
 
           {/* Ecology Filters */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs text-muted-foreground font-medium text-center justify-center">Filter by ecology</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-1.5 mx-2 rounded bg-blue-600/80">Filter by adult ecology (below) or location (map)</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="px-2 space-y-2">
                 {/* Ecosystem filter */}
                 <div>
                   <div className="text-xs font-medium text-white/80 mb-1">Ecosystem</div>
                   <div className="space-y-0.5">
-                    {['Marine', 'Euryhaline', 'Freshwater'].map(eco => (
-                      <label key={eco} className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-white/5 ${selectedEcosystems.has(eco) ? 'bg-white/10' : ''}`}>
-                        <input
-                          type="checkbox"
-                          checked={selectedEcosystems.has(eco)}
-                          onChange={() => {
-                            setSelectedEcosystems(prev => {
-                              const next = new Set(prev);
-                              if (next.has(eco)) next.delete(eco); else next.add(eco);
-                              return next;
-                            });
-                          }}
-                          className="rounded border-border"
-                        />
-                        <span className="text-white/90">{eco}</span>
-                      </label>
-                    ))}
+                    {['Marine', 'Euryhaline', 'Freshwater'].map(eco => {
+                      const displayLabel = eco === 'Freshwater' ? 'Freshwater (marine larvae)' : eco;
+                      return (
+                        <label key={eco} className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-white/5 ${selectedEcosystems.has(eco) ? 'bg-white/10' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={selectedEcosystems.has(eco)}
+                            onChange={() => {
+                              setSelectedEcosystems(prev => {
+                                const next = new Set(prev);
+                                if (next.has(eco)) next.delete(eco); else next.add(eco);
+                                return next;
+                              });
+                            }}
+                            className="rounded border-border"
+                          />
+                          <span className="text-white/90">{displayLabel}</span>
+                        </label>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Habitat filter */}
@@ -339,7 +342,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
 
           {/* Trait Filters - uses availableTraitTypes from useSpeciesData */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-[10px] text-muted-foreground font-medium text-center justify-center leading-tight">Filter by dispersal traits availability (below)</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-1.5 mx-2 rounded bg-blue-600/80">Filter by dispersal traits availability</SidebarGroupLabel>
             <SidebarGroupContent>
               <TraitFilters
                 selectedTraits={selectedTraits}
