@@ -27,6 +27,7 @@ export async function GET() {
         id: s.id,
         scientificName: s.validName,
         commonName: s.commonName,
+        allCommonNames: s.allCommonNames || [],
         order: s.order,
         family: s.family,
         genus: s.genus,

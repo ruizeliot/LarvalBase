@@ -10,14 +10,12 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { useI18n } from "@/lib/i18n/i18n-context";
-
-type SearchMode = "latin" | "common";
 
 interface SpeciesItem {
   id: string;
   scientificName: string;
   commonName: string | null;
+  allCommonNames?: string[];
   family: string;
 }
 
@@ -28,32 +26,27 @@ interface SynonymMatch {
 }
 
 interface SpeciesSearchProps {
-  /** All species to search through (filtering handled by cmdk) */
   species: SpeciesItem[];
   onSelect: (species: SpeciesItem) => void;
   onSearchChange?: (search: string) => void;
 }
 
 /**
- * Species search with autocomplete, Latin/Common name toggle, and synonym support.
- * Shows species name + family as user types.
- * Results appear after 200ms debounce.
- * When a synonym is searched, shows the valid species with a "Synonym of" note.
+ * Species search with autocomplete and synonym support.
+ * Searches both Latin names AND common names simultaneously.
  */
 export function SpeciesSearch({
   species,
   onSelect,
   onSearchChange,
 }: SpeciesSearchProps) {
-  const { t } = useI18n();
   const [search, setSearch] = useState("");
-  const [searchMode, setSearchMode] = useState<SearchMode>("latin");
   const debouncedSearch = useDebouncedValue(search, 200);
   const [synonymMatches, setSynonymMatches] = useState<SynonymMatch[]>([]);
 
-  // Fetch synonym matches when searching in latin mode
+  // Fetch synonym matches
   useEffect(() => {
-    if (searchMode !== "latin" || !debouncedSearch.trim() || debouncedSearch.trim().length < 3) {
+    if (!debouncedSearch.trim() || debouncedSearch.trim().length < 3) {
       setSynonymMatches([]);
       return;
     }
@@ -71,26 +64,27 @@ export function SpeciesSearch({
       });
 
     return () => { cancelled = true; };
-  }, [debouncedSearch, searchMode]);
+  }, [debouncedSearch]);
 
-  // Filter species based on debounced search and selected mode
+  // Filter species — search both Latin and common names simultaneously
   const filteredSpecies = debouncedSearch.trim()
     ? species.filter((sp) => {
         const lowerSearch = debouncedSearch.toLowerCase();
-        if (searchMode === "latin") {
-          return sp.scientificName.toLowerCase().includes(lowerSearch);
-        }
-        return sp.commonName?.toLowerCase().includes(lowerSearch) ?? false;
+        const latinMatch = sp.scientificName.toLowerCase().includes(lowerSearch);
+        // Search across all common names (up to 3)
+        const commonMatch = sp.allCommonNames?.some(n => n.toLowerCase().includes(lowerSearch))
+          ?? sp.commonName?.toLowerCase().includes(lowerSearch)
+          ?? false;
+        return latinMatch || commonMatch;
       })
     : [];
 
-  // Build synonym-matched species (valid names from synonym lookup)
+  // Build synonym-matched species
   const synonymSpecies: Array<SpeciesItem & { synonymOf: string }> = [];
-  if (searchMode === "latin" && synonymMatches.length > 0) {
+  if (synonymMatches.length > 0) {
     const directIds = new Set(filteredSpecies.map(sp => sp.scientificName.toLowerCase()));
     for (const match of synonymMatches) {
       const validLower = match.validName.toLowerCase();
-      // Don't duplicate species already in direct results
       if (directIds.has(validLower)) continue;
       const found = species.find(sp => sp.scientificName.toLowerCase() === validLower);
       if (found) {
@@ -109,43 +103,17 @@ export function SpeciesSearch({
 
   return (
     <Command shouldFilter={false} className="border-b">
-      {/* Search mode radio toggle */}
-      <div className="flex items-center gap-3 px-3 py-1.5 border-b bg-muted/30">
-        <label className="flex items-center gap-1 cursor-pointer text-xs">
-          <input
-            type="radio"
-            name="searchMode"
-            checked={searchMode === "latin"}
-            onChange={() => setSearchMode("latin")}
-            className="accent-primary"
-          />
-          {t('search_latin_name')}
-        </label>
-        <label className="flex items-center gap-1 cursor-pointer text-xs">
-          <input
-            type="radio"
-            name="searchMode"
-            checked={searchMode === "common"}
-            onChange={() => setSearchMode("common")}
-            className="accent-primary"
-          />
-          {t('search_common_name')}
-        </label>
-      </div>
-      <div className="flex items-center border-b px-3">
-        <CommandInput
-          placeholder={searchMode === "latin" ? t('search_placeholder_latin') : t('search_placeholder_common')}
-          value={search}
-          onValueChange={handleSearchChange}
-          className="flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
+      <CommandInput
+        placeholder="Search by scientific or common name..."
+        value={search}
+        onValueChange={handleSearchChange}
+      />
       <CommandList className="max-h-64 overflow-auto">
         {debouncedSearch.trim() && totalResults === 0 && (
-          <CommandEmpty>{t('no_species_found')}</CommandEmpty>
+          <CommandEmpty>No species found</CommandEmpty>
         )}
         {filteredSpecies.length > 0 && (
-          <CommandGroup heading={`${totalResults} ${t('results')}`}>
+          <CommandGroup heading={`${totalResults} results`}>
             {filteredSpecies.slice(0, 50).map((sp) => (
               <CommandItem
                 key={sp.id}
@@ -154,11 +122,15 @@ export function SpeciesSearch({
                 className="flex flex-col items-start py-2"
               >
                 <span className="font-medium italic">{sp.scientificName}</span>
-                {sp.commonName && (
+                {(sp.allCommonNames?.length ?? 0) > 0 ? (
+                  <span className="text-xs text-muted-foreground">
+                    {sp.allCommonNames!.join(', ')}
+                  </span>
+                ) : sp.commonName ? (
                   <span className="text-xs text-muted-foreground">
                     {sp.commonName}
                   </span>
-                )}
+                ) : null}
                 <span className="text-xs text-muted-foreground">
                   Family: {sp.family}
                 </span>
@@ -167,7 +139,7 @@ export function SpeciesSearch({
           </CommandGroup>
         )}
         {synonymSpecies.length > 0 && (
-          <CommandGroup heading={t('synonym_results') || 'Synonym matches'}>
+          <CommandGroup heading="Synonym matches">
             {synonymSpecies.slice(0, 20).map((sp) => (
               <CommandItem
                 key={`syn-${sp.id}`}
@@ -177,7 +149,7 @@ export function SpeciesSearch({
               >
                 <span className="font-medium italic">{sp.scientificName}</span>
                 <span className="text-xs text-amber-400">
-                  {t('synonym_of') || 'Synonym of'} {sp.scientificName} ({sp.synonymOf})
+                  Synonym of {sp.scientificName} ({sp.synonymOf})
                 </span>
                 {sp.commonName && (
                   <span className="text-xs text-muted-foreground">
@@ -193,7 +165,7 @@ export function SpeciesSearch({
         )}
         {!debouncedSearch.trim() && (
           <div className="py-6 text-center text-sm text-muted-foreground">
-            {t('type_to_search')}
+            Type to search species...
           </div>
         )}
       </CommandList>

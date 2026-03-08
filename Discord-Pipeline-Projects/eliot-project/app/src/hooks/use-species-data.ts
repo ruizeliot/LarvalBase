@@ -8,6 +8,7 @@ interface SpeciesItem {
   id: string;
   scientificName: string;
   commonName: string | null;
+  allCommonNames?: string[];
   order: string;
   family: string;
   genus: string;
@@ -18,6 +19,7 @@ interface ApiSpeciesItem {
   validName?: string;
   scientificName?: string;
   commonName: string | null;
+  allCommonNames?: string[];
   order: string;
   family: string;
   genus: string;
@@ -119,6 +121,7 @@ export function useSpeciesData(): SpeciesDataState {
             id: sp.id,
             scientificName: sp.validName || sp.scientificName || "",
             commonName: sp.commonName,
+            allCommonNames: sp.allCommonNames,
             order: sp.order,
             family: sp.family,
             genus: sp.genus,

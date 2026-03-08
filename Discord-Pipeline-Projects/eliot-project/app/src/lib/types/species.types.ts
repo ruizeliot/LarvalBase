@@ -19,6 +19,9 @@ export interface Species {
   /** Common name if available (e.g., "Convict surgeonfish") */
   commonName: string | null;
 
+  /** All common names (up to 3) for search */
+  allCommonNames?: string[];
+
   /** Taxonomic order (e.g., "Perciformes") */
   order: string;
 

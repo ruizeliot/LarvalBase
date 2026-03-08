@@ -86,12 +86,6 @@ export function SpeciesHeader({
             <h1 className="text-[28px] font-semibold italic">{scientificName}</h1>
             {/* Taxonomy line */}
             <div className="text-muted-foreground">
-              {commonName && (
-                <>
-                  <span>{commonName}</span>
-                  <span className="mx-2">|</span>
-                </>
-              )}
               <span>{family}</span>
               <span className="mx-2">|</span>
               <span>{cleanOrderName(order)}</span>

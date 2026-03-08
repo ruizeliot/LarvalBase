@@ -9,6 +9,9 @@
  * This ensures GitHub is only hit when cache is empty or expired.
  */
 
+import { promises as fs } from 'fs';
+import path from 'path';
+import Papa from 'papaparse';
 import { getCache, CACHE_KEY } from './cache';
 import { getDataCache } from './csv-cache';
 import { fetchAllCSVs, getFileType } from './github-client';
@@ -816,7 +819,38 @@ export async function getOrLoadData(): Promise<AllData> {
     console.warn('[data-repository] Could not load image registry for species merge:', error);
   }
 
-  // 2c. Tag species that have growth model data with virtual 'growth_model' trait
+  // 2c. Load common names from best3 CSV and attach to species
+  try {
+    const commonNamesPath = path.join(process.cwd(), 'data', 'common_names_best3.csv');
+    const cnContent = await fs.readFile(commonNamesPath, 'utf-8');
+    let commonNamesCount = 0;
+    Papa.parse(cnContent, {
+      header: true,
+      skipEmptyLines: true,
+      step: (result: { data: Record<string, string> }) => {
+        const row = result.data;
+        if (row.LANGUAGE !== 'English') return;
+        const validName = row.VALID_NAME;
+        if (!validName) return;
+        const id = slugify(validName);
+        const sp = species.get(id);
+        if (sp && !sp.commonName) {
+          sp.commonName = row.COMMON_NAME_1 || null;
+          const names: string[] = [];
+          if (row.COMMON_NAME_1) names.push(row.COMMON_NAME_1);
+          if (row.COMMON_NAME_2) names.push(row.COMMON_NAME_2);
+          if (row.COMMON_NAME_3) names.push(row.COMMON_NAME_3);
+          if (names.length > 0) sp.allCommonNames = names;
+          commonNamesCount++;
+        }
+      },
+    });
+    console.log(`[data-repository] Loaded ${commonNamesCount} English common names`);
+  } catch (error) {
+    console.warn('[data-repository] Could not load common names:', error);
+  }
+
+  // 2d. Tag species that have growth model data with virtual 'growth_model' trait
   // (same pattern as larval_age_at_length — ensures sidebar filter works)
   try {
     const growthModelSpecies = await getSpeciesWithGrowthModels();
