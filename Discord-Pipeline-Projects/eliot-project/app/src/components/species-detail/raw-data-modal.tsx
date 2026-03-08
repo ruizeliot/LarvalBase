@@ -117,166 +117,173 @@ function getRawField(row: RawMeasurement, csvField: string): unknown {
  * Standard measurement columns shared by most trait types.
  * @param preCols - Columns before Mean/Min/Max (e.g. N, qualitative info)
  * @param postCols - Columns after Max/Conf (e.g. Mean Type, Conf Type, Length Type, Temperature)
+ * @param ctx - Optional context for trait-specific descriptions (e.g. { trait: "flexion age", unit: "days post-hatching" })
  */
-function stdMeasurementCols(preCols: TraitColumnDef[], postCols: TraitColumnDef[] = []): TraitColumnDef[] {
+function stdMeasurementCols(
+  preCols: TraitColumnDef[],
+  postCols: TraitColumnDef[] = [],
+  ctx?: { trait: string; unit: string }
+): TraitColumnDef[] {
+  const t = ctx?.trait || "measured value";
+  const u = ctx?.unit ? ` (${ctx.unit})` : "";
   return [
-    { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
+    { key: "VALID_NAME", label: "Name", description: "Valid species name (accepted taxonomy)", csvField: "VALID_NAME" },
     ...preCols,
-    { key: "__MEAN__", label: "Mean", description: "Mean measured value", csvField: "__MEAN__" },
-    { key: "__MIN__", label: "Min", description: "Minimum value", csvField: "__MIN__" },
-    { key: "__MAX__", label: "Max", description: "Maximum value", csvField: "__MAX__" },
-    { key: "__CONF__", label: "Conf", description: "Confidence interval", csvField: "__CONF__" },
+    { key: "__MEAN__", label: "Mean", description: `Mean ${t}${u}`, csvField: "__MEAN__" },
+    { key: "__MIN__", label: "Min", description: `Minimum ${t} observed${u}`, csvField: "__MIN__" },
+    { key: "__MAX__", label: "Max", description: `Maximum ${t} observed${u}`, csvField: "__MAX__" },
+    { key: "__CONF__", label: "Conf", description: `Confidence interval for ${t} (standard deviation or standard error)`, csvField: "__CONF__" },
     ...postCols,
-    { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
-    { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
+    { key: "EXT_REF", label: "External References", description: "Source study of the information cited in the main reference", csvField: "EXT_REF" },
+    { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open the original publication link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
   ];
 }
 
 /** Egg diameter columns — per columns_per_type.txt: EGG_L_MEAN_TYPE, EGG_DIAMETER_CONF_TYPE */
 const EGG_DIAMETER_COLUMNS: TraitColumnDef[] = stdMeasurementCols([], [
-  { key: "EGG_L_MEAN_TYPE", label: "Mean Type", description: "Type of egg length mean", csvField: "EGG_L_MEAN_TYPE" },
-  { key: "EGG_DIAMETER_CONF_TYPE", label: "Conf Type", description: "Type of diameter confidence", csvField: "EGG_DIAMETER_CONF_TYPE" },
-]);
+  { key: "EGG_L_MEAN_TYPE", label: "Mean Type", description: "How the egg diameter mean was computed (e.g. arithmetic mean, median)", csvField: "EGG_L_MEAN_TYPE" },
+  { key: "EGG_DIAMETER_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "EGG_DIAMETER_CONF_TYPE" },
+], { trait: "egg diameter", unit: "mm" });
 
 /** Yolk diameter columns — per columns_per_type.txt: YOLK_SIZE_MEAN_TYPE */
 const YOLK_DIAMETER_COLUMNS: TraitColumnDef[] = stdMeasurementCols([], [
-  { key: "YOLK_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of yolk size mean", csvField: "YOLK_SIZE_MEAN_TYPE" },
-]);
+  { key: "YOLK_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the yolk diameter mean was computed", csvField: "YOLK_SIZE_MEAN_TYPE" },
+], { trait: "yolk diameter", unit: "mm" });
 
 /** Oil globule size columns — per columns_per_type.txt: OIL_GLOBULE_SIZE_MEAN_TYPE */
 const OIL_GLOBULE_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([], [
-  { key: "OIL_GLOBULE_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of oil globule size mean", csvField: "OIL_GLOBULE_SIZE_MEAN_TYPE" },
-]);
+  { key: "OIL_GLOBULE_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the oil globule size mean was computed", csvField: "OIL_GLOBULE_SIZE_MEAN_TYPE" },
+], { trait: "oil globule size", unit: "mm" });
 
 /** Egg volume columns — per columns_per_type.txt: EGG_VOLUME_TYPE */
 const EGG_VOLUME_COLUMNS: TraitColumnDef[] = stdMeasurementCols([], [
-  { key: "EGG_VOLUME_TYPE", label: "Volume Type", description: "Type of egg volume measurement", csvField: "EGG_VOLUME_TYPE" },
-]);
+  { key: "EGG_VOLUME_TYPE", label: "Volume Type", description: "How egg volume was measured or estimated", csvField: "EGG_VOLUME_TYPE" },
+], { trait: "egg volume", unit: "mm³" });
 
 /** Incubation duration columns — per columns_per_type.txt: MEAN_TYPE + temperature */
 const INCUBATION_DURATION_COLUMNS: TraitColumnDef[] = stdMeasurementCols([], [
-  { key: "INCUBATION_GESTATION_HOUR_MEAN_TYPE", label: "Mean Type", description: "Type of incubation mean", csvField: "INCUBATION_GESTATION_HOUR_MEAN_TYPE" },
-  { key: "INCUBATION_GESTATION_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean temperature (°C)", csvField: "INCUBATION_GESTATION_TEMPERATURE_MEAN" },
-  { key: "INCUBATION_GESTATION_TEMPERATURE_MIN", label: "Temp Min", description: "Min temperature (°C)", csvField: "INCUBATION_GESTATION_TEMPERATURE_MIN" },
-  { key: "INCUBATION_GESTATION_TEMPERATURE_MAX", label: "Temp Max", description: "Max temperature (°C)", csvField: "INCUBATION_GESTATION_TEMPERATURE_MAX" },
-  { key: "INCUBATION_GESTATION_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "INCUBATION_GESTATION_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "INCUBATION_GESTATION_HOUR_MEAN_TYPE", label: "Mean Type", description: "How the incubation/gestation duration mean was computed", csvField: "INCUBATION_GESTATION_HOUR_MEAN_TYPE" },
+  { key: "INCUBATION_GESTATION_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean water temperature during incubation (°C)", csvField: "INCUBATION_GESTATION_TEMPERATURE_MEAN" },
+  { key: "INCUBATION_GESTATION_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum water temperature during incubation (°C)", csvField: "INCUBATION_GESTATION_TEMPERATURE_MIN" },
+  { key: "INCUBATION_GESTATION_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum water temperature during incubation (°C)", csvField: "INCUBATION_GESTATION_TEMPERATURE_MAX" },
+  { key: "INCUBATION_GESTATION_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the incubation temperature mean was computed", csvField: "INCUBATION_GESTATION_TEMPERATURE_MEAN_TYPE" },
+], { trait: "incubation/gestation duration", unit: "hours" });
 
 /** Hatching size — per columns_per_type.txt */
 const HATCHING_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([], [
-  { key: "HATCHING_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of hatching size mean", csvField: "HATCHING_SIZE_MEAN_TYPE" },
-  { key: "HATCHING_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "HATCHING_SIZE_CONF_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "HATCHING_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the hatching size mean was computed", csvField: "HATCHING_SIZE_MEAN_TYPE" },
+  { key: "HATCHING_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "HATCHING_SIZE_CONF_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "hatching/parturition size", unit: "mm" });
 
 /** First feeding age — per columns_per_type.txt */
 const FIRST_FEEDING_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "FIRST_FEEDING_DPH_MEAN_TYPE", label: "Mean Type", description: "Type of first feeding age mean", csvField: "FIRST_FEEDING_DPH_MEAN_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "FIRST_FEEDING_DPH_MEAN_TYPE", label: "Mean Type", description: "How the first feeding age mean was computed", csvField: "FIRST_FEEDING_DPH_MEAN_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "first feeding age", unit: "days post-hatching" });
 
 /** Yolk absorption age — same pattern as first feeding age */
 const YOLK_ABSORPTION_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "YOLK_ABSORPTION_MEAN_TYPE", label: "Mean Type", description: "Type of yolk absorption age mean", csvField: "YOLK_ABSORPTION_MEAN_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "YOLK_ABSORPTION_MEAN_TYPE", label: "Mean Type", description: "How the yolk absorption age mean was computed", csvField: "YOLK_ABSORPTION_MEAN_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "yolk absorption age", unit: "days post-hatching" });
 
 /** First feeding size — per columns_per_type.txt */
 const FIRST_FEEDING_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "FIRST_FEEDING_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of first feeding size mean", csvField: "FIRST_FEEDING_SIZE_MEAN_TYPE" },
-  { key: "FIRST_FEEDING_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "FIRST_FEEDING_SIZE_CONF_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "FIRST_FEEDING_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the first feeding size mean was computed", csvField: "FIRST_FEEDING_SIZE_MEAN_TYPE" },
+  { key: "FIRST_FEEDING_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "FIRST_FEEDING_SIZE_CONF_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "first feeding size", unit: "mm" });
 
 /** Yolk absorption size — per columns_per_type.txt */
 const YOLK_ABSORBED_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of yolk absorption size mean", csvField: "YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE" },
-  { key: "YOLK_SAC_ABSORBED_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "YOLK_SAC_ABSORBED_SIZE_CONF_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the yolk absorption size mean was computed", csvField: "YOLK_SAC_ABSORBED_SIZE_MEAN_TYPE" },
+  { key: "YOLK_SAC_ABSORBED_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "YOLK_SAC_ABSORBED_SIZE_CONF_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "yolk-absorbed size", unit: "mm" });
 
 /** Flexion age — per columns_per_type.txt */
 const FLEXION_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
-  { key: "FLEXION_INFOS", label: "Flexion Info", description: "Additional flexion information", csvField: "FLEXION_INFOS" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
+  { key: "FLEXION_INFOS", label: "Flexion Info", description: "Additional notochord flexion information", csvField: "FLEXION_INFOS" },
 ], [
-  { key: "FLEXION_AGE_DPH_MEAN_TYPE", label: "Mean Type", description: "Type of flexion age mean", csvField: "FLEXION_AGE_DPH_MEAN_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "FLEXION_AGE_DPH_MEAN_TYPE", label: "Mean Type", description: "How the flexion age mean was computed", csvField: "FLEXION_AGE_DPH_MEAN_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "flexion age", unit: "days post-hatching" });
 
 /** Flexion size — per columns_per_type.txt */
 const FLEXION_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "FLEXION_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of flexion size mean", csvField: "FLEXION_SIZE_MEAN_TYPE" },
-  { key: "FLEXION_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "FLEXION_SIZE_CONF_TYPE" },
-  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of length measurement", csvField: "LENGTH_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "FLEXION_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the flexion size mean was computed", csvField: "FLEXION_SIZE_MEAN_TYPE" },
+  { key: "FLEXION_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "FLEXION_SIZE_CONF_TYPE" },
+  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of body length measurement (SL, TL, NL, etc.)", csvField: "LENGTH_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "flexion size", unit: "mm" });
 
 /** Metamorphosis age — per columns_per_type.txt */
 const METAMORPHOSIS_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
-  { key: "MET_DEFINITION", label: "Met Definition", description: "Metamorphosis definition", csvField: "MET_DEFINITION" },
-  { key: "MET_AGE_INFOS", label: "Met Age Info", description: "Additional age information", csvField: "MET_AGE_INFOS" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
+  { key: "MET_DEFINITION", label: "Met Definition", description: "How metamorphosis was defined for this study", csvField: "MET_DEFINITION" },
+  { key: "MET_AGE_INFOS", label: "Met Age Info", description: "Additional metamorphosis age information", csvField: "MET_AGE_INFOS" },
 ], [
-  { key: "MET_AGE_DPH_MEAN_TYPE", label: "Mean Type", description: "Type of met age mean", csvField: "MET_AGE_DPH_MEAN_TYPE" },
-  { key: "MET_AGE_DPH_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "MET_AGE_DPH_CONF_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "MET_AGE_DPH_MEAN_TYPE", label: "Mean Type", description: "How the metamorphosis age mean was computed", csvField: "MET_AGE_DPH_MEAN_TYPE" },
+  { key: "MET_AGE_DPH_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "MET_AGE_DPH_CONF_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "metamorphosis age", unit: "days post-hatching" });
 
 /** Metamorphosis duration — per columns_per_type.txt */
 const METAMORPHOSIS_DURATION_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
   { key: "MET_AGE_INFOS", label: "Met Age Info", description: "Additional age information", csvField: "MET_AGE_INFOS" },
 ], [
-  { key: "MET_DURATION_MEAN_TYPE", label: "Mean Type", description: "Type of met duration mean", csvField: "MET_DURATION_MEAN_TYPE" },
-  { key: "MET_DURATION_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "MET_DURATION_CONF_TYPE" },
-  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
-  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Min rearing temp (°C)", csvField: "REARING_TEMPERATURE_MIN" },
-  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Max rearing temp (°C)", csvField: "REARING_TEMPERATURE_MAX" },
-  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "MET_DURATION_MEAN_TYPE", label: "Mean Type", description: "How the metamorphosis duration mean was computed", csvField: "MET_DURATION_MEAN_TYPE" },
+  { key: "MET_DURATION_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "MET_DURATION_CONF_TYPE" },
+  { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
+  { key: "REARING_TEMPERATURE_MIN", label: "Temp Min", description: "Minimum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MIN" },
+  { key: "REARING_TEMPERATURE_MAX", label: "Temp Max", description: "Maximum rearing water temperature (°C)", csvField: "REARING_TEMPERATURE_MAX" },
+  { key: "REARING_TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the rearing temperature mean was computed", csvField: "REARING_TEMPERATURE_MEAN_TYPE" },
+], { trait: "metamorphosis duration", unit: "days" });
 
 /** Metamorphosis size — per columns_per_type.txt */
 const METAMORPHOSIS_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
   { key: "MET_PARTICULARITY", label: "Particularity", description: "Met particularity", csvField: "MET_PARTICULARITY" },
   { key: "MET_SIZE_INFOS", label: "Size Info", description: "Additional size information", csvField: "MET_SIZE_INFOS" },
 ], [
-  { key: "MET_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of met size mean", csvField: "MET_SIZE_MEAN_TYPE" },
+  { key: "MET_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the metamorphosis size mean was computed", csvField: "MET_SIZE_MEAN_TYPE" },
   { key: "MET_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "MET_SIZE_CONF_TYPE" },
   { key: "LENGTH_TYPE", label: "Length Type", description: "Type of length measurement", csvField: "LENGTH_TYPE" },
   { key: "REARING_TEMPERATURE_MEAN", label: "Temp Mean", description: "Rearing temperature (°C)", csvField: "REARING_TEMPERATURE_MEAN" },
@@ -287,81 +294,79 @@ const METAMORPHOSIS_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
 
 /** Settlement age — per columns_per_type.txt (field-based + temperature) */
 const SETTLEMENT_AGE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "SAMPLING_DATES", label: "Sampling Dates", description: "Sampling dates", csvField: "SAMPLING_DATES" },
-  { key: "START_DATE", label: "Start Date", description: "Start date", csvField: "START_DATE" },
-  { key: "END_DATE", label: "End Date", description: "End date", csvField: "END_DATE" },
-  { key: "ORIGIN", label: "Origin", description: "Sample origin", csvField: "ORIGIN" },
-  { key: "LATITUDE", label: "Latitude", description: "Latitude", csvField: "LATITUDE" },
-  { key: "LONGITUDE", label: "Longitude", description: "Longitude", csvField: "LONGITUDE" },
-  { key: "ARTICLE_GPS_COORD", label: "GPS Coord", description: "Article GPS coordinates", csvField: "ARTICLE_GPS_COORD" },
-  { key: "APPROX_GPS", label: "Approx GPS", description: "Approximate GPS", csvField: "APPROX_GPS" },
-  { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "COUNTRY", label: "Country", description: "Country", csvField: "COUNTRY" },
-  { key: "GEAR", label: "Gear", description: "Sampling gear", csvField: "GEAR" },
-  { key: "OTOLITH", label: "Otolith", description: "Otolith analysis", csvField: "OTOLITH" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "SAMPLING_DATES", label: "Sampling Dates", description: "Date range when specimens were collected", csvField: "SAMPLING_DATES" },
+  { key: "START_DATE", label: "Start Date", description: "First sampling date", csvField: "START_DATE" },
+  { key: "END_DATE", label: "End Date", description: "Last sampling date", csvField: "END_DATE" },
+  { key: "ORIGIN", label: "Origin", description: "Sample origin (Wild or Reared)", csvField: "ORIGIN" },
+  { key: "LATITUDE", label: "Latitude", description: "Sampling site latitude (decimal degrees)", csvField: "LATITUDE" },
+  { key: "LONGITUDE", label: "Longitude", description: "Sampling site longitude (decimal degrees)", csvField: "LONGITUDE" },
+  { key: "ARTICLE_GPS_COORD", label: "GPS Coord", description: "GPS coordinates as reported in the article", csvField: "ARTICLE_GPS_COORD" },
+  { key: "APPROX_GPS", label: "Approx GPS", description: "Whether GPS coordinates are approximate", csvField: "APPROX_GPS" },
+  { key: "LOCATION", label: "Location", description: "Geographic location name", csvField: "LOCATION" },
+  { key: "COUNTRY", label: "Country", description: "Country where specimens were collected", csvField: "COUNTRY" },
+  { key: "GEAR", label: "Gear", description: "Sampling gear used (e.g. light trap, plankton net)", csvField: "GEAR" },
+  { key: "OTOLITH", label: "Otolith", description: "Whether otolith analysis was used for age estimation", csvField: "OTOLITH" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "SET_AGE_DPH_MEAN_TYPE", label: "Mean Type", description: "Type of settlement age mean", csvField: "SET_AGE_DPH_MEAN_TYPE" },
-  { key: "SET_AGE_DPH_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "SET_AGE_DPH_CONF_TYPE" },
-  { key: "TEMPERATURE_MEAN", label: "Temp Mean", description: "Temperature (°C)", csvField: "TEMPERATURE_MEAN" },
-  { key: "TEMPERATURE_MIN", label: "Temp Min", description: "Min temperature (°C)", csvField: "TEMPERATURE_MIN" },
-  { key: "TEMPERATURE_MAX", label: "Temp Max", description: "Max temperature (°C)", csvField: "TEMPERATURE_MAX" },
-  { key: "TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "SET_AGE_DPH_MEAN_TYPE", label: "Mean Type", description: "How the settlement age mean was computed", csvField: "SET_AGE_DPH_MEAN_TYPE" },
+  { key: "SET_AGE_DPH_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "SET_AGE_DPH_CONF_TYPE" },
+  { key: "TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean water temperature at sampling site (°C)", csvField: "TEMPERATURE_MEAN" },
+  { key: "TEMPERATURE_MIN", label: "Temp Min", description: "Minimum water temperature at sampling site (°C)", csvField: "TEMPERATURE_MIN" },
+  { key: "TEMPERATURE_MAX", label: "Temp Max", description: "Maximum water temperature at sampling site (°C)", csvField: "TEMPERATURE_MAX" },
+  { key: "TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the water temperature mean was computed", csvField: "TEMPERATURE_MEAN_TYPE" },
+], { trait: "settlement age", unit: "days post-hatching" });
 
 /** Settlement size — per columns_per_type.txt */
 const SETTLEMENT_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "SAMPLING_DATES", label: "Sampling Dates", description: "Sampling dates", csvField: "SAMPLING_DATES" },
-  { key: "START_DATE", label: "Start Date", description: "Start date", csvField: "START_DATE" },
-  { key: "END_DATE", label: "End Date", description: "End date", csvField: "END_DATE" },
-  { key: "ORIGIN", label: "Origin", description: "Sample origin", csvField: "ORIGIN" },
-  { key: "LATITUDE", label: "Latitude", description: "Latitude", csvField: "LATITUDE" },
-  { key: "LONGITUDE", label: "Longitude", description: "Longitude", csvField: "LONGITUDE" },
-  { key: "ARTICLE_GPS_COORD", label: "GPS Coord", description: "Article GPS coordinates", csvField: "ARTICLE_GPS_COORD" },
-  { key: "APPROX_GPS", label: "Approx GPS", description: "Approximate GPS", csvField: "APPROX_GPS" },
-  { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "COUNTRY", label: "Country", description: "Country", csvField: "COUNTRY" },
-  { key: "GEAR", label: "Gear", description: "Sampling gear", csvField: "GEAR" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "SAMPLING_DATES", label: "Sampling Dates", description: "Date range when specimens were collected", csvField: "SAMPLING_DATES" },
+  { key: "START_DATE", label: "Start Date", description: "First sampling date", csvField: "START_DATE" },
+  { key: "END_DATE", label: "End Date", description: "Last sampling date", csvField: "END_DATE" },
+  { key: "ORIGIN", label: "Origin", description: "Sample origin (Wild or Reared)", csvField: "ORIGIN" },
+  { key: "LATITUDE", label: "Latitude", description: "Sampling site latitude (decimal degrees)", csvField: "LATITUDE" },
+  { key: "LONGITUDE", label: "Longitude", description: "Sampling site longitude (decimal degrees)", csvField: "LONGITUDE" },
+  { key: "ARTICLE_GPS_COORD", label: "GPS Coord", description: "GPS coordinates as reported in the article", csvField: "ARTICLE_GPS_COORD" },
+  { key: "APPROX_GPS", label: "Approx GPS", description: "Whether GPS coordinates are approximate", csvField: "APPROX_GPS" },
+  { key: "LOCATION", label: "Location", description: "Geographic location name", csvField: "LOCATION" },
+  { key: "COUNTRY", label: "Country", description: "Country where specimens were collected", csvField: "COUNTRY" },
+  { key: "GEAR", label: "Gear", description: "Sampling gear used (e.g. light trap, plankton net)", csvField: "GEAR" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "SET_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of settlement size mean", csvField: "SET_SIZE_MEAN_TYPE" },
-  { key: "SET_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "SET_SIZE_CONF_TYPE" },
-  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of length measurement", csvField: "LENGTH_TYPE" },
-  { key: "TEMPERATURE_MEAN", label: "Temp Mean", description: "Temperature (°C)", csvField: "TEMPERATURE_MEAN" },
-  { key: "TEMPERATURE_MIN", label: "Temp Min", description: "Min temperature (°C)", csvField: "TEMPERATURE_MIN" },
-  { key: "TEMPERATURE_MAX", label: "Temp Max", description: "Max temperature (°C)", csvField: "TEMPERATURE_MAX" },
-  { key: "TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "Type of temperature mean", csvField: "TEMPERATURE_MEAN_TYPE" },
-]);
+  { key: "SET_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the settlement size mean was computed", csvField: "SET_SIZE_MEAN_TYPE" },
+  { key: "SET_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "SET_SIZE_CONF_TYPE" },
+  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of body length measurement (SL, TL, NL, etc.)", csvField: "LENGTH_TYPE" },
+  { key: "TEMPERATURE_MEAN", label: "Temp Mean", description: "Mean water temperature at sampling site (°C)", csvField: "TEMPERATURE_MEAN" },
+  { key: "TEMPERATURE_MIN", label: "Temp Min", description: "Minimum water temperature at sampling site (°C)", csvField: "TEMPERATURE_MIN" },
+  { key: "TEMPERATURE_MAX", label: "Temp Max", description: "Maximum water temperature at sampling site (°C)", csvField: "TEMPERATURE_MAX" },
+  { key: "TEMPERATURE_MEAN_TYPE", label: "Temp Mean Type", description: "How the water temperature mean was computed", csvField: "TEMPERATURE_MEAN_TYPE" },
+], { trait: "settlement size", unit: "mm" });
 
 /** Pelagic juvenile size — per columns_per_type.txt */
 const PELAGIC_JUVENILE_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
   { key: "KEY_WORD", label: "Key Word", description: "Key word", csvField: "KEY_WORD" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "PELAGIC_JUV_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of size mean", csvField: "PELAGIC_JUV_SIZE_MEAN_TYPE" },
-  { key: "PELAGIC_JUV_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "PELAGIC_JUV_SIZE_CONF_TYPE" },
-  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of length measurement", csvField: "LENGTH_TYPE" },
-
-]);
+  { key: "PELAGIC_JUV_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the pelagic juvenile size mean was computed", csvField: "PELAGIC_JUV_SIZE_MEAN_TYPE" },
+  { key: "PELAGIC_JUV_SIZE_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "PELAGIC_JUV_SIZE_CONF_TYPE" },
+  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of body length measurement (SL, TL, NL, etc.)", csvField: "LENGTH_TYPE" },
+], { trait: "pelagic juvenile size", unit: "mm" });
 
 /** Pelagic juvenile duration — per columns_per_type.txt */
 const PELAGIC_JUVENILE_DURATION_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
   { key: "KEY_WORD", label: "Key Word", description: "Key word", csvField: "KEY_WORD" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
 ], [
-  { key: "PELAGIC_JUV_DURATION_MEAN_TYPE", label: "Mean Type", description: "Type of duration mean", csvField: "PELAGIC_JUV_DURATION_MEAN_TYPE" },
-  { key: "PELAGIC_JUV_DURATION_CONF_TYPE", label: "Conf Type", description: "Type of confidence", csvField: "PELAGIC_JUV_DURATION_CONF_TYPE" },
-
-]);
+  { key: "PELAGIC_JUV_DURATION_MEAN_TYPE", label: "Mean Type", description: "How the pelagic juvenile duration mean was computed", csvField: "PELAGIC_JUV_DURATION_MEAN_TYPE" },
+  { key: "PELAGIC_JUV_DURATION_CONF_TYPE", label: "Conf Type", description: "Type of confidence measure (SD, SE, range)", csvField: "PELAGIC_JUV_DURATION_CONF_TYPE" },
+], { trait: "pelagic juvenile duration", unit: "days" });
 
 /** Rafters size — per columns_per_type.txt */
 const RAFTING_SIZE_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
-  { key: "FLOATSAM", label: "Flotsam", description: "Floating substrate type", csvField: "FLOATSAM" },
-  { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
+  { key: "FLOATSAM", label: "Flotsam", description: "Type of floating substrate (e.g. Sargassum, debris, jellyfish)", csvField: "FLOATSAM" },
+  { key: "STAGE", label: "Stage", description: "Developmental stage of the fish (larva, juvenile, etc.)", csvField: "STAGE" },
 ], [
-  { key: "RAFTING_SIZE_MEAN_TYPE", label: "Mean Type", description: "Type of raft size mean", csvField: "RAFTING_SIZE_MEAN_TYPE" },
-  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of length measurement", csvField: "LENGTH_TYPE" },
-]);
+  { key: "RAFTING_SIZE_MEAN_TYPE", label: "Mean Type", description: "How the rafting fish size mean was computed", csvField: "RAFTING_SIZE_MEAN_TYPE" },
+  { key: "LENGTH_TYPE", label: "Length Type", description: "Type of body length measurement (SL, TL, NL, etc.)", csvField: "LENGTH_TYPE" },
+], { trait: "rafting size", unit: "mm" });
 
 /** Rafting behavior/duration — per columns_per_type.txt: just FLOATSAM, STAGE */
 const RAFTING_BEHAVIOR_COLUMNS: TraitColumnDef[] = stdMeasurementCols([
@@ -385,7 +390,7 @@ export const VERTICAL_DISTRIBUTION_COLUMNS: TraitColumnDef[] = [
   { key: "MAX_DEPTH_CAPTURE", label: "Max", description: "Maximum depth of capture (m)", csvField: "MAX_DEPTH_CAPTURE" },
   { key: "WEIGHTED_SD_DEPTH_CAPTURE", label: "SD", description: "Weighted SD of depth capture (m)", csvField: "WEIGHTED_SD_DEPTH_CAPTURE" },
   { key: "WEIGHTING_DETAILS", label: "Weighting", description: "Details of weighting method", csvField: "WEIGHTING_DETAILS" },
-  { key: "EXT_REF", label: "External references", description: "External reference identifier", csvField: "EXT_REF" },
+  { key: "EXT_REF", label: "External references", description: "Source study of the information cited in the main reference", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
 
@@ -394,7 +399,7 @@ export const CRITICAL_SWIMMING_ABS_COLUMNS: TraitColumnDef[] = [
   { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
   { key: "ORIGIN", label: "Origin", description: "Sample origin (Wild/Reared)", csvField: "ORIGIN" },
   { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
   { key: "AGE_RANGE_DPH", label: "Age Range (DPH)", description: "Age range in days post-hatch", csvField: "AGE_RANGE_DPH" },
   { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
   { key: "UCRIT_ABS_MEAN", label: "Mean", description: "Mean absolute Ucrit (cm/s)", csvField: "UCRIT_ABS_MEAN" },
@@ -413,7 +418,7 @@ export const CRITICAL_SWIMMING_ABS_COLUMNS: TraitColumnDef[] = [
   { key: "UCRIT_ABS_RANGE_TYPE", label: "Ucrit Abs Range Type", description: "Type of absolute Ucrit range", csvField: "UCRIT_ABS_RANGE_TYPE" },
   { key: "UCRIT_ABS_CONF_TYPE", label: "Ucrit Abs Conf Type", description: "Type of absolute Ucrit confidence", csvField: "UCRIT_ABS_CONF_TYPE" },
 
-  { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
+  { key: "EXT_REF", label: "External References", description: "Source study of the information cited in the main reference", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
 
@@ -422,7 +427,7 @@ export const CRITICAL_SWIMMING_REL_COLUMNS: TraitColumnDef[] = [
   { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
   { key: "ORIGIN", label: "Origin", description: "Sample origin (Wild/Reared)", csvField: "ORIGIN" },
   { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
   { key: "AGE_RANGE_DPH", label: "Age Range (DPH)", description: "Age range in days post-hatch", csvField: "AGE_RANGE_DPH" },
   { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
   { key: "UCRIT_REL_MEAN", label: "Mean", description: "Mean relative Ucrit (BL/s)", csvField: "UCRIT_REL_MEAN" },
@@ -443,7 +448,7 @@ export const CRITICAL_SWIMMING_REL_COLUMNS: TraitColumnDef[] = [
   { key: "TEMPERATURE_CONF_TYPE", label: "Temp Conf Type", description: "Type of temperature confidence", csvField: "TEMPERATURE_CONF_TYPE" },
   { key: "UCRIT_REL_CONF_TYPE", label: "Ucrit Rel Conf Type", description: "Type of relative Ucrit confidence", csvField: "UCRIT_REL_CONF_TYPE" },
 
-  { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
+  { key: "EXT_REF", label: "External References", description: "Source study of the information cited in the main reference", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
 
@@ -452,7 +457,7 @@ export const IN_SITU_SWIMMING_ABS_COLUMNS: TraitColumnDef[] = [
   { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
   { key: "ORIGIN", label: "Origin", description: "Sample origin (Wild/Reared)", csvField: "ORIGIN" },
   { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
   { key: "AGE_RANGE_DPH", label: "Age Range (DPH)", description: "Age range in days post-hatch", csvField: "AGE_RANGE_DPH" },
   { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
   { key: "ISS_ABS_MEAN", label: "Mean", description: "Mean absolute ISS (cm/s)", csvField: "ISS_ABS_MEAN" },
@@ -469,7 +474,7 @@ export const IN_SITU_SWIMMING_ABS_COLUMNS: TraitColumnDef[] = [
   { key: "ISS_ABS_RANGE_TYPE", label: "ISS Abs Range Type", description: "Type of absolute ISS range", csvField: "ISS_ABS_RANGE_TYPE" },
   { key: "ISS_ABS_CONF_TYPE", label: "ISS Abs Conf Type", description: "Type of absolute ISS confidence", csvField: "ISS_ABS_CONF_TYPE" },
 
-  { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
+  { key: "EXT_REF", label: "External References", description: "Source study of the information cited in the main reference", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
 
@@ -478,7 +483,7 @@ export const IN_SITU_SWIMMING_REL_COLUMNS: TraitColumnDef[] = [
   { key: "VALID_NAME", label: "Name", description: "Valid species name", csvField: "VALID_NAME" },
   { key: "ORIGIN", label: "Origin", description: "Sample origin (Wild/Reared)", csvField: "ORIGIN" },
   { key: "LOCATION", label: "Location", description: "Geographic location", csvField: "LOCATION" },
-  { key: "N", label: "N", description: "Sample size", csvField: "N" },
+  { key: "N", label: "N", description: "Number of specimens measured", csvField: "N" },
   { key: "AGE_RANGE_DPH", label: "Age Range (DPH)", description: "Age range in days post-hatch", csvField: "AGE_RANGE_DPH" },
   { key: "STAGE", label: "Stage", description: "Developmental stage", csvField: "STAGE" },
   { key: "ISS_REL_MEAN", label: "Mean", description: "Mean relative ISS (BL/s)", csvField: "ISS_REL_MEAN" },
@@ -501,7 +506,7 @@ export const IN_SITU_SWIMMING_REL_COLUMNS: TraitColumnDef[] = [
   { key: "ISS_REL_RANGE_TYPE", label: "ISS Rel Range Type", description: "Type of relative ISS range", csvField: "ISS_REL_RANGE_TYPE" },
   { key: "ISS_REL_CONF_TYPE", label: "ISS Rel Conf Type", description: "Type of relative ISS confidence", csvField: "ISS_REL_CONF_TYPE" },
 
-  { key: "EXT_REF", label: "External References", description: "External reference identifier", csvField: "EXT_REF" },
+  { key: "EXT_REF", label: "External References", description: "Source study of the information cited in the main reference", csvField: "EXT_REF" },
   { key: "REFERENCE", label: "Main Reference", description: "Data source citation (click to open link)", csvField: "REFERENCE", isReference: true, linkField: "LINK" },
 ];
 
@@ -575,7 +580,7 @@ const DEFAULT_COLUMNS = [
   { key: "location", label: "Location", description: "Geographic location" },
   { key: "sampleSize", label: "N", description: "Sample size" },
   { key: "reference", label: "Main reference", description: "Data source citation (click to open link)" },
-  { key: "externalRef", label: "External reference", description: "External reference identifier" },
+  { key: "externalRef", label: "External reference", description: "Source study of the information cited in the main reference" },
 ];
 
 /**

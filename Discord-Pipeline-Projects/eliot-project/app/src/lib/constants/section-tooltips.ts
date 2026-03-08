@@ -6,15 +6,15 @@
 /** Section-level tooltip definitions (keyed by section title in DISPLAY_GROUPS) */
 export const SECTION_TOOLTIPS: Record<string, string> = {
   'Egg & Incubation':
-    'Egg characteristics: position in the water column, shape, dimensions, volume, yolk properties, and oil globule(s). Includes incubation/gestation duration and temperature.',
+    'Embryo development location and characteristics of eggs (if any), including position in the water column, shape, dimensions, volume, yolk properties, and oil globule(s). Includes incubation/gestation duration and temperature.',
   'Hatching & Pre-flexion Stage':
-    'Size of larvae at hatching or parturition, with associated rearing temperature.',
+    'Size of larvae at hatching (egg-based reproduction) or parturition, with associated rearing temperature.',
   'Flexion Stage':
-    'Timing and size at notochord flexion \u2014 upward bending of the notochord during caudal fin ossification. A key larval developmental milestone.',
+    'Timing and size of notochord (embryonic vertebrate column) flexion. The upward bending of the notochord is associated with the ossification of caudal fin elements that allows efficient swimming, which marks the transition from the pre-flexion to post-flexion stage.',
   'Metamorphosis':
-    'Timing, duration, and size at metamorphosis \u2014 the larval-to-juvenile transition marked by scale appearance, fin development, and body proportion changes.',
+    'Timing, duration, and size at morphological metamorphosis: the transition from larval to juvenile stage. This process largely varies among fish families, but is often characterized by the appearance of scales, the growth of all fin spines/rays to reach the adult count, the acquisition of juvenile coloration, and/or the loss of specialized larval attributes.',
   'Settlement':
-    'Age and size at settlement \u2014 when pelagic larvae transition to benthic/demersal life, marking the end of pelagic larval duration (PLD).',
+    'This database specific to benthic fishes (living near the bottom) provides the age and size at settlement on a substrate, which marks the transition from a pelagic (offshore) to a benthic lifestyle. It is often confused with the term \'recruitment\' (wrongly applied, as it defines the entrance of juveniles in the adult stock), and the term \'PLD\' (Pelagic Larval Duration), that suppose morphological metamorphosis and settlement occur simultaneously, which is not necessarily the case (see Pelagic juvenile and Rafting sections).',
   'Vertical Position':
     'Larval position in the water column. Important for dispersal as different depths experience different current regimes.',
   'Swimming Speed':
@@ -27,51 +27,87 @@ export const SECTION_TOOLTIPS: Record<string, string> = {
     'Individual age-length/weight measurements across the larval phase, used to estimate growth rates in relation to temperature.',
 };
 
+/** Column-level tooltip definitions for raw data tables */
+export const COLUMN_TOOLTIPS: Record<string, string> = {
+  // Pelagic Juvenile columns
+  pj_name: 'Valid scientific name of the species',
+  pj_keyword: 'Name given to the pelagic juvenile stage or key behavioral description',
+  pj_remarks: 'Additional observations about the pelagic juvenile stage',
+  pj_mean: 'Mean value of the measurement',
+  pj_min: 'Minimum value recorded',
+  pj_max: 'Maximum value recorded',
+  pj_conf: 'Confidence interval value',
+  pj_mean_type: 'Type of mean (arithmetic, geometric, etc.)',
+  pj_conf_type: 'Type of confidence interval (SD, SE, 95% CI, etc.)',
+  pj_unit: 'Unit of measurement (mm for size, days for duration)',
+  pj_ext_ref: 'Source study of the information cited in the main reference',
+  pj_reference: 'Main bibliographic reference for this record',
+  // Rafting columns
+  raft_name: 'Valid scientific name of the species',
+  raft_flotsam: 'Type of floating object the larvae/juveniles associate with (Sargassum, debris, etc.)',
+  raft_stage: 'Developmental stage during rafting association',
+  raft_age: 'Age category during rafting',
+  raft_mean: 'Mean value of the measurement',
+  raft_min: 'Minimum value recorded',
+  raft_max: 'Maximum value recorded',
+  raft_mean_type: 'Type of mean (arithmetic, geometric, etc.)',
+  raft_length_type: 'Type of length measurement (SL, TL, NL, etc.)',
+  raft_unit: 'Unit of measurement (mm for size)',
+  raft_ext_ref: 'Source study of the information cited in the main reference',
+  raft_reference: 'Main bibliographic reference for this record',
+};
+
 /** Trait-level tooltip definitions (keyed by trait key in DISPLAY_GROUPS) */
 export const TRAIT_TOOLTIPS: Record<string, string> = {
   // Egg & Incubation
+  egg_location:
+    'Description of the embryo location with, between parentheses, details on the reproductive mode, and if oviparous, on the position of eggs in the water column. Additional details of the position of eggs in the water column are also provided below.',
+  egg_shape:
+    'Sphericity of eggs (if oviparous)',
   egg_diameter:
-    'Egg length (diameter for spherical eggs) in mm. Position in water column: pelagic (floating), benthic (attached to substrate), or brooded (mouth/pouch).',
+    'Diameter of eggs in mm. Only shown when egg shape is spherical (width = length)',
+  egg_length:
+    'Length of eggs in mm (longest axis). Only shown when egg shape is non-spherical (width \u2260 length)',
   egg_width:
-    'Width of non-spherical eggs in mm. Only shown when egg shape is non-spherical (width \u2260 length).',
+    'Width of eggs in mm (shortest axis). Only shown when egg shape is non-spherical (width \u2260 length)',
   egg_volume:
     'Egg volume in mm\u00B3. Spherical: (4/3)\u03C0r\u00B3. Non-spherical: (4/3)\u03C0 \u00D7 (L/2) \u00D7 (W/2)\u00B2.',
   yolk_diameter:
     'Nutrient-rich material inside the egg nourishing the embryo until exogenous feeding. Size = yolk diameter in mm.',
   oil_globule_size:
-    'Lipid-rich droplet(s) inside the egg providing energy reserves. Size = diameter in mm.',
+    'Lipid-rich droplet(s) inside the egg ensuring egg buoyancy and providing energy reserves. Size = diameter in mm.',
   oil_globule_number:
     'Count or range of oil globule(s) in the egg. May change during development (e.g., multiple coalescing into one).',
   incubation_duration:
     'Duration of egg incubation or gestation (depending on reproduction mode), with associated water temperature.',
   // Hatching & Pre-flexion
   hatching_size:
-    'Size of larvae at hatching or parturition, with associated rearing temperature.',
+    'Size of larvae at hatching (egg-based reproduction) or parturition, with associated rearing temperature.',
   first_feeding_age:
     'Timing (days post-hatch) at first exogenous feeding \u2014 when larvae start feeding from external sources.',
   first_feeding_size:
-    'Size at first exogenous feeding and yolk-sac absorption.',
+    'Size (mm) at first exogenous feeding \u2014 when larvae start feeding from external sources.',
   yolk_absorption_age:
     'Timing of yolk-sac absorption \u2014 complete depletion of endogenous egg resources.',
   yolk_absorbed_size:
     'Size at yolk-sac absorption \u2014 complete depletion of endogenous egg resources.',
   // Flexion
   flexion_age:
-    'Timing of notochord flexion \u2014 upward bending of the notochord during caudal fin ossification.',
+    'Timing (days post-hatch) of notochord (embryonic vertebrate column) flexion. The upward bending of the notochord is associated with the ossification of caudal fin elements that allows efficient swimming, which marks the transition from the pre-flexion to post-flexion stage.',
   flexion_size:
-    'Size at notochord flexion \u2014 upward bending of the notochord during caudal fin ossification.',
+    'Size (mm) of notochord (embryonic vertebrate column) flexion. The upward bending of the notochord is associated with the ossification of caudal fin elements that allows efficient swimming, which marks the transition from the pre-flexion to post-flexion stage.',
   // Metamorphosis
   metamorphosis_age:
-    'Timing of metamorphosis \u2014 the larval-to-juvenile transition marked by scale appearance and fin development.',
+    'Timing (days post-hatch) at morphological metamorphosis: the transition from larval to juvenile stage. This process largely varies among fish families, but is often characterized by the appearance of scales, the growth of all fin spines/rays to reach the adult count, the acquisition of juvenile coloration, and/or the loss of specialized larval attributes.',
   metamorphosis_duration:
-    'Duration of metamorphosis \u2014 the transitional period from larval to juvenile morphology.',
+    'Duration (days) at morphological metamorphosis: the transition from larval to juvenile stage. This process largely varies among fish families, but is often characterized by the appearance of scales, the growth of all fin spines/rays to reach the adult count, the acquisition of juvenile coloration, and/or the loss of specialized larval attributes.',
   metamorphosis_size:
-    'Size at metamorphosis \u2014 the larval-to-juvenile transition marked by scale appearance and fin development.',
+    'Size (mm) at morphological metamorphosis: the transition from larval to juvenile stage. This process largely varies among fish families, but is often characterized by the appearance of scales, the growth of all fin spines/rays to reach the adult count, the acquisition of juvenile coloration, and/or the loss of specialized larval attributes.',
   // Settlement
   settlement_age:
-    'Age at settlement \u2014 when pelagic larvae transition to benthic/demersal life. Marks the end of pelagic larval duration (PLD).',
+    'This database specific to benthic fishes (living near the bottom) provides the age at settlement (days post-hatch) on a substrate, which marks the transition from a pelagic (offshore) to a benthic lifestyle.',
   settlement_size:
-    'Size at settlement \u2014 when pelagic larvae transition to benthic/demersal life.',
+    'This database specific to benthic fishes (living near the bottom) provides the size at settlement (mm) on a substrate, which marks the transition from a pelagic (offshore) to a benthic lifestyle.',
   // Swimming
   critical_swimming_speed:
     'Critical swimming speed (Ucrit) \u2014 maximum sustained velocity measured in laboratory flume experiments with incrementally increasing flow.',

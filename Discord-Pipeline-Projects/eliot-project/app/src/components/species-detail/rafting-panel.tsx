@@ -195,11 +195,11 @@ function QualitativeRecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Flotsam</TableHead>
-                  <TableHead className="text-xs">Stage</TableHead>
-                  <TableHead className="text-xs">External references</TableHead>
-                  <TableHead className="text-xs">Main reference</TableHead>
+                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
+                  <TableHead className="text-xs" title="Type of floating object the larvae/juveniles associate with">Flotsam</TableHead>
+                  <TableHead className="text-xs" title="Developmental stage during rafting association">Stage</TableHead>
+                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
+                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -419,17 +419,17 @@ function RecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Mean</TableHead>
-                  <TableHead className="text-xs">Min</TableHead>
-                  <TableHead className="text-xs">Max</TableHead>
-                  <TableHead className="text-xs">Mean type</TableHead>
+                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
+                  <TableHead className="text-xs" title="Mean value of the measurement">Mean</TableHead>
+                  <TableHead className="text-xs" title="Minimum value recorded">Min</TableHead>
+                  <TableHead className="text-xs" title="Maximum value recorded">Max</TableHead>
+                  <TableHead className="text-xs" title="Type of mean (arithmetic, geometric, etc.)">Mean type</TableHead>
                   {traitType === 'size' && (
-                    <TableHead className="text-xs">Length type</TableHead>
+                    <TableHead className="text-xs" title="Type of length measurement (SL, TL, NL, etc.)">Length type</TableHead>
                   )}
-                  <TableHead className="text-xs">Unit</TableHead>
-                  <TableHead className="text-xs">External references</TableHead>
-                  <TableHead className="text-xs">Main reference</TableHead>
+                  <TableHead className="text-xs" title="Unit of measurement (mm for size)">Unit</TableHead>
+                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
+                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -499,7 +499,7 @@ function NumericTraitPanel({
     return (
       <Card className="bg-card">
         <CardContent className="p-4">
-          <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+          <div className="text-xs font-medium uppercase text-white tracking-wide">
             {label}
           </div>
           <p className="text-sm text-muted-foreground italic mt-2">No {label.toLowerCase()} data available</p>
@@ -511,7 +511,7 @@ function NumericTraitPanel({
   return (
     <Card className="bg-card">
       <CardContent className="p-4">
-        <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+        <div className="text-xs font-medium uppercase text-white tracking-wide">
           {label}
         </div>
 
@@ -534,32 +534,28 @@ function NumericTraitPanel({
           )}
         </div>
 
-        <div className="mt-3 pt-3 border-t flex items-start justify-between text-sm">
-          <div>&nbsp;</div>
-          <div className="text-right space-y-0.5">
-            {showRange && (
-              <>
-                <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
-                <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
-              </>
-            )}
-            {stats.n === 0 ? (
-              <div className="text-muted-foreground" data-testid="records-link">
-                0 records
-              </div>
-            ) : (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="text-primary hover:underline"
-                  data-testid="records-link"
-                >
-                  {stats.n} record{stats.n !== 1 ? 's' : ''}
-                </button>
-              </div>
-            )}
-          </div>
+        {/* Range/Records row — all inline */}
+        <div className="mt-3 pt-3 border-t flex items-center justify-end gap-3 text-sm flex-wrap">
+          {showRange && (
+            <>
+              <span className="text-white">Min: {stats.min!.toFixed(1)}</span>
+              <span className="text-white">Max: {stats.max!.toFixed(1)}</span>
+            </>
+          )}
+          {stats.n === 0 ? (
+            <span className="text-muted-foreground" data-testid="records-link">
+              0 records
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-primary hover:underline"
+              data-testid="records-link"
+            >
+              {stats.n} record{stats.n !== 1 ? 's' : ''}
+            </button>
+          )}
         </div>
 
         {comparisons && (
@@ -595,7 +591,7 @@ function NumericTraitPanel({
           </div>
         )}
 
-        {showComparison && barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
+        {showComparison && barChartData && barChartData.entries.length > 1 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={barChartData.entries}
@@ -608,7 +604,7 @@ function NumericTraitPanel({
           </div>
         )}
         {/* Order chart as FALLBACK only — never show both */}
-        {showComparison && !(barChartData && barChartData.entries.length > 0) && orderBarChartData && orderBarChartData.entries.length > 0 && currentSpeciesId && (
+        {showComparison && !(barChartData && barChartData.entries.length > 1) && orderBarChartData && orderBarChartData.entries.length > 1 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={orderBarChartData.entries}
@@ -663,10 +659,10 @@ function AgeRecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Age</TableHead>
-                  <TableHead className="text-xs">External references</TableHead>
-                  <TableHead className="text-xs">Main reference</TableHead>
+                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
+                  <TableHead className="text-xs" title="Age category during rafting">Age</TableHead>
+                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
+                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -708,7 +704,7 @@ function AgeQualitativeCard({ data }: { data: RaftingData }) {
     return (
       <Card className="bg-card">
         <CardContent className="p-4">
-          <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+          <div className="text-xs font-medium uppercase text-white tracking-wide">
             Rafting Age
           </div>
           <p className="text-sm text-muted-foreground italic mt-2">No rafting age data available</p>

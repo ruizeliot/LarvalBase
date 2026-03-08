@@ -303,26 +303,76 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     const presentFeatures = geoData.features.filter(f => f.properties?.PROVINCE && isProvincePresent(f.properties.PROVINCE));
     if (presentFeatures.length === 0) return;
 
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    // Collect centroids of each present feature (in projected pixel coordinates)
+    const featureCentroids: { cx: number; cy: number; minX: number; minY: number; maxX: number; maxY: number }[] = [];
     for (const feature of presentFeatures) {
       if (!feature.geometry) continue;
       try {
         const bounds = pathGenerator.bounds(feature.geometry as GeoJSON.Geometry);
         if (!Number.isFinite(bounds[0][0]) || !Number.isFinite(bounds[0][1]) || !Number.isFinite(bounds[1][0]) || !Number.isFinite(bounds[1][1])) continue;
-        if (bounds[0][0] < minX) minX = bounds[0][0];
-        if (bounds[0][1] < minY) minY = bounds[0][1];
-        if (bounds[1][0] > maxX) maxX = bounds[1][0];
-        if (bounds[1][1] > maxY) maxY = bounds[1][1];
+        featureCentroids.push({
+          cx: (bounds[0][0] + bounds[1][0]) / 2,
+          cy: (bounds[0][1] + bounds[1][1]) / 2,
+          minX: bounds[0][0], minY: bounds[0][1],
+          maxX: bounds[1][0], maxY: bounds[1][1],
+        });
       } catch { continue; }
     }
+    if (featureCentroids.length === 0) return;
+
+    // Compute weighted centroid of all present provinces
+    let totalCx = 0, totalCy = 0;
+    for (const c of featureCentroids) {
+      totalCx += c.cx;
+      totalCy += c.cy;
+    }
+    const meanCx = totalCx / featureCentroids.length;
+    const meanCy = totalCy / featureCentroids.length;
+
+    // Compute bounding box
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const fb of featureCentroids) {
+      if (fb.minX < minX) minX = fb.minX;
+      if (fb.minY < minY) minY = fb.minY;
+      if (fb.maxX > maxX) maxX = fb.maxX;
+      if (fb.maxY > maxY) maxY = fb.maxY;
+    }
+
+    // Detect Pacific dateline wrapping
+    const bw = maxX - minX;
+    if (bw > BASE_WIDTH * 0.8 && featureCentroids.length >= 2) {
+      const sorted = [...featureCentroids].sort((a, b) => a.cx - b.cx);
+      let maxGap = 0, gapIdx = 0;
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = sorted[i].cx - sorted[i - 1].cx;
+        if (gap > maxGap) { maxGap = gap; gapIdx = i; }
+      }
+
+      if (maxGap > BASE_WIDTH * 0.3) {
+        // Shift features left of gap to right side
+        const shifted = sorted.map((c, i) => i < gapIdx ? ({
+          ...c, cx: c.cx + BASE_WIDTH, minX: c.minX + BASE_WIDTH, maxX: c.maxX + BASE_WIDTH
+        }) : c);
+        minX = Infinity; minY = Infinity; maxX = -Infinity; maxY = -Infinity;
+        let sCx = 0, sCy = 0;
+        for (const fb of shifted) {
+          if (fb.minX < minX) minX = fb.minX;
+          if (fb.minY < minY) minY = fb.minY;
+          if (fb.maxX > maxX) maxX = fb.maxX;
+          if (fb.maxY > maxY) maxY = fb.maxY;
+          sCx += fb.cx; sCy += fb.cy;
+        }
+        // Use shifted centroid
+        totalCx = sCx; totalCy = sCy;
+      }
+    }
+
     if (!Number.isFinite(minX) || !Number.isFinite(maxX)) return;
 
-    const bw = maxX - minX;
+    const finalBw = maxX - minX;
     const bh = maxY - minY;
     const pad = 0.2;
-    const vx = minX - bw * pad;
-    const vy = minY - bh * pad;
-    const vw = bw * (1 + 2 * pad);
+    const vw = finalBw * (1 + 2 * pad);
     const vh = bh * (1 + 2 * pad);
 
     const aspect = BASE_WIDTH / BASE_HEIGHT;
@@ -336,15 +386,20 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
 
     const minW = BASE_WIDTH / MAX_ZOOM;
     if (finalW < minW) { finalW = minW; finalH = finalW / aspect; }
-    if (finalW > BASE_WIDTH) { finalW = BASE_WIDTH; finalH = BASE_HEIGHT; }
+    // Allow some zoom even for wide distributions (min 1.2x for non-global)
+    const maxW = presentProvinces.size <= 10 ? BASE_WIDTH * 0.9 : BASE_WIDTH;
+    if (finalW > maxW) { finalW = maxW; finalH = finalW / aspect; }
 
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
+    // Use mean centroid for centering (not bbox center)
+    let cx = totalCx / featureCentroids.length;
+    const cy = totalCy / featureCentroids.length;
+    // Wrap cx back into [0, BASE_WIDTH] range
+    while (cx > BASE_WIDTH) cx -= BASE_WIDTH;
+    while (cx < 0) cx += BASE_WIDTH;
 
-    // Convert viewBox region to transform: scale = BASE_WIDTH / w, tx = -vx * scale, ty = -vy * scale
     const scale = BASE_WIDTH / finalW;
-    const tx = -(cx - finalW / 2) * scale;
-    const ty = -(cy - finalH / 2) * scale;
+    const tx = BASE_WIDTH / 2 - cx * scale;
+    const ty = BASE_HEIGHT / 2 - cy * scale;
 
     transformRef.current = { x: tx, y: ty, scale };
     applyTransform(gRef.current, transformRef.current);

@@ -175,11 +175,11 @@ function QualitativeRecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Key word</TableHead>
-                  <TableHead className="text-xs">Remarks</TableHead>
-                  <TableHead className="text-xs">External references</TableHead>
-                  <TableHead className="text-xs">Main reference</TableHead>
+                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
+                  <TableHead className="text-xs" title="Name given to the pelagic juvenile stage or key behavioral description">Key word</TableHead>
+                  <TableHead className="text-xs" title="Additional observations about the pelagic juvenile stage">Remarks</TableHead>
+                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
+                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -342,16 +342,16 @@ function RecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs">Name</TableHead>
-                  <TableHead className="text-xs">Mean</TableHead>
-                  <TableHead className="text-xs">Min</TableHead>
-                  <TableHead className="text-xs">Max</TableHead>
-                  <TableHead className="text-xs">Confidence interval</TableHead>
-                  <TableHead className="text-xs">Mean type</TableHead>
-                  <TableHead className="text-xs">Confidence interval type</TableHead>
-                  <TableHead className="text-xs">Unit</TableHead>
-                  <TableHead className="text-xs">External references</TableHead>
-                  <TableHead className="text-xs">Main reference</TableHead>
+                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
+                  <TableHead className="text-xs" title="Mean value of the measurement">Mean</TableHead>
+                  <TableHead className="text-xs" title="Minimum value recorded">Min</TableHead>
+                  <TableHead className="text-xs" title="Maximum value recorded">Max</TableHead>
+                  <TableHead className="text-xs" title="Confidence interval value">Confidence interval</TableHead>
+                  <TableHead className="text-xs" title="Type of mean (arithmetic, geometric, etc.)">Mean type</TableHead>
+                  <TableHead className="text-xs" title="Type of confidence interval (SD, SE, 95% CI, etc.)">Confidence interval type</TableHead>
+                  <TableHead className="text-xs" title="Unit of measurement (mm for size, days for duration)">Unit</TableHead>
+                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
+                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -423,7 +423,7 @@ function NumericTraitPanel({
     return (
       <Card className="bg-card">
         <CardContent className="p-4">
-          <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+          <div className="text-xs font-medium uppercase text-white tracking-wide">
             {label}
           </div>
           <p className="text-sm text-muted-foreground italic mt-2">No {label.toLowerCase()} data available</p>
@@ -436,7 +436,7 @@ function NumericTraitPanel({
     <Card className="bg-card">
       <CardContent className="p-4">
         {/* Label */}
-        <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide">
+        <div className="text-xs font-medium uppercase text-white tracking-wide">
           {label}
         </div>
 
@@ -460,33 +460,28 @@ function NumericTraitPanel({
           )}
         </div>
 
-        {/* Range/Records row */}
-        <div className="mt-3 pt-3 border-t flex items-start justify-between text-sm">
-          <div>&nbsp;</div>
-          <div className="text-right space-y-0.5">
-            {showRange && (
-              <>
-                <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
-                <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
-              </>
-            )}
-            {stats.n === 0 ? (
-              <div className="text-muted-foreground" data-testid="records-link">
-                0 records
-              </div>
-            ) : (
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(true)}
-                  className="text-primary hover:underline"
-                  data-testid="records-link"
-                >
-                  {stats.n} record{stats.n !== 1 ? 's' : ''}
-                </button>
-              </div>
-            )}
-          </div>
+        {/* Range/Records row — all inline */}
+        <div className="mt-3 pt-3 border-t flex items-center justify-end gap-3 text-sm flex-wrap">
+          {showRange && (
+            <>
+              <span className="text-white">Min: {stats.min!.toFixed(1)}</span>
+              <span className="text-white">Max: {stats.max!.toFixed(1)}</span>
+            </>
+          )}
+          {stats.n === 0 ? (
+            <span className="text-muted-foreground" data-testid="records-link">
+              0 records
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              className="text-primary hover:underline"
+              data-testid="records-link"
+            >
+              {stats.n} record{stats.n !== 1 ? 's' : ''}
+            </button>
+          )}
         </div>
 
         {/* Genus/Family/Order comparison text — hide when only 1 species known */}
@@ -524,7 +519,7 @@ function NumericTraitPanel({
         )}
 
         {/* Family/genus bar chart comparison — controlled by section-level toggle */}
-        {showComparison && barChartData && barChartData.entries.length > 0 && currentSpeciesId && (
+        {showComparison && barChartData && barChartData.entries.length > 1 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={barChartData.entries}
@@ -537,7 +532,7 @@ function NumericTraitPanel({
           </div>
         )}
         {/* Order bar chart as FALLBACK only — never show both */}
-        {showComparison && !(barChartData && barChartData.entries.length > 0) && orderBarChartData && orderBarChartData.entries.length > 0 && currentSpeciesId && (
+        {showComparison && !(barChartData && barChartData.entries.length > 1) && orderBarChartData && orderBarChartData.entries.length > 1 && currentSpeciesId && (
           <div className="mt-4 pt-4 border-t">
             <FamilyBarChart
               data={orderBarChartData.entries}

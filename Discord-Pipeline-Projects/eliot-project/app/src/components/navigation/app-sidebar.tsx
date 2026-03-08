@@ -106,7 +106,38 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
   // Filter state
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedTraits, setSelectedTraits] = useState<Set<string>>(new Set());
+  const [selectedEcosystems, setSelectedEcosystems] = useState<Set<string>>(new Set());
+  const [selectedHabitats, setSelectedHabitats] = useState<Set<string>>(new Set());
+  const [ecologySpeciesMap, setEcologySpeciesMap] = useState<Set<string> | null>(null);
   const debouncedSearch = useDebouncedValue(searchTerm, 200);
+
+  // Fetch ecology filter results when ecosystem/habitat selections change
+  useEffect(() => {
+    if (selectedEcosystems.size === 0 && selectedHabitats.size === 0) {
+      setEcologySpeciesMap(null);
+      return;
+    }
+
+    const params = new URLSearchParams();
+    if (selectedEcosystems.size > 0) {
+      params.set('ecosystem', [...selectedEcosystems].join(','));
+    }
+    if (selectedHabitats.size > 0) {
+      params.set('habitat', [...selectedHabitats].join(','));
+    }
+
+    let cancelled = false;
+    fetch(`/api/ecology?${params.toString()}`)
+      .then(r => r.json())
+      .then(data => {
+        if (!cancelled && data.species) {
+          setEcologySpeciesMap(new Set(data.species));
+        }
+      })
+      .catch(console.error);
+
+    return () => { cancelled = true; };
+  }, [selectedEcosystems, selectedHabitats]);
 
   // Filter species using the dedicated hook (for tree/count display)
   // Single search bar searches within filtered results when filters are active
@@ -117,32 +148,38 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
     traitsBySpecies,
   });
 
-  // Apply map province filter on top of trait/search filters
+  // Apply ecology filter
+  const ecologyFilteredSpecies = useMemo(() => {
+    if (!ecologySpeciesMap) return traitFilteredSpecies;
+    return traitFilteredSpecies.filter(sp => ecologySpeciesMap.has(sp.scientificName));
+  }, [traitFilteredSpecies, ecologySpeciesMap]);
+
+  // Apply map province filter on top of trait/search/ecology filters
   const filteredSpecies = useMemo(() => {
-    if (!mapFilteredSpecies) return traitFilteredSpecies;
-    return traitFilteredSpecies.filter(sp => mapFilteredSpecies.has(sp.scientificName));
-  }, [traitFilteredSpecies, mapFilteredSpecies]);
+    if (!mapFilteredSpecies) return ecologyFilteredSpecies;
+    return ecologyFilteredSpecies.filter(sp => mapFilteredSpecies.has(sp.scientificName));
+  }, [ecologyFilteredSpecies, mapFilteredSpecies]);
 
   // Build filtered taxonomy tree from filtered species
   const filteredTaxonomy = useMemo((): TaxonomyNodeJSON | null => {
     if (!taxonomy) return null;
     // If no filters are active, use the full taxonomy
-    if (selectedTraits.size === 0 && !debouncedSearch.trim() && !mapFilteredSpecies) {
+    if (selectedTraits.size === 0 && !debouncedSearch.trim() && !mapFilteredSpecies && !ecologySpeciesMap) {
       return taxonomy;
     }
     // Build taxonomy from filtered species
     return buildTaxonomyFromSpecies(filteredSpecies);
-  }, [taxonomy, filteredSpecies, selectedTraits, debouncedSearch, mapFilteredSpecies]);
+  }, [taxonomy, filteredSpecies, selectedTraits, debouncedSearch, mapFilteredSpecies, ecologySpeciesMap]);
 
-  // Notify parent when trait filter changes the visible species set
+  // Notify parent when trait/ecology filter changes the visible species set
   useEffect(() => {
     if (!onFilteredSpeciesChange) return;
-    if (selectedTraits.size === 0) {
+    if (selectedTraits.size === 0 && selectedEcosystems.size === 0 && selectedHabitats.size === 0) {
       onFilteredSpeciesChange(null);
     } else {
       onFilteredSpeciesChange(new Set(filteredSpecies.map((sp) => sp.scientificName)));
     }
-  }, [filteredSpecies, selectedTraits, onFilteredSpeciesChange]);
+  }, [filteredSpecies, selectedTraits, selectedEcosystems, selectedHabitats, onFilteredSpeciesChange]);
 
   // Handlers
   const handleTraitToggle = useCallback((trait: string) => {
@@ -235,9 +272,74 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
 
           <SidebarSeparator />
 
+          {/* Ecology Filters */}
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs text-muted-foreground font-medium text-center justify-center">Filter by ecology</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <div className="px-2 space-y-2">
+                {/* Ecosystem filter */}
+                <div>
+                  <div className="text-xs font-medium text-white/80 mb-1">Ecosystem</div>
+                  <div className="space-y-0.5">
+                    {['Marine', 'Euryhaline', 'Freshwater'].map(eco => (
+                      <label key={eco} className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-white/5 ${selectedEcosystems.has(eco) ? 'bg-white/10' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedEcosystems.has(eco)}
+                          onChange={() => {
+                            setSelectedEcosystems(prev => {
+                              const next = new Set(prev);
+                              if (next.has(eco)) next.delete(eco); else next.add(eco);
+                              return next;
+                            });
+                          }}
+                          className="rounded border-border"
+                        />
+                        <span className="text-white/90">{eco}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {/* Habitat filter */}
+                <div>
+                  <div className="text-xs font-medium text-white/80 mb-1">Habitat</div>
+                  <div className="space-y-0.5">
+                    {['Benthic', 'Pelagic'].map(hab => (
+                      <label key={hab} className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-white/5 ${selectedHabitats.has(hab) ? 'bg-white/10' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedHabitats.has(hab)}
+                          onChange={() => {
+                            setSelectedHabitats(prev => {
+                              const next = new Set(prev);
+                              if (next.has(hab)) next.delete(hab); else next.add(hab);
+                              return next;
+                            });
+                          }}
+                          className="rounded border-border"
+                        />
+                        <span className="text-white/90">{hab}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+                {(selectedEcosystems.size > 0 || selectedHabitats.size > 0) && (
+                  <button
+                    className="text-xs text-blue-400 hover:text-blue-300"
+                    onClick={() => { setSelectedEcosystems(new Set()); setSelectedHabitats(new Set()); }}
+                  >
+                    Clear ecology filters
+                  </button>
+                )}
+              </div>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
           {/* Trait Filters - uses availableTraitTypes from useSpeciesData */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-base text-muted-foreground font-medium text-center justify-center">Filter by trait (sidebar) or location (map)</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-[10px] text-muted-foreground font-medium text-center justify-center leading-tight">Filter by dispersal traits availability (below)</SidebarGroupLabel>
             <SidebarGroupContent>
               <TraitFilters
                 selectedTraits={selectedTraits}

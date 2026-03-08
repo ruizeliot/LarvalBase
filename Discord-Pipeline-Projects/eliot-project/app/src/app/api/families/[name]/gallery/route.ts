@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
-import { buildImageUrl } from '@/lib/utils/encode-image-path';
+import { buildImageUrl, extractCopyright } from '@/lib/utils/encode-image-path';
 
 interface GalleryImage {
   imageUrl: string;
@@ -13,18 +13,25 @@ interface GalleryImage {
   level: 'species' | 'genus' | 'family';
 }
 
-interface GallerySection {
-  genus: string;
+interface SpeciesSubsection {
+  speciesName: string;
   images: GalleryImage[];
-  /** Section type for styling: family, genus, or species */
-  sectionType?: 'family' | 'genus' | 'species';
+}
+
+interface GenusSection {
+  genusName: string;
+  genusImages: GalleryImage[];       // genus-level IDs
+  speciesSubsections: SpeciesSubsection[];  // species-level IDs grouped by species
+}
+
+interface GalleryResponse {
+  family: string;
+  genusSections: GenusSection[];
+  familyImages: GalleryImage[];      // family-level IDs at bottom
 }
 
 /**
  * Parse a metadata file and return images matching the given family.
- *
- * Handles the row-number column offset: fam_ids and gen_ids metadata files
- * have a leading row-number column in data rows but NO header for it.
  */
 async function parseMetadataForFamily(
   filePath: string,
@@ -34,8 +41,7 @@ async function parseMetadataForFamily(
   try {
     let content = await fs.readFile(filePath, 'utf-8');
 
-    // Detect row-number column offset: if first data row has more fields
-    // than the header, prepend an empty header for the row-number column.
+    // Detect row-number column offset
     const lines = content.split('\n');
     if (lines.length >= 2) {
       const headerFields = lines[0].split('@').length;
@@ -63,7 +69,7 @@ async function parseMetadataForFamily(
         if (rowFamily !== family) return;
 
         const uncertain = (row.UNCERTAIN || '').replace(/^"|"$/g, '') === 'TRUE';
-        const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '');
+        const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '').replace(/^Final image database\//, '');
         const fileName = (row.FILE_NAME || '').replace(/^"|"$/g, '');
         const author = (row.AUTHOR || '').replace(/^"|"$/g, '');
         const genus = row.GENUS ? row.GENUS.replace(/^"|"$/g, '') : null;
@@ -71,8 +77,9 @@ async function parseMetadataForFamily(
 
         if (!imgPath || !fileName) return;
 
+        const copyright = extractCopyright(author);
         images.push({
-          imageUrl: buildImageUrl(imgPath, fileName),
+          imageUrl: buildImageUrl(imgPath, fileName, copyright || undefined),
           species,
           genus,
           author,
@@ -91,10 +98,9 @@ async function parseMetadataForFamily(
 /**
  * GET /api/families/[name]/gallery
  *
- * Returns gallery images organized in order:
- * 1. Family-level IDs (fam_ids_pics_metadata.txt)
- * 2. Genus-level IDs (gen_ids_pics_metadata.txt)
- * 3. Species grouped by genus sections, then species subsections, sorted by author
+ * Returns gallery images organized as:
+ * - genusSections[]: per genus, with genus-level images on top + species subsections below
+ * - familyImages[]: family-level IDs at the bottom
  */
 export async function GET(
   request: NextRequest,
@@ -105,7 +111,6 @@ export async function GET(
     const family = decodeURIComponent(familyName);
     const imagesDir = path.join(process.cwd(), 'images');
 
-    // Load from all three metadata files in parallel
     const [speciesImages, genusImages, familyImages] = await Promise.all([
       parseMetadataForFamily(
         path.join(imagesDir, 'sp_ids_pics_metadata.txt'),
@@ -124,95 +129,80 @@ export async function GET(
       ),
     ]);
 
-    const sections: GallerySection[] = [];
-
-    // 1. Genus-level IDs on top, grouped by genus
-    const genusByName = new Map<string, GalleryImage[]>();
+    // Group genus-level images by genus name
+    const genusImagesByGenus = new Map<string, GalleryImage[]>();
     for (const img of genusImages) {
-      const genusName = img.genus || 'Unknown';
-      const list = genusByName.get(genusName) ?? [];
+      const g = img.genus || 'Unknown';
+      const list = genusImagesByGenus.get(g) ?? [];
       list.push(img);
-      genusByName.set(genusName, list);
-    }
-    for (const [genusName, images] of [...genusByName.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-      images.sort((a, b) => a.author.localeCompare(b.author));
-      sections.push({
-        genus: `${genusName} sp. — Genus-level identifications`,
-        images,
-        sectionType: 'genus',
-      });
+      genusImagesByGenus.set(g, list);
     }
 
-    // 2. Species-level IDs: filter certain/uncertain, group by genus then species
-    const speciesCertainMap = new Map<string, GalleryImage[]>();
-    const speciesUncertainMap = new Map<string, GalleryImage[]>();
+    // Group species-level images by genus → species
+    // Prefer certain over uncertain per species
+    const speciesByGenus = new Map<string, Map<string, GalleryImage[]>>();
+    const certainBySpecies = new Map<string, GalleryImage[]>();
+    const uncertainBySpecies = new Map<string, GalleryImage[]>();
+
     for (const img of speciesImages) {
       const key = img.species || 'unknown';
       if (img.uncertain) {
-        const list = speciesUncertainMap.get(key) ?? [];
+        const list = uncertainBySpecies.get(key) ?? [];
         list.push(img);
-        speciesUncertainMap.set(key, list);
+        uncertainBySpecies.set(key, list);
       } else {
-        const list = speciesCertainMap.get(key) ?? [];
+        const list = certainBySpecies.get(key) ?? [];
         list.push(img);
-        speciesCertainMap.set(key, list);
+        certainBySpecies.set(key, list);
       }
     }
 
-    // Merge: certain first, uncertain only if no certain for that species
-    const filteredBySpecies = new Map<string, GalleryImage[]>();
-    const allSpeciesKeys = new Set([...speciesCertainMap.keys(), ...speciesUncertainMap.keys()]);
+    const allSpeciesKeys = new Set([...certainBySpecies.keys(), ...uncertainBySpecies.keys()]);
     for (const key of allSpeciesKeys) {
-      const certain = speciesCertainMap.get(key);
-      if (certain && certain.length > 0) {
-        filteredBySpecies.set(key, certain);
-      } else {
-        const uncertain = speciesUncertainMap.get(key);
-        if (uncertain) filteredBySpecies.set(key, uncertain);
-      }
-    }
-
-    // Group species by genus for sections
-    const speciesByGenus = new Map<string, Map<string, GalleryImage[]>>();
-    for (const [speciesName, images] of filteredBySpecies) {
+      const certain = certainBySpecies.get(key);
+      const images = (certain && certain.length > 0) ? certain : (uncertainBySpecies.get(key) ?? []);
       const genusName = images[0]?.genus || 'Unknown';
       if (!speciesByGenus.has(genusName)) speciesByGenus.set(genusName, new Map());
-      speciesByGenus.get(genusName)!.set(speciesName, images);
+      speciesByGenus.get(genusName)!.set(key, images);
     }
 
-    // Add species sections sorted by genus, then species, sorted by author
-    for (const [genusName, speciesMap] of [...speciesByGenus.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-      const allGenusSpeciesImages: GalleryImage[] = [];
-      for (const [, images] of [...speciesMap.entries()].sort(([a], [b]) => a.localeCompare(b))) {
-        images.sort((a, b) => a.author.localeCompare(b.author));
-        allGenusSpeciesImages.push(...images);
+    // Collect all genus names (from both genus-level and species-level)
+    const allGenera = new Set([...genusImagesByGenus.keys(), ...speciesByGenus.keys()]);
+
+    // Build genus sections
+    const genusSections: GenusSection[] = [];
+    for (const genusName of [...allGenera].sort()) {
+      const genusImgs = genusImagesByGenus.get(genusName) ?? [];
+      genusImgs.sort((a, b) => a.author.localeCompare(b.author));
+
+      const speciesMap = speciesByGenus.get(genusName) ?? new Map();
+      const speciesSubsections: SpeciesSubsection[] = [];
+      for (const [speciesName, images] of [...speciesMap.entries()].sort((a: [string, GalleryImage[]], b: [string, GalleryImage[]]) => a[0].localeCompare(b[0]))) {
+        images.sort((a: GalleryImage, b: GalleryImage) => a.author.localeCompare(b.author));
+        speciesSubsections.push({ speciesName, images });
       }
-      sections.push({
-        genus: genusName,
-        images: allGenusSpeciesImages,
-        sectionType: 'species',
+
+      genusSections.push({
+        genusName,
+        genusImages: genusImgs,
+        speciesSubsections,
       });
     }
 
-    // 3. Family-level IDs last
-    if (familyImages.length > 0) {
-      familyImages.sort((a, b) => a.author.localeCompare(b.author));
-      sections.push({
-        genus: `${family} — Family-level identifications`,
-        images: familyImages,
-        sectionType: 'family',
-      });
-    }
+    // Family images at bottom
+    familyImages.sort((a, b) => a.author.localeCompare(b.author));
 
-    return NextResponse.json(
-      { family, sections },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
-    );
+    const response: GalleryResponse = {
+      family,
+      genusSections,
+      familyImages,
+    };
+
+    return NextResponse.json(response, {
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+    });
   } catch (error) {
     console.error('Error loading family gallery:', error);
-    return NextResponse.json(
-      { error: 'Failed to load gallery' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to load gallery' }, { status: 500 });
   }
 }
