@@ -19,6 +19,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FamilyBarChart } from "./family-bar-chart";
+import { SectionTooltip } from "./section-tooltip";
+import { PANEL_TOOLTIPS } from "@/lib/constants/section-tooltips";
+import { ColumnHeader } from "./column-header";
 
 /**
  * A single record (one data point per reference) for size or age.
@@ -195,11 +198,11 @@ function QualitativeRecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
-                  <TableHead className="text-xs" title="Type of floating object the larvae/juveniles associate with">Flotsam</TableHead>
-                  <TableHead className="text-xs" title="Developmental stage during rafting association">Stage</TableHead>
-                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
-                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Name" description="Valid scientific name of the species" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Flotsam" description="Type of floating object associated with rafting behaviour. Categories: algae/plant, FAD (man-made Fish Aggregating Device), gelatinous zooplankton, mangrove litter, other object, pelagic vertebrate, plastic, or tsunamis debris" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Stage" description="Life stage(s) associated with rafting behaviour (A = adult, J = juvenile, L = larvae). Multiple stages separated by '|', uncertainties indicated by 'and/or'" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="External references" description="Source study of the information cited in the main reference" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Main reference" description="Main bibliographic reference for this record" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -240,8 +243,9 @@ function QualitativeCard({ data }: { data: RaftingData }) {
   return (
     <Card className="bg-card">
       <CardContent className="p-4 space-y-3">
-        <span className="text-xs font-medium uppercase text-muted-foreground">
+        <span className="text-xs font-medium uppercase text-muted-foreground flex items-center gap-1">
           Rafting
+          <SectionTooltip text={PANEL_TOOLTIPS['Rafting']} />
         </span>
 
         {/* Status */}
@@ -419,17 +423,17 @@ function RecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
-                  <TableHead className="text-xs" title="Mean value of the measurement">Mean</TableHead>
-                  <TableHead className="text-xs" title="Minimum value recorded">Min</TableHead>
-                  <TableHead className="text-xs" title="Maximum value recorded">Max</TableHead>
-                  <TableHead className="text-xs" title="Type of mean (arithmetic, geometric, etc.)">Mean type</TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Name" description="Valid scientific name of the species" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Mean" description={traitType === 'size' ? 'Mean (or midrange) size (in mm) of individuals exhibiting rafting behaviour' : 'Mean (or midrange) age (in days) associated with rafting behaviour'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Min" description={traitType === 'size' ? 'Minimum size (in mm) of individuals exhibiting rafting behaviour' : 'Minimum age (in days) associated with rafting behaviour'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Max" description={traitType === 'size' ? 'Maximum size (in mm) of individuals exhibiting rafting behaviour' : 'Maximum age (in days) associated with rafting behaviour'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Mean type" description="Whether the value represents an actual mean or a computed midrange" /></TableHead>
                   {traitType === 'size' && (
-                    <TableHead className="text-xs" title="Type of length measurement (SL, TL, NL, etc.)">Length type</TableHead>
+                    <TableHead className="text-xs"><ColumnHeader label="Length type" description="Type of length measurement: FL (Fork Length), SL (Standard Length), or TL (Total Length)" /></TableHead>
                   )}
-                  <TableHead className="text-xs" title="Unit of measurement (mm for size)">Unit</TableHead>
-                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
-                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Unit" description={traitType === 'size' ? 'Unit of measurement (mm)' : 'Unit of measurement (days)'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="External references" description="Source study of the information cited in the main reference" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Main reference" description="Main bibliographic reference for this record" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -499,8 +503,9 @@ function NumericTraitPanel({
     return (
       <Card className="bg-card">
         <CardContent className="p-4">
-          <div className="text-xs font-medium uppercase text-white tracking-wide">
+          <div className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
             {label}
+            {PANEL_TOOLTIPS[label] && <SectionTooltip text={PANEL_TOOLTIPS[label]} />}
           </div>
           <p className="text-sm text-muted-foreground italic mt-2">No {label.toLowerCase()} data available</p>
         </CardContent>
@@ -534,27 +539,29 @@ function NumericTraitPanel({
           )}
         </div>
 
-        {/* Range/Records row — all inline */}
-        <div className="mt-3 pt-3 border-t flex items-center justify-end gap-3 text-sm flex-wrap">
+        {/* Range/Records — stacked vertically like TraitCard */}
+        <div className="mt-2 text-right text-sm space-y-0.5">
           {showRange && (
             <>
-              <span className="text-white">Min: {stats.min!.toFixed(1)}</span>
-              <span className="text-white">Max: {stats.max!.toFixed(1)}</span>
+              <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
+              <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
             </>
           )}
           {stats.n === 0 ? (
-            <span className="text-muted-foreground" data-testid="records-link">
+            <div className="text-muted-foreground" data-testid="records-link">
               0 records
-            </span>
+            </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-primary hover:underline"
-              data-testid="records-link"
-            >
-              {stats.n} record{stats.n !== 1 ? 's' : ''}
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="text-primary hover:underline"
+                data-testid="records-link"
+              >
+                {stats.n} record{stats.n !== 1 ? 's' : ''}
+              </button>
+            </div>
           )}
         </div>
 
@@ -659,10 +666,10 @@ function AgeRecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
-                  <TableHead className="text-xs" title="Age category during rafting">Age</TableHead>
-                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
-                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Name" description="Valid scientific name of the species" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Age" description="Age range or duration (in days) associated with rafting behaviour" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="External references" description="Source study of the information cited in the main reference" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Main reference" description="Main bibliographic reference for this record" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -704,8 +711,9 @@ function AgeQualitativeCard({ data }: { data: RaftingData }) {
     return (
       <Card className="bg-card">
         <CardContent className="p-4">
-          <div className="text-xs font-medium uppercase text-white tracking-wide">
+          <div className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
             Rafting Age
+            <SectionTooltip text={PANEL_TOOLTIPS['Rafting Age']} />
           </div>
           <p className="text-sm text-muted-foreground italic mt-2">No rafting age data available</p>
         </CardContent>
@@ -716,8 +724,9 @@ function AgeQualitativeCard({ data }: { data: RaftingData }) {
   return (
     <Card className="bg-card">
       <CardContent className="p-4 space-y-3">
-        <span className="text-xs font-medium uppercase text-muted-foreground">
+        <span className="text-xs font-medium uppercase text-muted-foreground flex items-center gap-1">
           Rafting Age
+          <SectionTooltip text={PANEL_TOOLTIPS['Rafting Age']} />
         </span>
 
         {/* Records link at top */}

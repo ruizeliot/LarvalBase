@@ -9,6 +9,7 @@ import {
   CommandGroup,
   CommandItem,
 } from "@/components/ui/command";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 interface SpeciesItem {
@@ -41,6 +42,8 @@ export function SpeciesSearch({
   onSearchChange,
 }: SpeciesSearchProps) {
   const [search, setSearch] = useState("");
+  const [searchLatin, setSearchLatin] = useState(true);
+  const [searchCommon, setSearchCommon] = useState(true);
   const debouncedSearch = useDebouncedValue(search, 200);
   const [synonymMatches, setSynonymMatches] = useState<SynonymMatch[]>([]);
 
@@ -66,15 +69,16 @@ export function SpeciesSearch({
     return () => { cancelled = true; };
   }, [debouncedSearch]);
 
-  // Filter species — search both Latin and common names simultaneously
+  // Filter species — respect search mode toggles
   const filteredSpecies = debouncedSearch.trim()
     ? species.filter((sp) => {
         const lowerSearch = debouncedSearch.toLowerCase();
-        const latinMatch = sp.scientificName.toLowerCase().includes(lowerSearch);
-        // Search across all common names (up to 3)
-        const commonMatch = sp.allCommonNames?.some(n => n.toLowerCase().includes(lowerSearch))
+        const latinMatch = searchLatin && sp.scientificName.toLowerCase().includes(lowerSearch);
+        const commonMatch = searchCommon && (
+          sp.allCommonNames?.some(n => n.toLowerCase().includes(lowerSearch))
           ?? sp.commonName?.toLowerCase().includes(lowerSearch)
-          ?? false;
+          ?? false
+        );
         return latinMatch || commonMatch;
       })
     : [];
@@ -103,6 +107,23 @@ export function SpeciesSearch({
 
   return (
     <Command shouldFilter={false} className="border-b">
+      {/* Search mode toggles */}
+      <div className="flex items-center gap-4 px-3 py-1.5 border-b border-border/50">
+        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+          <Checkbox
+            checked={searchLatin}
+            onCheckedChange={(checked) => setSearchLatin(!!checked)}
+          />
+          <span className="text-muted-foreground">Latin names</span>
+        </label>
+        <label className="flex items-center gap-1.5 text-xs cursor-pointer">
+          <Checkbox
+            checked={searchCommon}
+            onCheckedChange={(checked) => setSearchCommon(!!checked)}
+          />
+          <span className="text-muted-foreground">Common names</span>
+        </label>
+      </div>
       <CommandInput
         placeholder="Search by scientific or common name..."
         value={search}

@@ -19,6 +19,7 @@ import { SectionExportButtons } from "./section-export-buttons";
 import { isAllEggsSpherical } from "./egg-spherical-helper";
 import { useSpeciesImages } from "@/hooks/use-species-images";
 import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 import { useI18n } from "@/lib/i18n/i18n-context";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,9 +139,26 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
     traitName: string;
   } | null>(null);
 
-  // Comparison toggles for Pelagic Juvenile and Rafting sections
+  // Comparison toggles for Pelagic Juvenile and Rafting sections — reset on species change (P7)
   const [showPelagicComparison, setShowPelagicComparison] = useState(false);
   const [showRaftingComparison, setShowRaftingComparison] = useState(false);
+
+  // P7: Reset barplot visibility when navigating to a new species
+  useEffect(() => {
+    setShowPelagicComparison(false);
+    setShowRaftingComparison(false);
+  }, [speciesId]);
+
+  // Habitat data for adult ecosystem/habitat display and pelagic section hiding
+  const [habitatInfo, setHabitatInfo] = useState<{ habitat: string | null; ecosystem: string | null } | null>(null);
+
+  useEffect(() => {
+    if (!speciesId) return;
+    fetch(`/api/species/${encodeURIComponent(speciesId)}/habitat`)
+      .then(r => r.json())
+      .then(data => setHabitatInfo(data))
+      .catch(() => setHabitatInfo(null));
+  }, [speciesId]);
 
   // State for comparison stats (genus/family/order averages)
   const [comparisons, setComparisons] = useState<Map<string, ComparisonStats>>(new Map());
@@ -203,6 +221,9 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
   const hasEggWidthData = data ? (data.traits['egg_width']?.n ?? 0) > 0 : false;
   const allEggsSpherical = isAllEggsSpherical(eggQualitativeData ?? null, hasEggWidthData);
 
+  // P3: Hide Settlement/Pelagic Juvenile sections for pelagic species
+  const isPelagicSpecies = habitatInfo?.habitat === 'Pelagic';
+
   // Map API traits to display groups
   // Show ALL trait categories, with "No known values" for traits without data
   const traitGroups = DISPLAY_GROUPS.map((group) => {
@@ -242,13 +263,20 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
   return (
     <div className="space-y-8">
       {/* Back button */}
-      {onBack && (
+      {onBack ? (
         <button
           onClick={onBack}
           className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4" /> {backLabel || "Back"}
         </button>
+      ) : (
+        <Link
+          href="/"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to homepage
+        </Link>
       )}
 
       {/* Species Header */}
@@ -262,6 +290,8 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
         studyCount={studyCount}
       />
 
+      {/* Adult Ecosystem & Habitat — moved to below the map */}
+
       {/* Growth Curves Chart - At the top, before traits */}
       <SpeciesGrowthChart
         speciesId={speciesId}
@@ -271,7 +301,11 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
       {/* Trait Groups with Map after Settlement */}
       {traitGroups.length > 0 ? (
         <div className="space-y-8">
-          {traitGroups.map((group, index) => (
+          {traitGroups.filter(group => {
+            // P3: Hide Settlement section for pelagic species
+            if (isPelagicSpecies && group.title === 'Settlement') return false;
+            return true;
+          }).map((group) => (
             <div key={group.title}>
               <TraitGroup
                 title={group.title}
@@ -284,11 +318,11 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                 comparisons={comparisons}
                 eggQualitativeData={group.title === "Egg & Incubation" ? eggQualitativeData : undefined}
               />
-              {/* Insert map after Settlement section */}
-              {group.title === "Settlement" && (
+              {/* Insert map + PJ + Rafting after Settlement section (or after Metamorphosis if pelagic) */}
+              {((group.title === "Settlement" && !isPelagicSpecies) || (group.title === "Metamorphosis" && isPelagicSpecies)) && (
                 <>
-                  {/* Settlement-stage sampling locations — only show if GPS data exists */}
-                  {locations.length > 0 && locations.some(
+                  {/* Settlement-stage sampling locations — only show if GPS data exists and NOT pelagic */}
+                  {!isPelagicSpecies && locations.length > 0 && locations.some(
                     (loc) => loc.latitude != null && loc.longitude != null && !isNaN(loc.latitude) && !isNaN(loc.longitude)
                   ) && (
                   <div className="space-y-4 mt-8">
@@ -306,8 +340,24 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                   </div>
                   )}
 
-                  {/* Pelagic Juvenile section (Epic 6) — after Settlement, before Swimming */}
-                  {pelagicJuvenileData && (
+                  {/* Adult Ecosystem & Habitat — below the map */}
+                  {habitatInfo && (habitatInfo.ecosystem || habitatInfo.habitat) && (
+                    <div className="space-y-1 mt-4 text-sm text-white">
+                      {habitatInfo.ecosystem && (
+                        <div>Adult ecosystem: <span className="font-medium">{habitatInfo.ecosystem === 'Freshwater' ? 'Freshwater (marine larvae)' : habitatInfo.ecosystem}</span></div>
+                      )}
+                      {habitatInfo.habitat && (
+                        <div>Adult habitat: <span className="font-medium">
+                          {habitatInfo.habitat === 'Benthic' ? 'Benthic and/or demersal' :
+                           habitatInfo.habitat === 'Pelagic' ? 'Pelagic (offshore) (settlement and pelagic juvenile sections not showed)' :
+                           habitatInfo.habitat}
+                        </span></div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Pelagic Juvenile section — hidden for pelagic species (P3) */}
+                  {!isPelagicSpecies && pelagicJuvenileData && (
                     <div className="space-y-4 mt-8">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -328,7 +378,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                           {SECTION_TOOLTIPS['Pelagic Juvenile'] && (
                             <SectionTooltip text={SECTION_TOOLTIPS['Pelagic Juvenile']} />
                           )}
-                          {(pelagicJuvenileData.sizeBarChart?.entries?.length || pelagicJuvenileData.durationBarChart?.entries?.length || pelagicJuvenileData.sizeOrderBarChart?.entries?.length || pelagicJuvenileData.durationOrderBarChart?.entries?.length) && (
+                          {((pelagicJuvenileData.sizeBarChart?.entries?.length ?? 0) > 1 || (pelagicJuvenileData.durationBarChart?.entries?.length ?? 0) > 1 || (pelagicJuvenileData.sizeOrderBarChart?.entries?.length ?? 0) > 1 || (pelagicJuvenileData.durationOrderBarChart?.entries?.length ?? 0) > 1) && (
                             <button
                               type="button"
                               onClick={() => setShowPelagicComparison(!showPelagicComparison)}
@@ -348,7 +398,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                     </div>
                   )}
 
-                  {/* Rafting section (Epic 7) — after Pelagic Juvenile */}
+                  {/* Rafting section — always shown (not hidden for pelagic species) */}
                   {raftingData && (
                     <div className="space-y-4 mt-8">
                       <div className="flex items-center justify-between">
@@ -370,7 +420,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                           {SECTION_TOOLTIPS['Rafting'] && (
                             <SectionTooltip text={SECTION_TOOLTIPS['Rafting']} />
                           )}
-                          {(raftingData.sizeBarChart?.entries?.length || raftingData.sizeOrderBarChart?.entries?.length) && (
+                          {((raftingData.sizeBarChart?.entries?.length ?? 0) > 1 || (raftingData.sizeOrderBarChart?.entries?.length ?? 0) > 1) && (
                             <button
                               type="button"
                               onClick={() => setShowRaftingComparison(!showRaftingComparison)}

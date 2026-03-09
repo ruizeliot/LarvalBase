@@ -12,6 +12,7 @@ import {
   SidebarSeparator,
 } from "@/components/ui/sidebar";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SpeciesSearch } from "./species-search";
 import { TaxonomyTree } from "./taxonomy-tree";
 import { TraitFilters } from "./trait-filters";
@@ -274,66 +275,63 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
 
           {/* Ecology Filters */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-1.5 mx-2 rounded bg-blue-600/80">Filter by adult ecology (below) or location (map)</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-1.5 mx-2 rounded bg-blue-600/80">Filter by adult ecology or location (map)</SidebarGroupLabel>
             <SidebarGroupContent>
-              <div className="px-2 space-y-2">
-                {/* Ecosystem filter */}
-                <div>
-                  <div className="text-xs font-medium text-white/80 mb-1">Ecosystem</div>
-                  <div className="space-y-0.5">
-                    {['Marine', 'Euryhaline', 'Freshwater'].map(eco => {
-                      const displayLabel = eco === 'Freshwater' ? 'Freshwater (marine larvae)' : eco;
-                      return (
-                        <label key={eco} className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-white/5 ${selectedEcosystems.has(eco) ? 'bg-white/10' : ''}`}>
-                          <input
-                            type="checkbox"
-                            checked={selectedEcosystems.has(eco)}
-                            onChange={() => {
-                              setSelectedEcosystems(prev => {
-                                const next = new Set(prev);
-                                if (next.has(eco)) next.delete(eco); else next.add(eco);
-                                return next;
-                              });
-                            }}
-                            className="rounded border-border"
-                          />
-                          <span className="text-white/90">{displayLabel}</span>
-                        </label>
-                      );
-                    })}
+              <div className="space-y-1">
+                {(selectedEcosystems.size > 0 || selectedHabitats.size > 0) && (
+                  <div className="flex items-center justify-end px-2 py-1">
+                    <button
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => { setSelectedEcosystems(new Set()); setSelectedHabitats(new Set()); }}
+                    >
+                      Clear ({selectedEcosystems.size + selectedHabitats.size})
+                    </button>
                   </div>
+                )}
+                {/* Ecosystem filter */}
+                <div className="px-2 py-1.5 text-sm">Ecosystem</div>
+                <div className="pl-2 space-y-0.5">
+                  {['Marine', 'Euryhaline', 'Freshwater'].map(eco => {
+                    const displayLabel = eco === 'Freshwater' ? 'Freshwater (marine larvae)' : eco;
+                    return (
+                      <label key={eco} className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-accent/50 rounded cursor-pointer transition-colors">
+                        <Checkbox
+                          checked={selectedEcosystems.has(eco)}
+                          onCheckedChange={() => {
+                            setSelectedEcosystems(prev => {
+                              const next = new Set(prev);
+                              if (next.has(eco)) next.delete(eco); else next.add(eco);
+                              return next;
+                            });
+                          }}
+                        />
+                        <span className="text-muted-foreground">{displayLabel}</span>
+                      </label>
+                    );
+                  })}
                 </div>
                 {/* Habitat filter */}
-                <div>
-                  <div className="text-xs font-medium text-white/80 mb-1">Habitat</div>
-                  <div className="space-y-0.5">
-                    {['Benthic', 'Pelagic'].map(hab => (
-                      <label key={hab} className={`flex items-center gap-2 px-2 py-0.5 rounded text-xs cursor-pointer hover:bg-white/5 ${selectedHabitats.has(hab) ? 'bg-white/10' : ''}`}>
-                        <input
-                          type="checkbox"
+                <div className="px-2 py-1.5 text-sm">Habitat</div>
+                <div className="pl-2 space-y-0.5">
+                  {['Benthic', 'Pelagic'].map(hab => {
+                    const displayLabel = hab === 'Benthic' ? 'Benthic and/or demersal' : 'Pelagic (offshore)';
+                    return (
+                      <label key={hab} className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-accent/50 rounded cursor-pointer transition-colors">
+                        <Checkbox
                           checked={selectedHabitats.has(hab)}
-                          onChange={() => {
+                          onCheckedChange={() => {
                             setSelectedHabitats(prev => {
                               const next = new Set(prev);
                               if (next.has(hab)) next.delete(hab); else next.add(hab);
                               return next;
                             });
                           }}
-                          className="rounded border-border"
                         />
-                        <span className="text-white/90">{hab}</span>
+                        <span className="text-muted-foreground">{displayLabel}</span>
                       </label>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-                {(selectedEcosystems.size > 0 || selectedHabitats.size > 0) && (
-                  <button
-                    className="text-xs text-blue-400 hover:text-blue-300"
-                    onClick={() => { setSelectedEcosystems(new Set()); setSelectedHabitats(new Set()); }}
-                  >
-                    Clear ecology filters
-                  </button>
-                )}
               </div>
             </SidebarGroupContent>
           </SidebarGroup>

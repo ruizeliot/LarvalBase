@@ -19,6 +19,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { FamilyBarChart } from "./family-bar-chart";
+import { SectionTooltip } from "./section-tooltip";
+import { PANEL_TOOLTIPS } from "@/lib/constants/section-tooltips";
+import { ColumnHeader } from "./column-header";
 
 /**
  * A single record (one data point per reference).
@@ -175,11 +178,11 @@ function QualitativeRecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
-                  <TableHead className="text-xs" title="Name given to the pelagic juvenile stage or key behavioral description">Key word</TableHead>
-                  <TableHead className="text-xs" title="Additional observations about the pelagic juvenile stage">Remarks</TableHead>
-                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
-                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Name" description="Valid scientific name of the species" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Key word" description="Keywords referring to the pelagic juvenile stage used in Google Scholar to find this information" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Remarks" description="Additional remarks about the pelagic juvenile stage data" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="External references" description="Source study of the information cited in the main reference" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Main reference" description="Main bibliographic reference for this record" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -220,8 +223,9 @@ function QualitativeCard({ data }: { data: PelagicJuvenileData }) {
   return (
     <Card className="bg-card">
       <CardContent className="p-4 space-y-3">
-        <span className="text-xs font-medium uppercase text-muted-foreground">
+        <span className="text-xs font-medium uppercase text-muted-foreground flex items-center gap-1">
           Pelagic Juvenile
+          <SectionTooltip text={PANEL_TOOLTIPS['Pelagic Juvenile']} />
         </span>
 
         {/* Status */}
@@ -342,16 +346,16 @@ function RecordsDialog({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="text-xs" title="Valid scientific name of the species">Name</TableHead>
-                  <TableHead className="text-xs" title="Mean value of the measurement">Mean</TableHead>
-                  <TableHead className="text-xs" title="Minimum value recorded">Min</TableHead>
-                  <TableHead className="text-xs" title="Maximum value recorded">Max</TableHead>
-                  <TableHead className="text-xs" title="Confidence interval value">Confidence interval</TableHead>
-                  <TableHead className="text-xs" title="Type of mean (arithmetic, geometric, etc.)">Mean type</TableHead>
-                  <TableHead className="text-xs" title="Type of confidence interval (SD, SE, 95% CI, etc.)">Confidence interval type</TableHead>
-                  <TableHead className="text-xs" title="Unit of measurement (mm for size, days for duration)">Unit</TableHead>
-                  <TableHead className="text-xs" title="Source study of the information cited in the main reference">External references</TableHead>
-                  <TableHead className="text-xs" title="Main bibliographic reference for this record">Main reference</TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Name" description="Valid scientific name of the species" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Mean" description={traitType === 'size' ? 'Mean (or midrange) size (in mm) of pelagic juveniles' : 'Mean (or midrange) duration (in days) of the pelagic juvenile stage'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Min" description={traitType === 'size' ? 'Minimum size (in mm) of pelagic juveniles' : 'Minimum duration (in days) of the pelagic juvenile stage'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Max" description={traitType === 'size' ? 'Maximum size (in mm) of pelagic juveniles' : 'Maximum duration (in days) of the pelagic juvenile stage'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Confidence interval" description={traitType === 'size' ? 'Confidence interval (in mm) associated with the mean size of pelagic juveniles' : 'Confidence interval (in days) associated with the mean duration of the pelagic juvenile stage'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Mean type" description="Whether the value represents an actual mean or a computed midrange" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Confidence interval type" description="Type of confidence interval (SD, SE, CV, or CI)" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Unit" description={traitType === 'size' ? 'Unit of measurement (mm)' : 'Unit of measurement (days post-hatch)'} /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="External references" description="Source study of the information cited in the main reference" /></TableHead>
+                  <TableHead className="text-xs"><ColumnHeader label="Main reference" description="Main bibliographic reference for this record" /></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -423,8 +427,9 @@ function NumericTraitPanel({
     return (
       <Card className="bg-card">
         <CardContent className="p-4">
-          <div className="text-xs font-medium uppercase text-white tracking-wide">
+          <div className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
             {label}
+            {PANEL_TOOLTIPS[label] && <SectionTooltip text={PANEL_TOOLTIPS[label]} />}
           </div>
           <p className="text-sm text-muted-foreground italic mt-2">No {label.toLowerCase()} data available</p>
         </CardContent>
@@ -436,8 +441,9 @@ function NumericTraitPanel({
     <Card className="bg-card">
       <CardContent className="p-4">
         {/* Label */}
-        <div className="text-xs font-medium uppercase text-white tracking-wide">
+        <div className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
           {label}
+          {PANEL_TOOLTIPS[label] && <SectionTooltip text={PANEL_TOOLTIPS[label]} />}
         </div>
 
         {/* Value: mean ± SD */}
@@ -460,27 +466,29 @@ function NumericTraitPanel({
           )}
         </div>
 
-        {/* Range/Records row — all inline */}
-        <div className="mt-3 pt-3 border-t flex items-center justify-end gap-3 text-sm flex-wrap">
+        {/* Range/Records — stacked vertically like TraitCard */}
+        <div className="mt-2 text-right text-sm space-y-0.5">
           {showRange && (
             <>
-              <span className="text-white">Min: {stats.min!.toFixed(1)}</span>
-              <span className="text-white">Max: {stats.max!.toFixed(1)}</span>
+              <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
+              <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
             </>
           )}
           {stats.n === 0 ? (
-            <span className="text-muted-foreground" data-testid="records-link">
+            <div className="text-muted-foreground" data-testid="records-link">
               0 records
-            </span>
+            </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              className="text-primary hover:underline"
-              data-testid="records-link"
-            >
-              {stats.n} record{stats.n !== 1 ? 's' : ''}
-            </button>
+            <div>
+              <button
+                type="button"
+                onClick={() => setModalOpen(true)}
+                className="text-primary hover:underline"
+                data-testid="records-link"
+              >
+                {stats.n} record{stats.n !== 1 ? 's' : ''}
+              </button>
+            </div>
           )}
         </div>
 
