@@ -520,49 +520,53 @@ function NumericTraitPanel({
           {label}
         </div>
 
-        <div className="mt-2">
-          {hasData ? (
-            <>
-              <span className="text-2xl font-bold font-mono" data-testid="trait-value">
-                {stats.mean!.toFixed(2)}
-                {stats.sd !== null && (
-                  <span className="text-lg font-normal">
-                    {" \u00B1 "}
-                    {stats.sd.toFixed(2)}
-                  </span>
-                )}
-              </span>
-              <div className="text-sm text-muted-foreground mt-1">{unit}</div>
-            </>
-          ) : (
-            <span className="text-lg text-muted-foreground italic">No known values</span>
-          )}
-        </div>
+        {/* Value + Stats row: main value LEFT, summary stats RIGHT */}
+        <div className="mt-2 flex items-start justify-between">
+          {/* Left side: main value */}
+          <div>
+            {hasData ? (
+              <>
+                <span className="text-2xl font-bold font-mono" data-testid="trait-value">
+                  {stats.mean!.toFixed(2)}
+                  {stats.sd !== null && (
+                    <span className="text-lg font-normal">
+                      {" \u00B1 "}
+                      {stats.sd.toFixed(2)}
+                    </span>
+                  )}
+                </span>
+                <div className="text-sm text-muted-foreground mt-1">{unit}</div>
+              </>
+            ) : (
+              <span className="text-lg text-muted-foreground italic">No known values</span>
+            )}
+          </div>
 
-        {/* Range/Records — stacked vertically like TraitCard */}
-        <div className="mt-2 text-right text-sm space-y-0.5">
-          {showRange && (
-            <>
-              <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
-              <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
-            </>
-          )}
-          {stats.n === 0 ? (
-            <div className="text-muted-foreground" data-testid="records-link">
-              0 records
-            </div>
-          ) : (
-            <div>
-              <button
-                type="button"
-                onClick={() => setModalOpen(true)}
-                className="text-primary hover:underline"
-                data-testid="records-link"
-              >
-                {stats.n} record{stats.n !== 1 ? 's' : ''}
-              </button>
-            </div>
-          )}
+          {/* Right side: Min, Max, records */}
+          <div className="text-right text-sm space-y-0.5">
+            {showRange && (
+              <>
+                <div className="text-white">Min: {stats.min!.toFixed(1)}</div>
+                <div className="text-white">Max: {stats.max!.toFixed(1)}</div>
+              </>
+            )}
+            {stats.n === 0 ? (
+              <div className="text-muted-foreground" data-testid="records-link">
+                0 records
+              </div>
+            ) : (
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setModalOpen(true)}
+                  className="text-primary hover:underline"
+                  data-testid="records-link"
+                >
+                  {stats.n} record{stats.n !== 1 ? 's' : ''}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         {comparisons && (
