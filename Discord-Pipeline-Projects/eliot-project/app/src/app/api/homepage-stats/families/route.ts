@@ -69,8 +69,8 @@ export async function GET() {
     const [data, imageRegistry, genCounts, famCounts] = await Promise.all([
       getOrLoadData(),
       loadImageRegistry(),
-      countImagesFromMetadata(path.join(imagesDir, 'gen_ids_pics_metadata.txt')),
-      countImagesFromMetadata(path.join(imagesDir, 'fam_ids_pics_metadata.txt')),
+      countImagesFromMetadata(path.join(imagesDir, 'gen_ids_pics_metadata_03_2026.txt')),
+      countImagesFromMetadata(path.join(imagesDir, 'fam_ids_pics_metadata_03_2026.txt')),
     ]);
 
     // Count ALL species-level images per family (no early break)
@@ -141,7 +141,7 @@ export async function GET() {
 
     // 2. Also parse fam_ids and gen_ids metadata for additional blackwater candidates
     // (some families only have BW images at genus/family level, not species level)
-    for (const metaFile of ['fam_ids_pics_metadata.txt', 'gen_ids_pics_metadata.txt'] as const) {
+    for (const metaFile of ['fam_ids_pics_metadata_03_2026.txt', 'gen_ids_pics_metadata_03_2026.txt'] as const) {
       const metaLevel: 'species' | 'genus' | 'family' = metaFile.startsWith('fam_') ? 'family' : 'genus';
       try {
         let content = await fs.readFile(path.join(imagesDir, metaFile), 'utf-8');

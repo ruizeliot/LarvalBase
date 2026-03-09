@@ -241,7 +241,7 @@ export async function GET() {
 
       // 2. Genus-level and family-level images from their metadata files
       const imagesDir = path.join(process.cwd(), 'images');
-      for (const metaFile of ['gen_ids_pics_metadata.txt', 'fam_ids_pics_metadata.txt']) {
+      for (const metaFile of ['gen_ids_pics_metadata_03_2026.txt', 'fam_ids_pics_metadata_03_2026.txt']) {
         try {
           let content = await fs.readFile(path.join(imagesDir, metaFile), 'utf-8');
           const lines = content.split('\n');

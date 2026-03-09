@@ -215,6 +215,49 @@ function computeBarChartData(
     });
   }
 
+  // Aggregation cascade for order-level: >15 species → per-genus, >15 genera → per-family
+  if (comparisonType === 'order' && entries.length > 15) {
+    const genusMeans = new Map<string, number[]>();
+    for (const entry of entries) {
+      const genus = entry.speciesName.split(' ')[0];
+      const existing = genusMeans.get(genus) ?? [];
+      existing.push(entry.meanValue);
+      genusMeans.set(genus, existing);
+    }
+
+    if (genusMeans.size <= 15) {
+      const genusEntries: BarChartSpeciesEntry[] = [];
+      for (const [genusName, values] of genusMeans) {
+        genusEntries.push({
+          speciesId: `genus:${genusName}`,
+          speciesName: genusName,
+          meanValue: values.reduce((a, b) => a + b, 0) / values.length,
+        });
+      }
+      return { entries: genusEntries, comparisonType, taxonomyName };
+    }
+
+    const familyMeans = new Map<string, number[]>();
+    for (const row of rows) {
+      const mean = parseNum(row[meanCol]);
+      if (mean === null) continue;
+      const family = String(row['FAMILY'] ?? '').trim();
+      if (!family || family === 'NA') continue;
+      const existing = familyMeans.get(family) ?? [];
+      existing.push(mean);
+      familyMeans.set(family, existing);
+    }
+    const familyEntries: BarChartSpeciesEntry[] = [];
+    for (const [familyName, values] of familyMeans) {
+      familyEntries.push({
+        speciesId: `family:${familyName}`,
+        speciesName: familyName,
+        meanValue: values.reduce((a, b) => a + b, 0) / values.length,
+      });
+    }
+    return { entries: familyEntries, comparisonType, taxonomyName };
+  }
+
   return { entries, comparisonType, taxonomyName };
 }
 

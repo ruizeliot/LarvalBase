@@ -18,6 +18,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { SectionTooltip } from "./section-tooltip";
+import { QUALITATIVE_TRAIT_TOOLTIPS, QUALITATIVE_COLUMN_TOOLTIPS } from "@/lib/constants/section-tooltips";
 
 /**
  * A single frequency bar entry.
@@ -101,7 +103,7 @@ interface EggQualitativePanelProps {
 
 /** Human-readable labels for each qualitative trait. */
 const TRAIT_LABELS: Record<string, string> = {
-  EGG_LOCATION: 'Egg location',
+  EGG_LOCATION: 'Embryo location',
   EGG_SHAPE: 'Egg shape',
   NB_OIL_GLOBULE: 'Number of oil globules',
 };
@@ -242,12 +244,14 @@ function RecordTableModal({
   title,
   rows,
   showDetails = false,
+  traitKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
   rows: QualitativeRecordRow[];
   showDetails?: boolean;
+  traitKey?: string;
 }) {
   // Sort rows alphabetically by species name
   const sortedRows = [...rows].sort((a, b) => a.species.localeCompare(b.species));
@@ -265,11 +269,17 @@ function RecordTableModal({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-xs">Species</TableHead>
-                <TableHead className="text-xs">Value</TableHead>
-                {showDetails && <TableHead className="text-xs">Details</TableHead>}
-                <TableHead className="text-xs">Main reference</TableHead>
-                <TableHead className="text-xs">External reference</TableHead>
+                {(['Species', 'Value', ...(showDetails ? ['Details'] : []), 'Main reference', 'External reference'] as const).map(col => {
+                  const colTooltip = traitKey && QUALITATIVE_COLUMN_TOOLTIPS[traitKey]?.[col];
+                  return (
+                    <TableHead key={col} className="text-xs">
+                      <span className="flex items-center gap-1">
+                        {col}
+                        {colTooltip && <SectionTooltip text={colTooltip} />}
+                      </span>
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -343,6 +353,7 @@ function LevelRecordLinks({
         title={modalTitle}
         rows={modalRows}
         showDetails={showDetails}
+        traitKey={traitKey}
       />
     </>
   );
@@ -372,8 +383,11 @@ function QualitativeTraitCard({
   return (
     <Card className="bg-card">
       <CardContent className="p-4 space-y-2">
-        <span className="text-xs font-medium uppercase text-muted-foreground">
+        <span className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
           {TRAIT_LABELS[traitKey]}
+          {QUALITATIVE_TRAIT_TOOLTIPS[traitKey] && (
+            <SectionTooltip text={QUALITATIVE_TRAIT_TOOLTIPS[traitKey]} />
+          )}
         </span>
         <FrequencyBarplot entries={displayEntries} color={color} labelWidth={labelWidth} />
         <LevelRecordLinks

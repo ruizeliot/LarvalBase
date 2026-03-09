@@ -12,6 +12,7 @@ interface GalleryImage {
   author: string;
   uncertain: boolean;
   level: "species" | "genus" | "family";
+  link?: string;
 }
 
 interface SpeciesSubsection {
@@ -443,14 +444,25 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
             <img
               src={allImages[lightboxIndex].imageUrl}
               alt={allImages[lightboxIndex].species || family}
-              className="max-w-full max-h-[75vh] object-contain protected-image"
+              className="max-w-full max-h-[75vh] object-contain"
               draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
-              onDragStart={(e) => e.preventDefault()}
             />
             <div className="mt-2 text-white text-center">
+              <p className="text-sm italic">{allImages[lightboxIndex].species || allImages[lightboxIndex].genus || family}</p>
               <p className="text-sm text-white/60">
-                {allImages[lightboxIndex].author}
+                Picture source:{' '}
+                {allImages[lightboxIndex].link ? (
+                  <a
+                    href={allImages[lightboxIndex].link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-400 hover:underline"
+                  >
+                    {allImages[lightboxIndex].author}
+                  </a>
+                ) : (
+                  allImages[lightboxIndex].author
+                )}
                 {allImages[lightboxIndex].uncertain ? " (Unsure ID)" : " (Sure ID)"}
               </p>
               <p className="text-xs text-white/40">
@@ -502,10 +514,8 @@ function ImageGrid({
               alt={img.species || img.genus || ""}
               loading="lazy"
               decoding="async"
-              className="w-full h-full object-contain protected-image"
+              className="w-full h-full object-contain"
               draggable={false}
-              onContextMenu={(e) => e.preventDefault()}
-              onDragStart={(e) => e.preventDefault()}
             />
           </div>
         </div>

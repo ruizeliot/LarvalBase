@@ -38,7 +38,7 @@ function getFamilySvgDir(): string {
  * Uses @ delimiter per project convention.
  */
 async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
-  const metadataPath = path.join(getImagesDir(), 'sp_ids_pics_metadata.txt');
+  const metadataPath = path.join(getImagesDir(), 'sp_ids_pics_metadata_03_2026.txt');
   let content = await fs.readFile(metadataPath, 'utf-8');
 
   const imagesBySpecies = new Map<string, SpeciesImage[]>();
@@ -73,8 +73,12 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
         // Filter out excluded image
         if (parsed.FILE_NAME.includes(EXCLUDED_FILENAME)) return;
 
-        // Extract relative path from full path (remove "images/" prefix if present)
-        const relativePath = parsed.PATH.replace(/^images\//, '');
+        // Extract relative path from full path
+        // Remove "images/" prefix if present, and "Final image database/" prefix
+        // (metadata has "Final image database/..." but VPS stores directly under images/)
+        const relativePath = parsed.PATH
+          .replace(/^images\//, '')
+          .replace(/^Final image database\//, '');
 
         // Get display author — use raw AUTHOR field directly
         const displayAuthor = parsed.AUTHOR;

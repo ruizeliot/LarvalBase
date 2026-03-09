@@ -7,10 +7,20 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'LarvalBase - Fish Larvae Trait Database',
-  description: 'Explore marine fish species larval trait data',
+  title: {
+    default: 'LarvalBase - Fish Larvae Trait Database',
+    template: '%s | LarvalBase',
+  },
+  description: 'Comprehensive database of marine fish larvae dispersal traits: egg characteristics, hatching size, metamorphosis, settlement, swimming speed, growth curves, and more.',
+  metadataBase: new URL('https://larvalbase.ingevision.cloud'),
   icons: {
     icon: '/favicon.svg',
+  },
+  openGraph: {
+    type: 'website',
+    title: 'LarvalBase - Fish Larvae Trait Database',
+    description: 'Comprehensive database of marine fish larvae dispersal traits.',
+    url: 'https://larvalbase.ingevision.cloud',
   },
 };
 

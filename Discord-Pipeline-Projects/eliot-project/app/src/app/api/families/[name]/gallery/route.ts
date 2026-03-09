@@ -11,6 +11,7 @@ interface GalleryImage {
   author: string;
   uncertain: boolean;
   level: 'species' | 'genus' | 'family';
+  link?: string;
 }
 
 interface SpeciesSubsection {
@@ -74,6 +75,8 @@ async function parseMetadataForFamily(
         const author = (row.AUTHOR || '').replace(/^"|"$/g, '');
         const genus = row.GENUS ? row.GENUS.replace(/^"|"$/g, '') : null;
         const species = row.VALID_NAME ? row.VALID_NAME.replace(/^"|"$/g, '') : null;
+        const rawLink = (row.LINK || '').replace(/^"|"$/g, '');
+        const link = rawLink && rawLink !== 'NA' ? rawLink : undefined;
 
         if (!imgPath || !fileName) return;
 
@@ -85,6 +88,7 @@ async function parseMetadataForFamily(
           author,
           uncertain,
           level,
+          link,
         });
       },
     });
@@ -113,17 +117,17 @@ export async function GET(
 
     const [speciesImages, genusImages, familyImages] = await Promise.all([
       parseMetadataForFamily(
-        path.join(imagesDir, 'sp_ids_pics_metadata.txt'),
+        path.join(imagesDir, 'sp_ids_pics_metadata_03_2026.txt'),
         family,
         'species'
       ),
       parseMetadataForFamily(
-        path.join(imagesDir, 'gen_ids_pics_metadata.txt'),
+        path.join(imagesDir, 'gen_ids_pics_metadata_03_2026.txt'),
         family,
         'genus'
       ),
       parseMetadataForFamily(
-        path.join(imagesDir, 'fam_ids_pics_metadata.txt'),
+        path.join(imagesDir, 'fam_ids_pics_metadata_03_2026.txt'),
         family,
         'family'
       ),
