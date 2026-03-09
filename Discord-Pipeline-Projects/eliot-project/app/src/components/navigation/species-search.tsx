@@ -47,9 +47,10 @@ export function SpeciesSearch({
   const debouncedSearch = useDebouncedValue(search, 200);
   const [synonymMatches, setSynonymMatches] = useState<SynonymMatch[]>([]);
 
-  // Fetch synonym matches
+  // Fetch synonym matches — only when Latin names search is active
+  // (synonyms are ORIGINAL_NAME → VALID_NAME Latin name mappings)
   useEffect(() => {
-    if (!debouncedSearch.trim() || debouncedSearch.trim().length < 3) {
+    if (!searchLatin || !debouncedSearch.trim() || debouncedSearch.trim().length < 3) {
       setSynonymMatches([]);
       return;
     }
@@ -67,7 +68,7 @@ export function SpeciesSearch({
       });
 
     return () => { cancelled = true; };
-  }, [debouncedSearch]);
+  }, [debouncedSearch, searchLatin]);
 
   // Filter species — respect search mode toggles
   const filteredSpecies = debouncedSearch.trim()

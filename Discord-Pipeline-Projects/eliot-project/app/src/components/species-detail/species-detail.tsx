@@ -290,7 +290,26 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
         studyCount={studyCount}
       />
 
-      {/* Adult Ecosystem & Habitat — moved to below the map */}
+      {/* Adult Ecosystem & Habitat — below the species province map at the top */}
+      {habitatInfo && (habitatInfo.ecosystem || habitatInfo.habitat) && (
+        <div className="space-y-1 text-sm text-white">
+          {habitatInfo.ecosystem && (
+            <div>Adult ecosystem: <span className="font-medium">{habitatInfo.ecosystem === 'Freshwater' ? 'Freshwater (marine larvae)' : habitatInfo.ecosystem}</span></div>
+          )}
+          {habitatInfo.habitat && (
+            <div>Adult habitat:{' '}
+              <span className="font-medium">
+                {habitatInfo.habitat === 'Benthic' ? 'Benthic and/or demersal' :
+                 habitatInfo.habitat === 'Pelagic' ? 'Pelagic' :
+                 habitatInfo.habitat}
+              </span>
+              {habitatInfo.habitat === 'Pelagic' && (
+                <span className="text-xs italic text-muted-foreground ml-1">- settlement and pelagic juvenile sections not showed</span>
+              )}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Growth Curves Chart - At the top, before traits */}
       <SpeciesGrowthChart
@@ -338,22 +357,6 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                     </div>
                     <CollectionMap locations={locations} />
                   </div>
-                  )}
-
-                  {/* Adult Ecosystem & Habitat — below the map */}
-                  {habitatInfo && (habitatInfo.ecosystem || habitatInfo.habitat) && (
-                    <div className="space-y-1 mt-4 text-sm text-white">
-                      {habitatInfo.ecosystem && (
-                        <div>Adult ecosystem: <span className="font-medium">{habitatInfo.ecosystem === 'Freshwater' ? 'Freshwater (marine larvae)' : habitatInfo.ecosystem}</span></div>
-                      )}
-                      {habitatInfo.habitat && (
-                        <div>Adult habitat: <span className="font-medium">
-                          {habitatInfo.habitat === 'Benthic' ? 'Benthic and/or demersal' :
-                           habitatInfo.habitat === 'Pelagic' ? 'Pelagic (offshore) (settlement and pelagic juvenile sections not showed)' :
-                           habitatInfo.habitat}
-                        </span></div>
-                      )}
-                    </div>
                   )}
 
                   {/* Pelagic Juvenile section — hidden for pelagic species (P3) */}
