@@ -290,9 +290,9 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
         studyCount={studyCount}
       />
 
-      {/* Adult Ecosystem & Habitat — below the species province map at the top */}
+      {/* Adult Ecosystem & Habitat — tight below Source (2026), same size as Picture source (text-sm) */}
       {habitatInfo && (habitatInfo.ecosystem || habitatInfo.habitat) && (
-        <div className="space-y-1 text-sm text-white">
+        <div className="-mt-6 space-y-0.5 text-sm text-white">
           {habitatInfo.ecosystem && (
             <div>Adult ecosystem: <span className="font-medium">{habitatInfo.ecosystem === 'Freshwater' ? 'Freshwater (marine larvae)' : habitatInfo.ecosystem}</span></div>
           )}
@@ -377,7 +377,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                               height={44}
                             />
                           </div>
-                          <h2 className="text-lg font-semibold">Pelagic Juvenile</h2>
+                          <h2 className="text-lg font-semibold text-white">Pelagic Juvenile</h2>
                           {SECTION_TOOLTIPS['Pelagic Juvenile'] && (
                             <SectionTooltip text={SECTION_TOOLTIPS['Pelagic Juvenile']} />
                           )}
@@ -419,7 +419,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                               height={44}
                             />
                           </div>
-                          <h2 className="text-lg font-semibold">Rafting</h2>
+                          <h2 className="text-lg font-semibold text-white">Rafting</h2>
                           {SECTION_TOOLTIPS['Rafting'] && (
                             <SectionTooltip text={SECTION_TOOLTIPS['Rafting']} />
                           )}

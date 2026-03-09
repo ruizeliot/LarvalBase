@@ -106,7 +106,8 @@ function computeFrequencies(rows: Record<string, unknown>[], column: string): Fr
 }
 
 /**
- * Extract unique species names from rows (excluding the target species).
+ * Extract unique species/genus names from rows (excluding the target species).
+ * Includes genus-level identifications (RANK == "Genus") as "GenusName sp." format.
  */
 function extractSpeciesNames(
   rows: Record<string, unknown>[],
@@ -114,9 +115,18 @@ function extractSpeciesNames(
 ): string[] {
   const names = new Set<string>();
   for (const row of rows) {
-    const name = String(row['VALID_NAME'] ?? '').trim();
-    if (name && name !== 'NA' && name !== excludeSpecies) {
-      names.add(name);
+    const rank = String(row['RANK'] ?? '').trim();
+    if (rank === 'Genus') {
+      // Genus-level: use ORIGINAL_NAME (e.g. "Gymnothorax sp.") or construct from genus
+      const originalName = String(row['ORIGINAL_NAME'] ?? '').trim();
+      if (originalName && originalName !== 'NA') {
+        names.add(originalName);
+      }
+    } else {
+      const name = String(row['VALID_NAME'] ?? '').trim();
+      if (name && name !== 'NA' && name !== excludeSpecies) {
+        names.add(name);
+      }
     }
   }
   return Array.from(names).sort();
@@ -404,15 +414,39 @@ export async function getRaftingData(
   }
 
   // Filter rows at each taxonomic level
+  // Include genus-level rows (RANK=="Genus") by matching ORIGINAL_NAME prefix to genus name
   const speciesRows = rows.filter(
     (r) => String(r['VALID_NAME'] ?? '').trim() === species.validName
   );
-  const genusRows = rows.filter(
-    (r) => String(r['GENUS'] ?? '').trim() === species.genus
-  );
-  const familyRows = rows.filter(
-    (r) => String(r['FAMILY'] ?? '').trim() === species.family
-  );
+  const genusRows = rows.filter((r) => {
+    const genusCol = String(r['GENUS'] ?? '').trim();
+    if (genusCol === species.genus) return true;
+    // Include genus-level identifications matching this genus
+    const rank = String(r['RANK'] ?? '').trim();
+    if (rank === 'Genus') {
+      const origName = String(r['ORIGINAL_NAME'] ?? '').trim();
+      return origName.startsWith(species.genus + ' ');
+    }
+    return false;
+  });
+  const familyRows = rows.filter((r) => {
+    const familyCol = String(r['FAMILY'] ?? '').trim();
+    if (familyCol === species.family) return true;
+    // Include genus-level rows whose genus name belongs to this family
+    // We identify these by matching genus name from ORIGINAL_NAME against known genera in this family
+    const rank = String(r['RANK'] ?? '').trim();
+    if (rank === 'Genus') {
+      const origName = String(r['ORIGINAL_NAME'] ?? '').trim();
+      const genusName = origName.split(/\s+/)[0];
+      // Check if any species-level row in this family shares this genus
+      return rows.some(sr => {
+        const srFamily = String(sr['FAMILY'] ?? '').trim();
+        const srGenus = String(sr['GENUS'] ?? '').trim();
+        return srFamily === species.family && srGenus === genusName;
+      });
+    }
+    return false;
+  });
   const orderRows = rows.filter(
     (r) => String(r['ORDER'] ?? '').trim() === species.order
   );

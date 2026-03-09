@@ -516,8 +516,9 @@ function NumericTraitPanel({
   return (
     <Card className="bg-card">
       <CardContent className="p-4">
-        <div className="text-xs font-medium uppercase text-white tracking-wide">
+        <div className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
           {label}
+          {PANEL_TOOLTIPS[label] && <SectionTooltip text={PANEL_TOOLTIPS[label]} />}
         </div>
 
         {/* Value + Stats row: main value LEFT, summary stats RIGHT */}
