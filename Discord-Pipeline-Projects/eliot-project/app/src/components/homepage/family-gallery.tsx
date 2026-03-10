@@ -63,7 +63,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
     onMapFilterSpecies?.(species);
   }, [onMapFilterSpecies]);
   const [selectedProvinces, setSelectedProvinces] = useState<Set<string> | null>(null);
-  const [provinceListExpanded, setProvinceListExpanded] = useState(false);
   const [provinceApiData, setProvinceApiData] = useState<Record<string, { count: number; species: string[] }> | null>(null);
   const [genusProvinces, setGenusProvinces] = useState<Record<string, string[]> | null>(null);
   const [commonNames, setCommonNames] = useState<Record<string, string[]>>({});
@@ -162,7 +161,6 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
     // Scroll to top when entering the gallery
     window.scrollTo({ top: 0 });
     setSelectedProvinces(null);
-    setProvinceListExpanded(false);
 
     async function loadGallery() {
       try {
@@ -298,79 +296,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         externalSelectedProvinces={selectedProvinces}
       />
 
-      {/* Biogeographic province filter */}
-      {provinceApiData && Object.keys(provinceApiData).length > 0 && (
-        <div className="rounded-lg border border-border/50 bg-card/30 p-3">
-          <button
-            className="flex items-center justify-between w-full text-sm font-semibold text-white"
-            onClick={() => setProvinceListExpanded(!provinceListExpanded)}
-          >
-            <span>Biogeographic province {selectedProvinces && selectedProvinces.size > 0 ? `(${selectedProvinces.size} selected)` : ''}</span>
-            <span className="text-muted-foreground text-xs">{provinceListExpanded ? '▲' : '▼'}</span>
-          </button>
-          {provinceListExpanded && (
-            <div className="mt-2 space-y-0.5 max-h-60 overflow-y-auto">
-              {selectedProvinces && selectedProvinces.size > 0 && (
-                <button
-                  className="text-xs text-blue-400 hover:text-blue-300 mb-1"
-                  onClick={() => {
-                    setSelectedProvinces(null);
-                    setProvinceFilter(null);
-                  }}
-                >
-                  Clear all
-                </button>
-              )}
-              {Object.entries(provinceApiData)
-                .filter(([, d]) => d.count > 0)
-                .sort(([a], [b]) => a.localeCompare(b))
-                .map(([name, pData]) => {
-                  const isChecked = selectedProvinces?.has(name) ?? false;
-                  const imgCount = speciesWithImageNames
-                    ? pData.species.filter(s => speciesWithImageNames.has(s)).length
-                    : null;
-                  return (
-                    <label
-                      key={name}
-                      className={`flex items-center gap-2 px-2 py-1 rounded text-xs cursor-pointer hover:bg-white/5 ${isChecked ? 'bg-white/10' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={() => {
-                          const next = new Set(selectedProvinces ?? []);
-                          if (next.has(name)) {
-                            next.delete(name);
-                          } else {
-                            next.add(name);
-                          }
-                          const result = next.size > 0 ? next : null;
-                          setSelectedProvinces(result);
-                          // Compute species filter from selected provinces
-                          if (result) {
-                            const allSpecies = new Set<string>();
-                            for (const pName of result) {
-                              const pd = provinceApiData[pName];
-                              if (pd) pd.species.forEach(s => allSpecies.add(s));
-                            }
-                            setProvinceFilter(allSpecies.size > 0 ? allSpecies : null);
-                          } else {
-                            setProvinceFilter(null);
-                          }
-                        }}
-                        className="rounded border-border"
-                      />
-                      <span className="text-white/90 flex-1">{name}</span>
-                      <span className="text-white/50">
-                        {pData.count} spp{imgCount !== null ? `, ${imgCount} img` : ''}
-                      </span>
-                    </label>
-                  );
-                })}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Province filter dropdown is inside ProvinceMap above — no duplicate needed */}
 
       {(filteredData.genusSections ?? []).length === 0 && (filteredData.familyImages ?? []).length === 0 && (
         <p className="text-muted-foreground">No photos available for this family.</p>

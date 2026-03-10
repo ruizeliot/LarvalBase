@@ -7,6 +7,8 @@
 export const SECTION_TOOLTIPS: Record<string, string> = {
   'Egg & Incubation':
     'Embryo development location and characteristics of eggs (if any), including position in the water column, shape, dimensions, volume, yolk properties, and oil globule(s). Includes incubation/gestation duration and temperature.',
+  'Pre-flexion Stage':
+    'Size of larvae at hatching (egg-based reproduction) or parturition, with associated rearing temperature.',
   'Hatching & Pre-flexion Stage':
     'Size of larvae at hatching (egg-based reproduction) or parturition, with associated rearing temperature.',
   'Flexion Stage':
@@ -16,15 +18,31 @@ export const SECTION_TOOLTIPS: Record<string, string> = {
   'Settlement':
     'This database specific to benthic fishes (living near the bottom) provides the age and size at settlement on a substrate, which marks the transition from a pelagic (offshore) to a benthic lifestyle. It is often confused with the term \'recruitment\' (wrongly applied, as it defines the entrance of juveniles in the adult stock), and the term \'PLD\' (Pelagic Larval Duration), that suppose morphological metamorphosis and settlement occur simultaneously, which is not necessarily the case (see Pelagic juvenile and Rafting sections).',
   'Vertical Position':
-    'Larval position in the water column. Important for dispersal as different depths experience different current regimes.',
+    'Vertical distribution of fish larvae (genus and family-level identifications also taken into account) in the first 100m of the water column (standardized by sampling effort), as different depths experience different current regimes.',
   'Swimming Speed':
-    'Swimming performance measured in laboratory (critical speed, Ucrit) and in the field (in situ speed using SCUBA protocols).',
+    'Critical swimming speed (Ucrit) and In-situ Swimming Speed (ISS) at or near the settlement stage of benthic/demersal fishes. Ucrit corresponds to forced laboratory measurements of short-term maximum speed in a swimming flume with incrementally increasing flow. ISS corresponds to in situ measurements of routine speed while scuba diving to follow larvae in the wild.',
   'Pelagic Juvenile':
-    'Possibility of extended pelagic phase after settlement in benthic/demersal fishes. Records size and age of wild pelagic juveniles sampled.',
+    'Possibility of extended pelagic phase after settlement in benthic/demersal fishes. Species-level records of the age and size of wild pelagic juveniles sampled pelagic juveniles.',
   'Rafting':
-    'Association of larvae/juveniles with floating objects (Sargassum, debris), which can significantly alter dispersal distance and direction.',
+    'Associations with floating objects or organisms in the pelagic environment, which could largely increase the dispersal potential of rafters. Species-level and genus-level records of the age and size of sampled rafters.',
   'Larval Growth':
     'Individual age-length/weight measurements across the larval phase, used to estimate growth rates in relation to temperature.',
+};
+
+/** Panel-level tooltip definitions for Pelagic Juvenile and Rafting custom panels */
+export const PANEL_TOOLTIPS: Record<string, string> = {
+  'Pelagic Juvenile':
+    'Records of extended pelagic phase after settlement in benthic/demersal fishes and name given to this phase in the source.',
+  'Pelagic Juvenile Size':
+    'Size (mm) of sampled pelagic juveniles.',
+  'Pelagic Juvenile Duration':
+    'Age (days post-hatch) of sampled pelagic juveniles.',
+  'Rafting':
+    "Description of the floatsam and stages associated with rafting behaviour. Life stage(s) associated with rafting behaviour (A = adult, J = juvenile, L = larvae). Multiple stages found associated with a floatsam are separated by '|' while uncertainties about stage identification are indicated by 'and/or'. Floatsam categories include: 'algae/plant' (any plant/algae matter such as dead logs except mangrove litter), 'FAD' (man-made Fish Aggregating Device), 'gelatinous zooplankton' (any Cnidaria, Ctenophora or pelagic Tunicata), 'mangrove litter' (floating debris originating from mangroves), 'other object' (undefined category for some Castro et al. 2002 records), 'pelagic vertebrate', 'plastic' (except FAD), or 'tsunamis debris' (any object set drifting by a tsunami).",
+  'Rafting Size':
+    'Size (mm) of sampled rafters.',
+  'Rafting Age':
+    'Age (days post-hatch) of sampled rafters.',
 };
 
 /** Column-level tooltip definitions for raw data tables */
@@ -55,6 +73,39 @@ export const COLUMN_TOOLTIPS: Record<string, string> = {
   raft_unit: 'Unit of measurement (mm for size)',
   raft_ext_ref: 'Source study of the information cited in the main reference',
   raft_reference: 'Main bibliographic reference for this record',
+};
+
+/** Qualitative egg trait tooltips (keyed by uppercase trait key used in EggQualitativePanel) */
+export const QUALITATIVE_TRAIT_TOOLTIPS: Record<string, string> = {
+  EGG_LOCATION:
+    'Description of the embryo location with, between parentheses, details on the reproductive mode, and if oviparous, on the position of eggs in the water column. Additional details of the position of eggs in the water column are also provided below.',
+  EGG_SHAPE:
+    'Sphericity of eggs (if oviparous)',
+  NB_OIL_GLOBULE:
+    'Number or qualitative estimates of lipid-rich droplet(s) inside the egg. Oil globules ensure egg buoyancy and providing energy reserves.',
+};
+
+/** Column tooltips for qualitative egg record tables */
+export const QUALITATIVE_COLUMN_TOOLTIPS: Record<string, Record<string, string>> = {
+  EGG_LOCATION: {
+    Species: 'Valid scientific name of the species',
+    Value: 'Embryo location category (e.g. Pelagic eggs, Demersal eggs, Viviparous)',
+    Details: 'Reproductive mode details and egg position in the water column',
+    'Main reference': 'Main bibliographic reference for this record',
+    'External reference': 'Source study cited in the main reference',
+  },
+  EGG_SHAPE: {
+    Species: 'Valid scientific name of the species',
+    Value: 'Egg shape (Spherical or Non-spherical)',
+    'Main reference': 'Main bibliographic reference for this record',
+    'External reference': 'Source study cited in the main reference',
+  },
+  NB_OIL_GLOBULE: {
+    Species: 'Valid scientific name of the species',
+    Value: 'Number or qualitative description of oil globule(s)',
+    'Main reference': 'Main bibliographic reference for this record',
+    'External reference': 'Source study cited in the main reference',
+  },
 };
 
 /** Trait-level tooltip definitions (keyed by trait key in DISPLAY_GROUPS) */
@@ -110,18 +161,18 @@ export const TRAIT_TOOLTIPS: Record<string, string> = {
     'This database specific to benthic fishes (living near the bottom) provides the size at settlement (mm) on a substrate, which marks the transition from a pelagic (offshore) to a benthic lifestyle.',
   // Swimming
   critical_swimming_speed:
-    'Critical swimming speed (Ucrit) \u2014 maximum sustained velocity measured in laboratory flume experiments with incrementally increasing flow.',
+    'Absolute (cm/s) critical swimming speed (Ucrit), which is the maximum sustained velocity measured in laboratory flume experiments with incrementally increasing flow.',
   critical_swimming_speed_rel:
-    'Relative critical swimming speed (Ucrit) expressed in body lengths per second (BL/s).',
+    'Relative (BL/s) critical swimming speed (Ucrit), which is the maximum sustained velocity measured in laboratory flume experiments with incrementally increasing flow. Relative swimming speeds were computed from the size of tested individuals (BL/s = body length per second).',
   in_situ_swimming_speed:
-    'In situ swimming speed \u2014 field-measured performance using SCUBA protocols where divers follow individual larvae in open water.',
+    'Absolute (cm/s) in-situ swimming speed (ISS), which is the routine speed measured while scuba diving to follow larvae in the wild.',
   in_situ_swimming_speed_rel:
-    'Relative in situ swimming speed expressed in body lengths per second (BL/s).',
+    'Relative (BL/s) in-situ swimming speed (ISS), which is the routine speed measured while scuba diving to follow larvae in the wild. Relative swimming speeds were computed from the size of tested individuals (BL/s = body length per second).',
   // Vertical position
   vertical_day_depth:
-    'Daytime depth of larvae in the water column.',
+    'Daytime depth of larvae in the water column, standardized by sampling effort (see metadata).',
   vertical_night_depth:
-    'Nighttime depth of larvae in the water column.',
+    'Nighttime depth of larvae in the water column, standardized by sampling effort (see metadata).',
   vertical_distribution:
-    'Larval position in the water column. Important for dispersal as different depths experience different current regimes.',
+    'Daytime and nighttime (combined) depth of larvae in the water column, standardized by sampling effort (see metadata).',
 };

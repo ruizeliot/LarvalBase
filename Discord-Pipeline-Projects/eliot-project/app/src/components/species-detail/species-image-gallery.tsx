@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { ImageCaption } from './image-caption';
 import type { SpeciesImage } from '@/lib/types/image.types';
-import { buildImageUrl } from '@/lib/utils/encode-image-path';
+import { buildImageUrl, extractCopyright } from '@/lib/utils/encode-image-path';
 
 interface SpeciesImageGalleryProps {
   /** Array of species images (sorted by priority) */
@@ -54,7 +54,8 @@ function SpeciesImageWithFallback({
   showZoomHint?: boolean;
 }) {
   const [hasError, setHasError] = useState(false);
-  const imageSrc = buildImageUrl(image.path, image.filename);
+  const copyright = extractCopyright(image.author);
+  const imageSrc = buildImageUrl(image.path, image.filename, copyright);
 
   if (hasError) {
     return (
@@ -74,13 +75,11 @@ function SpeciesImageWithFallback({
         src={imageSrc}
         alt={`${speciesName} - photo by ${image.displayAuthor}`}
         fill
-        className="object-contain protected-image"
+        className="object-contain"
         sizes="(max-width: 768px) 100vw, 400px"
         unoptimized
         draggable={false}
         onError={() => setHasError(true)}
-        onContextMenu={(e) => e.preventDefault()}
-        onDragStart={(e) => e.preventDefault()}
       />
       {showZoomHint && (
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
@@ -260,15 +259,16 @@ function ImageLightbox({
 
   if (!image) return null;
 
-  const imageSrc = buildImageUrl(image.path, image.filename);
+  const copyright = extractCopyright(image.author);
+  const imageSrc = buildImageUrl(image.path, image.filename, copyright);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 bg-black border-none flex flex-col [&>button]:hidden">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh] p-0 bg-black border-none flex flex-col [&>button:last-of-type]:hidden">
         <DialogTitle className="sr-only">
           {speciesName} - Photo {currentIndex + 1} of {images.length}
         </DialogTitle>
-        
+
         {/* Close button */}
         <button
           onClick={() => onOpenChange(false)}
@@ -304,7 +304,6 @@ function ImageLightbox({
             src={imageSrc}
             alt={`${speciesName} - photo by ${image.displayAuthor}`}
             className="max-w-full max-h-full object-contain"
-            onContextMenu={(e) => e.preventDefault()}
           />
         </div>
 

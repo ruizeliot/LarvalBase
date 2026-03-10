@@ -37,7 +37,7 @@ export const DISPLAY_GROUPS: TraitGroupConfig[] = [
   },
   {
     // US-1.6: Renamed from "Hatching & Early Development"
-    title: 'Hatching & Pre-flexion Stage',
+    title: 'Pre-flexion Stage',
     stage: 'yolk-sac',
     traits: [
       'hatching_size',

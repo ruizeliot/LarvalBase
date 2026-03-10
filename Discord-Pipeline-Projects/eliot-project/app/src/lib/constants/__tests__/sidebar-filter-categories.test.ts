@@ -53,7 +53,7 @@ describe('sidebar filter categories', () => {
       'Pictures',
       'Larval Growth',
       'Egg & Incubation',
-      'Hatching & Pre-flexion Stage',
+      'Pre-flexion Stage',
       'Flexion Stage',
       'Metamorphosis',
       'Settlement',

@@ -44,7 +44,7 @@ export const TRAIT_GROUPS: TraitGroup[] = [
     ],
   },
   {
-    name: "Hatching & Pre-flexion Stage",
+    name: "Pre-flexion Stage",
     traits: [
       "hatching_size",
       "first_feeding_age",

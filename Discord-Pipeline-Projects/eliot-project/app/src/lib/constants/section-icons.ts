@@ -16,7 +16,8 @@
 export const SECTION_ICONS: Record<string, string> = {
   // Section SVGs from researcher (in /icons/sections/)
   'Egg & Incubation': '/icons/sections/Egg %26 Incubation.svg',
-  'Hatching & Pre-flexion Stage': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'Pre-flexion Stage': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'Hatching & Pre-flexion Stage': '/icons/sections/Hatching %26 Pre-flexion Stage.svg', // Legacy alias
   'Hatching & Early Development': '/icons/sections/Hatching %26 Pre-flexion Stage.svg', // Legacy alias
   'Flexion Stage': '/icons/sections/Flexion Stage.svg',
   'Metamorphosis': '/icons/sections/Metamorphosis.svg',

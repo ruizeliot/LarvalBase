@@ -20,7 +20,7 @@ describe('US-1.5: SVG Section Icons', () => {
   it('should have icons for all main sections', () => {
     const requiredSections = [
       'Egg & Incubation',
-      'Hatching & Pre-flexion Stage',
+      'Pre-flexion Stage',
       'Flexion Stage',
       'Metamorphosis',
       'Settlement',

@@ -183,7 +183,7 @@ const en: TranslationStrings = {
 
   // Section titles
   section_egg: 'Egg & Incubation',
-  section_hatching: 'Hatching & Pre-flexion Stage',
+  section_hatching: 'Pre-flexion Stage',
   section_flexion: 'Flexion Stage',
   section_metamorphosis: 'Metamorphosis',
   section_settlement: 'Settlement',
@@ -1185,6 +1185,7 @@ export const translations: Record<Language, TranslationStrings> = { en, fr, es, 
 /** Section title mapping for i18n (English title -> translation key) */
 export const SECTION_TITLE_KEYS: Record<string, keyof TranslationStrings> = {
   'Egg & Incubation': 'section_egg',
+  'Pre-flexion Stage': 'section_hatching',
   'Hatching & Pre-flexion Stage': 'section_hatching',
   'Flexion Stage': 'section_flexion',
   'Metamorphosis': 'section_metamorphosis',
@@ -1231,12 +1232,13 @@ export const TRAIT_NAME_KEYS: Record<string, keyof TranslationStrings> = {
 export const SECTION_TOOLTIP_TRANSLATIONS: Record<Language, Record<string, string>> = {
   en: {
     'Egg & Incubation': 'Embryo development location and characteristics of eggs (if any), including position in the water column, shape, dimensions, volume, yolk properties, and oil globule(s). Includes incubation/gestation duration and temperature.',
+    'Pre-flexion Stage': 'Size of larvae at hatching (egg-based reproduction) or parturition, with associated rearing temperature.',
     'Hatching & Pre-flexion Stage': 'Size of larvae at hatching (egg-based reproduction) or parturition, with associated rearing temperature.',
     'Flexion Stage': 'Timing and size of notochord (embryonic vertebrate column) flexion. The upward bending of the notochord is associated with the ossification of caudal fin elements that allows efficient swimming, which marks the transition from the pre-flexion to post-flexion stage.',
     'Metamorphosis': 'Timing, duration, and size at morphological metamorphosis: the transition from larval to juvenile stage. This process largely varies among fish families, but is often characterized by the appearance of scales, the growth of all fin spines/rays to reach the adult count, the acquisition of juvenile coloration, and/or the loss of specialized larval attributes.',
     'Settlement': 'This database specific to benthic fishes (living near the bottom) provides the age and size at settlement on a substrate, which marks the transition from a pelagic (offshore) to a benthic lifestyle. It is often confused with the term \'recruitment\' (wrongly applied, as it defines the entrance of juveniles in the adult stock), and the term \'PLD\' (Pelagic Larval Duration), that suppose morphological metamorphosis and settlement occur simultaneously, which is not necessarily the case (see Pelagic juvenile and Rafting sections).',
-    'Vertical Position': 'Position of larvae in the water column, important for understanding dispersal patterns as different depths experience different current regimes.',
-    'Swimming Speed': 'Swimming performance of larvae measured in laboratory (critical swimming speed, Ucrit) and in the field (in situ swimming speed using SCUBA-based protocols).',
+    'Vertical Position': 'Vertical distribution of fish larvae (genus and family-level identifications also taken into account) in the first 100m of the water column (standardized by sampling effort), as different depths experience different current regimes.',
+    'Swimming Speed': 'Critical swimming speed (Ucrit) and In-situ Swimming Speed (ISS) at or near the settlement stage of benthic/demersal fishes. Ucrit corresponds to forced laboratory measurements of short-term maximum speed in a swimming flume with incrementally increasing flow. ISS corresponds to in situ measurements of routine speed while scuba diving to follow larvae in the wild.',
     'Pelagic Juvenile': 'Possibility of extended pelagic phase after settlement in benthic/demersal fishes. Records size and age of wild pelagic juveniles sampled.',
     'Rafting': 'Association of larvae/juveniles with floating objects (Sargassum, debris), which can significantly alter dispersal distance and direction.',
     'Larval Growth': 'Individual age-length/weight measurements across the larval phase, used to estimate growth rates in relation to temperature.',
