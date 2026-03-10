@@ -66,6 +66,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
   const [provinceListExpanded, setProvinceListExpanded] = useState(false);
   const [provinceApiData, setProvinceApiData] = useState<Record<string, { count: number; species: string[] }> | null>(null);
   const [genusProvinces, setGenusProvinces] = useState<Record<string, string[]> | null>(null);
+  const [commonNames, setCommonNames] = useState<Record<string, string[]>>({});
 
   // Compute set of species names that have images
   const speciesWithImageNames = useMemo((): Set<string> | null => {
@@ -193,6 +194,29 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
       })
       .catch(console.error);
   }, [family]);
+
+  // Fetch common names for all species in the gallery
+  useEffect(() => {
+    if (!data) return;
+    const speciesNames: string[] = [];
+    for (const genus of (data.genusSections ?? [])) {
+      for (const sp of genus.speciesSubsections) {
+        speciesNames.push(sp.speciesName);
+      }
+    }
+    if (speciesNames.length === 0) return;
+
+    fetch('/api/species/common-names-batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ species: speciesNames }),
+    })
+      .then(r => r.json())
+      .then((json: { results: Record<string, string[]> }) => {
+        setCommonNames(json.results ?? {});
+      })
+      .catch(console.error);
+  }, [data]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -380,6 +404,11 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
               <div>
                 <h4 className="text-sm font-semibold italic text-white">
                   {sp.speciesName}
+                  {commonNames[sp.speciesName] && commonNames[sp.speciesName].length > 0 && (
+                    <span className="not-italic font-normal text-gray-400 ml-1">
+                      ({commonNames[sp.speciesName].join(', ')})
+                    </span>
+                  )}
                 </h4>
                 <button
                   className="text-xs text-blue-400 hover:text-blue-300 hover:underline"
