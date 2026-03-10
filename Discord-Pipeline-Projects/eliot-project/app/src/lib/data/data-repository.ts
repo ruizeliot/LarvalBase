@@ -168,7 +168,14 @@ function extractSpeciesFromRows(rows: SpeciesRow[]): Map<string, Species> {
     // Handle genus/family level rows (RANK != Species, VALID_NAME is NA)
     const rank = String((row as Record<string, unknown>).RANK ?? '').trim();
     if (!validName || validName === 'NA') {
-      const genus = row.GENUS ?? row.Genus ?? '';
+      let genus = row.GENUS ?? row.Genus ?? '';
+      // If GENUS is NA, extract genus from ORIGINAL_NAME (e.g. "Gymnothorax sp." → "Gymnothorax")
+      if ((!genus || genus === 'NA') && rank === 'Genus') {
+        const origName = String((row as Record<string, unknown>).ORIGINAL_NAME ?? '').trim();
+        if (origName && origName !== 'NA') {
+          genus = origName.replace(/\s+(sp\.|spp\.|sp|spp)$/i, '').trim();
+        }
+      }
       if (rank === 'Genus' && genus && genus !== 'NA') {
         validName = `${genus} sp.`;
       } else if ((rank === 'Family' || rank === 'Subfamily') && family && family !== 'NA') {
@@ -183,14 +190,17 @@ function extractSpeciesFromRows(rows: SpeciesRow[]): Map<string, Species> {
 
     // Extract genus from species name if not provided
     const nameParts = validName.split(' ');
-    const genus = row.GENUS ?? row.Genus ?? nameParts[0] ?? 'Unknown';
+    const rawGenus = row.GENUS ?? row.Genus ?? '';
+    const genus = (rawGenus && rawGenus !== 'NA') ? rawGenus : (nameParts[0] ?? 'Unknown');
+    const rawFamily = row.FAMILY ?? row.Family ?? '';
+    const rawOrder = row.ORDER ?? row.Order ?? '';
 
     species.set(id, {
       id,
       validName,
       commonName: row.COMMON_NAME ?? row.Common_name ?? null,
-      order: row.ORDER ?? row.Order ?? 'Unknown',
-      family: row.FAMILY ?? row.Family ?? 'Unknown',
+      order: (rawOrder && rawOrder !== 'NA') ? rawOrder : 'Unknown',
+      family: (rawFamily && rawFamily !== 'NA') ? rawFamily : 'Unknown',
       genus,
     });
   }
@@ -312,8 +322,15 @@ function extractTraitsFromRows(
 
     // For genus/family level rows (VALID_NAME is NA), use "GENUS sp." / "FAMILY und." labels
     if (!validName || validName === 'NA') {
-      const genus = String((row as Record<string, unknown>).GENUS ?? '').trim();
+      let genus = String((row as Record<string, unknown>).GENUS ?? '').trim();
       const family = (row as Record<string, unknown>).FAMILY as string ?? '';
+      // If GENUS is NA, extract genus from ORIGINAL_NAME (e.g. "Gymnothorax sp." → "Gymnothorax")
+      if ((!genus || genus === 'NA') && rank === 'Genus') {
+        const origName = String((row as Record<string, unknown>).ORIGINAL_NAME ?? '').trim();
+        if (origName && origName !== 'NA') {
+          genus = origName.replace(/\s+(sp\.|spp\.|sp|spp)$/i, '').trim();
+        }
+      }
       if (rank === 'Genus' && genus && genus !== 'NA') {
         validName = `${genus} sp.`;
       } else if ((rank === 'Family' || rank === 'Subfamily') && family && family !== 'NA') {
@@ -795,7 +812,32 @@ export async function getOrLoadData(): Promise<AllData> {
     `[data-repository] Registry: ${databaseRegistry.speciesDatabases.size} species across ${databaseRegistry.databaseSpecies.size} databases`
   );
 
-  // 2b. Add image-only species (not in any CSV but have photos)
+  // 2b. Fill in missing family/order for genus-level entries from same-genus species
+  {
+    // Build genus → family/order lookup from species with known taxonomy
+    const genusTaxonomy = new Map<string, { family: string; order: string }>();
+    for (const sp of species.values()) {
+      if (sp.family !== 'Unknown' && sp.order !== 'Unknown' && !genusTaxonomy.has(sp.genus)) {
+        genusTaxonomy.set(sp.genus, { family: sp.family, order: sp.order });
+      }
+    }
+    let inferredCount = 0;
+    for (const sp of species.values()) {
+      if (sp.family === 'Unknown' || sp.order === 'Unknown') {
+        const lookup = genusTaxonomy.get(sp.genus);
+        if (lookup) {
+          if (sp.family === 'Unknown') sp.family = lookup.family;
+          if (sp.order === 'Unknown') sp.order = lookup.order;
+          inferredCount++;
+        }
+      }
+    }
+    if (inferredCount > 0) {
+      console.log(`[data-repository] Inferred taxonomy for ${inferredCount} genus/family-level entries`);
+    }
+  }
+
+  // 2c. Add image-only species (not in any CSV but have photos) [was 2b]
   try {
     const imageRegistry = await loadImageRegistry();
     for (const images of imageRegistry.imagesBySpecies.values()) {
