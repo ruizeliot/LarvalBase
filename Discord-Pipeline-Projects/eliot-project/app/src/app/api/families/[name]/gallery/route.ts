@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
 import { buildImageUrl, extractCopyright } from '@/lib/utils/encode-image-path';
+import { getAuthorTier } from '@/lib/types/image.types';
 
 interface GalleryImage {
   imageUrl: string;
@@ -12,6 +13,43 @@ interface GalleryImage {
   uncertain: boolean;
   level: 'species' | 'genus' | 'family';
   link?: string;
+  brightness: number;
+}
+
+/** Cached brightness data */
+let galleryBrightnessCache: Map<string, number> | null = null;
+
+async function loadBrightnessMap(): Promise<Map<string, number>> {
+  if (galleryBrightnessCache) return galleryBrightnessCache;
+  galleryBrightnessCache = new Map();
+  try {
+    const darknessPath = path.join(process.cwd(), 'images', 'image_darkness.txt');
+    const content = await fs.readFile(darknessPath, 'utf-8');
+    for (const line of content.split('\n').slice(1)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const tabIdx = trimmed.lastIndexOf('\t');
+      if (tabIdx === -1) continue;
+      const imgPath = trimmed.slice(0, tabIdx);
+      const brightness = parseFloat(trimmed.slice(tabIdx + 1));
+      if (!isNaN(brightness)) galleryBrightnessCache.set(imgPath, brightness);
+    }
+  } catch { /* brightness file not available */ }
+  return galleryBrightnessCache;
+}
+
+/** Multi-criteria sort: tier → certainty → brightness → author */
+function sortGalleryImages(images: GalleryImage[]): void {
+  images.sort((a, b) => {
+    const aTier = getAuthorTier(a.author);
+    const bTier = getAuthorTier(b.author);
+    if (aTier !== bTier) return aTier - bTier;
+    const certA = a.uncertain ? 1 : 0;
+    const certB = b.uncertain ? 1 : 0;
+    if (certA !== certB) return certA - certB;
+    if (a.brightness !== b.brightness) return a.brightness - b.brightness;
+    return a.author.localeCompare(b.author);
+  });
 }
 
 interface SpeciesSubsection {
@@ -37,7 +75,8 @@ interface GalleryResponse {
 async function parseMetadataForFamily(
   filePath: string,
   family: string,
-  level: 'species' | 'genus' | 'family'
+  level: 'species' | 'genus' | 'family',
+  brightnessMap: Map<string, number>
 ): Promise<GalleryImage[]> {
   try {
     let content = await fs.readFile(filePath, 'utf-8');
@@ -80,6 +119,9 @@ async function parseMetadataForFamily(
 
         if (!imgPath || !fileName) return;
 
+        const brightnessKey = `${imgPath}/${fileName}`;
+        const brightness = brightnessMap.get(brightnessKey) ?? 999;
+
         const copyright = extractCopyright(author);
         images.push({
           imageUrl: buildImageUrl(imgPath, fileName, copyright || undefined),
@@ -89,6 +131,7 @@ async function parseMetadataForFamily(
           uncertain,
           level,
           link,
+          brightness,
         });
       },
     });
@@ -114,22 +157,26 @@ export async function GET(
     const { name: familyName } = await params;
     const family = decodeURIComponent(familyName);
     const imagesDir = path.join(process.cwd(), 'images');
+    const brightnessMap = await loadBrightnessMap();
 
     const [speciesImages, genusImages, familyImages] = await Promise.all([
       parseMetadataForFamily(
         path.join(imagesDir, 'sp_ids_pics_metadata_03_2026.txt'),
         family,
-        'species'
+        'species',
+        brightnessMap
       ),
       parseMetadataForFamily(
         path.join(imagesDir, 'gen_ids_pics_metadata_03_2026.txt'),
         family,
-        'genus'
+        'genus',
+        brightnessMap
       ),
       parseMetadataForFamily(
         path.join(imagesDir, 'fam_ids_pics_metadata_03_2026.txt'),
         family,
-        'family'
+        'family',
+        brightnessMap
       ),
     ]);
 
@@ -142,32 +189,17 @@ export async function GET(
       genusImagesByGenus.set(g, list);
     }
 
-    // Group species-level images by genus → species
-    // Prefer certain over uncertain per species
+    // Group species-level images by genus → species (ALL images, certain + uncertain)
     const speciesByGenus = new Map<string, Map<string, GalleryImage[]>>();
-    const certainBySpecies = new Map<string, GalleryImage[]>();
-    const uncertainBySpecies = new Map<string, GalleryImage[]>();
 
     for (const img of speciesImages) {
       const key = img.species || 'unknown';
-      if (img.uncertain) {
-        const list = uncertainBySpecies.get(key) ?? [];
-        list.push(img);
-        uncertainBySpecies.set(key, list);
-      } else {
-        const list = certainBySpecies.get(key) ?? [];
-        list.push(img);
-        certainBySpecies.set(key, list);
-      }
-    }
-
-    const allSpeciesKeys = new Set([...certainBySpecies.keys(), ...uncertainBySpecies.keys()]);
-    for (const key of allSpeciesKeys) {
-      const certain = certainBySpecies.get(key);
-      const images = (certain && certain.length > 0) ? certain : (uncertainBySpecies.get(key) ?? []);
-      const genusName = images[0]?.genus || 'Unknown';
+      const genusName = img.genus || 'Unknown';
       if (!speciesByGenus.has(genusName)) speciesByGenus.set(genusName, new Map());
-      speciesByGenus.get(genusName)!.set(key, images);
+      const speciesMap = speciesByGenus.get(genusName)!;
+      const list = speciesMap.get(key) ?? [];
+      list.push(img);
+      speciesMap.set(key, list);
     }
 
     // Collect all genus names (from both genus-level and species-level)
@@ -177,12 +209,12 @@ export async function GET(
     const genusSections: GenusSection[] = [];
     for (const genusName of [...allGenera].sort()) {
       const genusImgs = genusImagesByGenus.get(genusName) ?? [];
-      genusImgs.sort((a, b) => a.author.localeCompare(b.author));
+      sortGalleryImages(genusImgs);
 
       const speciesMap = speciesByGenus.get(genusName) ?? new Map();
       const speciesSubsections: SpeciesSubsection[] = [];
       for (const [speciesName, images] of [...speciesMap.entries()].sort((a: [string, GalleryImage[]], b: [string, GalleryImage[]]) => a[0].localeCompare(b[0]))) {
-        images.sort((a: GalleryImage, b: GalleryImage) => a.author.localeCompare(b.author));
+        sortGalleryImages(images);
         speciesSubsections.push({ speciesName, images });
       }
 
@@ -194,7 +226,7 @@ export async function GET(
     }
 
     // Family images at bottom
-    familyImages.sort((a, b) => a.author.localeCompare(b.author));
+    sortGalleryImages(familyImages);
 
     const response: GalleryResponse = {
       family,

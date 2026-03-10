@@ -47,6 +47,7 @@ const mockImage: SpeciesImage = {
   speciesName: 'Chromis viridis',
   family: 'Pomacentridae',
   order: 'Perciformes',
+  brightness: 999,
 };
 
 describe('US-5.2: Lightbox with black bars (letterbox/pillarbox)', () => {

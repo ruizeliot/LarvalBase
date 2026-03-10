@@ -47,6 +47,7 @@ const mockImage: SpeciesImage = {
   order: 'Perciformes',
   scale: true,
   link: 'https://example.com',
+  brightness: 999,
 };
 
 describe('US-5.4: Captions visible without dezooming', () => {

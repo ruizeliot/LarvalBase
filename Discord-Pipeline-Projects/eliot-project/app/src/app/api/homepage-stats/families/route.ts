@@ -222,32 +222,12 @@ export async function GET() {
     //   7. Everything else
     // Within each group: certain > uncertain, BW authors first, then darkest
     const familyImageMap = new Map<string, string>();
-    const DARK_THRESHOLD = 80;
 
     function getAuthorTierForSort(author: string): number {
       if (BLACKWATER_AUTHORS.has(author)) return 1;
       if (SECONDARY_AUTHORS.has(author)) return 2;
       if (TERTIARY_AUTHORS.has(author)) return 3;
       return 4;
-    }
-
-    // "BW" authors tend to have truly black backgrounds (highest priority within blackwater)
-    function isBWAuthor(author: string): boolean {
-      return /\bBW\b/i.test(author);
-    }
-
-    function getPriorityGroup(c: Candidate): number {
-      const isDark = c.brightness < DARK_THRESHOLD;
-      const authorTier = getAuthorTierForSort(c.author);
-      const isSpecies = c.level === 'species';
-
-      if (isSpecies && isDark && authorTier === 1) return 1;
-      if (isSpecies && isDark && authorTier <= 3) return 2;
-      if (!isSpecies && isDark) return 3;
-      if (isSpecies && authorTier === 1) return 4;
-      if (isSpecies && authorTier <= 3) return 5;
-      if (!isSpecies) return 6;
-      return 7;
     }
 
     // Apply manual overrides first
@@ -266,17 +246,17 @@ export async function GET() {
     for (const [family, candidates] of familyCandidates) {
       if (familyImageMap.has(family)) continue; // skip if override already set
       candidates.sort((a, b) => {
-        // Certain before uncertain
+        // 1. Author tier (blackwater first)
+        const aTier = getAuthorTierForSort(a.author);
+        const bTier = getAuthorTierForSort(b.author);
+        if (aTier !== bTier) return aTier - bTier;
+        // 2. Certain before uncertain
         if (a.uncertain !== b.uncertain) return a.uncertain ? 1 : -1;
-        // Priority group
-        const aGroup = getPriorityGroup(a);
-        const bGroup = getPriorityGroup(b);
-        if (aGroup !== bGroup) return aGroup - bGroup;
-        // Within same group, prefer BW authors
-        const aBW = isBWAuthor(a.author);
-        const bBW = isBWAuthor(b.author);
-        if (aBW !== bBW) return aBW ? -1 : 1;
-        // Within same group, darkest first (lowest brightness)
+        // 3. Species-level before genus/family-level
+        const aSpecies = a.level === 'species' ? 0 : 1;
+        const bSpecies = b.level === 'species' ? 0 : 1;
+        if (aSpecies !== bSpecies) return aSpecies - bSpecies;
+        // 4. Darkest first (lowest brightness)
         return a.brightness - b.brightness;
       });
       for (const candidate of candidates) {

@@ -21,6 +21,7 @@ const mockImages = [
     speciesName: 'Test species',
     family: 'Testidae',
     order: 'Testiformes',
+    brightness: 999,
   },
 ];
 

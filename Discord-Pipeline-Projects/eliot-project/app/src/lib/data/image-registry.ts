@@ -19,6 +19,37 @@ import {
 /** Cached registry instance */
 let registryCache: ImageRegistry | null = null;
 
+/** Cached brightness data: relative path -> mean brightness */
+let brightnessCache: Map<string, number> | null = null;
+
+/**
+ * Load image brightness data from image_darkness.txt.
+ * Format: TSV with header "PATH\tMEAN_BRIGHTNESS"
+ * PATH is relative like "classified_bw_images_species/filename.jpg"
+ */
+async function loadBrightnessData(): Promise<Map<string, number>> {
+  if (brightnessCache) return brightnessCache;
+
+  brightnessCache = new Map();
+  try {
+    const darknessPath = path.join(getImagesDir(), 'image_darkness.txt');
+    const content = await fs.readFile(darknessPath, 'utf-8');
+    for (const line of content.split('\n').slice(1)) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      const tabIdx = trimmed.lastIndexOf('\t');
+      if (tabIdx === -1) continue;
+      const imgPath = trimmed.slice(0, tabIdx);
+      const brightness = parseFloat(trimmed.slice(tabIdx + 1));
+      if (!isNaN(brightness)) brightnessCache.set(imgPath, brightness);
+    }
+    console.log(`[image-registry] Loaded brightness for ${brightnessCache.size} images`);
+  } catch {
+    console.warn('[image-registry] image_darkness.txt not found — brightness tiebreaker disabled');
+  }
+  return brightnessCache;
+}
+
 /**
  * Get path to images directory.
  */
@@ -42,6 +73,7 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
   let content = await fs.readFile(metadataPath, 'utf-8');
 
   const imagesBySpecies = new Map<string, SpeciesImage[]>();
+  const brightnessMap = await loadBrightnessData();
 
   // Detect row-number column offset
   const lines = content.split('\n');
@@ -86,6 +118,10 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
         // Parse LINK — treat "NA" as undefined
         const link = parsed.LINK && parsed.LINK !== 'NA' ? parsed.LINK : undefined;
 
+        // Look up brightness: key is "relativePath/filename"
+        const brightnessKey = `${relativePath}/${parsed.FILE_NAME}`;
+        const brightness = brightnessMap.get(brightnessKey) ?? 999;
+
         const image: SpeciesImage = {
           author: parsed.AUTHOR,
           displayAuthor,
@@ -99,6 +135,7 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
           order: parsed.ORDER,
           scale: parsed.SCALE,
           link,
+          brightness,
         };
 
         // Add to species map
@@ -114,20 +151,22 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
     },
   });
 
-  // Sort each species' images:
-  // 1. Blackwater + Sure ID first
-  // 2. Literature/BOLD + Sure ID second
-  // 3. Other + Sure ID third
-  // 4. Uncertain images last (same tier ordering within)
+  // Sort each species' images by multi-criteria priority:
+  // 1. Primary: Author tier (1=Blackwater, 2=Secondary, 3=Tertiary, 4=Other)
+  // 2. Secondary: Certainty — UNCERTAIN=FALSE (sure ID) before UNCERTAIN=TRUE
+  // 3. Tertiary: Brightness — darkest first (lower value = blacker background)
+  // 4. Quaternary: Filename for deterministic tiebreaker
   for (const [species, images] of imagesBySpecies) {
     images.sort((a, b) => {
-      // Certain before uncertain
+      // 1. Author tier (lower = higher priority)
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      // 2. Certain before uncertain
       const certA = a.uncertain ? 1 : 0;
       const certB = b.uncertain ? 1 : 0;
       if (certA !== certB) return certA - certB;
-      // Within same certainty, sort by priority tier
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      // Stable tiebreaker: sort by filename for deterministic thumbnail selection
+      // 3. Darkest first (lowest brightness value)
+      if (a.brightness !== b.brightness) return a.brightness - b.brightness;
+      // 4. Stable tiebreaker: sort by filename for deterministic thumbnail selection
       return a.filename.localeCompare(b.filename);
     });
     imagesBySpecies.set(species, images);
@@ -257,6 +296,7 @@ export async function getFamilyForOrder(order: string): Promise<string | null> {
  */
 export function clearImageRegistryCache(): void {
   registryCache = null;
+  brightnessCache = null;
 }
 
 /**

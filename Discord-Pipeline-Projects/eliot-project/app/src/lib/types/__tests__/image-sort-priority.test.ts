@@ -71,25 +71,27 @@ describe('Image sort priority tiers', () => {
     expect(TERTIARY_AUTHORS.has('Current Study')).toBe(true);
   });
 
-  it('should sort certain images before uncertain at same tier', () => {
+  it('should sort by tier first, then certainty within tier', () => {
     const images = [
-      { priority: 1, uncertain: true, author: 'Blackwater' },
-      { priority: 1, uncertain: false, author: 'Blackwater' },
-      { priority: 4, uncertain: false, author: 'Other' },
-      { priority: 4, uncertain: true, author: 'Other' },
+      { priority: 4, uncertain: false, author: 'Other', brightness: 100 },
+      { priority: 1, uncertain: true, author: 'Blackwater', brightness: 10 },
+      { priority: 1, uncertain: false, author: 'Blackwater', brightness: 20 },
+      { priority: 4, uncertain: true, author: 'Other', brightness: 150 },
     ];
 
     images.sort((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
       const certA = a.uncertain ? 1 : 0;
       const certB = b.uncertain ? 1 : 0;
       if (certA !== certB) return certA - certB;
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      return 0;
+      return a.brightness - b.brightness;
     });
 
+    // Tier 1 (blackwater) first, certain before uncertain
     expect(images[0]).toEqual(expect.objectContaining({ priority: 1, uncertain: false }));
-    expect(images[1]).toEqual(expect.objectContaining({ priority: 4, uncertain: false }));
-    expect(images[2]).toEqual(expect.objectContaining({ priority: 1, uncertain: true }));
+    expect(images[1]).toEqual(expect.objectContaining({ priority: 1, uncertain: true }));
+    // Tier 4 (other) last, certain before uncertain
+    expect(images[2]).toEqual(expect.objectContaining({ priority: 4, uncertain: false }));
     expect(images[3]).toEqual(expect.objectContaining({ priority: 4, uncertain: true }));
   });
 

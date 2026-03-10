@@ -135,6 +135,8 @@ export interface SpeciesImage {
   scale?: boolean;
   /** URL link for the author/source */
   link?: string;
+  /** Mean border brightness (0-255, lower = darker background). Used as sort tiebreaker. */
+  brightness: number;
 }
 
 /**

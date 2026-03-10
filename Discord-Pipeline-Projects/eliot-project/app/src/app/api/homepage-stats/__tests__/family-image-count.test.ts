@@ -36,6 +36,7 @@ function makeImage(overrides: Partial<SpeciesImage>): SpeciesImage {
     speciesName: 'Test species',
     family: 'Testidae',
     order: 'Testiformes',
+    brightness: 999,
     ...overrides,
   };
 }
