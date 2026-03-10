@@ -127,7 +127,8 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
       if (certA !== certB) return certA - certB;
       // Within same certainty, sort by priority tier
       if (a.priority !== b.priority) return a.priority - b.priority;
-      return 0;
+      // Stable tiebreaker: sort by filename for deterministic thumbnail selection
+      return a.filename.localeCompare(b.filename);
     });
     imagesBySpecies.set(species, images);
   }

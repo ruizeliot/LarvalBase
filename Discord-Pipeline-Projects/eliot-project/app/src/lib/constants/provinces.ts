@@ -131,6 +131,8 @@ export function buildCsvToProvinceMap(): Record<string, string> {
   map['Somali/Arabian'] = 'Somali/Arabian';
   map['St  Helena and Ascension Islands'] = 'St. Helena and Ascension Islands';
   map['Juan Fernandez and Desventuradas'] = 'Juan Fernández and Desventuradas';
+  map['Marshall Gilbert and Ellis Islands'] = 'Marshall, Gilbert and Ellis Islands';
+  map['St Helena and Ascension Islands'] = 'St. Helena and Ascension Islands';
 
   // Red Sea & Mediterranean aliases (CSV names with coastal/offshore qualifiers)
   map['Red Sea and Gulf of Aden (coastal)'] = 'Red Sea and Gulf of Aden';

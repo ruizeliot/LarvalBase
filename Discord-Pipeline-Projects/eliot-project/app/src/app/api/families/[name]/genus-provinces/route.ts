@@ -1,7 +1,7 @@
 /**
  * API route to get genus-level province presence for a family.
  *
- * Uses spalding_provinces_genera.csv.
+ * Uses spalding_provinces_genera_032026.csv.
  * Returns: { genera: { [genus]: province[] } }
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -18,7 +18,7 @@ let genusProvinceCache: Map<string, Map<string, string[]>> | null = null;
 async function loadGenusProvinces(): Promise<Map<string, Map<string, string[]>>> {
   if (genusProvinceCache) return genusProvinceCache;
 
-  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_genera.csv');
+  const csvPath = path.join(process.cwd(), 'data', 'spalding_provinces_genera_032026.csv');
   const content = await fs.readFile(csvPath, 'utf-8');
 
   const result = new Map<string, Map<string, string[]>>();
