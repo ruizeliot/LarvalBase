@@ -223,10 +223,14 @@ function MainReferenceCell({ text, link }: { text: string; link: string }) {
 }
 
 /**
- * Render a species name as a clickable link to the species page.
+ * Render a species name as a clickable link, or grey text for genus-level entries.
  */
 function SpeciesLink({ name }: { name: string }) {
   if (!name) return <span>-</span>;
+  // Genus-level entries (e.g. "Gymnothorax sp." or "Gymnothorax sp") — no link, grey text
+  if (/\bsp\.?$/i.test(name.trim()) || /\bund\.?$/i.test(name.trim())) {
+    return <span className="text-muted-foreground italic">{name}</span>;
+  }
   const slug = name.toLowerCase().replace(/\s+/g, '-');
   return (
     <Link href={`/species/${slug}`} className="text-primary hover:underline italic">
