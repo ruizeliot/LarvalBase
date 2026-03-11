@@ -53,8 +53,8 @@ function SpeciesDetailSkeleton() {
   return (
     <div className="space-y-8">
       {/* Header skeleton */}
-      <div className="flex gap-6">
-        <Skeleton className="w-[120px] h-[120px] rounded-lg flex-shrink-0" />
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        <Skeleton className="w-full md:w-[120px] h-[120px] rounded-lg flex-shrink-0" />
         <div className="flex-1 space-y-4">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-4 w-1/2" />
@@ -362,8 +362,8 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                   {/* Pelagic Juvenile section — hidden for pelagic species (P3) */}
                   {!isPelagicSpecies && pelagicJuvenileData && (
                     <div className="space-y-4 mt-8">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <div
                             className="flex items-center justify-center rounded-full shrink-0"
                             style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
@@ -404,8 +404,8 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                   {/* Rafting section — always shown (not hidden for pelagic species) */}
                   {raftingData && (
                     <div className="space-y-4 mt-8">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <div
                             className="flex items-center justify-center rounded-full shrink-0"
                             style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}

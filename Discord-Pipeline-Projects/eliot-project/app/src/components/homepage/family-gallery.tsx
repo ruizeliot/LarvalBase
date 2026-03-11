@@ -243,7 +243,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         </button>
         <div className="animate-pulse space-y-4">
           <div className="h-8 bg-muted rounded w-48" />
-          <div className="grid grid-cols-5 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
             {Array.from({ length: 10 }).map((_, i) => (
               <div key={i} className="h-32 bg-muted rounded" />
             ))}
@@ -256,7 +256,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
   if (!data || !filteredData) return null;
 
   return (
-    <div data-testid="family-gallery" className="p-6 space-y-6">
+    <div data-testid="family-gallery" className="p-3 md:p-6 space-y-4 md:space-y-6">
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -453,7 +453,7 @@ function ImageGrid({
   onClickImage: (index: number) => void;
 }) {
   return (
-    <div className="grid grid-cols-5 gap-2">
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
       {images.map((img, i) => (
         <div
           key={`${img.imageUrl}-${i}`}

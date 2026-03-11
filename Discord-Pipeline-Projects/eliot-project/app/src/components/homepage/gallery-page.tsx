@@ -55,7 +55,7 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
   }, [families, filteredSpeciesNames, mapFilteredSpecies]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       <button
         onClick={onBack}
         className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
@@ -63,9 +63,9 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
         <ArrowLeft className="h-4 w-4" /> Back to homepage
       </button>
 
-      <h2 className="text-xl font-bold text-white">
+      <h2 className="text-lg md:text-xl font-bold text-white">
         Colored pictures of post-flexion and early juvenile stages library
-        <span className="ml-2 text-base font-normal text-muted-foreground">
+        <span className="ml-1 md:ml-2 text-sm md:text-base font-normal text-muted-foreground">
           ({visibleFamilies.length} families)
         </span>
       </h2>
@@ -74,7 +74,7 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
       <HomepageProvinceMap onFilterSpecies={handleMapFilter} mode="families" />
 
       {/* All family thumbnails — no pagination */}
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
         {visibleFamilies.map((fam) => (
           <div
             key={fam.family}

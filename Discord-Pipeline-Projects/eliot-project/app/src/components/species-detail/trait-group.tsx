@@ -79,6 +79,11 @@ export function TraitGroup({
   // Section-level comparison toggle (one button for entire section)
   const [showSectionComparison, setShowSectionComparison] = useState(false);
 
+  // P7: Reset comparison toggle when species changes
+  useEffect(() => {
+    setShowSectionComparison(false);
+  }, [speciesId]);
+
   // State for family/genus chart data per trait (includes comparison type)
   const [familyCharts, setFamilyCharts] = useState<Map<string, FamilyBarChartData>>(new Map());
 
@@ -123,8 +128,8 @@ export function TraitGroup({
           return true;
         }
       }
-      // Also check order chart fallback
-      if (chartData?.orderChart?.species && chartData.orderChart.species.length > 0) {
+      // Also check order chart fallback (must have > 1 species)
+      if (chartData?.orderChart?.species && chartData.orderChart.species.length > 1) {
         return true;
       }
     }
@@ -140,8 +145,8 @@ export function TraitGroup({
   return (
     <div className="space-y-4">
       {/* Header with section icon and export button */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-3 flex-wrap">
           <div
             className="flex items-center justify-center rounded-full shrink-0"
             style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}

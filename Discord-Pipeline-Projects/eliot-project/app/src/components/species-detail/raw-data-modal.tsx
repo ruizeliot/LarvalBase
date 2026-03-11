@@ -667,7 +667,7 @@ export function RawDataModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-6xl max-h-[85vh] overflow-hidden flex flex-col w-[95vw] md:w-auto">
         <DialogHeader className="flex flex-row items-start justify-between">
           <div>
             <DialogTitle>{traitName} - Raw Data</DialogTitle>

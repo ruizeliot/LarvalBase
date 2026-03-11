@@ -101,7 +101,7 @@ export default function Home() {
         {/* Gallery button ABOVE the map */}
         <button
           onClick={handleOpenGallery}
-          className="w-full flex items-center justify-between px-4 py-3 rounded-lg border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-colors text-left"
+          className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-lg border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-colors text-left gap-1 sm:gap-0"
         >
           <span className="text-sm font-semibold text-white">
             {t('gallery_button')} ({familyPhotos.length} families)

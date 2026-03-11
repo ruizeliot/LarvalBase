@@ -89,3 +89,20 @@ img[data-protected="true"],
     max-width: 100vw;
   }
 }
+
+/* Mobile responsive: make data tables horizontally scrollable */
+@media (max-width: 767px) {
+  /* Wrap tables in scrollable container */
+  .overflow-auto table,
+  [data-sidebar="content"] table {
+    min-width: max-content;
+  }
+
+  /* Recharts containers should fit mobile width */
+  .recharts-wrapper {
+    max-width: 100% !important;
+  }
+  .recharts-surface {
+    max-width: 100%;
+  }
+}

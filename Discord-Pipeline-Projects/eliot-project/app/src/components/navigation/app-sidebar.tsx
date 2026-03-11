@@ -223,7 +223,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
   // Loading state
   if (isLoading) {
     return (
-      <Sidebar collapsible="none" className="border-r">
+      <Sidebar className="border-r">
         <SidebarContent className="flex items-center justify-center h-full">
           <div className="text-sm text-muted-foreground">Loading data...</div>
         </SidebarContent>
@@ -234,7 +234,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
   // Error state
   if (error) {
     return (
-      <Sidebar collapsible="none" className="border-r">
+      <Sidebar className="border-r">
         <SidebarContent className="flex items-center justify-center h-full p-4">
           <div className="text-sm text-destructive text-center">
             <p className="font-medium">Error loading data</p>
@@ -246,7 +246,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
   }
 
   return (
-    <Sidebar collapsible="none" className="border-r">
+    <Sidebar className="border-r">
       {/* Search at top - receives ALL species, filters internally */}
       <SidebarHeader className="p-0">
         <SpeciesSearch

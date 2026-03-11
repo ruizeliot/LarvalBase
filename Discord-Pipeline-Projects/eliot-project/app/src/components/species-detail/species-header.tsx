@@ -62,9 +62,9 @@ export function SpeciesHeader({
   const currentImage = images[currentImageIndex];
 
   return (
-    <div className="flex gap-6 items-stretch">
+    <div className="flex flex-col md:flex-row gap-4 md:gap-6 items-stretch">
       {/* Image gallery or skeleton */}
-      <div className="flex-shrink-0 w-[300px] flex flex-col">
+      <div className="flex-shrink-0 w-full md:w-[300px] flex flex-col">
         {isLoading ? (
           <Skeleton className="w-full aspect-[4/3] rounded-lg" />
         ) : (
@@ -78,14 +78,15 @@ export function SpeciesHeader({
       </div>
 
       {/* Text content — centered between panels */}
-      <div className="flex-1 space-y-2 flex flex-col justify-center">
+      <div className="flex-1 space-y-2 flex flex-col justify-center min-w-0">
         {/* Scientific name with large family icon */}
-        <div className="flex items-center gap-4">
-          <FamilyIcon family={family} size={72} className="shrink-0" />
-          <div className="space-y-1">
-            <h1 className="text-[28px] font-semibold italic">{scientificName}</h1>
+        <div className="flex items-center gap-3 md:gap-4">
+          <FamilyIcon family={family} size={72} className="shrink-0 hidden sm:block" />
+          <FamilyIcon family={family} size={48} className="shrink-0 sm:hidden" />
+          <div className="space-y-1 min-w-0">
+            <h1 className="text-xl md:text-[28px] font-semibold italic break-words">{scientificName}</h1>
             {/* Taxonomy line */}
-            <div className="text-muted-foreground">
+            <div className="text-muted-foreground text-sm md:text-base">
               <span>{family}</span>
               <span className="mx-2">|</span>
               <span>{cleanOrderName(order)}</span>
@@ -165,7 +166,7 @@ export function SpeciesHeader({
       </div>
 
       {/* Species distribution mini-map — same height as picture panel */}
-      <div className="flex-shrink-0 w-[300px] flex flex-col">
+      <div className="flex-shrink-0 w-full md:w-[300px] flex flex-col">
         <h3 className="text-xs font-semibold text-muted-foreground mb-1 text-center">
           {t('distribution_title')}
         </h3>
