@@ -1,0 +1,1089 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>GanttFlow — App Mockup Complet</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0c12;--s1:#131620;--s2:#1a1d2a;--s3:#22263a;--faint:#2d3350;
+  --border:#252a3d;--text:#e2e8f0;--muted:#6b7280;
+  --c1:#6c63ff;--c2:#4fd1c5;--c3:#f6ad55;--c4:#fc8181;--c5:#68d391;
+  --r:10px;
+}
+html,body{width:100%;height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text)}
+
+/* NAV */
+#nav{position:fixed;top:0;left:0;right:0;height:52px;background:rgba(10,12,18,.97);border-bottom:1px solid var(--border);backdrop-filter:blur(16px);z-index:200;display:flex;align-items:center;gap:10px;padding:0 14px}
+.brand{display:flex;align-items:center;gap:9px;flex-shrink:0;margin-right:4px}
+.brand-ico{width:32px;height:32px;border-radius:8px;background:var(--c1);display:flex;align-items:center;justify-content:center;font-size:16px}
+.brand-name{font-size:14px;font-weight:800;letter-spacing:-.3px}
+.brand-sub{font-size:9.5px;color:var(--muted)}
+.ndiv{width:1px;height:24px;background:var(--border);flex-shrink:0}
+#npills{display:flex;gap:3px;flex:1;overflow-x:auto;scrollbar-width:none}
+#npills::-webkit-scrollbar{display:none}
+.npill{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:7px;border:none;cursor:pointer;font-size:11.5px;font-weight:600;background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap;flex-shrink:0}
+.npill:hover{background:var(--s3);color:var(--text)}
+.npill.active{color:#fff}
+.pnum{width:17px;height:17px;border-radius:5px;font-size:9px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-r{display:flex;align-items:center;gap:6px;flex-shrink:0;margin-left:auto}
+#ctr{font-size:11px;color:var(--muted);min-width:36px;text-align:right}
+.arr{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.arr:hover:not([disabled]){background:var(--s3);color:var(--text)}
+.arr[disabled]{opacity:.3;cursor:default}
+
+/* PROGRESS */
+#prog{position:fixed;top:52px;left:0;right:0;height:2px;background:var(--border);z-index:199}
+#prog-fill{height:100%;width:0;transition:width .3s,background .3s}
+
+/* SLIDES */
+#slides{position:fixed;top:54px;left:0;right:0;bottom:0;overflow:hidden}
+.slide{position:absolute;inset:0;opacity:0;transform:translateX(28px);transition:opacity .25s,transform .25s;pointer-events:none;overflow:hidden}
+.slide.active{opacity:1;transform:none;pointer-events:all}
+.slide.out{opacity:0;transform:translateX(-28px)}
+
+/* ════ HOME ════ */
+.home-wrap{height:100%;overflow-y:auto;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(108,99,255,.1),transparent)}
+.home-hero{padding:42px 44px 30px;display:flex;align-items:center;gap:36px;border-bottom:1px solid var(--border)}
+.hero-l{flex:1;min-width:0}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;background:rgba(108,99,255,.1);border:1px solid rgba(108,99,255,.22);color:var(--c1);padding:4px 13px;border-radius:99px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.hero-title{font-size:38px;font-weight:900;line-height:1.08;letter-spacing:-1.5px;margin-bottom:10px}
+.hero-title em{font-style:normal;background:linear-gradient(125deg,var(--c1),var(--c2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-desc{font-size:14px;color:var(--muted);line-height:1.65;max-width:480px;margin-bottom:18px}
+.chips{display:flex;gap:7px;flex-wrap:wrap}
+.chip{font-size:11px;color:var(--muted);border:1px solid var(--border);padding:3px 10px;border-radius:99px}
+.hero-r{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;width:240px;flex-shrink:0}
+.stat-box{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:13px 14px}
+.stat-val{font-size:26px;font-weight:900;line-height:1}
+.stat-label{font-size:10.5px;color:var(--muted);margin-top:2px}
+.mods-grid{padding:26px 44px 44px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.mcard{background:var(--s2);border:1px solid var(--border);border-radius:12px;padding:18px;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.mcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--mc)}
+.mcard:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.mc-eye{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--mc);margin-bottom:7px}
+.mc-ico{font-size:22px;margin-bottom:7px;display:block}
+.mc-name{font-size:13px;font-weight:800;margin-bottom:4px}
+.mc-desc{font-size:11.5px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.mc-ul{list-style:none;display:flex;flex-direction:column;gap:3px}
+.mc-ul li{font-size:11px;color:var(--muted);padding-left:11px;position:relative}
+.mc-ul li::before{content:'→';position:absolute;left:0;color:var(--mc);font-size:10px}
+.mc-btn{display:inline-flex;align-items:center;gap:5px;margin-top:12px;padding:5px 12px;border-radius:7px;border:none;cursor:pointer;font-size:11.5px;font-weight:700;color:#fff;background:var(--mc);transition:filter .15s}
+.mc-btn:hover{filter:brightness(1.15)}
+
+/* ════ MODULE SLIDE SHELL ════ */
+.mod-slide{height:100%;display:flex}
+.ml{width:320px;flex-shrink:0;background:var(--s1);border-right:1px solid var(--border);overflow-y:auto;padding:24px 20px;display:flex;flex-direction:column;gap:20px}
+.ml-head{display:flex;gap:12px;align-items:flex-start}
+.ml-badge{width:36px;height:36px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900}
+.ml-ico{font-size:20px;display:block;margin-bottom:2px}
+.ml-title{font-size:16px;font-weight:800;line-height:1.2;margin-bottom:3px}
+.ml-sub{font-size:11.5px;color:var(--muted);line-height:1.5}
+.sec-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px}
+.stories{display:flex;flex-direction:column;gap:9px}
+.story{display:flex;gap:9px;align-items:flex-start}
+.sn{width:20px;height:20px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800}
+.st strong{font-size:12px;font-weight:700;display:block;margin-bottom:1px}
+.st span{font-size:11.5px;color:var(--muted);line-height:1.4}
+.ixns{display:flex;flex-direction:column;gap:5px}
+.ixn{display:flex;align-items:flex-start;gap:7px;font-size:11.5px;color:var(--muted);background:var(--s2);border:1px solid var(--border);border-radius:7px;padding:6px 9px}
+.ixn-i{font-size:13px;flex-shrink:0}
+
+/* ════ DEMO PANEL ════ */
+.mr{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column;background:var(--bg)}
+.dh{height:40px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:9px;padding:0 14px;flex-shrink:0}
+.dh-dots{display:flex;gap:4px}
+.dot{width:9px;height:9px;border-radius:50%}
+.dot.r{background:#ff5f57}.dot.y{background:#febc2e}.dot.g{background:#28c840}
+.dh-url{flex:1;background:var(--s2);border-radius:5px;height:20px;display:flex;align-items:center;padding:0 9px;font-size:10px;color:var(--muted);font-family:monospace}
+.dh-tag{padding:2px 9px;border-radius:99px;font-size:10px;font-weight:600;display:flex;align-items:center;gap:4px}
+.db{flex:1;overflow:auto;padding:18px 20px}
+
+/* ════ SHARED COMPONENTS ════ */
+.btn-p{padding:6px 13px;border-radius:7px;border:none;cursor:pointer;font-size:12px;font-weight:700;color:#fff;transition:filter .15s;display:inline-flex;align-items:center;gap:5px}
+.btn-p:hover{filter:brightness(1.15)}
+.btn-o{padding:6px 12px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:11.5px;font-weight:600;transition:all .15s}
+.btn-o:hover{background:var(--s3);color:var(--text)}
+.field label{font-size:11px;font-weight:600;color:var(--muted);display:block;margin-bottom:4px}
+.field input,.field select{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:12.5px;color:var(--text);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:var(--acc,var(--c1))}
+
+/* ── DEMO 1: PROJECTS ── */
+.filter-bar{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+.filt{padding:5px 12px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11.5px;font-weight:600;cursor:pointer;transition:all .15s}
+.filt.on{background:var(--c1);color:#fff;border-color:var(--c1)}
+.filt:hover:not(.on){background:var(--s3);color:var(--text)}
+#new-proj-form{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:16px;margin-bottom:14px;display:none}
+#new-proj-form.open{display:block}
+.form-row{display:flex;gap:9px;margin-bottom:9px;flex-wrap:wrap}
+.form-row .field{flex:1;min-width:130px}
+.form-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:6px}
+.proj-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:11px}
+.pcard{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:14px;position:relative;overflow:hidden;transition:all .18s}
+.pcard:hover{border-color:var(--faint);transform:translateY(-1px)}
+.pcard.hidden{display:none}
+.pcard::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--pc)}
+.pc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.sbadge{padding:2px 7px;border-radius:99px;font-size:9.5px;font-weight:700;text-transform:uppercase}
+.pmenu-wrap{position:relative}
+.pmenu-btn{width:22px;height:22px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.pmenu-btn:hover{background:var(--s3);color:var(--text)}
+.ctx{position:absolute;right:0;top:calc(100% + 4px);background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:4px;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.5);min-width:130px;visibility:hidden;opacity:0;transform:translateY(-6px);transition:all .15s}
+.ctx.open{visibility:visible;opacity:1;transform:none}
+.ci{padding:6px 11px;border-radius:6px;cursor:pointer;font-size:11.5px;display:flex;align-items:center;gap:7px;transition:background .1s}
+.ci:hover{background:var(--s3)}
+.ci.danger{color:var(--c4)}
+.pc-name{font-size:13px;font-weight:700;margin-bottom:3px}
+.pc-meta{font-size:10.5px;color:var(--muted);margin-bottom:10px}
+.pc-track{height:4px;background:var(--s3);border-radius:99px;overflow:hidden;margin-bottom:4px}
+.pc-fill{height:100%;border-radius:99px;background:var(--pc)}
+.pc-pct{font-size:10px;color:var(--muted)}
+
+/* ── DEMO 2: TASKS ── */
+.tgroup{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:8px}
+.tg-head{display:flex;align-items:center;gap:9px;padding:9px 13px;background:var(--s2);cursor:pointer;transition:background .15s;user-select:none}
+.tg-head:hover{background:var(--s3)}
+.tg-arrow{font-size:10px;color:var(--muted);transition:transform .2s;flex-shrink:0}
+.tg-arrow.open{transform:rotate(90deg)}
+.tg-name{font-size:12.5px;font-weight:700;flex:1}
+.tg-badge{font-size:9.5px;padding:2px 7px;border-radius:99px;font-weight:700}
+.tg-dates{font-size:10.5px;color:var(--muted)}
+.tg-body{display:flex;flex-direction:column;background:var(--bg)}
+.trow{display:flex;align-items:center;gap:9px;padding:7px 13px 7px 30px;cursor:pointer;transition:background .1s;border-top:1px solid var(--border)}
+.trow:hover,.trow.sel{background:var(--s2)}
+.trow.sel{border-left:3px solid var(--c2);padding-left:27px}
+.trow-name{flex:1;font-size:12px}
+.trow-dep{font-size:10px;color:var(--muted);padding:1px 6px;border-radius:99px;border:1px solid var(--border);white-space:nowrap}
+.trow-dates{font-size:10.5px;color:var(--muted);white-space:nowrap}
+.trow-av{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff}
+.add-trow{padding:7px 13px 7px 30px;cursor:pointer;border-top:1px solid var(--border);font-size:11.5px;color:var(--muted);display:flex;align-items:center;gap:5px;transition:background .1s;background:transparent;border-left:none;border-right:none;border-bottom:none;width:100%;text-align:left}
+.add-trow:hover{background:var(--s2);color:var(--text)}
+
+/* ── DEMO 3: GANTT ── */
+.g-controls{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.z-label{font-size:11px;color:var(--muted);font-weight:600}
+.zpills{display:flex;gap:4px}
+.zp{padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;transition:all .15s}
+.zp.on,.zp:hover{background:var(--c3);color:#0a0c12;border-color:var(--c3)}
+.g-hint{font-size:10.5px;color:var(--muted);margin-left:auto}
+.gantt-wrap{border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.grow{display:flex;align-items:stretch;border-bottom:1px solid var(--border)}
+.grow:last-child{border-bottom:none}
+.grow.hdr{background:var(--s2);min-height:28px}
+.gr-lbl{width:150px;flex-shrink:0;padding:0 11px;font-size:11.5px;border-right:1px solid var(--border);display:flex;align-items:center;gap:7px}
+.gr-lbl.h{font-size:9.5px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.gr-chart{flex:1;position:relative;overflow:hidden;height:38px}
+.gr-chart.h{height:28px;overflow:hidden;background:var(--s2)}
+.today-ln{position:absolute;top:0;bottom:0;width:2px;background:#ef4444;z-index:10;pointer-events:none}
+.today-ln::after{content:'Auj.';position:absolute;top:2px;left:3px;font-size:8.5px;color:#ef4444;font-weight:700;white-space:nowrap}
+.gbar{position:absolute;top:50%;transform:translateY(-50%);height:20px;border-radius:5px;cursor:grab;transition:filter .15s;user-select:none;display:flex;align-items:center;padding:0 8px;font-size:10px;color:#fff;white-space:nowrap;overflow:hidden}
+.gbar:hover{filter:brightness(1.2)}
+.gbar.drag{cursor:grabbing;filter:brightness(1.3);box-shadow:0 4px 14px rgba(0,0,0,.5);z-index:20}
+.tl-lbl{position:absolute;font-size:9px;color:var(--muted);top:50%;transform:translateY(-50%);white-space:nowrap;pointer-events:none}
+.gr-lbl .bar-pct{font-size:9.5px;color:var(--muted)}
+
+/* ── DEMO 4: COLLAB ── */
+.sc{background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:15px;margin-bottom:12px}
+.sc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.sc-head h4{font-size:12.5px;font-weight:700}
+.mlist{display:flex;flex-direction:column;gap:7px}
+.mrow{display:flex;align-items:center;gap:9px}
+.av{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;position:relative}
+.sdot{width:8px;height:8px;border-radius:50%;border:2px solid var(--s2);position:absolute;bottom:0;right:0}
+.mname{font-size:12.5px;font-weight:600;flex:1}
+.rbadge{padding:3px 8px;border-radius:99px;font-size:10.5px;font-weight:700;cursor:pointer;transition:all .15s;border:1px solid transparent;user-select:none}
+.rbadge:hover{filter:brightness(1.15)}
+#inv-form{display:none;margin-bottom:12px}
+#inv-form.open{display:block}
+.inv-row{display:flex;gap:7px;margin-top:8px;flex-wrap:wrap}
+.inv-row input,.inv-row select{flex:1;min-width:120px;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text);outline:none}
+.inv-row input:focus{border-color:var(--c4)}
+.actlog{display:flex;flex-direction:column;gap:5px}
+.aitem{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;border-radius:7px;cursor:default}
+.aitem:hover{background:var(--s3)}
+.a-ico{font-size:14px;flex-shrink:0;margin-top:1px}
+.a-body{flex:1;font-size:11.5px;line-height:1.4}
+.a-body strong{font-weight:600}
+.a-time{font-size:10px;color:var(--muted);flex-shrink:0;white-space:nowrap}
+
+/* ── DEMO 5: EXPORT ── */
+.ftabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.ftab{display:flex;align-items:center;gap:7px;padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:var(--s2);cursor:pointer;font-size:12px;font-weight:600;color:var(--muted);transition:all .15s}
+.ftab:hover{border-color:var(--faint);color:var(--text)}
+.ftab.on{background:rgba(104,211,145,.1);border-color:var(--c5);color:var(--c5)}
+.ftab-i{font-size:16px}
+.exp-layout{display:flex;gap:14px;flex-wrap:wrap}
+.exp-left{flex:1;min-width:180px}
+.exp-prev{width:220px;flex-shrink:0;background:var(--s2);border:1px solid var(--border);border-radius:11px;padding:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:140px}
+.ep-ico{font-size:46px}
+.ep-label{font-size:11px;color:var(--muted);text-align:center}
+.exp-fields{display:flex;flex-direction:column;gap:8px}
+.ef .ef-label{font-size:10.5px;font-weight:600;color:var(--muted);margin-bottom:4px}
+.ef input,.ef select{width:100%;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:6px 10px;font-size:12px;color:var(--text);outline:none}
+.ef input:focus,.ef select:focus{border-color:var(--c5)}
+.exp-actions{display:flex;gap:7px;margin-top:12px;flex-wrap:wrap}
+.linkbox{display:none;align-items:center;gap:7px;margin-top:10px;background:var(--s3);border:1px solid var(--border);border-radius:7px;padding:7px 11px}
+.linkbox.show{display:flex}
+.link-url{font-size:10.5px;color:var(--muted);font-family:monospace;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn-copy{padding:3px 9px;border-radius:6px;border:none;cursor:pointer;font-size:10.5px;font-weight:700;background:var(--c5);color:#0a0c12;transition:all .15s;white-space:nowrap}
+.btn-copy.ok{background:var(--c2)}
+
+/* KB */
+#kbh{position:fixed;bottom:12px;right:12px;z-index:300;display:flex;align-items:center;gap:5px;background:rgba(10,12,18,.9);border:1px solid var(--border);border-radius:7px;padding:4px 10px;font-size:10.5px;color:var(--muted);backdrop-filter:blur(8px);opacity:.5;transition:opacity .2s}
+#kbh:hover{opacity:1}
+.key{display:inline-flex;align-items:center;justify-content:center;width:18px;height:16px;background:var(--s3);border:1px solid var(--border);border-radius:3px;font-size:9px}
+
+/* SCROLL */
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* RESPONSIVE */
+@media(max-width:680px){
+  .mod-slide{flex-direction:column}
+  .ml{width:100%;flex-shrink:0;border-right:none;border-bottom:1px solid var(--border);max-height:40vh}
+  .hero-r{display:none}
+  .home-hero{padding:24px 18px}
+  .mods-grid{padding:18px;grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="nav">
+  <div class="brand">
+    <div class="brand-ico">📊</div>
+    <div><div class="brand-name">GanttFlow</div><div class="brand-sub">Planification visuelle · V1</div></div>
+  </div>
+  <div class="ndiv"></div>
+  <div id="npills">
+    <button class="npill active" data-s="0"><div class="pnum" style="background:rgba(108,99,255,.2);color:var(--c1)">🏠</div>Accueil</button>
+    <button class="npill" data-s="1"><div class="pnum" style="background:rgba(108,99,255,.18);color:#6c63ff">1</div>Projets</button>
+    <button class="npill" data-s="2"><div class="pnum" style="background:rgba(79,209,197,.18);color:#4fd1c5">2</div>Tâches</button>
+    <button class="npill" data-s="3"><div class="pnum" style="background:rgba(246,173,85,.18);color:#f6ad55">3</div>Gantt</button>
+    <button class="npill" data-s="4"><div class="pnum" style="background:rgba(252,129,129,.18);color:#fc8181">4</div>Collab</button>
+    <button class="npill" data-s="5"><div class="pnum" style="background:rgba(104,211,145,.18);color:#68d391">5</div>Export</button>
+  </div>
+  <div class="nav-r">
+    <span id="ctr">1 / 6</span>
+    <button class="arr" id="bp">‹</button>
+    <button class="arr" id="bn">›</button>
+  </div>
+</nav>
+<div id="prog"><div id="prog-fill"></div></div>
+
+<!-- ══════════════════════════════════════
+     SLIDE 0 — HOME
+══════════════════════════════════════ -->
+<div id="slides">
+<section class="slide active" id="s0">
+<div class="home-wrap">
+  <div class="home-hero">
+    <div class="hero-l">
+      <div class="eyebrow">⚡ Prototype V1 · Mars 2026</div>
+      <h1 class="hero-title">Planiifiez vite,<br><em>livrez mieux.</em></h1>
+      <p class="hero-desc">GanttFlow est un outil de planification visuelle pour créer et gérer des projets sous forme de diagrammes de Gantt — avec tâches hiérarchiques, dépendances, collaboration en temps réel et export multi-format.</p>
+      <div class="chips">
+        <span class="chip">🗂 5 modules</span>
+        <span class="chip">📋 15 user stories</span>
+        <span class="chip">👥 Temps réel</span>
+        <span class="chip">📤 PDF/PNG/CSV</span>
+        <span class="chip">🔗 Dépendances Fin→Début</span>
+      </div>
+    </div>
+    <div class="hero-r">
+      <div class="stat-box"><div class="stat-val" style="color:var(--c1)">5</div><div class="stat-label">Modules</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--c2)">15</div><div class="stat-label">User stories</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--c3)">20</div><div class="stat-label">Utilisateurs max</div></div>
+      <div class="stat-box"><div class="stat-val" style="color:var(--c5)">4</div><div class="stat-label">Formats export</div></div>
+    </div>
+  </div>
+  <div class="mods-grid">
+    <div class="mcard" data-goto="1" style="--mc:var(--c1)">
+      <div class="mc-eye">Module 01</div><span class="mc-ico">🗂</span>
+      <div class="mc-name">Gestion des projets</div>
+      <div class="mc-desc">Tableau de bord central pour créer, filtrer et suivre tous vos projets.</div>
+      <ul class="mc-ul"><li>Créer un projet avec formulaire</li><li>Filtrer par statut / recherche</li><li>Archiver et restaurer</li></ul>
+      <button class="mc-btn">Voir le module →</button>
+    </div>
+    <div class="mcard" data-goto="2" style="--mc:var(--c2)">
+      <div class="mc-eye">Module 02</div><span class="mc-ico">📋</span>
+      <div class="mc-name">Structure des tâches</div>
+      <div class="mc-desc">Tâches hiérarchiques avec dépendances Fin→Début et recalcul en cascade.</div>
+      <ul class="mc-ul"><li>Sous-tâches rattachées à une phase</li><li>Dépendances Fin→Début</li><li>Durées et dates par tâche</li></ul>
+      <button class="mc-btn">Voir le module →</button>
+    </div>
+    <div class="mcard" data-goto="3" style="--mc:var(--c3)">
+      <div class="mc-eye">Module 03</div><span class="mc-ico">📊</span>
+      <div class="mc-name">Vue Gantt interactive</div>
+      <div class="mc-desc">Barres glissables par drag & drop, zoom semaine/mois/trimestre.</div>
+      <ul class="mc-ul"><li>Déplacer une barre par glisser-déposer</li><li>Zoom semaine / mois / trimestre</li><li>Ligne "aujourd'hui" dynamique</li></ul>
+      <button class="mc-btn">Voir le module →</button>
+    </div>
+    <div class="mcard" data-goto="4" style="--mc:var(--c4)">
+      <div class="mc-eye">Module 04</div><span class="mc-ico">👥</span>
+      <div class="mc-name">Collaboration</div>
+      <div class="mc-desc">Invitations par email, rôles Éditeur/Lecteur, journal d'activité horodaté.</div>
+      <ul class="mc-ul"><li>Inviter un collaborateur par email</li><li>Rôle Lecteur pour un client</li><li>Voir qui a modifié quoi et quand</li></ul>
+      <button class="mc-btn">Voir le module →</button>
+    </div>
+    <div class="mcard" data-goto="5" style="--mc:var(--c5)">
+      <div class="mc-eye">Module 05</div><span class="mc-ico">📤</span>
+      <div class="mc-name">Export &amp; Partage</div>
+      <div class="mc-desc">Export PDF/PNG/CSV/Excel avec aperçu live et lien de partage lecture seule.</div>
+      <ul class="mc-ul"><li>Exporter le Gantt en PDF</li><li>Lien de partage lecture seule</li><li>Plage de dates personnalisée</li></ul>
+      <button class="mc-btn">Voir le module →</button>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SLIDE 1 — GESTION DES PROJETS
+══════════════════════════════════════ -->
+<section class="slide" id="s1">
+<div class="mod-slide">
+  <div class="ml">
+    <div class="ml-head">
+      <div class="ml-badge" style="background:rgba(108,99,255,.15);color:#6c63ff">01</div>
+      <div><span class="ml-ico">🗂</span><div class="ml-title">Gestion des projets</div><div class="ml-sub">Tableau de bord central pour créer, filtrer et suivre tous vos projets en un coup d'œil.</div></div>
+    </div>
+    <div>
+      <div class="sec-title">📋 User Stories</div>
+      <div class="stories">
+        <div class="story"><div class="sn" style="background:rgba(108,99,255,.15);color:#6c63ff">①</div><div class="st"><strong>Créer un projet</strong><span>Je peux créer un projet avec nom, description, dates de début/fin et membres de l'équipe assignés.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(108,99,255,.15);color:#6c63ff">②</div><div class="st"><strong>Filtrer les projets</strong><span>Je peux filtrer mes projets par statut (En cours, Terminé…) ou par recherche textuelle.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(108,99,255,.15);color:#6c63ff">③</div><div class="st"><strong>Archiver / Restaurer</strong><span>Je peux archiver un projet terminé pour le masquer du tableau, et le restaurer si besoin.</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title">🔑 Interactions clés</div>
+      <div class="ixns">
+        <div class="ixn"><span class="ixn-i">➕</span>Cliquer "+ Nouveau projet" → ouvre le formulaire</div>
+        <div class="ixn"><span class="ixn-i">🔽</span>Pills de filtre → filtrage dynamique des cartes</div>
+        <div class="ixn"><span class="ixn-i">⋮</span>Menu contextuel → Archiver ou Dupliquer</div>
+      </div>
+    </div>
+  </div>
+  <div class="mr">
+    <div class="dh">
+      <div class="dh-dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="dh-url">ganttflow.app / projects</div>
+      <div class="dh-tag" style="background:rgba(108,99,255,.1);color:#6c63ff;border:1px solid rgba(108,99,255,.22)"><span>●</span> Module 1</div>
+    </div>
+    <div class="db">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+        <div class="filter-bar" id="filter-bar">
+          <button class="filt on" data-filter="all">Tous</button>
+          <button class="filt" data-filter="en-cours">En cours</button>
+          <button class="filt" data-filter="en-pause">En pause</button>
+          <button class="filt" data-filter="termine">Terminé</button>
+        </div>
+        <button class="btn-p" id="btn-new-proj" style="background:var(--c1)">➕ Nouveau projet</button>
+      </div>
+      <div id="new-proj-form">
+        <div class="form-row">
+          <div class="field"><label>Nom du projet</label><input type="text" placeholder="Ex : Refonte site web" id="nproj-name"></div>
+          <div class="field"><label>Statut</label><select id="nproj-status"><option value="en-cours">En cours</option><option value="en-pause">En pause</option><option value="termine">Terminé</option></select></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Date de début</label><input type="date" id="nproj-start" value="2026-04-01"></div>
+          <div class="field"><label>Date de fin</label><input type="date" id="nproj-end" value="2026-06-30"></div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-o" id="btn-cancel-proj">Annuler</button>
+          <button class="btn-p" id="btn-save-proj" style="background:var(--c1)">✓ Créer le projet</button>
+        </div>
+      </div>
+      <div class="proj-grid" id="proj-grid">
+        <div class="pcard" data-status="en-cours" style="--pc:#6c63ff">
+          <div class="pc-top"><span class="sbadge" style="background:rgba(108,99,255,.15);color:#6c63ff">En cours</span><div class="pmenu-wrap"><button class="pmenu-btn">⋮</button><div class="ctx"><div class="ci">✏️ Modifier</div><div class="ci">📋 Dupliquer</div><div class="ci danger">🗄 Archiver</div></div></div></div>
+          <div class="pc-name">Refonte E-commerce</div>
+          <div class="pc-meta">👥 Sophie, Thomas, Marie · 📅 15 avr.</div>
+          <div class="pc-track"><div class="pc-fill" style="width:42%"></div></div>
+          <div class="pc-pct">42% · 8 tâches restantes</div>
+        </div>
+        <div class="pcard" data-status="en-cours" style="--pc:#4fd1c5">
+          <div class="pc-top"><span class="sbadge" style="background:rgba(79,209,197,.15);color:#4fd1c5">En cours</span><div class="pmenu-wrap"><button class="pmenu-btn">⋮</button><div class="ctx"><div class="ci">✏️ Modifier</div><div class="ci">📋 Dupliquer</div><div class="ci danger">🗄 Archiver</div></div></div></div>
+          <div class="pc-name">App Mobile RH</div>
+          <div class="pc-meta">👥 Lucas, Emma · 📅 30 mai</div>
+          <div class="pc-track"><div class="pc-fill" style="width:28%;background:#4fd1c5"></div></div>
+          <div class="pc-pct">28% · 12 tâches restantes</div>
+        </div>
+        <div class="pcard" data-status="en-pause" style="--pc:#f6ad55">
+          <div class="pc-top"><span class="sbadge" style="background:rgba(246,173,85,.15);color:#f6ad55">En pause</span><div class="pmenu-wrap"><button class="pmenu-btn">⋮</button><div class="ctx"><div class="ci">✏️ Modifier</div><div class="ci">📋 Dupliquer</div><div class="ci danger">🗄 Archiver</div></div></div></div>
+          <div class="pc-name">Portail Partenaires</div>
+          <div class="pc-meta">👥 Antoine · 📅 Indéfini</div>
+          <div class="pc-track"><div class="pc-fill" style="width:15%;background:#f6ad55"></div></div>
+          <div class="pc-pct">15% · En attente budget</div>
+        </div>
+        <div class="pcard" data-status="termine" style="--pc:#68d391">
+          <div class="pc-top"><span class="sbadge" style="background:rgba(104,211,145,.15);color:#68d391">Terminé</span><div class="pmenu-wrap"><button class="pmenu-btn">⋮</button><div class="ctx"><div class="ci">✏️ Modifier</div><div class="ci">📋 Dupliquer</div><div class="ci danger">🗄 Archiver</div></div></div></div>
+          <div class="pc-name">Audit Sécurité Q4</div>
+          <div class="pc-meta">👥 Léa, Hugo · 📅 12 jan.</div>
+          <div class="pc-track"><div class="pc-fill" style="width:100%;background:#68d391"></div></div>
+          <div class="pc-pct">100% · Livré ✓</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SLIDE 2 — STRUCTURE DES TÂCHES
+══════════════════════════════════════ -->
+<section class="slide" id="s2">
+<div class="mod-slide">
+  <div class="ml">
+    <div class="ml-head">
+      <div class="ml-badge" style="background:rgba(79,209,197,.15);color:#4fd1c5">02</div>
+      <div><span class="ml-ico">📋</span><div class="ml-title">Structure des tâches</div><div class="ml-sub">Tâches hiérarchiques avec dépendances Fin→Début et recalcul automatique en cascade.</div></div>
+    </div>
+    <div>
+      <div class="sec-title">📋 User Stories</div>
+      <div class="stories">
+        <div class="story"><div class="sn" style="background:rgba(79,209,197,.15);color:#4fd1c5">①</div><div class="st"><strong>Créer des sous-tâches</strong><span>Je peux créer des sous-tâches rattachées à une phase parente avec durée et assigné.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(79,209,197,.15);color:#4fd1c5">②</div><div class="st"><strong>Dépendances Fin→Début</strong><span>Je peux définir qu'une tâche ne démarre qu'après la fin d'une autre. Les dates se recalculent.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(79,209,197,.15);color:#4fd1c5">③</div><div class="st"><strong>Assigner durées et dates</strong><span>Je peux définir des durées et dates pour chaque tâche, avec propagation aux phases parentes.</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title">🔑 Interactions clés</div>
+      <div class="ixns">
+        <div class="ixn"><span class="ixn-i">▶</span>Cliquer la flèche → déplier / replier une phase</div>
+        <div class="ixn"><span class="ixn-i">🖱</span>Cliquer une tâche → sélection et highlight</div>
+        <div class="ixn"><span class="ixn-i">➕</span>"+ Ajouter" → nouvelle tâche dans la phase</div>
+      </div>
+    </div>
+  </div>
+  <div class="mr">
+    <div class="dh">
+      <div class="dh-dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="dh-url">ganttflow.app / e-commerce / tasks</div>
+      <div class="dh-tag" style="background:rgba(79,209,197,.1);color:#4fd1c5;border:1px solid rgba(79,209,197,.22)"><span>●</span> Module 2</div>
+    </div>
+    <div class="db">
+      <div id="task-tree">
+        <!-- Group 1 -->
+        <div class="tgroup">
+          <div class="tg-head" data-group="g1">
+            <span class="tg-arrow open">▶</span>
+            <span class="tg-name">Phase 1 — Analyse &amp; Cadrage</span>
+            <span class="tg-badge" style="background:rgba(108,99,255,.15);color:#6c63ff">3 tâches</span>
+            <span class="tg-dates">3 mar → 17 mar</span>
+          </div>
+          <div class="tg-body" id="g1-body">
+            <div class="trow" data-task="t1"><span class="trow-name">Cahier des charges</span><span class="trow-dep">–</span><span class="trow-dates">3–10 mar</span><span class="trow-av" style="background:#6c63ff">SM</span></div>
+            <div class="trow" data-task="t2"><span class="trow-name">Réunion de lancement</span><span class="trow-dep">Après: Cahier</span><span class="trow-dates">11 mar</span><span class="trow-av" style="background:#4fd1c5">TD</span></div>
+            <div class="trow" data-task="t3"><span class="trow-name">Validation budget</span><span class="trow-dep">Après: Réunion</span><span class="trow-dates">12–17 mar</span><span class="trow-av" style="background:#f6ad55">ML</span></div>
+            <button class="add-trow" data-group="g1">➕ Ajouter une tâche</button>
+          </div>
+        </div>
+        <!-- Group 2 -->
+        <div class="tgroup">
+          <div class="tg-head" data-group="g2">
+            <span class="tg-arrow open">▶</span>
+            <span class="tg-name">Phase 2 — Conception</span>
+            <span class="tg-badge" style="background:rgba(79,209,197,.15);color:#4fd1c5">3 tâches</span>
+            <span class="tg-dates">18 mar → 8 avr</span>
+          </div>
+          <div class="tg-body" id="g2-body">
+            <div class="trow" data-task="t4"><span class="trow-name">Maquettes UX/UI</span><span class="trow-dep">Après: Phase 1</span><span class="trow-dates">18 mar–1 avr</span><span class="trow-av" style="background:#fc8181">AB</span></div>
+            <div class="trow" data-task="t5"><span class="trow-name">Validation client</span><span class="trow-dep">Après: Maquettes</span><span class="trow-dates">2–5 avr</span><span class="trow-av" style="background:#6c63ff">SM</span></div>
+            <div class="trow" data-task="t6"><span class="trow-name">Spécifications techniques</span><span class="trow-dep">Après: Maquettes</span><span class="trow-dates">2–8 avr</span><span class="trow-av" style="background:#4fd1c5">TD</span></div>
+            <button class="add-trow" data-group="g2">➕ Ajouter une tâche</button>
+          </div>
+        </div>
+        <!-- Group 3 -->
+        <div class="tgroup">
+          <div class="tg-head" data-group="g3">
+            <span class="tg-arrow">▶</span>
+            <span class="tg-name">Phase 3 — Développement</span>
+            <span class="tg-badge" style="background:rgba(246,173,85,.15);color:#f6ad55">4 tâches</span>
+            <span class="tg-dates">9 avr → 30 mai</span>
+          </div>
+          <div class="tg-body" id="g3-body" style="display:none">
+            <div class="trow" data-task="t7"><span class="trow-name">Front-end (React)</span><span class="trow-dep">Après: Phase 2</span><span class="trow-dates">9 avr–9 mai</span><span class="trow-av" style="background:#fc8181">AB</span></div>
+            <div class="trow" data-task="t8"><span class="trow-name">Back-end (API)</span><span class="trow-dep">Après: Phase 2</span><span class="trow-dates">9 avr–2 mai</span><span class="trow-av" style="background:#f6ad55">ML</span></div>
+            <div class="trow" data-task="t9"><span class="trow-name">Intégration</span><span class="trow-dep">Après: Front/Back</span><span class="trow-dates">3–23 mai</span><span class="trow-av" style="background:#4fd1c5">TD</span></div>
+            <div class="trow" data-task="t10"><span class="trow-name">Tests unitaires</span><span class="trow-dep">Après: Intégration</span><span class="trow-dates">24–30 mai</span><span class="trow-av" style="background:#6c63ff">SM</span></div>
+            <button class="add-trow" data-group="g3">➕ Ajouter une tâche</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SLIDE 3 — VUE GANTT INTERACTIVE
+══════════════════════════════════════ -->
+<section class="slide" id="s3">
+<div class="mod-slide">
+  <div class="ml">
+    <div class="ml-head">
+      <div class="ml-badge" style="background:rgba(246,173,85,.15);color:#f6ad55">03</div>
+      <div><span class="ml-ico">📊</span><div class="ml-title">Vue Gantt interactive</div><div class="ml-sub">Barres glissables par drag & drop, zoom semaine/mois/trimestre, ligne "aujourd'hui" dynamique.</div></div>
+    </div>
+    <div>
+      <div class="sec-title">📋 User Stories</div>
+      <div class="stories">
+        <div class="story"><div class="sn" style="background:rgba(246,173,85,.15);color:#f6ad55">①</div><div class="st"><strong>Déplacer une barre</strong><span>Je peux glisser-déposer une barre pour changer les dates de début/fin d'une tâche.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(246,173,85,.15);color:#f6ad55">②</div><div class="st"><strong>Changer le zoom</strong><span>Je peux basculer entre la vue semaine, mois et trimestre selon mes besoins.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(246,173,85,.15);color:#f6ad55">③</div><div class="st"><strong>Ligne "aujourd'hui"</strong><span>Une ligne verticale rouge indique la date du jour pour visualiser les retards.</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title">🔑 Interactions clés</div>
+      <div class="ixns">
+        <div class="ixn"><span class="ixn-i">🖱</span>Glisser une barre → déplace les dates</div>
+        <div class="ixn"><span class="ixn-i">🔍</span>Boutons zoom → change la granularité</div>
+        <div class="ixn"><span class="ixn-i">📍</span>Ligne rouge → position "aujourd'hui"</div>
+      </div>
+    </div>
+  </div>
+  <div class="mr">
+    <div class="dh">
+      <div class="dh-dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="dh-url">ganttflow.app / e-commerce / gantt</div>
+      <div class="dh-tag" style="background:rgba(246,173,85,.1);color:#f6ad55;border:1px solid rgba(246,173,85,.22)"><span>●</span> Module 3</div>
+    </div>
+    <div class="db">
+      <div class="g-controls">
+        <span class="z-label">Zoom :</span>
+        <div class="zpills">
+          <button class="zp" data-zoom="week">Semaine</button>
+          <button class="zp on" data-zoom="month">Mois</button>
+          <button class="zp" data-zoom="quarter">Trimestre</button>
+        </div>
+        <span class="g-hint">🖱 Glissez les barres</span>
+      </div>
+      <div class="gantt-wrap" id="gantt-wrap">
+        <div class="grow hdr">
+          <div class="gr-lbl h">Tâche</div>
+          <div class="gr-chart h" id="gantt-header"></div>
+        </div>
+        <div class="grow" id="gr-0"><div class="gr-lbl"><span>Ph.1 Analyse</span><span class="bar-pct" id="pct-0">100%</span></div><div class="gr-chart" id="gc-0"></div></div>
+        <div class="grow" id="gr-1"><div class="gr-lbl"><span>Ph.2 Conception</span><span class="bar-pct" id="pct-1">72%</span></div><div class="gr-chart" id="gc-1"></div></div>
+        <div class="grow" id="gr-2"><div class="gr-lbl"><span>Ph.3 Développement</span><span class="bar-pct" id="pct-2">18%</span></div><div class="gr-chart" id="gc-2"></div></div>
+        <div class="grow" id="gr-3"><div class="gr-lbl"><span>Tests &amp; QA</span><span class="bar-pct" id="pct-3">0%</span></div><div class="gr-chart" id="gc-3"></div></div>
+        <div class="grow" id="gr-4"><div class="gr-lbl"><span>Déploiement</span><span class="bar-pct" id="pct-4">0%</span></div><div class="gr-chart" id="gc-4"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SLIDE 4 — COLLABORATION
+══════════════════════════════════════ -->
+<section class="slide" id="s4">
+<div class="mod-slide">
+  <div class="ml">
+    <div class="ml-head">
+      <div class="ml-badge" style="background:rgba(252,129,129,.15);color:#fc8181">04</div>
+      <div><span class="ml-ico">👥</span><div class="ml-title">Collaboration</div><div class="ml-sub">Invitations par email, rôles Éditeur/Lecteur par projet, journal d'activité horodaté filtrable.</div></div>
+    </div>
+    <div>
+      <div class="sec-title">📋 User Stories</div>
+      <div class="stories">
+        <div class="story"><div class="sn" style="background:rgba(252,129,129,.15);color:#fc8181">①</div><div class="st"><strong>Inviter un collaborateur</strong><span>Je peux inviter un membre par email avec un rôle défini (Éditeur ou Lecteur).</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(252,129,129,.15);color:#fc8181">②</div><div class="st"><strong>Rôle Lecteur pour client</strong><span>Je peux donner un accès lecture seule à un client externe sans qu'il puisse modifier.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(252,129,129,.15);color:#fc8181">③</div><div class="st"><strong>Journal d'activité</strong><span>Je peux voir qui a modifié une tâche, quand et quelle valeur a changé.</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title">🔑 Interactions clés</div>
+      <div class="ixns">
+        <div class="ixn"><span class="ixn-i">✉️</span>Cliquer "+ Inviter" → formulaire d'invitation</div>
+        <div class="ixn"><span class="ixn-i">🔁</span>Cliquer le badge rôle → bascule Éditeur/Lecteur</div>
+        <div class="ixn"><span class="ixn-i">📜</span>Journal filtrable par membre ou action</div>
+      </div>
+    </div>
+  </div>
+  <div class="mr">
+    <div class="dh">
+      <div class="dh-dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="dh-url">ganttflow.app / e-commerce / collaboration</div>
+      <div class="dh-tag" style="background:rgba(252,129,129,.1);color:#fc8181;border:1px solid rgba(252,129,129,.22)"><span>●</span> Module 4</div>
+    </div>
+    <div class="db">
+      <div class="sc">
+        <div class="sc-head">
+          <h4>👥 Membres de l'équipe (4)</h4>
+          <button class="btn-p" id="btn-invite" style="background:var(--c4)">✉️ Inviter</button>
+        </div>
+        <div id="inv-form">
+          <div class="inv-row">
+            <input type="email" placeholder="email@example.com" id="inv-email">
+            <select id="inv-role"><option value="editeur">Éditeur</option><option value="lecteur">Lecteur</option></select>
+            <button class="btn-p" id="btn-inv-send" style="background:var(--c4)">Envoyer</button>
+          </div>
+        </div>
+        <div class="mlist" id="member-list">
+          <div class="mrow"><div class="av" style="background:#6c63ff">SM<div class="sdot" style="background:#22c55e"></div></div><span class="mname">Sophie Martin</span><span class="rbadge" data-role="editeur" style="background:rgba(108,99,255,.15);color:#6c63ff">Éditeur</span></div>
+          <div class="mrow"><div class="av" style="background:#4fd1c5">TD<div class="sdot" style="background:#22c55e"></div></div><span class="mname">Thomas Durand</span><span class="rbadge" data-role="lecteur" style="background:rgba(107,114,128,.15);color:#9ca3af">Lecteur</span></div>
+          <div class="mrow"><div class="av" style="background:#f6ad55">ML<div class="sdot" style="background:#f59e0b"></div></div><span class="mname">Marie Leblanc</span><span class="rbadge" data-role="editeur" style="background:rgba(108,99,255,.15);color:#6c63ff">Éditeur</span></div>
+          <div class="mrow"><div class="av" style="background:#fc8181">AB<div class="sdot" style="background:#6b7280"></div></div><span class="mname">Antoine Bernard</span><span class="rbadge" data-role="lecteur" style="background:rgba(107,114,128,.15);color:#9ca3af">Lecteur</span></div>
+        </div>
+      </div>
+      <div class="sc">
+        <div class="sc-head"><h4>📜 Journal d'activité</h4><button class="btn-o" style="font-size:11px">Filtrer</button></div>
+        <div class="actlog">
+          <div class="aitem"><span class="a-ico">✏️</span><div class="a-body"><strong>Sophie Martin</strong> a modifié la date de fin de "Maquettes UX/UI"<br><span style="color:var(--muted)">22 mar → 1 avr</span></div><span class="a-time">il y a 5 min</span></div>
+          <div class="aitem"><span class="a-ico">➕</span><div class="a-body"><strong>Thomas Durand</strong> a ajouté la tâche "Tests unitaires" dans Phase 3</div><span class="a-time">il y a 23 min</span></div>
+          <div class="aitem"><span class="a-ico">💬</span><div class="a-body"><strong>Marie Leblanc</strong> a commenté sur "Validation client"<br><span style="color:var(--muted)">« RAS côté client, on peut avancer »</span></div><span class="a-time">il y a 1 h</span></div>
+          <div class="aitem"><span class="a-ico">🔗</span><div class="a-body"><strong>Antoine Bernard</strong> a lié "Spécifications techniques" → "Front-end"</div><span class="a-time">il y a 2 h</span></div>
+          <div class="aitem"><span class="a-ico">✅</span><div class="a-body"><strong>Sophie Martin</strong> a marqué "Réunion de lancement" comme terminée</div><span class="a-time">hier, 17:42</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- ══════════════════════════════════════
+     SLIDE 5 — EXPORT & PARTAGE
+══════════════════════════════════════ -->
+<section class="slide" id="s5">
+<div class="mod-slide">
+  <div class="ml">
+    <div class="ml-head">
+      <div class="ml-badge" style="background:rgba(104,211,145,.15);color:#68d391">05</div>
+      <div><span class="ml-ico">📤</span><div class="ml-title">Export &amp; Partage</div><div class="ml-sub">Export PDF/PNG/CSV/Excel avec aperçu live, sélection de plage et lien de partage lecture seule.</div></div>
+    </div>
+    <div>
+      <div class="sec-title">📋 User Stories</div>
+      <div class="stories">
+        <div class="story"><div class="sn" style="background:rgba(104,211,145,.15);color:#68d391">①</div><div class="st"><strong>Exporter en PDF</strong><span>Je peux exporter le diagramme de Gantt en PDF haute résolution pour une présentation.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(104,211,145,.15);color:#68d391">②</div><div class="st"><strong>Lien lecture seule</strong><span>Je peux générer un lien public à durée limitée permettant à n'importe qui de consulter le Gantt en lecture seule.</span></div></div>
+        <div class="story"><div class="sn" style="background:rgba(104,211,145,.15);color:#68d391">③</div><div class="st"><strong>Plage de dates</strong><span>Je peux sélectionner une plage de dates spécifique à exporter (sprint, phase ou projet entier).</span></div></div>
+      </div>
+    </div>
+    <div>
+      <div class="sec-title">🔑 Interactions clés</div>
+      <div class="ixns">
+        <div class="ixn"><span class="ixn-i">📁</span>Onglets format → aperçu mis à jour en live</div>
+        <div class="ixn"><span class="ixn-i">📅</span>Plage de dates → filtre le Gantt exporté</div>
+        <div class="ixn"><span class="ixn-i">🔗</span>"Générer le lien" → URL copiable en un clic</div>
+      </div>
+    </div>
+  </div>
+  <div class="mr">
+    <div class="dh">
+      <div class="dh-dots"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+      <div class="dh-url">ganttflow.app / e-commerce / export</div>
+      <div class="dh-tag" style="background:rgba(104,211,145,.1);color:#68d391;border:1px solid rgba(104,211,145,.22)"><span>●</span> Module 5</div>
+    </div>
+    <div class="db">
+      <div class="ftabs" id="fmt-tabs">
+        <button class="ftab on" data-fmt="pdf"><span class="ftab-i">📄</span>PDF</button>
+        <button class="ftab" data-fmt="png"><span class="ftab-i">🖼</span>PNG</button>
+        <button class="ftab" data-fmt="csv"><span class="ftab-i">📊</span>CSV</button>
+        <button class="ftab" data-fmt="excel"><span class="ftab-i">📗</span>Excel</button>
+      </div>
+      <div class="exp-layout">
+        <div class="exp-left">
+          <div class="exp-fields">
+            <div class="ef"><div class="ef-label">Plage de dates</div>
+              <div style="display:flex;gap:8px"><input type="date" value="2026-03-01" id="exp-from" style="flex:1"><input type="date" value="2026-05-30" id="exp-to" style="flex:1"></div>
+            </div>
+            <div class="ef"><div class="ef-label">Orientation</div>
+              <select id="exp-orient"><option>Paysage (recommandé)</option><option>Portrait</option></select>
+            </div>
+            <div class="ef"><div class="ef-label">Contenu inclus</div>
+              <select id="exp-content"><option>Gantt + liste des tâches</option><option>Gantt uniquement</option><option>Liste des tâches uniquement</option></select>
+            </div>
+          </div>
+          <div class="exp-actions">
+            <button class="btn-p" id="btn-dl" style="background:var(--c5);color:#0a0c12">📥 Télécharger</button>
+            <button class="btn-o" id="btn-share">🔗 Générer un lien</button>
+          </div>
+          <div class="linkbox" id="link-box">
+            <span class="link-url" id="link-url">https://ganttflow.app/share/ec-2026-a8f3d...</span>
+            <button class="btn-copy" id="btn-copy">Copier</button>
+          </div>
+        </div>
+        <div class="exp-prev" id="exp-preview">
+          <div class="ep-ico" id="ep-ico">📄</div>
+          <div class="ep-label" id="ep-label">PDF · Paysage<br><span style="font-size:10px;color:var(--muted)">Prêt à télécharger</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+</div><!-- #slides -->
+
+<!-- KB HINT -->
+<div id="kbh"><span class="key">←</span><span class="key">→</span>&nbsp;naviguer&nbsp;·&nbsp;<span class="key">0</span>–<span class="key">5</span>&nbsp;module direct</div>
+
+<script>
+/* ══════════════════════════
+   NAVIGATION
+══════════════════════════ */
+const TOTAL = 6;
+const COLORS = ['#6c63ff','#6c63ff','#4fd1c5','#f6ad55','#fc8181','#68d391'];
+let cur = 0;
+
+function goTo(n) {
+  if (n === cur || n < 0 || n >= TOTAL) return;
+  const slides = document.querySelectorAll('.slide');
+  const pills  = document.querySelectorAll('.npill');
+  slides[cur].classList.remove('active');
+  slides[cur].classList.add('out');
+  setTimeout(() => slides[cur] && slides[cur].classList.remove('out'), 300);
+  cur = n;
+  slides[cur].classList.remove('out');
+  slides[cur].classList.add('active');
+  pills.forEach((p,i) => {
+    p.classList.toggle('active', i===cur);
+    p.style.background = i===cur ? COLORS[cur]+'18' : '';
+    p.style.color = i===cur ? COLORS[cur] : '';
+  });
+  document.getElementById('ctr').textContent = (cur+1)+' / '+TOTAL;
+  document.getElementById('bp').disabled = cur===0;
+  document.getElementById('bn').disabled = cur===TOTAL-1;
+  const fill = document.getElementById('prog-fill');
+  fill.style.width = (cur/(TOTAL-1)*100)+'%';
+  fill.style.background = COLORS[cur];
+}
+
+document.querySelectorAll('.npill').forEach((p,i)=>p.addEventListener('click',()=>goTo(i)));
+document.getElementById('bp').addEventListener('click',()=>goTo(cur-1));
+document.getElementById('bn').addEventListener('click',()=>goTo(cur+1));
+document.querySelectorAll('[data-goto],[data-s]').forEach(el=>{
+  const n = +(el.dataset.goto ?? el.dataset.s);
+  el.addEventListener('click',()=>goTo(n));
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft'||e.key==='ArrowUp'){e.preventDefault();goTo(cur-1);}
+  if(e.key==='ArrowRight'||e.key==='ArrowDown'){e.preventDefault();goTo(cur+1);}
+  if(e.key>='0'&&e.key<='5') goTo(+e.key);
+  if(e.key==='Home') goTo(0);
+  if(e.key==='End') goTo(TOTAL-1);
+});
+// init
+document.getElementById('bp').disabled=true;
+document.getElementById('prog-fill').style.width='0%';
+document.getElementById('prog-fill').style.background=COLORS[0];
+document.querySelectorAll('.npill')[0].style.background=COLORS[0]+'18';
+document.querySelectorAll('.npill')[0].style.color=COLORS[0];
+
+/* ══════════════════════════
+   MODULE 1 — PROJECTS
+══════════════════════════ */
+(function(){
+  const btn = document.getElementById('btn-new-proj');
+  const form = document.getElementById('new-proj-form');
+  const cancel = document.getElementById('btn-cancel-proj');
+  const save = document.getElementById('btn-save-proj');
+  const grid = document.getElementById('proj-grid');
+
+  btn.addEventListener('click', ()=>{ form.classList.toggle('open'); });
+  cancel.addEventListener('click', ()=>{ form.classList.remove('open'); });
+  save.addEventListener('click', ()=>{
+    const name = document.getElementById('nproj-name').value.trim() || 'Nouveau projet';
+    const status = document.getElementById('nproj-status').value;
+    const colors = {'en-cours':'#4fd1c5','en-pause':'#f6ad55','termine':'#68d391'};
+    const labels = {'en-cours':'En cours','en-pause':'En pause','termine':'Terminé'};
+    const bc = {'en-cours':'rgba(79,209,197,.15)','en-pause':'rgba(246,173,85,.15)','termine':'rgba(104,211,145,.15)'};
+    const tc = {'en-cours':'#4fd1c5','en-pause':'#f6ad55','termine':'#68d391'};
+    const card = document.createElement('div');
+    card.className='pcard'; card.dataset.status=status;
+    card.style.setProperty('--pc',colors[status]);
+    card.innerHTML=`<div class="pc-top"><span class="sbadge" style="background:${bc[status]};color:${tc[status]}">${labels[status]}</span><div class="pmenu-wrap"><button class="pmenu-btn">⋮</button><div class="ctx"><div class="ci">✏️ Modifier</div><div class="ci">📋 Dupliquer</div><div class="ci danger">🗄 Archiver</div></div></div></div><div class="pc-name">${name}</div><div class="pc-meta">📅 Nouveau</div><div class="pc-track"><div class="pc-fill" style="width:0%;background:${colors[status]}"></div></div><div class="pc-pct">0%</div>`;
+    grid.appendChild(card);
+    wireCardMenu(card.querySelector('.pmenu-btn'));
+    form.classList.remove('open');
+    document.getElementById('nproj-name').value='';
+    applyFilter();
+  });
+
+  // Filter pills
+  const filterBar = document.getElementById('filter-bar');
+  function applyFilter() {
+    const active = filterBar.querySelector('.filt.on');
+    const val = active ? active.dataset.filter : 'all';
+    document.querySelectorAll('.pcard').forEach(c=>{
+      c.classList.toggle('hidden', val!=='all' && c.dataset.status!==val);
+    });
+  }
+  filterBar.addEventListener('click', e=>{
+    const f = e.target.closest('.filt');
+    if(!f) return;
+    filterBar.querySelectorAll('.filt').forEach(x=>x.classList.remove('on'));
+    f.classList.add('on');
+    applyFilter();
+  });
+
+  // Context menus
+  function wireCardMenu(btn) {
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      document.querySelectorAll('.ctx.open').forEach(c=>c.classList.remove('open'));
+      btn.nextElementSibling.classList.toggle('open');
+    });
+  }
+  document.querySelectorAll('.pmenu-btn').forEach(wireCardMenu);
+  document.addEventListener('click', ()=>document.querySelectorAll('.ctx.open').forEach(c=>c.classList.remove('open')));
+})();
+
+/* ══════════════════════════
+   MODULE 2 — TASKS
+══════════════════════════ */
+(function(){
+  // Toggle groups
+  document.querySelectorAll('.tg-head').forEach(head=>{
+    head.addEventListener('click', ()=>{
+      const gid = head.dataset.group;
+      const body = document.getElementById(gid+'-body');
+      const arrow = head.querySelector('.tg-arrow');
+      if(!body) return;
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : '';
+      arrow.classList.toggle('open', !open);
+    });
+  });
+  // Select task row
+  document.addEventListener('click', e=>{
+    const row = e.target.closest('.trow');
+    if(!row) return;
+    document.querySelectorAll('.trow.sel').forEach(r=>r.classList.remove('sel'));
+    row.classList.add('sel');
+  });
+  // Add task
+  let taskCount = 10;
+  document.querySelectorAll('.add-trow').forEach(btn=>{
+    btn.addEventListener('click', e=>{
+      e.stopPropagation();
+      taskCount++;
+      const row = document.createElement('div');
+      row.className='trow'; row.dataset.task='t'+taskCount;
+      row.innerHTML=`<span class="trow-name">Nouvelle tâche ${taskCount}</span><span class="trow-dep">–</span><span class="trow-dates">À définir</span><span class="trow-av" style="background:#6b7280">?</span>`;
+      btn.parentNode.insertBefore(row, btn);
+    });
+  });
+})();
+
+/* ══════════════════════════
+   MODULE 3 — GANTT
+══════════════════════════ */
+(function(){
+  const REF = new Date(2026,2,1); // March 1 2026
+  const TODAY_OFFSET = Math.floor((new Date(2026,2,11)-REF)/(864e5)); // day 10
+  const TASKS = [
+    {name:'Ph.1 Analyse',    start:0,  dur:14, color:'#6c63ff'},
+    {name:'Ph.2 Conception', start:14, dur:22, color:'#4fd1c5'},
+    {name:'Ph.3 Dev',        start:36, dur:30, color:'#f6ad55'},
+    {name:'Tests & QA',      start:62, dur:10, color:'#fc8181'},
+    {name:'Déploiement',     start:72, dur:6,  color:'#68d391'},
+  ];
+  const ZOOMS = {week:{ppd:42,days:21},month:{ppd:16,days:90},quarter:{ppd:8,days:180}};
+  let zoom = 'month';
+  let offsets = TASKS.map(t=>t.start); // mutable start offsets
+
+  function dayLabel(offset, zKey) {
+    const d = new Date(REF.getTime() + offset*864e5);
+    if(zKey==='week') return d.toLocaleDateString('fr-FR',{day:'numeric',month:'short'});
+    if(zKey==='month') {
+      if(d.getDate()===1||offset===0) return d.toLocaleDateString('fr-FR',{month:'short'});
+      return '';
+    }
+    return d.getDate()===1 ? d.toLocaleDateString('fr-FR',{month:'short'}) : '';
+  }
+
+  function render() {
+    const {ppd, days} = ZOOMS[zoom];
+    const wrap = document.getElementById('gantt-wrap');
+    const hdr = document.getElementById('gantt-header');
+    // Header
+    hdr.innerHTML='';
+    hdr.style.position='relative';
+    for(let i=0;i<days;i++) {
+      const lbl = dayLabel(i, zoom);
+      if(lbl) {
+        const el = document.createElement('span');
+        el.className='tl-lbl';
+        el.style.left=(i*ppd+2)+'px';
+        el.textContent=lbl;
+        hdr.appendChild(el);
+      }
+      // grid lines
+      const line = document.createElement('div');
+      line.style.cssText=`position:absolute;left:${i*ppd}px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.04)`;
+      hdr.appendChild(line);
+    }
+    // Today line in header
+    const tln = document.createElement('div');
+    tln.className='today-ln'; tln.style.left=(TODAY_OFFSET*ppd)+'px';
+    hdr.appendChild(tln);
+
+    TASKS.forEach((t,i)=>{
+      const gc = document.getElementById('gc-'+i);
+      if(!gc) return;
+      gc.innerHTML='';
+      gc.style.position='relative';
+      // grid lines
+      for(let d=0;d<days;d++) {
+        const line = document.createElement('div');
+        line.style.cssText=`position:absolute;left:${d*ppd}px;top:0;bottom:0;width:1px;background:rgba(255,255,255,.03)`;
+        gc.appendChild(line);
+      }
+      // today line
+      const tl = document.createElement('div');
+      tl.className='today-ln'; tl.style.left=(TODAY_OFFSET*ppd)+'px';
+      gc.appendChild(tl);
+      // bar
+      const bar = document.createElement('div');
+      bar.className='gbar';
+      bar.style.left=(offsets[i]*ppd)+'px';
+      bar.style.width=(t.dur*ppd)+'px';
+      bar.style.background=t.color;
+      bar.textContent=t.name;
+      gc.appendChild(bar);
+      // drag
+      let dragging=false, startX=0, startOff=0;
+      bar.addEventListener('mousedown', e=>{
+        if(e.button!==0) return;
+        dragging=true; startX=e.clientX; startOff=offsets[i];
+        bar.classList.add('drag');
+        e.preventDefault();
+      });
+      bar.addEventListener('touchstart', e=>{
+        dragging=true; startX=e.touches[0].clientX; startOff=offsets[i];
+        bar.classList.add('drag');
+      },{passive:true});
+      function onMove(clientX) {
+        if(!dragging) return;
+        const dx = clientX-startX;
+        const newOff = Math.max(0, Math.round(startOff + dx/ppd));
+        offsets[i] = newOff;
+        bar.style.left=(newOff*ppd)+'px';
+      }
+      document.addEventListener('mousemove', e=>{ if(dragging) onMove(e.clientX); });
+      document.addEventListener('touchmove', e=>{ if(dragging) onMove(e.touches[0].clientX); },{passive:true});
+      function onUp() { dragging=false; bar.classList.remove('drag'); }
+      document.addEventListener('mouseup', onUp);
+      document.addEventListener('touchend', onUp);
+    });
+  }
+
+  // Zoom buttons
+  document.querySelectorAll('.zp').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.zp').forEach(z=>z.classList.remove('on'));
+      btn.classList.add('on');
+      zoom = btn.dataset.zoom;
+      render();
+    });
+  });
+
+  // Init when slide 3 becomes visible (avoid layout=0 issues)
+  const observer = new MutationObserver(()=>{
+    if(document.getElementById('s3').classList.contains('active')) { render(); observer.disconnect(); }
+  });
+  observer.observe(document.getElementById('s3'),{attributes:true,attributeFilter:['class']});
+  // Also render now in case already active
+  setTimeout(render, 100);
+})();
+
+/* ══════════════════════════
+   MODULE 4 — COLLAB
+══════════════════════════ */
+(function(){
+  // Invite form toggle
+  const btnInv = document.getElementById('btn-invite');
+  const invForm = document.getElementById('inv-form');
+  const btnSend = document.getElementById('btn-inv-send');
+  btnInv.addEventListener('click', ()=>invForm.classList.toggle('open'));
+
+  btnSend.addEventListener('click', ()=>{
+    const email = document.getElementById('inv-email').value.trim();
+    const role  = document.getElementById('inv-role').value;
+    if(!email) return;
+    const initials = email.split('@')[0].slice(0,2).toUpperCase();
+    const colors = ['#a78bfa','#34d399','#60a5fa','#fb923c','#f472b6'];
+    const c = colors[Math.floor(Math.random()*colors.length)];
+    const isEditor = role==='editeur';
+    const row = document.createElement('div');
+    row.className='mrow';
+    row.innerHTML=`<div class="av" style="background:${c}">${initials}<div class="sdot" style="background:#6b7280"></div></div><span class="mname">${email}</span><span class="rbadge" data-role="${role}" style="background:${isEditor?'rgba(108,99,255,.15)':'rgba(107,114,128,.15)'};color:${isEditor?'#6c63ff':'#9ca3af'}">${isEditor?'Éditeur':'Lecteur'}</span>`;
+    document.getElementById('member-list').appendChild(row);
+    wireRoleBadge(row.querySelector('.rbadge'));
+    document.getElementById('inv-email').value='';
+    invForm.classList.remove('open');
+  });
+
+  // Role badge toggle
+  function wireRoleBadge(badge) {
+    badge.addEventListener('click', ()=>{
+      const isEditor = badge.dataset.role==='editeur';
+      badge.dataset.role = isEditor ? 'lecteur' : 'editeur';
+      badge.textContent = isEditor ? 'Lecteur' : 'Éditeur';
+      badge.style.background = isEditor ? 'rgba(107,114,128,.15)' : 'rgba(108,99,255,.15)';
+      badge.style.color = isEditor ? '#9ca3af' : '#6c63ff';
+    });
+  }
+  document.querySelectorAll('.rbadge').forEach(wireRoleBadge);
+})();
+
+/* ══════════════════════════
+   MODULE 5 — EXPORT
+══════════════════════════ */
+(function(){
+  const FMTS = {
+    pdf:   {ico:'📄', label:'PDF · Paysage',   sub:'Prêt à télécharger'},
+    png:   {ico:'🖼', label:'PNG · 2400×1200px', sub:'Haute résolution'},
+    csv:   {ico:'📊', label:'CSV · UTF-8',      sub:'Toutes les tâches'},
+    excel: {ico:'📗', label:'Excel · .xlsx',    sub:'Formules incluses'},
+  };
+  let curFmt = 'pdf';
+
+  function updatePreview() {
+    const f = FMTS[curFmt];
+    document.getElementById('ep-ico').textContent   = f.ico;
+    document.getElementById('ep-label').innerHTML   = `${f.label}<br><span style="font-size:10px;color:var(--muted)">${f.sub}</span>`;
+  }
+
+  document.querySelectorAll('.ftab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('on'));
+      tab.classList.add('on');
+      curFmt = tab.dataset.fmt;
+      updatePreview();
+      document.getElementById('link-box').classList.remove('show');
+    });
+  });
+
+  // Download (simulate)
+  document.getElementById('btn-dl').addEventListener('click', function(){
+    const orig = this.textContent;
+    this.textContent='⏳ Génération…';
+    this.disabled=true;
+    setTimeout(()=>{ this.textContent='✅ Téléchargé !'; }, 900);
+    setTimeout(()=>{ this.textContent=orig; this.disabled=false; }, 2200);
+  });
+
+  // Share link
+  document.getElementById('btn-share').addEventListener('click', ()=>{
+    const box = document.getElementById('link-box');
+    const from = document.getElementById('exp-from').value.replace(/-/g,'');
+    const to   = document.getElementById('exp-to').value.replace(/-/g,'');
+    document.getElementById('link-url').textContent = `https://ganttflow.app/share/ec-${from}-${to}-${Math.random().toString(36).slice(2,7)}`;
+    box.classList.add('show');
+  });
+
+  // Copy link
+  document.getElementById('btn-copy').addEventListener('click', function(){
+    const url = document.getElementById('link-url').textContent;
+    if(navigator.clipboard) navigator.clipboard.writeText(url).catch(()=>{});
+    this.textContent='Copié !'; this.classList.add('ok');
+    setTimeout(()=>{ this.textContent='Copier'; this.classList.remove('ok'); }, 1800);
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GanttFlow — Roadmap</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1d27;--s2:#22263a;--border:#2e3350;
+  --accent:#6c63ff;--text:#e2e8f0;--muted:#718096;
+  --e1:#6c63ff;--e2:#4fd1c5;--e3:#fc8181;--e4:#68d391;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:0}
+
+/* HEADER */
+#header{background:var(--surface);border-bottom:1px solid var(--border);padding:28px 40px}
+.hdr-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(108,99,255,.12);border:1px solid rgba(108,99,255,.3);color:var(--accent);padding:5px 14px;border-radius:99px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px}
+.hdr-title{font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:6px}
+.hdr-title span{color:var(--accent)}
+.hdr-sub{font-size:14px;color:var(--muted);margin-bottom:20px}
+.hdr-stats{display:flex;gap:12px;flex-wrap:wrap}
+.stat{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:10px 16px;display:flex;flex-direction:column;gap:2px;min-width:100px}
+.stat-val{font-size:22px;font-weight:800}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+
+/* MAIN */
+#main{max-width:900px;margin:0 auto;padding:36px 40px}
+
+/* EPIC */
+.epic{background:var(--surface);border:1px solid var(--border);border-radius:18px;margin-bottom:24px;overflow:hidden}
+.epic-head{padding:22px 26px;display:flex;align-items:flex-start;gap:16px;border-bottom:1px solid var(--border);position:relative}
+.epic-head::before{content:'';position:absolute;top:0;left:0;width:4px;bottom:0;border-radius:18px 0 0 0}
+.epic-num{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:900;flex-shrink:0}
+.epic-meta{flex:1}
+.epic-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;opacity:.8}
+.epic-name{font-size:18px;font-weight:800;margin-bottom:4px}
+.epic-desc{font-size:13px;color:var(--muted);line-height:1.5}
+.epic-tags{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.epic-tag{padding:3px 10px;border-radius:99px;font-size:11px;font-weight:600;border:1px solid}
+.epic-status{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;background:rgba(255,255,255,.05);flex-shrink:0}
+
+/* DEMO BOX */
+.demo-box{margin:16px 26px;padding:14px 18px;border-radius:12px;border:1px solid;display:flex;align-items:flex-start;gap:12px}
+.demo-ico{font-size:18px;flex-shrink:0;margin-top:1px}
+.demo-content{}
+.demo-label{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;opacity:.7}
+.demo-text{font-size:13px;line-height:1.5}
+
+/* USER STORIES */
+.us-section{padding:16px 26px 22px}
+.us-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:12px}
+.us-list{display:flex;flex-direction:column;gap:8px}
+.us-item{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:11px 14px;display:flex;align-items:flex-start;gap:10px}
+.us-id{font-size:10.5px;font-weight:800;white-space:nowrap;margin-top:1px;font-family:monospace;opacity:.8}
+.us-text{font-size:12.5px;line-height:1.5}
+.us-as{color:var(--muted)}
+.us-want{color:var(--text);font-weight:600}
+.us-so{}
+
+/* DEP SECTION */
+.dep-section{padding:0 26px 18px;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--muted)}
+.dep-ico{font-size:14px}
+
+@media(max-width:600px){
+  #header,#main{padding:20px}
+  .epic-head{flex-wrap:wrap}
+  .hdr-title{font-size:24px}
+}
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div class="hdr-badge">📍 Roadmap · GanttFlow v1.0</div>
+  <div class="hdr-title">Application de <span>Gantt Chart</span></div>
+  <div class="hdr-sub">Outil de planification visuelle avec tâches, dépendances, collaboration et export multi-format.</div>
+  <div class="hdr-stats">
+    <div class="stat"><div class="stat-val" style="color:var(--accent)">4</div><div class="stat-lbl">Épics</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--accent)">5</div><div class="stat-lbl">Modules</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--accent)">15</div><div class="stat-lbl">User Stories</div></div>
+    <div class="stat"><div class="stat-val" style="color:var(--muted)">🔲</div><div class="stat-lbl">Statut</div></div>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- EPIC 1 -->
+  <div class="epic">
+    <div class="epic-head" style="--ec:var(--e1)">
+      <style>.epic:nth-child(1) .epic-head::before{background:var(--e1)}</style>
+      <div class="epic-num" style="background:rgba(108,99,255,.15);color:#6c63ff">E1</div>
+      <div class="epic-meta">
+        <div class="epic-label" style="color:#6c63ff">Épic 1 — Fondations</div>
+        <div class="epic-name">Projets & Structure des tâches</div>
+        <div class="epic-desc">Le socle de l'application : créer des projets, organiser les tâches en hiérarchie, définir des dépendances Fin→Début avec recalcul automatique.</div>
+        <div class="epic-tags">
+          <span class="epic-tag" style="background:rgba(108,99,255,.1);color:#6c63ff;border-color:rgba(108,99,255,.3)">Module 1</span>
+          <span class="epic-tag" style="background:rgba(108,99,255,.1);color:#6c63ff;border-color:rgba(108,99,255,.3)">Module 2</span>
+          <span class="epic-tag" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:var(--border)">6 user stories</span>
+        </div>
+      </div>
+      <div class="epic-status">🔲</div>
+    </div>
+    <div class="demo-box" style="background:rgba(108,99,255,.05);border-color:rgba(108,99,255,.2)">
+      <div class="demo-ico">🎯</div>
+      <div class="demo-content">
+        <div class="demo-label" style="color:#6c63ff">Demo outcome</div>
+        <div class="demo-text">Créer un projet, y ajouter des phases et des sous-tâches, définir une dépendance Fin→Début et observer le recalcul automatique des dates.</div>
+      </div>
+    </div>
+    <div class="us-section">
+      <div class="us-title">User Stories</div>
+      <div class="us-list">
+        <div class="us-item">
+          <div class="us-id" style="color:#6c63ff">US-1.1</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">créer un projet avec un nom, une date de début et une date de fin</span><span class="us-as"> afin d'avoir un cadre temporel clair.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#6c63ff">US-1.2</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">voir tous mes projets dans un tableau de bord</span><span class="us-as"> afin de suivre l'avancement global en un coup d'œil.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#6c63ff">US-1.3</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">archiver un projet terminé</span><span class="us-as"> afin de garder mon espace de travail propre.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#6c63ff">US-2.1</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">créer des sous-tâches rattachées à une tâche parente</span><span class="us-as"> afin de décomposer le travail en étapes.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#6c63ff">US-2.2</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">définir une dépendance Fin→Début entre deux tâches</span><span class="us-as"> afin que le planning se recale automatiquement.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#6c63ff">US-2.3</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">assigner une durée et des dates à chaque tâche</span><span class="us-as"> afin que le diagramme reflète la réalité.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 2 -->
+  <div class="epic">
+    <div class="epic-head">
+      <style>.epic:nth-child(2) .epic-head::before{background:var(--e2)}</style>
+      <div class="epic-num" style="background:rgba(79,209,197,.15);color:#4fd1c5">E2</div>
+      <div class="epic-meta">
+        <div class="epic-label" style="color:#4fd1c5">Épic 2 — Visualisation</div>
+        <div class="epic-name">Vue Gantt interactive</div>
+        <div class="epic-desc">La vue centrale de l'app : diagramme Gantt avec barres glissables, zoom adaptatif et repère temporel en temps réel.</div>
+        <div class="epic-tags">
+          <span class="epic-tag" style="background:rgba(79,209,197,.1);color:#4fd1c5;border-color:rgba(79,209,197,.3)">Module 3</span>
+          <span class="epic-tag" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:var(--border)">3 user stories</span>
+        </div>
+      </div>
+      <div class="epic-status">🔲</div>
+    </div>
+    <div class="demo-box" style="background:rgba(79,209,197,.05);border-color:rgba(79,209,197,.2)">
+      <div class="demo-ico">🎯</div>
+      <div class="demo-content">
+        <div class="demo-label" style="color:#4fd1c5">Demo outcome</div>
+        <div class="demo-text">Ouvrir un projet, faire glisser une barre de tâche pour décaler sa date, switcher entre zoom semaine/mois/trimestre, et voir la ligne "aujourd'hui" positionnée dynamiquement.</div>
+      </div>
+    </div>
+    <div class="dep-section">
+      <div class="dep-ico">⛓</div>
+      <span><strong>Dépend de :</strong> Épic 1 (les tâches doivent exister pour être visualisées)</span>
+    </div>
+    <div class="us-section">
+      <div class="us-title">User Stories</div>
+      <div class="us-list">
+        <div class="us-item">
+          <div class="us-id" style="color:#4fd1c5">US-3.1</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">déplacer une barre de tâche par glisser-déposer</span><span class="us-as"> afin de réajuster le planning sans formulaire.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#4fd1c5">US-3.2</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">changer le zoom (semaine / mois / trimestre)</span><span class="us-as"> afin d'avoir la granularité adaptée à ma phase.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#4fd1c5">US-3.3</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">voir une ligne verticale "aujourd'hui"</span><span class="us-as"> afin de situer instantanément l'avancement réel.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 3 -->
+  <div class="epic">
+    <div class="epic-head">
+      <style>.epic:nth-child(3) .epic-head::before{background:var(--e3)}</style>
+      <div class="epic-num" style="background:rgba(252,129,129,.15);color:#fc8181">E3</div>
+      <div class="epic-meta">
+        <div class="epic-label" style="color:#fc8181">Épic 3 — Collaboration</div>
+        <div class="epic-name">Multi-utilisateurs & Rôles</div>
+        <div class="epic-desc">Invitations par email, gestion des rôles Éditeur/Lecteur, et journal d'activité pour suivre chaque modification sans réunion.</div>
+        <div class="epic-tags">
+          <span class="epic-tag" style="background:rgba(252,129,129,.1);color:#fc8181;border-color:rgba(252,129,129,.3)">Module 4</span>
+          <span class="epic-tag" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:var(--border)">3 user stories</span>
+        </div>
+      </div>
+      <div class="epic-status">🔲</div>
+    </div>
+    <div class="demo-box" style="background:rgba(252,129,129,.05);border-color:rgba(252,129,129,.2)">
+      <div class="demo-ico">🎯</div>
+      <div class="demo-content">
+        <div class="demo-label" style="color:#fc8181">Demo outcome</div>
+        <div class="demo-text">Inviter un client par email avec le rôle Lecteur, lui montrer le planning en lecture seule, puis consulter le journal d'activité pour voir qui a modifié quelle tâche.</div>
+      </div>
+    </div>
+    <div class="dep-section">
+      <div class="dep-ico">⛓</div>
+      <span><strong>Dépend de :</strong> Épic 1 (les projets et tâches doivent exister)</span>
+    </div>
+    <div class="us-section">
+      <div class="us-title">User Stories</div>
+      <div class="us-list">
+        <div class="us-item">
+          <div class="us-id" style="color:#fc8181">US-4.1</div>
+          <div class="us-text"><span class="us-as">En tant que chef de projet, je veux </span><span class="us-want">inviter un collaborateur par email</span><span class="us-as"> afin qu'il accède au projet sans inscription complexe.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#fc8181">US-4.2</div>
+          <div class="us-text"><span class="us-as">En tant que chef de projet, je veux </span><span class="us-want">définir un rôle Lecteur pour un client</span><span class="us-as"> afin qu'il voie le planning sans le modifier.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#fc8181">US-4.3</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">voir qui a modifié une tâche et quand</span><span class="us-as"> afin de suivre les changements sans réunion.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EPIC 4 -->
+  <div class="epic">
+    <div class="epic-head">
+      <style>.epic:nth-child(4) .epic-head::before{background:var(--e4)}</style>
+      <div class="epic-num" style="background:rgba(104,211,145,.15);color:#68d391">E4</div>
+      <div class="epic-meta">
+        <div class="epic-label" style="color:#68d391">Épic 4 — Export</div>
+        <div class="epic-name">Export & Partage</div>
+        <div class="epic-desc">Exporter le Gantt en PDF, PNG, CSV ou Excel avec aperçu live et sélection de plage de dates. Générer un lien de partage en lecture seule pour les clients.</div>
+        <div class="epic-tags">
+          <span class="epic-tag" style="background:rgba(104,211,145,.1);color:#68d391;border-color:rgba(104,211,145,.3)">Module 5</span>
+          <span class="epic-tag" style="background:rgba(255,255,255,.05);color:var(--muted);border-color:var(--border)">3 user stories</span>
+        </div>
+      </div>
+      <div class="epic-status">🔲</div>
+    </div>
+    <div class="demo-box" style="background:rgba(104,211,145,.05);border-color:rgba(104,211,145,.2)">
+      <div class="demo-ico">🎯</div>
+      <div class="demo-content">
+        <div class="demo-label" style="color:#68d391">Demo outcome</div>
+        <div class="demo-text">Sélectionner la plage "Phase 2 → Phase 3", prévisualiser le Gantt filtré, l'exporter en PDF, puis générer un lien de partage lecture seule à envoyer au client.</div>
+      </div>
+    </div>
+    <div class="dep-section">
+      <div class="dep-ico">⛓</div>
+      <span><strong>Dépend de :</strong> Épic 1 + Épic 2 (les tâches et la vue Gantt doivent être fonctionnelles)</span>
+    </div>
+    <div class="us-section">
+      <div class="us-title">User Stories</div>
+      <div class="us-list">
+        <div class="us-item">
+          <div class="us-id" style="color:#68d391">US-5.1</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">exporter le Gantt en PDF</span><span class="us-as"> afin de l'intégrer dans une présentation.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#68d391">US-5.2</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">générer un lien de partage en lecture seule</span><span class="us-as"> afin d'envoyer une vue live à un client.</span></div>
+        </div>
+        <div class="us-item">
+          <div class="us-id" style="color:#68d391">US-5.3</div>
+          <div class="us-text"><span class="us-as">En tant qu'utilisateur, je veux </span><span class="us-want">choisir la plage de dates à exporter</span><span class="us-as"> afin de ne montrer que la phase pertinente.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
