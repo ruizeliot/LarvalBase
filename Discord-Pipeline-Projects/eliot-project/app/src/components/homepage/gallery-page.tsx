@@ -2,8 +2,9 @@
 
 import { useState, useMemo, useCallback } from "react";
 import Image from "next/image";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download, Loader2 } from "lucide-react";
 import { cleanOrderName } from "@/lib/utils/clean-order-name";
+import { getProvinceDisplayName } from "@/lib/constants/provinces";
 import { HomepageProvinceMap } from "./homepage-province-map";
 import type { FamilyPhotoData } from "./photo-grid";
 
@@ -24,11 +25,38 @@ interface GalleryPageProps {
  */
 export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesNames, onMapFilterSpecies }: GalleryPageProps) {
   const [mapFilteredSpecies, setMapFilteredSpecies] = useState<Set<string> | null>(null);
+  const [selectedProvince, setSelectedProvince] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const handleMapFilter = useCallback((species: Set<string> | null) => {
     setMapFilteredSpecies(species);
     onMapFilterSpecies?.(species);
   }, [onMapFilterSpecies]);
+
+  const handleSelectedProvinceChange = useCallback((province: string | null) => {
+    setSelectedProvince(province);
+  }, []);
+
+  const handleProvinceExport = useCallback(async () => {
+    if (!selectedProvince) return;
+    setIsExporting(true);
+    try {
+      const url = `/api/export/province-traits?province=${encodeURIComponent(selectedProvince)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Export failed');
+      const blob = await res.blob();
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      const safeName = selectedProvince.replace(/[^a-zA-Z0-9-_ ]/g, '').replace(/\s+/g, '_');
+      a.download = `${safeName}_all_traits.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    } catch (e) {
+      console.error('Province export error:', e);
+    } finally {
+      setIsExporting(false);
+    }
+  }, [selectedProvince]);
 
   // Filter families based on province map + sidebar trait filter
   const visibleFamilies = useMemo(() => {
@@ -71,7 +99,26 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
       </h2>
 
       {/* Province map for filtering — families mode */}
-      <HomepageProvinceMap onFilterSpecies={handleMapFilter} mode="families" />
+      <HomepageProvinceMap onFilterSpecies={handleMapFilter} mode="families" onSelectedProvinceChange={handleSelectedProvinceChange} />
+
+      {/* Export all traits for selected province */}
+      <div className="flex justify-center">
+        <button
+          onClick={handleProvinceExport}
+          disabled={!selectedProvince || isExporting}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white rounded transition-colors"
+          title={selectedProvince ? `Export traits for species in ${getProvinceDisplayName(selectedProvince)}` : 'Select a province first'}
+        >
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          {selectedProvince
+            ? `Export all traits (without metadata) for all species in ${getProvinceDisplayName(selectedProvince)}`
+            : 'Export all traits (without metadata) for all species in the selected area'}
+        </button>
+      </div>
 
       {/* All family thumbnails — no pagination */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">

@@ -358,6 +358,9 @@ function RecordsDialog({
                   <TableHead className="text-xs"><ColumnHeader label="Mean type" description="Whether the value represents an actual mean or a computed midrange" /></TableHead>
                   <TableHead className="text-xs"><ColumnHeader label="Confidence interval type" description="Type of confidence interval (SD, SE, CV, or CI)" /></TableHead>
                   <TableHead className="text-xs"><ColumnHeader label="Unit" description={traitType === 'size' ? 'Unit of measurement (mm)' : 'Unit of measurement (days post-hatch)'} /></TableHead>
+                  {traitType === 'size' && (
+                    <TableHead className="text-xs"><ColumnHeader label="Length type" description="Type of body length measurement (SL = standard length, TL = total length, NL = notochord length, etc.)" /></TableHead>
+                  )}
                   <TableHead className="text-xs"><ColumnHeader label="External references" description="Source study of the information cited in the main reference" /></TableHead>
                   <TableHead className="text-xs"><ColumnHeader label="Main reference" description="Main bibliographic reference for this record" /></TableHead>
                 </TableRow>
@@ -370,11 +373,12 @@ function RecordsDialog({
                     <TableCell className="text-xs font-mono">{r.rawMin?.toFixed(2) ?? '-'}</TableCell>
                     <TableCell className="text-xs font-mono">{r.rawMax?.toFixed(2) ?? '-'}</TableCell>
                     <TableCell className="text-xs font-mono">{r.conf?.toFixed(2) ?? '-'}</TableCell>
-                    <TableCell className="text-xs">
-                      {traitType === 'size' ? (r.lengthType || '-') : (r.meanType || '-')}
-                    </TableCell>
+                    <TableCell className="text-xs">{r.meanType || '-'}</TableCell>
                     <TableCell className="text-xs">{r.confType || '-'}</TableCell>
                     <TableCell className="text-xs">{unit}</TableCell>
+                    {traitType === 'size' && (
+                      <TableCell className="text-xs">{r.lengthType || '-'}</TableCell>
+                    )}
                     <TableCell className="text-xs">{r.extRef || '-'}</TableCell>
                     <TableCell className="text-xs max-w-[200px] truncate" title={r.reference}>
                       {r.link ? (

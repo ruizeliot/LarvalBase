@@ -146,8 +146,8 @@ export default function Home() {
               className="relative overflow-hidden rounded-t-lg cursor-pointer"
               onClick={handleOpenGallery}
             >
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 p-2 bg-card">
-                {familyPhotos.slice(0, 21).map((fam) => (
+              <div className="grid grid-cols-5 gap-1 p-2 bg-card">
+                {familyPhotos.slice(0, 10).map((fam) => (
                   <div key={fam.family} className="relative aspect-[4/3] bg-black rounded overflow-hidden">
                     {fam.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */

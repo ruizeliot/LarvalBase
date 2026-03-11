@@ -18,7 +18,7 @@ import { useRafting } from "@/hooks/use-rafting";
 import { SectionExportButtons } from "./section-export-buttons";
 import { isAllEggsSpherical } from "./egg-spherical-helper";
 import { useSpeciesImages } from "@/hooks/use-species-images";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import Link from "next/link";
 import { useI18n } from "@/lib/i18n/i18n-context";
 
@@ -290,7 +290,7 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
         studyCount={studyCount}
       />
 
-      {/* Adult Ecosystem & Habitat — tight below Source (2026), same size as Picture source (text-sm) */}
+      {/* Adult Ecosystem & Habitat — below the species province map / Source line */}
       {habitatInfo && (habitatInfo.ecosystem || habitatInfo.habitat) && (
         <div className="-mt-6 space-y-0.5 text-sm text-white">
           {habitatInfo.ecosystem && (
@@ -310,6 +310,18 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
           )}
         </div>
       )}
+
+      {/* Export all traits button */}
+      <div className="flex justify-end -mb-4">
+        <a
+          href={`/api/species/${encodeURIComponent(speciesId)}/export-all-traits`}
+          download
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors"
+        >
+          <Download className="h-3.5 w-3.5" />
+          Export all traits (without metadata)
+        </a>
+      </div>
 
       {/* Growth Curves Chart - At the top, before traits */}
       <SpeciesGrowthChart

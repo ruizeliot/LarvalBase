@@ -115,9 +115,11 @@ interface HomepageProvinceMapProps {
   onFilterSpecies?: (species: Set<string> | null) => void;
   /** When 'families', show percentage of families per province instead of species */
   mode?: 'species' | 'families';
+  /** Callback when a province is selected/deselected */
+  onSelectedProvinceChange?: (province: string | null) => void;
 }
 
-export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: HomepageProvinceMapProps) {
+export function HomepageProvinceMap({ onFilterSpecies, mode = 'species', onSelectedProvinceChange }: HomepageProvinceMapProps) {
   const colorPalette = mode === 'families' ? YL_GN_COLORS : YLOR_RD_COLORS;
   const [geoData, setGeoData] = useState<GeoFeatureCollection | null>(null);
   const [landData, setLandData] = useState<GeoFeatureCollection | null>(null);
@@ -173,6 +175,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
   useEffect(() => {
     setSelectedProvince(null);
     onFilterSpecies?.(null);
+    onSelectedProvinceChange?.(null);
     transformRef.current = { x: 0, y: 0, scale: 1 };
     applyTransform(gRef.current, transformRef.current);
   }, [selectedTrait]);
@@ -284,12 +287,14 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
       if (selectedProvince === provinceName) {
         setSelectedProvince(null);
         onFilterSpecies?.(null);
+        onSelectedProvinceChange?.(null);
       } else {
         setSelectedProvince(provinceName);
         onFilterSpecies?.(new Set(info.species));
+        onSelectedProvinceChange?.(provinceName);
       }
     },
-    [selectedProvince, getProvinceInfo, onFilterSpecies]
+    [selectedProvince, getProvinceInfo, onFilterSpecies, onSelectedProvinceChange]
   );
 
   const zoomBy = useCallback((factor: number) => {
@@ -358,7 +363,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
         {selectedProvince && (
           <button
             className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded"
-            onClick={() => { setSelectedProvince(null); onFilterSpecies?.(null); }}
+            onClick={() => { setSelectedProvince(null); onFilterSpecies?.(null); onSelectedProvinceChange?.(null); }}
           >
             Clear selection
           </button>
