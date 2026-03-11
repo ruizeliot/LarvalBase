@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
+import { TRAIT_SLUG_MAP } from "@/lib/data/trait-config";
 
 /**
  * Horizontal barplots showing record/species/genus/family/order counts per trait.
@@ -75,7 +78,7 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
   return (
     <div data-testid="barplots-container" className="rounded-lg border bg-card p-4 space-y-4">
       <h3 className="text-sm font-semibold text-white">
-        Taxa per trait (grouped bars)
+        Taxa per trait (click on trait names to download all records per biogeographic province)
       </h3>
 
       {/* Legend at top */}
@@ -94,13 +97,34 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
 
       {allStats.map((stat) => {
         const iconFile = TRAIT_ICON_MAP[stat.traitName];
+        const traitSlug = TRAIT_SLUG_MAP[stat.traitName];
+        const traitHref = traitSlug === 'GALLERY' ? '/gallery' : traitSlug ? `/traits/${traitSlug}` : undefined;
         return (
         <div key={stat.traitName} className="flex items-start gap-2">
           <div className="w-24 sm:w-48 flex flex-col items-end shrink-0 pt-0.5">
-            <span className="text-xs text-muted-foreground text-right truncate w-full">
-              {stat.traitName}
-            </span>
-            {iconFile && (
+            {traitHref ? (
+              <Link href={traitHref} className="text-xs text-blue-400 font-bold text-right truncate w-full hover:underline cursor-pointer inline-flex items-center justify-end gap-0.5">
+                {stat.traitName}
+                <ExternalLink className="w-2.5 h-2.5 shrink-0" />
+              </Link>
+            ) : (
+              <span className="text-xs text-muted-foreground text-right truncate w-full">
+                {stat.traitName}
+              </span>
+            )}
+            {iconFile && traitHref ? (
+              <Link href={traitHref}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={iconFile}
+                  alt=""
+                  width={48}
+                  height={48}
+                  className="shrink-0 mt-0.5 cursor-pointer"
+                  style={{ opacity: 0.85, filter: 'brightness(0) invert(1)' }}
+                />
+              </Link>
+            ) : iconFile ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={iconFile}
@@ -110,7 +134,7 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
                 className="shrink-0 mt-0.5"
                 style={{ opacity: 0.85, filter: 'brightness(0) invert(1)' }}
               />
-            )}
+            ) : null}
           </div>
           <div className="flex-1 space-y-0.5">
             {SEGMENTS.map((seg) => {
