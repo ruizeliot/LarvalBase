@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { useHomepageStats } from "@/hooks/use-homepage-stats";
-import { ChevronRight, HelpCircle, X } from "lucide-react";
+import { ChevronRight, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/i18n-context";
 
 // Lazy load heavy homepage components to reduce initial bundle
@@ -90,10 +90,10 @@ export default function Home() {
             />
             <button
               onClick={() => setShowHelp(true)}
-              className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors"
+              className="absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
               title="How to navigate this website"
             >
-              <HelpCircle className="h-5 w-5" />
+              Help
             </button>
           </div>
         </div>

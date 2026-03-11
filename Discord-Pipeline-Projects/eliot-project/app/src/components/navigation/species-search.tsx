@@ -126,7 +126,7 @@ export function SpeciesSearch({
         </label>
       </div>
       <CommandInput
-        placeholder=""
+        placeholder="Search by scientific or common name..."
         value={search}
         onValueChange={handleSearchChange}
       />
@@ -184,10 +184,6 @@ export function SpeciesSearch({
               </CommandItem>
             ))}
           </CommandGroup>
-        )}
-        {!debouncedSearch.trim() && (
-          <div className="py-6 text-center text-sm text-muted-foreground">
-          </div>
         )}
       </CommandList>
     </Command>
