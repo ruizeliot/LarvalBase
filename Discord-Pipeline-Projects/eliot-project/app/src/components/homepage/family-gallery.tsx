@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { ChevronLeft, ChevronRight, X, ArrowLeft } from "lucide-react";
+import { ChevronLeft, ChevronRight, X, ArrowLeft, Download, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { ProvinceMap } from "@/components/province-map/province-map";
+import { getProvinceDisplayName } from "@/lib/constants/provinces";
 
 interface GalleryImage {
   imageUrl: string;
@@ -66,6 +67,7 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
   const [provinceApiData, setProvinceApiData] = useState<Record<string, { count: number; species: string[] }> | null>(null);
   const [genusProvinces, setGenusProvinces] = useState<Record<string, string[]> | null>(null);
   const [commonNames, setCommonNames] = useState<Record<string, string[]>>({});
+  const [isExporting, setIsExporting] = useState(false);
 
   // Compute set of species names that have images
   const speciesWithImageNames = useMemo((): Set<string> | null => {
@@ -295,6 +297,42 @@ export function FamilyGallery({ family, onBack, onSelectSpecies, filteredSpecies
         onSelectedProvincesChange={setSelectedProvinces}
         externalSelectedProvinces={selectedProvinces}
       />
+
+      {/* Export all traits button for this family */}
+      <div className="flex justify-center">
+        <button
+          onClick={async () => {
+            setIsExporting(true);
+            try {
+              const params = new URLSearchParams({ family });
+              if (selectedProvinces && selectedProvinces.size > 0) {
+                const province = [...selectedProvinces][0];
+                params.set('province', province);
+              }
+              const res = await fetch(`/api/export/province-traits?${params.toString()}`);
+              if (!res.ok) throw new Error('Export failed');
+              const blob = await res.blob();
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = res.headers.get('Content-Disposition')?.match(/filename="(.+)"/)?.[1] || `${family}_all_traits.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            } catch (e) {
+              console.error('Export error:', e);
+            } finally {
+              setIsExporting(false);
+            }
+          }}
+          disabled={isExporting}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/50 disabled:cursor-not-allowed text-white rounded transition-colors text-center flex-wrap justify-center"
+        >
+          {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {selectedProvinces && selectedProvinces.size > 0
+            ? `Export all traits (without metadata) for all species in this family reported in ${getProvinceDisplayName([...selectedProvinces][0])}`
+            : `Export all traits (without metadata) for all species in this family worldwide`}
+        </button>
+      </div>
 
       {/* Province filter dropdown is inside ProvinceMap above — no duplicate needed */}
 

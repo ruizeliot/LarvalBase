@@ -373,7 +373,7 @@ export default function TraitPage() {
         {/* Province map */}
         <div className="rounded-lg border bg-card p-4 space-y-3">
           <h3 className="text-sm font-semibold text-white">
-            Percentage of species with {config.displayName.toLowerCase()} data per region (click to select)
+            Percentage of species with {config.displayName.toLowerCase()}{config.displayName.toLowerCase().endsWith('data') ? '' : ' data'} per region (click to select)
           </h3>
 
           {selectedProvince && (
@@ -499,7 +499,7 @@ export default function TraitPage() {
                   }
                   return (
                     <div className="text-white/70">
-                      {info.traitCount} species with {config.displayName.toLowerCase()} data ({info.percentage.toFixed(1)}% of {info.totalCount} species in province)
+                      {info.traitCount} species with {config.displayName.toLowerCase()}{config.displayName.toLowerCase().endsWith('data') ? '' : ' data'} ({info.percentage.toFixed(1)}% of {info.totalCount} species in province)
                     </div>
                   );
                 })()}
