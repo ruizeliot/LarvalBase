@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
+import { getProvinceDisplayName } from "@/lib/constants/provinces";
 
 /**
  * YlOrRd color ramp (yellow → orange → red).
@@ -448,7 +449,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
               transform: tooltipPos.x > 400 ? "translateX(-110%)" : undefined,
             }}
           >
-            <div className="font-medium">{hoveredProvince}</div>
+            <div className="font-medium">{getProvinceDisplayName(hoveredProvince)}</div>
             {(() => {
               const info = getProvinceInfo(hoveredProvince);
               if (!info || info.species.length === 0) {

@@ -269,6 +269,42 @@ export function buildDotCsvToProvinceMap(): Record<string, string> {
 }
 
 /**
+ * Display name aliases for provinces.
+ * Maps canonical province names to user-friendly display names.
+ */
+const PROVINCE_DISPLAY_ALIASES: Record<string, string> = {
+  'Red Sea': 'Red Sea',
+  'Red Sea and Gulf of Aden': 'Red Sea and Gulf of Aden',
+  'Mediterranean': 'Mediterranean',
+  'Mediterranean Sea': 'Mediterranean Sea',
+  'Agulhas': 'Agulhas',
+  'Agulhas Current': 'Agulhas Current',
+  'Antarctic': 'Antarctic',
+  'Subantarctic': 'Subantarctic',
+  'Amsterdam-St Paul': 'Amsterdam-St Paul',
+  'Juan Fernández and Desventuradas': 'Juan Fernández and Desventuradas',
+};
+
+/**
+ * Get the user-facing display name for a province.
+ * Strips qualifiers like "(coastal)", "(offshore)" and applies alias mappings.
+ */
+export function getProvinceDisplayName(name: string): string {
+  // Check direct alias first
+  if (PROVINCE_DISPLAY_ALIASES[name]) return PROVINCE_DISPLAY_ALIASES[name];
+  // Strip coastal/offshore qualifiers for display
+  const stripped = name
+    .replace(/\s*\(coastal\)\s*$/, '')
+    .replace(/\s*\(offshore\)\s*$/, '');
+  if (PROVINCE_DISPLAY_ALIASES[stripped]) return PROVINCE_DISPLAY_ALIASES[stripped];
+  // Fix "Amsterdam & St. Paul" → "Amsterdam-St Paul"
+  if (/amsterdam.*st.*paul/i.test(name)) return 'Amsterdam-St Paul';
+  // Fix "Juan Fernandez" (no accent) → proper display
+  if (/juan fernandez/i.test(name)) return 'Juan Fernández and Desventuradas';
+  return name;
+}
+
+/**
  * Parse a row from dot-notation CSV, returning set of canonical province names where TRUE.
  * Handles duplicate columns by OR-merging them.
  */

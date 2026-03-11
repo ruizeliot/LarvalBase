@@ -105,4 +105,16 @@ img[data-protected="true"],
   .recharts-surface {
     max-width: 100%;
   }
+
+  /* All chart/plot containers should fit mobile viewport */
+  [data-testid="barplots-container"],
+  [data-testid="pub-chart"] {
+    overflow-x: auto;
+  }
+
+  /* Trait barplot label column narrower on mobile */
+  [data-testid="barplots-container"] .w-48 {
+    width: 6rem !important;
+    min-width: 6rem !important;
+  }
 }

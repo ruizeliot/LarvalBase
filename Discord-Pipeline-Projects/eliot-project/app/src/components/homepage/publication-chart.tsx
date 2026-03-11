@@ -144,7 +144,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
       </div>
 
       {/* Stacked bars by 5-year bins */}
-      <div className="flex gap-[2px] h-40 pt-2">
+      <div className="flex gap-[2px] h-40 pt-2 min-w-0 overflow-hidden">
         {years.map((year) => {
           const yearData = byYear.get(year)!;
           let total = 0;
@@ -174,7 +174,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
                   );
                 })}
               </div>
-              <span className="text-[11px] text-muted-foreground mt-1">
+              <span className="text-[9px] sm:text-[11px] text-muted-foreground mt-1 truncate max-w-full">
                 {year}
               </span>
               {/* Tooltip on hover */}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
+import { getProvinceDisplayName } from "@/lib/constants/provinces";
 
 /**
  * Convert HSL to hex color string.
@@ -494,7 +495,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
               : null;
             return (
               <option key={name} value={name}>
-                {name} ({data.count} species{withImagesCount !== null ? `, ${withImagesCount} with images` : ''})
+                {getProvinceDisplayName(name)} ({data.count} species{withImagesCount !== null ? `, ${withImagesCount} with images` : ''})
               </option>
             );
           })}
@@ -584,7 +585,7 @@ export function ProvinceMap({ family, onFilterSpecies, speciesWithImages, onSele
               transform: tooltipPos.x > 400 ? "translateX(-110%)" : undefined,
             }}
           >
-            <div className="font-medium">{hoveredProvince}</div>
+            <div className="font-medium">{getProvinceDisplayName(hoveredProvince)}</div>
             {(() => {
               const info = getProvinceInfo(hoveredProvince);
               if (!info || info.count === 0) {

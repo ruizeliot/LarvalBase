@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Tree, NodeRendererProps } from "react-arborist";
 import { ChevronRight, ChevronDown } from "lucide-react";
 import type { TaxonomyNodeJSON } from "@/lib/types/taxonomy.types";
@@ -159,11 +159,26 @@ export function TaxonomyTree({
   // Transform data for react-arborist
   const arboristData = [transformToArboristData(data)];
 
+  // Build initial open state: root + all families open, genera closed
+  const familyOpenState = useMemo(() => {
+    const state: Record<string, boolean> = {};
+    for (const root of arboristData) {
+      state[root.id] = true;
+      if (root.children) {
+        for (const familyNode of root.children) {
+          state[familyNode.id] = true;
+        }
+      }
+    }
+    return state;
+  }, [data]); // eslint-disable-line react-hooks/exhaustive-deps
+
   return (
     <div className="taxonomy-tree">
       <Tree<ArboristNode>
         data={arboristData}
         openByDefault={false}
+        initialOpenState={familyOpenState}
         width="100%"
         height={height}
         rowHeight={32}

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { geoPath, geoIdentity } from "d3-geo";
+import { getProvinceDisplayName } from "@/lib/constants/provinces";
 
 /**
  * Convert HSL to hex color string.
@@ -296,52 +297,42 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
     return provinceColorMap.get(featureName) ?? "none";
   }
 
-  // Auto-zoom to species region (uses ref-based transform)
+  // Auto-zoom to fit all present provinces (bounding-box based, NOT centroid)
   useEffect(() => {
     if (!geoData || !provinceData || !pathGenerator || presentProvinces.size === 0 || autoZoomAppliedRef.current) return;
 
     const presentFeatures = geoData.features.filter(f => f.properties?.PROVINCE && isProvincePresent(f.properties.PROVINCE));
     if (presentFeatures.length === 0) return;
 
-    // Collect centroids of each present feature (in projected pixel coordinates)
-    const featureCentroids: { cx: number; cy: number; minX: number; minY: number; maxX: number; maxY: number }[] = [];
+    // Collect bounding boxes of each present feature (in projected pixel coordinates)
+    const featureBounds: { minX: number; minY: number; maxX: number; maxY: number }[] = [];
     for (const feature of presentFeatures) {
       if (!feature.geometry) continue;
       try {
         const bounds = pathGenerator.bounds(feature.geometry as GeoJSON.Geometry);
         if (!Number.isFinite(bounds[0][0]) || !Number.isFinite(bounds[0][1]) || !Number.isFinite(bounds[1][0]) || !Number.isFinite(bounds[1][1])) continue;
-        featureCentroids.push({
-          cx: (bounds[0][0] + bounds[1][0]) / 2,
-          cy: (bounds[0][1] + bounds[1][1]) / 2,
+        featureBounds.push({
           minX: bounds[0][0], minY: bounds[0][1],
           maxX: bounds[1][0], maxY: bounds[1][1],
         });
       } catch { continue; }
     }
-    if (featureCentroids.length === 0) return;
+    if (featureBounds.length === 0) return;
 
-    // Compute weighted centroid of all present provinces
-    let totalCx = 0, totalCy = 0;
-    for (const c of featureCentroids) {
-      totalCx += c.cx;
-      totalCy += c.cy;
-    }
-    const meanCx = totalCx / featureCentroids.length;
-    const meanCy = totalCy / featureCentroids.length;
-
-    // Compute bounding box
+    // Compute overall bounding box of ALL present provinces
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const fb of featureCentroids) {
+    for (const fb of featureBounds) {
       if (fb.minX < minX) minX = fb.minX;
       if (fb.minY < minY) minY = fb.minY;
       if (fb.maxX > maxX) maxX = fb.maxX;
       if (fb.maxY > maxY) maxY = fb.maxY;
     }
 
-    // Detect Pacific dateline wrapping
+    // Detect Pacific dateline wrapping: if bbox spans >80% of map width
     const bw = maxX - minX;
-    if (bw > BASE_WIDTH * 0.8 && featureCentroids.length >= 2) {
-      const sorted = [...featureCentroids].sort((a, b) => a.cx - b.cx);
+    if (bw > BASE_WIDTH * 0.8 && featureBounds.length >= 2) {
+      const centroids = featureBounds.map(fb => ({ cx: (fb.minX + fb.maxX) / 2, ...fb }));
+      const sorted = [...centroids].sort((a, b) => a.cx - b.cx);
       let maxGap = 0, gapIdx = 0;
       for (let i = 1; i < sorted.length; i++) {
         const gap = sorted[i].cx - sorted[i - 1].cx;
@@ -349,21 +340,17 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
       }
 
       if (maxGap > BASE_WIDTH * 0.3) {
-        // Shift features left of gap to right side
+        // Shift features left of gap to right side (wraps across dateline)
         const shifted = sorted.map((c, i) => i < gapIdx ? ({
-          ...c, cx: c.cx + BASE_WIDTH, minX: c.minX + BASE_WIDTH, maxX: c.maxX + BASE_WIDTH
+          ...c, minX: c.minX + BASE_WIDTH, maxX: c.maxX + BASE_WIDTH
         }) : c);
         minX = Infinity; minY = Infinity; maxX = -Infinity; maxY = -Infinity;
-        let sCx = 0, sCy = 0;
         for (const fb of shifted) {
           if (fb.minX < minX) minX = fb.minX;
           if (fb.minY < minY) minY = fb.minY;
           if (fb.maxX > maxX) maxX = fb.maxX;
           if (fb.maxY > maxY) maxY = fb.maxY;
-          sCx += fb.cx; sCy += fb.cy;
         }
-        // Use shifted centroid
-        totalCx = sCx; totalCy = sCy;
       }
     }
 
@@ -371,7 +358,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
 
     const finalBw = maxX - minX;
     const bh = maxY - minY;
-    const pad = 0.2;
+    const pad = 0.15; // 15% padding around the bounding box
     const vw = finalBw * (1 + 2 * pad);
     const vh = bh * (1 + 2 * pad);
 
@@ -386,13 +373,12 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
 
     const minW = BASE_WIDTH / MAX_ZOOM;
     if (finalW < minW) { finalW = minW; finalH = finalW / aspect; }
-    // Allow some zoom even for wide distributions (min 1.2x for non-global)
-    const maxW = presentProvinces.size <= 10 ? BASE_WIDTH * 0.9 : BASE_WIDTH;
-    if (finalW > maxW) { finalW = maxW; finalH = finalW / aspect; }
+    // Don't zoom past 1:1 (no need to show more than the whole map)
+    if (finalW > BASE_WIDTH) { finalW = BASE_WIDTH; finalH = BASE_HEIGHT; }
 
-    // Use mean centroid for centering (not bbox center)
-    let cx = totalCx / featureCentroids.length;
-    const cy = totalCy / featureCentroids.length;
+    // Center on BOUNDING BOX center (ensures all provinces are visible)
+    let cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
     // Wrap cx back into [0, BASE_WIDTH] range
     while (cx > BASE_WIDTH) cx -= BASE_WIDTH;
     while (cx < 0) cx += BASE_WIDTH;
@@ -551,7 +537,7 @@ export function SpeciesProvinceMap({ speciesId }: SpeciesProvinceMapProps) {
               transform: tooltipPos.x > 250 ? "translateX(-110%)" : undefined,
             }}
           >
-            <div className="font-medium">{hoveredProvince}</div>
+            <div className="font-medium">{getProvinceDisplayName(hoveredProvince)}</div>
             <div className="text-white/70">
               {isProvincePresent(hoveredProvince) ? "Present" : "Absent"}
             </div>

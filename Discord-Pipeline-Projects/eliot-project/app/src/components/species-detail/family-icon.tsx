@@ -36,20 +36,24 @@ export function FamilyIcon({ family, size = 48, className = '' }: FamilyIconProp
   // Calculate height proportionally (typical fish silhouettes are ~1.5:1 ratio)
   const height = Math.round(size * 0.67);
 
+  // Cap height at 96px to prevent tall aspect-ratio icons from overflowing
+  const maxHeight = Math.min(height, 96);
+
   return (
     <div
-      className={`flex items-center justify-center ${className}`}
-      style={{ width: size, height }}
+      className={`flex items-center justify-center overflow-hidden ${className}`}
+      style={{ width: size, height: maxHeight, maxHeight: maxHeight }}
       title={hasError ? 'No icon available' : family}
     >
       <Image
         src={svgPath}
         alt={hasError ? 'No family icon' : `${family} silhouette`}
         width={size}
-        height={height}
+        height={maxHeight}
         className="object-contain"
         style={{
           filter: 'brightness(0) invert(1)',
+          maxHeight: `${maxHeight}px`,
         }}
         onError={() => {
           if (!hasError) {

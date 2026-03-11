@@ -22,7 +22,7 @@ interface TraitBarplotsProps {
 }
 
 const SEGMENTS = [
-  { key: 'records' as const, label: 'Row', color: '#F8766D' },
+  { key: 'records' as const, label: 'Record', color: '#F8766D' },
   { key: 'species' as const, label: 'Species', color: '#00B0F6' },
   { key: 'genus' as const, label: 'Genus', color: '#00BF7D' },
   { key: 'family' as const, label: 'Family', color: '#A3A500' },
@@ -78,11 +78,25 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
         Taxa per trait (grouped bars)
       </h3>
 
+      {/* Legend at top */}
+      <div className="flex gap-3 flex-wrap">
+        {SEGMENTS.map((seg) => (
+          <div key={seg.key} className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div
+              data-testid="legend-dot"
+              className="w-2.5 h-2.5 rounded-sm"
+              style={{ backgroundColor: seg.color }}
+            />
+            {seg.label}
+          </div>
+        ))}
+      </div>
+
       {allStats.map((stat) => {
         const iconFile = TRAIT_ICON_MAP[stat.traitName];
         return (
         <div key={stat.traitName} className="flex items-start gap-2">
-          <div className="w-48 flex flex-col items-end shrink-0 pt-0.5">
+          <div className="w-24 sm:w-48 flex flex-col items-end shrink-0 pt-0.5">
             <span className="text-xs text-muted-foreground text-right truncate w-full">
               {stat.traitName}
             </span>
@@ -123,19 +137,6 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
         );
       })}
 
-      {/* Legend */}
-      <div className="flex gap-3 flex-wrap mt-2">
-        {SEGMENTS.map((seg) => (
-          <div key={seg.key} className="flex items-center gap-1 text-xs text-muted-foreground">
-            <div
-              data-testid="legend-dot"
-              className="w-2.5 h-2.5 rounded-sm"
-              style={{ backgroundColor: seg.color }}
-            />
-            {seg.label}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }

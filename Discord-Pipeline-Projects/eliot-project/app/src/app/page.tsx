@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, lazy, Suspense } from "react";
+import { useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
@@ -50,13 +50,53 @@ export default function Home() {
     router.push('/gallery');
   }, [router]);
 
+  // Height-matching: dynamically scale text font size to match mandala image height
+  const textRef = useRef<HTMLDivElement>(null);
+  const mandalaRef = useRef<HTMLDivElement>(null);
+  const [textScale, setTextScale] = useState(1);
+
+  useEffect(() => {
+    function matchHeights() {
+      const textEl = textRef.current;
+      const mandalaEl = mandalaRef.current;
+      if (!textEl || !mandalaEl) return;
+
+      // Only on desktop (lg grid = 2 cols)
+      if (window.innerWidth < 1024) {
+        setTextScale(1);
+        return;
+      }
+
+      const mandalaHeight = mandalaEl.offsetHeight;
+      if (mandalaHeight <= 0) return;
+
+      // Reset to measure natural text height
+      textEl.style.fontSize = '';
+      const naturalHeight = textEl.scrollHeight;
+
+      if (naturalHeight <= 0) return;
+
+      const ratio = mandalaHeight / naturalHeight;
+      // Don't scale below 0.7 (would make text ~8px which is too small)
+      if (ratio < 0.7) {
+        setTextScale(1);
+      } else {
+        setTextScale(Math.min(ratio, 1.2));
+      }
+    }
+
+    matchHeights();
+    window.addEventListener('resize', matchHeights);
+    return () => window.removeEventListener('resize', matchHeights);
+  }, []);
+
   return (
     <MainLayout sidebar={<AppSidebar onSelectSpecies={(sp) => { router.push(`/species/${sp.id}`); }} onFilteredSpeciesChange={handleFilteredSpeciesChange} mapFilteredSpecies={mapFilteredSpecies} />}>
       <div className="space-y-6">
         {/* Two-column hero: LEFT text, RIGHT mandala */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* LEFT column: title + credits + intro */}
-          <div>
+          <div ref={textRef} style={{ fontSize: textScale !== 1 ? `${textScale}em` : undefined }}>
             <h1 className="text-2xl font-bold leading-tight">
               {t('homepage_title')}
             </h1>
@@ -82,7 +122,7 @@ export default function Home() {
           </div>
 
           {/* RIGHT column: mandala image with help button */}
-          <div className="relative">
+          <div className="relative" ref={mandalaRef}>
             <img
               src="/mandala.png"
               alt="Mandala of fish larvae diversity"
@@ -98,19 +138,54 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Gallery button ABOVE the map */}
-        <button
-          onClick={handleOpenGallery}
-          className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-lg border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-colors text-left gap-1 sm:gap-0"
-        >
-          <span className="text-sm font-semibold text-white">
-            {t('gallery_button')} ({familyPhotos.length} families)
-          </span>
-          <span className="flex items-center gap-1 shrink-0">
-            <span className="text-xs text-blue-200 font-normal">Click to view images</span>
-            <ChevronRight className="h-5 w-5 text-white" />
-          </span>
-        </button>
+        {/* Gallery preview + button */}
+        <div className="space-y-0">
+          {/* Preview row of family thumbnails with fade */}
+          {familyPhotos.length > 0 && (
+            <div
+              className="relative overflow-hidden rounded-t-lg cursor-pointer"
+              onClick={handleOpenGallery}
+            >
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 p-2 bg-card">
+                {familyPhotos.slice(0, 14).map((fam) => (
+                  <div key={fam.family} className="relative aspect-[4/3] bg-black rounded overflow-hidden">
+                    {fam.imageUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={fam.imageUrl}
+                        alt={fam.family}
+                        loading="lazy"
+                        className="w-full h-full object-cover"
+                        draggable={false}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-lg">🐟</div>
+                    )}
+                    <div className="absolute bottom-0 left-0 right-0 bg-black/60 px-1 py-0.5">
+                      <span className="text-[9px] text-white truncate block">{fam.family}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Gradient fade at bottom */}
+              <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-[hsl(0,0%,5%)] to-transparent pointer-events-none" />
+            </div>
+          )}
+
+          {/* Gallery button */}
+          <button
+            onClick={handleOpenGallery}
+            className="w-full flex flex-col sm:flex-row items-start sm:items-center justify-between px-4 py-3 rounded-b-lg border border-blue-600 bg-blue-600 hover:bg-blue-700 transition-colors text-left gap-1 sm:gap-0"
+          >
+            <span className="text-sm font-semibold text-white">
+              {t('gallery_button')} ({familyPhotos.length} families)
+            </span>
+            <span className="flex items-center gap-1 shrink-0">
+              <span className="text-xs text-blue-200 font-normal">Click to view images</span>
+              <ChevronRight className="h-5 w-5 text-white" />
+            </span>
+          </button>
+        </div>
 
         {/* Province map */}
         <Suspense fallback={<HomepageSkeleton />}>
