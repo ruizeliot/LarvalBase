@@ -325,7 +325,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
   if (!geoData || !pathGenerator) {
     return (
       <div className="rounded-lg border bg-card p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-muted-foreground">
+        <h3 className="text-sm font-semibold text-white">
           {mode === 'families'
           ? 'Percentage of families per region in the database (click to filter)'
           : 'Percentage of species per region in the database (click to filter species)'}
@@ -337,7 +337,7 @@ export function HomepageProvinceMap({ onFilterSpecies, mode = 'species' }: Homep
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-3">
-      <h3 className="text-sm font-semibold text-muted-foreground">
+      <h3 className="text-sm font-semibold text-white">
         {mode === 'families'
           ? 'Percentage of families per region in the database (click to filter)'
           : 'Percentage of species per region in the database (click to filter species)'}

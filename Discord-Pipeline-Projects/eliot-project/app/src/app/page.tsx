@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { useHomepageStats } from "@/hooks/use-homepage-stats";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, HelpCircle, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n/i18n-context";
 
 // Lazy load heavy homepage components to reduce initial bundle
@@ -34,6 +34,7 @@ export default function Home() {
   const router = useRouter();
   const [filteredSpeciesNames, setFilteredSpeciesNames] = useState<Set<string> | null>(null);
   const [mapFilteredSpecies, setMapFilteredSpecies] = useState<Set<string> | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
   const { barplotStats, imageStats, publicationYears, familyPhotos } = useHomepageStats();
   const { t } = useI18n();
 
@@ -80,13 +81,20 @@ export default function Home() {
             </p>
           </div>
 
-          {/* RIGHT column: mandala image */}
-          <div>
+          {/* RIGHT column: mandala image with help button */}
+          <div className="relative">
             <img
               src="/mandala.png"
               alt="Mandala of fish larvae diversity"
               className="w-full rounded-lg"
             />
+            <button
+              onClick={() => setShowHelp(true)}
+              className="absolute top-2 right-2 bg-black/60 hover:bg-black/80 text-white rounded-full p-1.5 transition-colors"
+              title="How to navigate this website"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </button>
           </div>
         </div>
 
@@ -98,7 +106,10 @@ export default function Home() {
           <span className="text-sm font-semibold text-white">
             {t('gallery_button')} ({familyPhotos.length} families)
           </span>
-          <ChevronRight className="h-5 w-5 text-white shrink-0" />
+          <span className="flex items-center gap-1 shrink-0">
+            <span className="text-xs text-blue-200 font-normal">Click to view images</span>
+            <ChevronRight className="h-5 w-5 text-white" />
+          </span>
         </button>
 
         {/* Province map */}
@@ -116,6 +127,58 @@ export default function Home() {
           <HomepageSettlementMap />
         </Suspense>
       </div>
+
+      {/* Help overlay modal */}
+      {showHelp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70" onClick={() => setShowHelp(false)}>
+          <div className="relative bg-card border border-border rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto p-6" onClick={(e) => e.stopPropagation()}>
+            <button
+              onClick={() => setShowHelp(false)}
+              className="absolute top-3 right-3 text-muted-foreground hover:text-white"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h2 className="text-lg font-bold text-white mb-4">How to Navigate LarvalBase</h2>
+
+            <div className="space-y-3 text-sm text-gray-300 leading-relaxed">
+              <div>
+                <h3 className="font-semibold text-white mb-1">Search for species</h3>
+                <p>Use the search bar in the left sidebar to find species by <strong>scientific (Latin) name</strong> or <strong>common name</strong>. Toggle the checkboxes to search by one or both. Synonym names are also matched automatically.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">Filter by dispersal trait availability</h3>
+                <p>In the sidebar, check the trait filters to show only species that have data for specific traits (e.g. egg characteristics, settlement size, swimming speed). This narrows the species list and gallery to matching families.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">Filter by adult location</h3>
+                <p>Click on any region in the interactive world map to filter species by their <strong>biogeographic province</strong>. Selected regions are highlighted and the species list updates in real time. Click again to deselect.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">Filter by ecosystem &amp; habitat</h3>
+                <p>Use the <strong>Ecosystem</strong> (Marine, Euryhaline, Freshwater) and <strong>Habitat</strong> (Benthic, Pelagic) checkboxes in the sidebar to filter species by their adult ecology.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">Browse family galleries</h3>
+                <p>Click the blue <strong>&quot;Colored pictures&quot;</strong> button to open the gallery of family thumbnails. Click any family to view all specimen photographs for that family. Galleries include <strong>unsure identifications</strong>, <strong>genus-level</strong>, and <strong>family-level</strong> entries — highlighted with colored borders.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">Species detail pages</h3>
+                <p>Each species page shows trait data organized by life stage: egg characteristics, hatching size, growth curves, settlement, metamorphosis, swimming abilities, vertical distribution, and more. Section tooltips (?) provide detailed descriptions.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">No data? Explore related taxa</h3>
+                <p>Even if a trait is <strong>unavailable for a specific species</strong>, you can still view <strong>barplots and summary statistics</strong> from related species in the same genus or family, and <strong>download data from close taxa</strong> via the raw data tables.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </MainLayout>
   );
 }

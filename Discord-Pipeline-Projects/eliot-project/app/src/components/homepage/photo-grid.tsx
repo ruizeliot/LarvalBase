@@ -45,7 +45,7 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
 
   return (
     <div data-testid="photo-grid" className="space-y-3">
-      <h3 className="text-sm font-semibold text-muted-foreground">
+      <h3 className="text-sm font-semibold text-white">
         Colored pictures of post-flexion and early juvenile stages library
         <span className="ml-2 text-xs font-normal">({families.length} families)</span>
       </h3>
@@ -67,10 +67,8 @@ export function PhotoGrid({ families, onSelectFamily }: PhotoGridProps) {
                   alt={fam.family}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-contain protected-image"
+                  className="w-full h-full object-contain"
                   draggable={false}
-                  onContextMenu={(e) => e.preventDefault()}
-                  onDragStart={(e) => e.preventDefault()}
                 />
               ) : (
                 '🐟'

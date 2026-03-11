@@ -38,8 +38,10 @@ const TRAIT_ICON_MAP: Record<string, string> = {
   'Age-at-length data': '/icons/sections/Age-at-Length.svg',
   'Egg traits': '/icons/sections/Egg %26 Incubation.svg',
   'Incubation': '/icons/sections/Egg %26 Incubation.svg',
+  'Incubation/gestation': '/icons/sections/Egg %26 Incubation.svg',
   'First feeding size': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
   'Hatching size': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
+  'Hatching/parturition size': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
   'First feeding age': '/icons/sections/Hatching %26 Pre-flexion Stage.svg',
   'Flexion size': '/icons/sections/Flexion Stage.svg',
   'Flexion age': '/icons/sections/Flexion Stage.svg',
@@ -72,7 +74,7 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
 
   return (
     <div data-testid="barplots-container" className="rounded-lg border bg-card p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-muted-foreground">
+      <h3 className="text-sm font-semibold text-white">
         Taxa per trait (grouped bars)
       </h3>
 

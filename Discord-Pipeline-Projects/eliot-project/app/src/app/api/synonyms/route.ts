@@ -21,7 +21,8 @@ let cachedSynonyms: SynonymEntry[] | null = null;
 function loadSynonyms(): SynonymEntry[] {
   if (cachedSynonyms) return cachedSynonyms;
 
-  // Primary: marine_larvae_synonyms_habitat.csv (new, 48k+ rows)
+  // Primary: marine_larvae_synonyms_habitat.csv (has ORIGINAL_NAME → VALID_NAME, 48k+ rows)
+  // Note: marine_larvae_valid_names_synonyms_habitat_032026.txt does NOT have ORIGINAL_NAME
   const primaryPath = path.join(process.cwd(), 'data', 'marine_larvae_synonyms_habitat.csv');
   // Fallback: marine_fish_synonyms.csv (old)
   const fallbackPath = path.join(process.cwd(), 'data', 'marine_fish_synonyms.csv');

@@ -125,7 +125,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
   return (
     <div data-testid="pub-chart" className="rounded-lg border bg-card p-4 space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-muted-foreground">
+        <h3 className="text-sm font-semibold text-white">
           Number of references per 5-year interval
         </h3>
         {hasVariable && variables.length > 0 && (

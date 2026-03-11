@@ -88,10 +88,8 @@ export function GalleryPage({ families, onBack, onSelectFamily, filteredSpeciesN
                   alt={fam.family}
                   loading="lazy"
                   decoding="async"
-                  className="w-full h-full object-contain protected-image"
+                  className="w-full h-full object-contain"
                   draggable={false}
-                  onContextMenu={(e) => e.preventDefault()}
-                  onDragStart={(e) => e.preventDefault()}
                 />
               ) : (
                 '🐟'

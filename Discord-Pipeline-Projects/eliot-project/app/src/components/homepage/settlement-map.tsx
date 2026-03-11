@@ -43,7 +43,7 @@ export function HomepageSettlementMap() {
   if (isLoading) {
     return (
       <div className="rounded-lg border bg-card p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-muted-foreground">
+        <h3 className="text-sm font-semibold text-white">
           Settlement-stage sampling locations
         </h3>
         <div className="h-[300px] bg-muted rounded-lg animate-pulse" />
@@ -55,7 +55,7 @@ export function HomepageSettlementMap() {
 
   return (
     <div className="rounded-lg border bg-card p-4 space-y-4">
-      <h3 className="text-sm font-semibold text-muted-foreground">
+      <h3 className="text-sm font-semibold text-white">
         Settlement-stage sampling locations
       </h3>
       <Suspense fallback={<div className="h-[300px] bg-muted rounded-lg animate-pulse" />}>
