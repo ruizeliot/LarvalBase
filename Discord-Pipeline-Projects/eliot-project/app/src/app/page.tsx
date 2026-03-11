@@ -103,17 +103,17 @@ export default function Home() {
             <p className="text-base font-bold mt-2">
               {t('homepage_credits')}
             </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-3">
+            <p className="text-xs text-muted-foreground leading-snug mt-3 text-justify">
               {t('homepage_description_1')}
               <a href="https://doi.org/10.1111/2041-210X.70011" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
                 https://doi.org/10.1111/2041-210X.70011
               </a>
               {t('homepage_description_2')}
             </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-3">
+            <p className="text-xs text-muted-foreground leading-snug mt-3 text-justify">
               {t('homepage_description_3')}
             </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-3">
+            <p className="text-xs text-muted-foreground leading-snug mt-3 text-justify">
               {t('homepage_cite')}
               <a href="https://github.com/ruizeliot/fish_larvae_traits_db" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
                 https://github.com/ruizeliot/fish_larvae_traits_db
@@ -147,7 +147,7 @@ export default function Home() {
               onClick={handleOpenGallery}
             >
               <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 gap-1 p-2 bg-card">
-                {familyPhotos.slice(0, 14).map((fam) => (
+                {familyPhotos.slice(0, 21).map((fam) => (
                   <div key={fam.family} className="relative aspect-[4/3] bg-black rounded overflow-hidden">
                     {fam.imageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */

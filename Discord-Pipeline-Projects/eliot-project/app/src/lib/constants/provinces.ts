@@ -273,6 +273,18 @@ export function buildDotCsvToProvinceMap(): Record<string, string> {
  * Maps canonical province names to user-friendly display names.
  */
 const PROVINCE_DISPLAY_ALIASES: Record<string, string> = {
+  // CSV qualified names → shorter display aliases
+  'Red Sea (offshore)': 'Red Sea',
+  'Red Sea and Gulf of Aden (coastal)': 'Red Sea and Gulf of Aden',
+  'Mediterranean Sea (offshore)': 'Mediterranean',
+  'Mediterranean Sea (coastal)': 'Mediterranean Sea',
+  'Agulhas (coastal)': 'Agulhas',
+  'Agulhas Current (coastal)': 'Agulhas Current',
+  'Antarctic (coastal)': 'Antarctic',
+  'Subantarctic (offshore)': 'Subantarctic',
+  'Amsterdam & St. Paul': 'Amsterdam-St Paul',
+  'Juan Fernandez and Desventuradas': 'Juan Fernández and Desventuradas',
+  // Canonical names (from GeoJSON) — keep as-is
   'Red Sea': 'Red Sea',
   'Red Sea and Gulf of Aden': 'Red Sea and Gulf of Aden',
   'Mediterranean': 'Mediterranean',
