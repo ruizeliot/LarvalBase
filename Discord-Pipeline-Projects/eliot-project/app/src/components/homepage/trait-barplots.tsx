@@ -101,7 +101,7 @@ export function TraitBarplots({ stats, imageStats }: TraitBarplotsProps) {
         const traitHref = traitSlug === 'GALLERY' ? '/gallery' : traitSlug ? `/traits/${traitSlug}` : undefined;
         return (
         <div key={stat.traitName} className="flex items-start gap-2">
-          <div className="w-24 sm:w-48 flex flex-col items-end shrink-0 pt-0.5">
+          <div className="w-20 sm:w-48 flex flex-col items-end shrink-0 pt-0.5">
             {traitHref ? (
               <Link href={traitHref} className="text-xs text-blue-400 font-bold text-right truncate w-full hover:underline cursor-pointer inline-flex items-center justify-end gap-0.5">
                 {stat.traitName}

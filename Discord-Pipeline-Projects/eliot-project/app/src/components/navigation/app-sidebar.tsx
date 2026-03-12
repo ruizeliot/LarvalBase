@@ -66,11 +66,8 @@ function buildTaxonomyFromSpecies(
     });
   }
 
-  // Sort families by decreasing species count, then alphabetically
-  root.children.sort((a, b) => {
-    const diff = b.speciesCount - a.speciesCount;
-    return diff !== 0 ? diff : a.name.localeCompare(b.name);
-  });
+  // Sort families alphabetically
+  root.children.sort((a, b) => a.name.localeCompare(b.name));
 
   return root;
 }
@@ -266,7 +263,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
               <TaxonomyTree
                 data={filteredTaxonomy}
                 onSelectSpecies={handleSelectFromTree}
-                height={250}
+                height={typeof window !== 'undefined' && window.innerWidth < 768 ? 200 : 400}
               />
             </SidebarGroupContent>
           </SidebarGroup>
@@ -275,7 +272,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
 
           {/* Ecology Filters */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-1.5 mx-2 rounded bg-blue-600/80">Filter by adult ecology or location (map)</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-2.5 mx-2 rounded bg-blue-600 min-h-[2.5rem] h-auto leading-snug whitespace-normal">Filter by adult ecology or location (map)</SidebarGroupLabel>
             <SidebarGroupContent>
               <div className="space-y-1">
                 {(selectedEcosystems.size > 0 || selectedHabitats.size > 0) && (
@@ -340,7 +337,7 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
 
           {/* Trait Filters - uses availableTraitTypes from useSpeciesData */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-1.5 mx-2 rounded bg-blue-600/80">Filter by dispersal traits availability</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm text-white font-semibold text-center justify-center px-2 py-2.5 mx-2 rounded bg-blue-600 min-h-[2.5rem] h-auto leading-snug whitespace-normal">Filter by dispersal traits availability</SidebarGroupLabel>
             <SidebarGroupContent>
               <TraitFilters
                 selectedTraits={selectedTraits}

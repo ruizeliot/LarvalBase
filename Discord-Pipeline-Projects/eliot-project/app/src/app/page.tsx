@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { MainLayout } from "@/components/layout/main-layout";
 import { AppSidebar } from "@/components/navigation/app-sidebar";
 import { useHomepageStats } from "@/hooks/use-homepage-stats";
@@ -93,50 +94,68 @@ export default function Home() {
   return (
     <MainLayout sidebar={<AppSidebar onSelectSpecies={(sp) => { router.push(`/species/${sp.id}`); }} onFilteredSpeciesChange={handleFilteredSpeciesChange} mapFilteredSpecies={mapFilteredSpecies} />}>
       <div className="space-y-6">
+        {/* Title row: icon + title + help button */}
+        <div className="flex items-center justify-center gap-3">
+          <Image
+            src="/larvalbase-icon-3.png"
+            alt="LarvalBase icon"
+            width={64}
+            height={64}
+            className="h-16 w-auto shrink-0"
+            priority
+          />
+          <h1 className="text-2xl font-bold leading-tight text-center">
+            LarvalBase – A global pelagic dispersal traits databases<br />for early-life stages of marine fishes
+          </h1>
+          <button
+            onClick={() => setShowHelp(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors shrink-0"
+            title="How to navigate this website"
+          >
+            Help
+          </button>
+        </div>
+
         {/* Two-column hero: LEFT text, RIGHT mandala */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* LEFT column: title + credits + intro */}
+          {/* LEFT column: credits + intro text */}
           <div ref={textRef} style={{ fontSize: textScale !== 1 ? `${textScale}em` : undefined }}>
-            <h1 className="text-2xl font-bold leading-tight">
-              {t('homepage_title')}
-            </h1>
-            <p className="text-base font-bold mt-2">
+            <p className="text-lg font-bold">
               {t('homepage_credits')}
             </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-3 text-justify">
+            <p className="text-sm text-gray-300 leading-relaxed mt-3 text-justify">
               {t('homepage_description_1')}
               <a href="https://doi.org/10.1111/2041-210X.70011" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
                 https://doi.org/10.1111/2041-210X.70011
               </a>
               {t('homepage_description_2')}
             </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-3 text-justify">
+            <p className="text-sm text-gray-300 leading-relaxed mt-3 text-justify">
               {t('homepage_description_3')}
-            </p>
-            <p className="text-xs text-muted-foreground leading-snug mt-3 text-justify">
-              {t('homepage_cite')}
-              <a href="https://github.com/ruizeliot/fish_larvae_traits_db" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
-                https://github.com/ruizeliot/fish_larvae_traits_db
-              </a>
             </p>
           </div>
 
-          {/* RIGHT column: mandala image with help button */}
-          <div className="relative" ref={mandalaRef}>
-            <img
+          {/* RIGHT column: mandala image */}
+          <div ref={mandalaRef}>
+            <Image
               src="/mandala.png"
               alt="Mandala of fish larvae diversity"
+              width={800}
+              height={800}
               className="w-full rounded-lg"
+              priority
             />
-            <button
-              onClick={() => setShowHelp(true)}
-              className="absolute top-2 right-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium px-3 py-1.5 rounded-md transition-colors"
-              title="How to navigate this website"
-            >
-              Help
-            </button>
           </div>
         </div>
+
+        {/* Citation row: full width below both text and mandala */}
+        <p className="text-sm text-gray-300 leading-relaxed text-justify">
+          <strong>Please cite our data paper, which describes in further detail how this dataset was acquired, if you use any part of our database:</strong><br />
+          <em>Ruiz, E., Th&eacute;m&egrave;ze-Leroy, M., Ferraton, F., Panfili, J., Durand, J.-D., Kulbicki, M., Silhol, J., Bernard, A., Thomas, R., Morisson, T., Djouldem, Y., Baptiste, E., Pascal, P.-Y., Vanalderweireldt, L., Cordonnier, S., Chatagnon, A., Rault, P.-L., Leon, L., Leone, I., Fouchan, Y., Victor, B., Albouy-Boyer, S., Le Berre, T., Dromard, C. R., Pellissier, L., Albouy, C., &amp; Leprieur, F. (2026). Global pelagic dispersal traits databases for early-life stages of marine fishes. Scientific Data.{' '}
+          <a href="https://github.com/ruizeliot/fish_larvae_traits_db" className="text-primary hover:underline" target="_blank" rel="noopener noreferrer">
+            https://github.com/ruizeliot/fish_larvae_traits_db
+          </a></em>
+        </p>
 
         {/* Gallery preview + button */}
         <div className="space-y-0">
@@ -201,6 +220,33 @@ export default function Home() {
         <Suspense fallback={<HomepageSkeleton />}>
           <HomepageSettlementMap />
         </Suspense>
+
+        {/* Affiliations section */}
+        <div className="pt-4">
+          <h2 className="text-lg font-semibold text-white mb-4 border-b border-border pb-2">Affiliations</h2>
+          <div className="space-y-6">
+            {/* Row 1: MARBEC, IRD, ETHZ, MNHN — wide logos, single row */}
+            <div className="flex items-center justify-center gap-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-marbec.webp" alt="MARBEC" className="h-20 w-auto object-contain flex-shrink" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-ird.png" alt="IRD" className="h-20 w-auto object-contain flex-shrink" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-ethz.png" alt="ETH Zürich" className="h-20 w-auto object-contain flex-shrink" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-mnhn.png" alt="MNHN" className="h-20 w-auto object-contain flex-shrink" />
+            </div>
+            {/* Row 2: UM, Reefscapers, UA — taller logos, centered */}
+            <div className="flex items-center justify-center gap-12">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-um.png" alt="Université de Montpellier" className="h-40 w-auto object-contain flex-shrink" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-reefscapers.png" alt="Reefscapers" className="h-40 w-auto object-contain flex-shrink" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-ua.png" alt="Université des Antilles" className="h-40 w-auto object-contain flex-shrink" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Help overlay modal */}
@@ -249,6 +295,18 @@ export default function Home() {
               <div>
                 <h3 className="font-semibold text-white mb-1">No data? Explore related taxa</h3>
                 <p>Even if a trait is <strong>unavailable for a specific species</strong>, you can still view <strong>barplots and summary statistics</strong> from related species in the same genus or family, and <strong>download data from close taxa</strong> via the raw data tables.</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-white mb-1">Downloading data</h3>
+                <p>LarvalBase offers multiple ways to export trait data:</p>
+                <ul className="list-disc list-inside mt-1 space-y-1">
+                  <li><strong>Per species</strong>: On each species page, click the blue &quot;Export all traits&quot; button to download a table containing all available trait data for that species.</li>
+                  <li><strong>Per species and per trait</strong>: On each species page, click the &quot;Species&quot; button on the top-right corner of each trait section to download all traits included in this section for that species. You can also download data of close taxa by clicking on the &quot;Genus&quot;, &quot;Family&quot; and &quot;Order&quot; buttons next to it.</li>
+                  <li><strong>Per family</strong>: On each family page, click the blue export button to download trait data for all species in that family, optionally filtered by biogeographic province.</li>
+                  <li><strong>Per biogeographic province</strong>: On the gallery page, select a province on the map and click the export button to download trait data for all species present in that province. If no province is selected, data for all species worldwide is exported.</li>
+                  <li><strong>Per trait and province</strong>: Click on any trait name in the &quot;Taxa per trait&quot; barplot on the homepage to access a dedicated trait page. Each trait page shows a map of species coverage per province and allows downloading the original database file filtered for species present in the selected province.</li>
+                </ul>
               </div>
             </div>
           </div>

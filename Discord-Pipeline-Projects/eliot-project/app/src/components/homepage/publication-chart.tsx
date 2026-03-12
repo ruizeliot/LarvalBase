@@ -143,47 +143,56 @@ export function PublicationChart({ data }: PublicationChartProps) {
         )}
       </div>
 
-      {/* Stacked bars by 5-year bins */}
-      <div className="flex gap-[2px] h-40 pt-2 min-w-0 overflow-hidden">
-        {years.map((year) => {
-          const yearData = byYear.get(year)!;
-          let total = 0;
-          for (const count of yearData.values()) total += count;
-          const heightPct = maxCount > 0 ? (total / maxCount) * 100 : 0;
+      {/* Stacked bars by 5-year bins — bars area + separate date labels below */}
+      <div className="space-y-0">
+        {/* Bar area */}
+        <div className="flex items-end h-40 pt-2 min-w-0" style={{ gap: '3px' }}>
+          {years.map((year) => {
+            const yearData = byYear.get(year)!;
+            let total = 0;
+            for (const count of yearData.values()) total += count;
+            const heightPct = maxCount > 0 ? (total / maxCount) * 100 : 0;
 
-          return (
-            <div key={year} className="flex-1 flex flex-col items-center justify-end group relative">
-              <div
-                data-testid="pub-chart-bar"
-                className="w-full flex flex-col-reverse rounded-t-sm overflow-hidden"
-                style={{ height: `${heightPct}%`, minHeight: total > 0 ? '2px' : '0px' }}
-              >
-                {orderedSources.map((source) => {
-                  const count = yearData.get(source) ?? 0;
-                  if (count === 0) return null;
-                  const segPct = total > 0 ? (count / total) * 100 : 0;
-                  return (
-                    <div
-                      key={source}
-                      data-testid="pub-chart-bar-segment"
-                      style={{
-                        height: `${segPct}%`,
-                        backgroundColor: getSourceColor(source),
-                      }}
-                    />
-                  );
-                })}
+            return (
+              <div key={year} className="flex-1 flex items-end justify-center group relative" style={{ maxWidth: '28px' }}>
+                <div
+                  data-testid="pub-chart-bar"
+                  className="w-full flex flex-col-reverse rounded-t-sm overflow-hidden"
+                  style={{ height: `${heightPct}%`, minHeight: total > 0 ? '2px' : '0px' }}
+                >
+                  {orderedSources.map((source) => {
+                    const count = yearData.get(source) ?? 0;
+                    if (count === 0) return null;
+                    const segPct = total > 0 ? (count / total) * 100 : 0;
+                    return (
+                      <div
+                        key={source}
+                        data-testid="pub-chart-bar-segment"
+                        style={{
+                          height: `${segPct}%`,
+                          backgroundColor: getSourceColor(source),
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                {/* Tooltip on hover */}
+                <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover border rounded px-2 py-1 text-[10px] text-popover-foreground whitespace-nowrap z-10 shadow-md">
+                  {year}–{year + 4}: {total} refs
+                </div>
               </div>
-              <span className="text-[9px] sm:text-[11px] text-muted-foreground mt-1 truncate max-w-full">
-                {year}
-              </span>
-              {/* Tooltip on hover */}
-              <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover border rounded px-2 py-1 text-[10px] text-popover-foreground whitespace-nowrap z-10 shadow-md">
-                {year}–{year + 4}: {total} refs
-              </div>
+            );
+          })}
+        </div>
+        {/* Date labels below bars — completely outside the bar area */}
+        <div className="flex min-w-0" style={{ gap: '3px' }}>
+          {years.map((year) => (
+            <div key={year} className="flex-1 text-center" style={{ maxWidth: '28px' }}>
+              <span className="text-[10px] text-muted-foreground hidden sm:block">{year}</span>
+              <span className="text-[7px] text-muted-foreground sm:hidden block">{year % 10 === 0 ? year : ''}</span>
             </div>
-          );
-        })}
+          ))}
+        </div>
       </div>
 
       {/* Legend */}

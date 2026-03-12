@@ -101,9 +101,15 @@ img[data-protected="true"],
   /* Recharts containers should fit mobile width */
   .recharts-wrapper {
     max-width: 100% !important;
+    width: 100% !important;
   }
   .recharts-surface {
     max-width: 100%;
+  }
+  /* Force ResponsiveContainer to take full width on mobile */
+  .recharts-responsive-container {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   /* All chart/plot containers should fit mobile viewport */
@@ -113,8 +119,14 @@ img[data-protected="true"],
   }
 
   /* Trait barplot label column narrower on mobile */
-  [data-testid="barplots-container"] .w-48 {
-    width: 6rem !important;
-    min-width: 6rem !important;
+  [data-testid="barplots-container"] .sm\:w-48 {
+    width: 5rem !important;
+    min-width: 5rem !important;
+  }
+
+  /* Ensure comparison barplots render properly on mobile */
+  [data-chart] {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 }
