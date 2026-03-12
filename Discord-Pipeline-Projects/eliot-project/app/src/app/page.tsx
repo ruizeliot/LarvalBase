@@ -224,26 +224,29 @@ export default function Home() {
         {/* Affiliations section */}
         <div className="pt-4">
           <h2 className="text-lg font-semibold text-white mb-4 border-b border-border pb-2">Affiliations</h2>
-          <div className="space-y-6">
-            {/* Row 1: MARBEC, IRD, ETHZ, MNHN — wide logos, single row */}
-            <div className="flex items-center justify-center gap-8">
+          <div className="space-y-4">
+            {/* Row 1: Reefscapers — wider/longer banner logo, centered */}
+            <div className="flex items-center justify-center">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-marbec.webp" alt="MARBEC" className="h-20 w-auto object-contain flex-shrink" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-ird.png" alt="IRD" className="h-20 w-auto object-contain flex-shrink" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-ethz.png" alt="ETH Zürich" className="h-20 w-auto object-contain flex-shrink" />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-mnhn.png" alt="MNHN" className="h-20 w-auto object-contain flex-shrink" />
+              <img src="/logo-reefscapers.png" alt="Reefscapers" className="h-14 sm:h-20 w-auto max-w-[70%] object-contain" />
             </div>
-            {/* Row 2: UM, Reefscapers, UA — taller logos, centered */}
-            <div className="flex items-center justify-center gap-12">
+            {/* Row 2: UM, MNHN, UA — smaller/squarer logos */}
+            <div className="flex items-center justify-center gap-4 sm:gap-8">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-um.png" alt="Université de Montpellier" className="h-40 w-auto object-contain flex-shrink" />
+              <img src="/logo-um.png" alt="Université de Montpellier" className="h-16 sm:h-24 w-auto max-w-[28%] object-contain" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-reefscapers.png" alt="Reefscapers" className="h-40 w-auto object-contain flex-shrink" />
+              <img src="/logo-mnhn.png" alt="MNHN" className="h-16 sm:h-24 w-auto max-w-[28%] object-contain" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-ua.png" alt="Université des Antilles" className="h-40 w-auto object-contain flex-shrink" />
+              <img src="/logo-ua.png" alt="Université des Antilles" className="h-16 sm:h-24 w-auto max-w-[28%] object-contain" />
+            </div>
+            {/* Row 3: MARBEC, IRD, ETHZ — institutional logos */}
+            <div className="flex items-center justify-center gap-4 sm:gap-8">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-marbec.webp" alt="MARBEC" className="h-10 sm:h-16 w-auto max-w-[28%] object-contain" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-ird.png" alt="IRD" className="h-10 sm:h-16 w-auto max-w-[28%] object-contain" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/logo-ethz.png" alt="ETH Zürich" className="h-10 sm:h-16 w-auto max-w-[28%] object-contain" />
             </div>
           </div>
         </div>

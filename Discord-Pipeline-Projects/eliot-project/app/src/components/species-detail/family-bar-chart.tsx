@@ -1,12 +1,7 @@
 'use client';
 
-import { Bar, BarChart, XAxis, YAxis, Cell, CartesianGrid } from 'recharts';
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from '@/components/ui/chart';
+import { useState, useEffect } from 'react';
+import { Bar, BarChart, XAxis, YAxis, Cell, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
 import type { FamilyBarChartEntry } from '@/lib/types/species.types';
 import { useI18n } from '@/lib/i18n/i18n-context';
 
@@ -24,12 +19,6 @@ interface FamilyBarChartProps {
   /** Taxonomy name (family or genus name) */
   taxonomyName?: string;
 }
-
-const chartConfig = {
-  meanValue: {
-    label: 'Mean',
-  },
-} satisfies ChartConfig;
 
 /**
  * Format species name to two lines.
@@ -140,24 +129,27 @@ export function FamilyBarChart({
   const currentSpeciesColor = '#7CAE00';
   const otherSpeciesColor = comparisonType === 'genus' ? '#619CFF' : comparisonType === 'order' ? '#C77CFF' : '#F8766D';
 
+  // Detect mobile on mount for responsive YAxis width (useEffect avoids SSR hydration mismatch)
+  const [yAxisWidth, setYAxisWidth] = useState(150);
+  useEffect(() => {
+    if (typeof window !== 'undefined' && window.innerWidth < 640) setYAxisWidth(80);
+  }, []);
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-2 min-w-0 w-full">
       {/* Chart title */}
       <div className="text-sm font-medium text-center uppercase tracking-wide"
            style={{ color: otherSpeciesColor }}>
         {comparisonType === 'genus' ? t('genus_comparison') : comparisonType === 'order' ? t('order_comparison') : t('family_comparison')}
         {taxonomyName && <span className="font-normal ml-1">({taxonomyName})</span>}
       </div>
-      
-      <ChartContainer
-        config={chartConfig}
-        className="w-full bg-transparent"
-        style={{ minHeight: `${chartHeight}px` }}
-      >
+
+      <div style={{ width: '100%', height: `${chartHeight}px` }}>
+        <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ top: 5, right: 20, left: 10, bottom: 5 }}
+          margin={{ top: 5, right: 20, left: yAxisWidth < 150 ? 0 : 10, bottom: 5 }}
         >
           <CartesianGrid
             horizontal={false}
@@ -185,28 +177,24 @@ export function FamilyBarChart({
             tickLine={{ stroke: 'hsl(var(--border))', strokeWidth: 1 }}
             tickSize={6}
             axisLine={false}
-            width={150}
+            width={yAxisWidth}
             interval={0}
             tick={(props) => (
               <CustomYAxisTick {...props} fontFamily={fontFamily} />
             )}
           />
-          <ChartTooltip
-            cursor={{ fill: 'hsl(var(--muted) / 0.3)' }}
-            content={
-              <ChartTooltipContent
-                labelFormatter={(value, payload) => {
-                  const entry = payload?.[0]?.payload as
-                    | (FamilyBarChartEntry & { displayName: string })
-                    | undefined;
-                  return entry?.speciesName ?? value;
-                }}
-                formatter={(value) => [
-                  `${Number(value).toFixed(2)} ${unit}`,
-                  "", // Hide the trait label in tooltip
-                ]}
-              />
-            }
+          <Tooltip
+            cursor={{ fill: 'rgba(128,128,128,0.15)' }}
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const entry = payload[0].payload as FamilyBarChartEntry & { displayName: string };
+              return (
+                <div className="rounded-lg border bg-background px-3 py-2 text-xs shadow-md">
+                  <div className="font-medium italic">{entry.speciesName}</div>
+                  <div className="text-muted-foreground">{Number(entry.meanValue).toFixed(2)} {unit}</div>
+                </div>
+              );
+            }}
           />
           <Bar dataKey="meanValue" radius={[0, 4, 4, 0]}>
             {chartData.map((entry, index) => (
@@ -221,7 +209,8 @@ export function FamilyBarChart({
             ))}
           </Bar>
         </BarChart>
-      </ChartContainer>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
