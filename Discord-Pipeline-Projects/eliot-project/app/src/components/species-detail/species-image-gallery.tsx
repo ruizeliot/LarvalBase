@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { ImageCaption } from './image-caption';
 import type { SpeciesImage } from '@/lib/types/image.types';
-import { buildImageUrl, extractCopyright } from '@/lib/utils/encode-image-path';
+import { buildImageUrl } from '@/lib/utils/encode-image-path';
 
 interface SpeciesImageGalleryProps {
   /** Array of species images (sorted by priority) */
@@ -54,8 +54,7 @@ function SpeciesImageWithFallback({
   showZoomHint?: boolean;
 }) {
   const [hasError, setHasError] = useState(false);
-  const copyright = extractCopyright(image.author);
-  const imageSrc = buildImageUrl(image.path, image.filename, copyright);
+  const imageSrc = buildImageUrl(image.path, image.filename);
 
   if (hasError) {
     return (
@@ -259,8 +258,7 @@ function ImageLightbox({
 
   if (!image) return null;
 
-  const copyright = extractCopyright(image.author);
-  const imageSrc = buildImageUrl(image.path, image.filename, copyright);
+  const imageSrc = buildImageUrl(image.path, image.filename);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

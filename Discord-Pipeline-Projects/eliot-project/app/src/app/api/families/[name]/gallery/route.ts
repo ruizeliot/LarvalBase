@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
 import Papa from 'papaparse';
-import { buildImageUrl, extractCopyright } from '@/lib/utils/encode-image-path';
+import { buildImageUrl } from '@/lib/utils/encode-image-path';
 import { getAuthorTier } from '@/lib/types/image.types';
 
 interface GalleryImage {
@@ -122,9 +122,8 @@ async function parseMetadataForFamily(
         const brightnessKey = `${imgPath}/${fileName}`;
         const brightness = brightnessMap.get(brightnessKey) ?? 999;
 
-        const copyright = extractCopyright(author);
         images.push({
-          imageUrl: buildImageUrl(imgPath, fileName, copyright || undefined),
+          imageUrl: buildImageUrl(imgPath, fileName),
           species,
           genus,
           author,
