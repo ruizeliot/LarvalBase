@@ -310,8 +310,8 @@ export function AppSidebar({ onSelectSpecies, onFilteredSpeciesChange, mapFilter
                 {/* Habitat filter */}
                 <div className="px-2 py-1.5 text-sm">Habitat</div>
                 <div className="pl-2 space-y-0.5">
-                  {['Benthic', 'Pelagic'].map(hab => {
-                    const displayLabel = hab === 'Benthic' ? 'Benthic and/or demersal' : 'Pelagic (offshore)';
+                  {['Benthic and/or strictly demersal', 'Pelagic (offshore)'].map(hab => {
+                    const displayLabel = hab === 'Benthic and/or strictly demersal' ? 'Benthic and/or demersal' : 'Pelagic (offshore)';
                     return (
                       <label key={hab} className="flex items-center gap-2 px-2 py-1 text-sm hover:bg-accent/50 rounded cursor-pointer transition-colors">
                         <Checkbox

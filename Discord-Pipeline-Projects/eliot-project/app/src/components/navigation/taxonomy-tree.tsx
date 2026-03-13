@@ -58,7 +58,7 @@ function FamilySilhouette({ family, className = '' }: { family: string; classNam
       width={24}
       height={24}
       className={`shrink-0 object-contain ${className}`}
-      style={{ filter: 'brightness(0) invert(1)' }}
+      style={{ filter: 'brightness(0) invert(1)', maxHeight: '24px', maxWidth: '24px' }}
       onError={() => setErr(true)}
     />
   );
@@ -159,16 +159,11 @@ export function TaxonomyTree({
   // Transform data for react-arborist
   const arboristData = [transformToArboristData(data)];
 
-  // Build initial open state: root + all families open, genera closed
+  // Build initial open state: only root open, families collapsed (genera hidden)
   const familyOpenState = useMemo(() => {
     const state: Record<string, boolean> = {};
     for (const root of arboristData) {
       state[root.id] = true;
-      if (root.children) {
-        for (const familyNode of root.children) {
-          state[familyNode.id] = true;
-        }
-      }
     }
     return state;
   }, [data]); // eslint-disable-line react-hooks/exhaustive-deps

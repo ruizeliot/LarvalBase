@@ -22,10 +22,11 @@ let cachedEntries: EcologyEntry[] | null = null;
 function loadEcologyData(): EcologyEntry[] {
   if (cachedEntries) return cachedEntries;
 
-  // Prefer new 032026 file (valid names only, 17k rows), fallback to old synonym+habitat file
+  // Prefer newest file (with spaces in name), then underscored version, then old synonym file
+  const newestPath = path.join(process.cwd(), 'data', 'Marine larvae valid names synonyms and habitat 03.2026.txt');
   const newPath = path.join(process.cwd(), 'data', 'marine_larvae_valid_names_synonyms_habitat_032026.txt');
   const oldPath = path.join(process.cwd(), 'data', 'marine_larvae_synonyms_habitat.csv');
-  const csvPath = fs.existsSync(newPath) ? newPath : oldPath;
+  const csvPath = fs.existsSync(newestPath) ? newestPath : fs.existsSync(newPath) ? newPath : oldPath;
   if (!fs.existsSync(csvPath)) {
     return [];
   }

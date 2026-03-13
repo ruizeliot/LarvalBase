@@ -99,13 +99,13 @@ export default function Home() {
           <Image
             src="/larvalbase-icon-3.png"
             alt="LarvalBase icon"
-            width={160}
-            height={160}
-            className="h-36 sm:h-40 w-auto shrink-0"
+            width={200}
+            height={200}
+            className="h-44 sm:h-52 w-auto shrink-0"
             priority
           />
           <h1 className="text-2xl font-bold leading-tight text-center">
-            LarvalBase – A global pelagic dispersal traits databases<br />for early-life stages of marine fishes
+            LarvalBase – A global pelagic dispersal traits 🐟 databases<br />for early-life stages of marine fishes 🐟
           </h1>
           <button
             onClick={() => setShowHelp(true)}

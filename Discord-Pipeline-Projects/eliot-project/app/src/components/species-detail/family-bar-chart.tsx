@@ -135,22 +135,39 @@ export function FamilyBarChart({
     if (typeof window !== 'undefined' && window.innerWidth < 640) setYAxisWidth(80);
   }, []);
 
-  // Measure container width with a ref instead of ResponsiveContainer
+  // Measure container width with ResizeObserver for reliable mobile support
   // (ResponsiveContainer fails on mobile when parent has 0 width)
   const containerRef = useRef<HTMLDivElement>(null);
-  const [measuredWidth, setMeasuredWidth] = useState(300);
+  const [measuredWidth, setMeasuredWidth] = useState(0);
   useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
     function measure() {
-      if (containerRef.current) {
-        const w = containerRef.current.getBoundingClientRect().width;
+      if (el) {
+        const w = el.getBoundingClientRect().width;
         if (w > 0) setMeasuredWidth(w);
       }
     }
     measure();
+
+    // Use ResizeObserver for reliable resize detection (including when element becomes visible)
+    let observer: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      observer = new ResizeObserver(() => measure());
+      observer.observe(el);
+    }
+
     window.addEventListener('resize', measure);
-    // Also re-measure after a short delay (in case parent is still animating/expanding)
-    const timer = setTimeout(measure, 200);
-    return () => { window.removeEventListener('resize', measure); clearTimeout(timer); };
+    // Re-measure after short delays for animation/layout settling
+    const t1 = setTimeout(measure, 100);
+    const t2 = setTimeout(measure, 500);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', measure);
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
   }, []);
 
   return (
@@ -163,7 +180,7 @@ export function FamilyBarChart({
       </div>
 
       <div style={{ width: '100%', height: `${chartHeight}px`, overflow: 'hidden' }}>
-        <BarChart
+        {measuredWidth > 0 ? <BarChart
           data={chartData}
           layout="vertical"
           width={measuredWidth}
@@ -227,7 +244,7 @@ export function FamilyBarChart({
               />
             ))}
           </Bar>
-        </BarChart>
+        </BarChart> : <div className="flex items-center justify-center h-full text-muted-foreground text-sm">Loading chart...</div>}
       </div>
     </div>
   );
