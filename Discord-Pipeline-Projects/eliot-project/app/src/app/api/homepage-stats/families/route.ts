@@ -204,7 +204,7 @@ export async function GET() {
       'Chiasmodontidae': { path: 'classified_bw_images_family', filename: 'Copyright Zhang F. (2026) - 9069.jpg' },
       'Carangidae': { path: 'classified_bw_images_species', filename: 'Copyright Baensch (2026) - 8608.jpg' },
       'Pomacentridae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6712.jpg' },
-      'Labridae': { path: 'classified_bw_images_species', filename: 'Copyright Ianiello (2026) - 7310.jpg' },
+      'Labridae': { path: 'classified_bw_images_species', filename: 'Copyright Ianiello (2026) - 6819.jpg' },
       'Apogonidae': { path: 'classified_bw_images_family', filename: 'Copyright Ianiello (2026) - 8486.jpg' },
       'Blenniidae': { path: 'classified_bw_images_species', filename: 'Copyright Baensch (2026) - 6769.jpg' },
       'Ostraciidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6948.jpg' },
