@@ -77,8 +77,6 @@ export function PublicationChart({ data }: PublicationChartProps) {
     const allSources = new Set<string>();
 
     if (!hasVariable || selectedVariable === ALL_TRAITS_LABEL) {
-      // Aggregate: sum per-variable counts across variables per (source, yearBin)
-      // This matches the R "All dispersal traits" logic
       for (const d of data) {
         allSources.add(d.source);
         if (!byYear.has(d.year)) byYear.set(d.year, new Map());
@@ -86,7 +84,6 @@ export function PublicationChart({ data }: PublicationChartProps) {
         yearMap.set(d.source, (yearMap.get(d.source) ?? 0) + d.count);
       }
     } else {
-      // Filter to selected variable only
       for (const d of data) {
         if (d.variable !== selectedVariable) continue;
         allSources.add(d.source);
@@ -145,8 +142,8 @@ export function PublicationChart({ data }: PublicationChartProps) {
 
       {/* Stacked bars by 5-year bins — bars area + separate date labels below */}
       <div className="space-y-0">
-        {/* Bar area */}
-        <div className="flex items-end h-40 pt-2 min-w-0" style={{ gap: '2px' }}>
+        {/* Bar area — use stretch (default) so children fill h-48, not items-end */}
+        <div className="flex h-48 pt-2 min-w-0" style={{ gap: '1px' }}>
           {years.map((year) => {
             const yearData = byYear.get(year)!;
             let total = 0;
@@ -154,7 +151,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
             const heightPct = maxCount > 0 ? (total / maxCount) * 100 : 0;
 
             return (
-              <div key={year} className="flex-1 flex items-end justify-center group relative">
+              <div key={year} className="flex-1 flex flex-col justify-end group relative min-w-0">
                 <div
                   data-testid="pub-chart-bar"
                   className="w-full flex flex-col-reverse rounded-t-sm overflow-hidden"
@@ -178,16 +175,16 @@ export function PublicationChart({ data }: PublicationChartProps) {
                 </div>
                 {/* Tooltip on hover */}
                 <div className="absolute bottom-full mb-1 hidden group-hover:block bg-popover border rounded px-2 py-1 text-[10px] text-popover-foreground whitespace-nowrap z-10 shadow-md">
-                  {year}–{year + 4}: {total} refs
+                  {year}&ndash;{year + 4}: {total} refs
                 </div>
               </div>
             );
           })}
         </div>
         {/* Date labels below bars — completely outside the bar area */}
-        <div className="flex min-w-0" style={{ gap: '2px' }}>
+        <div className="flex min-w-0" style={{ gap: '1px' }}>
           {years.map((year) => (
-            <div key={year} className="flex-1 text-center">
+            <div key={year} className="flex-1 text-center min-w-0">
               <span className="text-[10px] text-muted-foreground hidden sm:block">{year}</span>
               <span className="text-[7px] text-muted-foreground sm:hidden block">{year % 20 === 0 ? year : ''}</span>
             </div>
