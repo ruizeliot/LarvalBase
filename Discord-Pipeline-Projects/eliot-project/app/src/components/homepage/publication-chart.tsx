@@ -181,12 +181,26 @@ export function PublicationChart({ data }: PublicationChartProps) {
             );
           })}
         </div>
-        {/* Date labels below bars — completely outside the bar area */}
-        <div className="flex min-w-0" style={{ gap: '1px' }}>
+        {/* Date labels below bars — desktop: every year inline, mobile: every 20y rotated 45° */}
+        <div className="hidden sm:flex min-w-0" style={{ gap: '1px' }}>
           {years.map((year) => (
             <div key={year} className="flex-1 text-center min-w-0">
-              <span className="text-[10px] text-muted-foreground hidden sm:block">{year}</span>
-              <span className="text-[7px] text-muted-foreground sm:hidden block">{year % 20 === 0 ? year : ''}</span>
+              <span className="text-[10px] text-muted-foreground">{year}</span>
+            </div>
+          ))}
+        </div>
+        {/* Mobile labels: rotated 45°, every 20 years, outside plot area */}
+        <div className="flex sm:hidden min-w-0 relative" style={{ gap: '1px', height: '28px' }}>
+          {years.map((year) => (
+            <div key={year} className="flex-1 min-w-0 relative">
+              {year % 20 === 0 && (
+                <span
+                  className="absolute top-0 left-1/2 text-[8px] text-muted-foreground whitespace-nowrap origin-top-left"
+                  style={{ transform: 'translateX(-50%) rotate(45deg)' }}
+                >
+                  {year}
+                </span>
+              )}
             </div>
           ))}
         </div>

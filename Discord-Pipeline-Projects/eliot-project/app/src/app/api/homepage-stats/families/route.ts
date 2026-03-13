@@ -169,7 +169,7 @@ export async function GET() {
           step: (result: { data: Record<string, string> }) => {
             const row = result.data;
             const family = (row.FAMILY || '').replace(/^"|"$/g, '');
-            const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '');
+            const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '').replace(/^Final image database[^/]*\//, '');
             const fileName = (row.FILE_NAME || '').replace(/^"|"$/g, '');
             const uncertain = (row.UNCERTAIN || '').replace(/^"|"$/g, '') === 'TRUE';
             const rowAuthor = (row.AUTHOR || '').replace(/^"|"$/g, '');

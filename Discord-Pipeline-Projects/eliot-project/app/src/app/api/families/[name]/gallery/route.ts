@@ -109,7 +109,7 @@ async function parseMetadataForFamily(
         if (rowFamily !== family) return;
 
         const uncertain = (row.UNCERTAIN || '').replace(/^"|"$/g, '') === 'TRUE';
-        const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '').replace(/^Final image database\//, '');
+        const imgPath = (row.PATH || '').replace(/^"|"$/g, '').replace(/^images\//, '').replace(/^Final image database[^/]*\//, '');
         const fileName = (row.FILE_NAME || '').replace(/^"|"$/g, '');
         const author = (row.AUTHOR || '').replace(/^"|"$/g, '');
         const genus = row.GENUS ? row.GENUS.replace(/^"|"$/g, '') : null;

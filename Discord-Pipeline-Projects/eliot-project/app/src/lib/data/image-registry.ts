@@ -110,7 +110,7 @@ async function loadImageMetadata(): Promise<Map<string, SpeciesImage[]>> {
         // (metadata has "Final image database/..." but VPS stores directly under images/)
         const relativePath = parsed.PATH
           .replace(/^images\//, '')
-          .replace(/^Final image database\//, '');
+          .replace(/^Final image database[^/]*\//, '');
 
         // Get display author — use raw AUTHOR field directly
         const displayAuthor = parsed.AUTHOR;
