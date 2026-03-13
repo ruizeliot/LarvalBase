@@ -101,7 +101,7 @@ export default function Home() {
             alt="LarvalBase icon"
             width={200}
             height={200}
-            className="h-8 w-auto shrink-0"
+            className="h-16 w-auto shrink-0"
             priority
           />
           <h1 className="text-2xl font-bold leading-tight text-center">
