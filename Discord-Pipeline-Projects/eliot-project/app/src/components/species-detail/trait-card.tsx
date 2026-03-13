@@ -62,6 +62,18 @@ function formatNumber(value: number | null, decimals: number): string {
 }
 
 /**
+ * Convert hours to days for incubation duration when >96h.
+ * Returns { value, unit } with converted value and unit label.
+ */
+function convertIncubationIfNeeded(
+  value: number | null,
+  isIncubation: boolean
+): { value: number | null; converted: boolean } {
+  if (!isIncubation || value === null || value <= 96) return { value, converted: false };
+  return { value: value / 24, converted: true };
+}
+
+/**
  * Format comparison value with sample size annotation and optional sd.
  * Returns "-" if no stats available.
  * Format: "0.89 ± 0.12 mm (n_sp = 9)" with "sp" as subscript
@@ -69,15 +81,19 @@ function formatNumber(value: number | null, decimals: number): string {
  */
 function formatComparison(
   stats: TaxonomyStats | null | undefined,
-  unit: string
+  unit: string,
+  isIncubation = false
 ): React.ReactNode {
   if (!stats || stats.stats.mean === null) return "-";
+  const { value: convMean, converted } = convertIncubationIfNeeded(stats.stats.mean, isIncubation);
+  const displayUnit = converted ? 'days' : unit;
   const showSd = stats.speciesCount >= 3 && stats.stats.sd !== null;
+  const convSd = converted && stats.stats.sd !== null ? stats.stats.sd / 24 : stats.stats.sd;
   return (
     <>
-      {stats.stats.mean.toFixed(2)}
-      {showSd && <> {"\u00B1"} {stats.stats.sd!.toFixed(2)}</>}
-      {" "}{unit} (n<sub>sp</sub> = {stats.speciesCount})
+      {convMean!.toFixed(2)}
+      {showSd && convSd !== null && <> {"\u00B1"} {convSd.toFixed(2)}</>}
+      {" "}{displayUnit} (n<sub>sp</sub> = {stats.speciesCount})
     </>
   );
 }
@@ -115,7 +131,16 @@ export function TraitCard({
   const showComparison = useContext(SectionComparisonContext);
   const { t } = useI18n();
   const hasData = mean !== null;
-  const showRange = min !== null && max !== null && min !== max;
+
+  // Incubation duration: convert to days if >96h (only in summary cards)
+  const isIncubation = traitKey === 'incubation_duration';
+  const { value: displayMean, converted: incubConverted } = convertIncubationIfNeeded(mean, isIncubation);
+  const displaySd = incubConverted && sd !== null ? sd / 24 : sd;
+  const displayMin = incubConverted && min !== null ? min / 24 : min;
+  const displayMax = incubConverted && max !== null ? max / 24 : max;
+  const displayUnit = incubConverted ? 'days' : unit;
+
+  const showRange = displayMin !== null && displayMax !== null && displayMin !== displayMax;
 
   // Determine if there's a chart to toggle
   const hasChart = familyChartData && familyChartData.length > 0 && currentSpeciesId &&
@@ -125,7 +150,7 @@ export function TraitCard({
     <Card className="bg-card">
       <CardContent className="p-4">
         {/* Label */}
-        <div className="text-xs font-medium uppercase text-muted-foreground tracking-wide flex items-center gap-1">
+        <div className="text-xs font-medium uppercase text-white tracking-wide flex items-center gap-1">
           {label}
           {traitKey && TRAIT_TOOLTIPS[traitKey] && (
             <SectionTooltip text={TRAIT_TOOLTIPS[traitKey]} />
@@ -139,16 +164,16 @@ export function TraitCard({
             {hasData ? (
               <>
                 <span className="text-2xl font-bold font-mono">
-                  {formatNumber(mean, 2)}
-                  {sd !== null && (
+                  {formatNumber(displayMean, 2)}
+                  {displaySd !== null && (
                     <span className="text-lg font-normal">
                       {" \u00B1 "}
-                      {formatNumber(sd, 2)}
+                      {formatNumber(displaySd, 2)}
                     </span>
                   )}
                 </span>
                 {/* Unit */}
-                <div className="text-sm text-muted-foreground mt-1">{unit}</div>
+                <div className="text-sm text-muted-foreground mt-1">{displayUnit}</div>
               </>
             ) : (
               <span className="text-lg text-muted-foreground italic">
@@ -161,8 +186,8 @@ export function TraitCard({
           <div className="text-right text-sm space-y-0.5">
             {showRange && (
               <>
-                <div className="text-white">Min: {formatNumber(min, 1)}</div>
-                <div className="text-white">Max: {formatNumber(max, 1)}</div>
+                <div className="text-white">Min: {formatNumber(displayMin, 1)}</div>
+                <div className="text-white">Max: {formatNumber(displayMax, 1)}</div>
               </>
             )}
             {/* N records link — grey and non-clickable when 0 */}
@@ -194,19 +219,19 @@ export function TraitCard({
             {genusStats !== undefined && genusStats !== null && (genusStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">{t('genus_average')}:</span>
-                <span className="font-mono">{formatComparison(genusStats, unit)}</span>
+                <span className="font-mono">{formatComparison(genusStats, displayUnit, isIncubation)}</span>
               </div>
             )}
             {familyStats !== undefined && familyStats !== null && (familyStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">{t('family_average')}:</span>
-                <span className="font-mono">{formatComparison(familyStats, unit)}</span>
+                <span className="font-mono">{formatComparison(familyStats, displayUnit, isIncubation)}</span>
               </div>
             )}
             {orderStats !== undefined && orderStats !== null && (orderStats.speciesCount ?? 0) > 1 && (
               <div className="flex justify-between" style={{ fontSize: '0.75rem' }}>
                 <span className="text-muted-foreground">{t('order_average')}:</span>
-                <span className="font-mono">{formatComparison(orderStats, unit)}</span>
+                <span className="font-mono">{formatComparison(orderStats, displayUnit, isIncubation)}</span>
               </div>
             )}
           </div>
@@ -214,7 +239,7 @@ export function TraitCard({
 
         {/* Family/Genus Bar Chart — controlled by section-level toggle */}
         {hasChart && showComparison && (
-          <div className="mt-4 pt-4 border-t">
+          <div className="mt-4 pt-4 border-t overflow-visible" style={{ minWidth: 0, width: '100%' }}>
             <FamilyBarChart
               data={familyChartData!}
               currentSpeciesId={currentSpeciesId!}
@@ -226,8 +251,8 @@ export function TraitCard({
           </div>
         )}
         {/* Order Bar Chart — only as FALLBACK when no family chart is available */}
-        {showComparison && !hasChart && orderChartData && orderChartData.length > 0 && currentSpeciesId && (
-          <div className="mt-4 pt-4 border-t">
+        {showComparison && !hasChart && orderChartData && orderChartData.length > 1 && currentSpeciesId && (
+          <div className="mt-4 pt-4 border-t overflow-visible" style={{ minWidth: 0, width: '100%' }}>
             <FamilyBarChart
               data={orderChartData}
               currentSpeciesId={currentSpeciesId}

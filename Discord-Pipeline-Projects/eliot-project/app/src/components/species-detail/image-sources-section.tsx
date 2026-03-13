@@ -16,7 +16,10 @@ export function ImageSourcesSection({ images }: ImageSourcesSectionProps) {
   // Deduplicate by author+link combination
   const seen = new Set<string>();
   const uniqueImages = images.filter((img) => {
-    const key = `${img.displayAuthor || ''}|${img.link || ''}`;
+    // Normalize author by trimming and collapsing whitespace for dedup
+    const author = (img.displayAuthor || '').trim().replace(/\s+/g, ' ');
+    const link = (img.link || '').trim();
+    const key = `${author}|${link}`;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

@@ -146,7 +146,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
       {/* Stacked bars by 5-year bins — bars area + separate date labels below */}
       <div className="space-y-0">
         {/* Bar area */}
-        <div className="flex items-end h-40 pt-2 min-w-0" style={{ gap: '3px' }}>
+        <div className="flex items-end h-40 pt-2 min-w-0" style={{ gap: '2px' }}>
           {years.map((year) => {
             const yearData = byYear.get(year)!;
             let total = 0;
@@ -154,7 +154,7 @@ export function PublicationChart({ data }: PublicationChartProps) {
             const heightPct = maxCount > 0 ? (total / maxCount) * 100 : 0;
 
             return (
-              <div key={year} className="flex-1 flex items-end justify-center group relative" style={{ maxWidth: '28px' }}>
+              <div key={year} className="flex-1 flex items-end justify-center group relative">
                 <div
                   data-testid="pub-chart-bar"
                   className="w-full flex flex-col-reverse rounded-t-sm overflow-hidden"
@@ -185,11 +185,11 @@ export function PublicationChart({ data }: PublicationChartProps) {
           })}
         </div>
         {/* Date labels below bars — completely outside the bar area */}
-        <div className="flex min-w-0" style={{ gap: '3px' }}>
+        <div className="flex min-w-0" style={{ gap: '2px' }}>
           {years.map((year) => (
-            <div key={year} className="flex-1 text-center" style={{ maxWidth: '28px' }}>
+            <div key={year} className="flex-1 text-center">
               <span className="text-[10px] text-muted-foreground hidden sm:block">{year}</span>
-              <span className="text-[7px] text-muted-foreground sm:hidden block">{year % 10 === 0 ? year : ''}</span>
+              <span className="text-[7px] text-muted-foreground sm:hidden block">{year % 20 === 0 ? year : ''}</span>
             </div>
           ))}
         </div>

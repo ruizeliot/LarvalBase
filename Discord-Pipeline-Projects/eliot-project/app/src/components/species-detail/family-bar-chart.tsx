@@ -136,7 +136,7 @@ export function FamilyBarChart({
   }, []);
 
   return (
-    <div className="space-y-2 min-w-0 w-full">
+    <div className="space-y-2 w-full" data-chart="comparison" style={{ minWidth: 0 }}>
       {/* Chart title */}
       <div className="text-sm font-medium text-center uppercase tracking-wide"
            style={{ color: otherSpeciesColor }}>
@@ -144,7 +144,7 @@ export function FamilyBarChart({
         {taxonomyName && <span className="font-normal ml-1">({taxonomyName})</span>}
       </div>
 
-      <div style={{ width: '100%', height: `${chartHeight}px` }}>
+      <div style={{ width: '100%', height: `${chartHeight}px`, position: 'relative' }}>
         <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={chartData}

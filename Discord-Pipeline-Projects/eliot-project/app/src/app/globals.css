@@ -129,4 +129,9 @@ img[data-protected="true"],
     width: 100% !important;
     min-width: 0 !important;
   }
+
+  /* Fix: Recharts ResponsiveContainer inside cards/grids on mobile */
+  .recharts-responsive-container {
+    min-height: 150px;
+  }
 }
