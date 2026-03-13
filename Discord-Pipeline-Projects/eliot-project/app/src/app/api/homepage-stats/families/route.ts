@@ -193,7 +193,7 @@ export async function GET() {
       'Holocentridae': { path: 'classified_bw_images_family', filename: 'Copyright Mazda (2026) - 8674.jpg' },
       'Scorpaenidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6909.jpg' },
       'Paralichthyidae': { path: 'classified_bw_images_species', filename: 'Copyright Jensen (2026) - 6625.jpg' },
-      'Acanthuridae': { path: 'classified_bw_images_species', filename: 'Copyright Meldonian (2026) - 6323.jpg' },
+      'Acanthuridae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 7384.jpg' },
       'Synodontidae': { path: 'classified_bw_images_species', filename: 'Copyright Meldonian (2026) - 7298.jpg' },
       'Antennariidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6364.jpg' },
       'Peristediidae': { path: 'classified_bw_images_family', filename: 'Copyright Gug (2026) - 8915.jpg' },
@@ -202,7 +202,7 @@ export async function GET() {
       'Xiphiidae': { path: 'classified_bw_images_species', filename: 'Copyright Kovacs (2026) - 7364.jpg' },
       'Diodontidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6723.jpg' },
       'Chiasmodontidae': { path: 'classified_bw_images_family', filename: 'Copyright Zhang F. (2026) - 9069.jpg' },
-      'Carangidae': { path: 'classified_bw_images_family', filename: 'Copyright Ianiello (2026) - 8603.jpg' },
+      'Carangidae': { path: 'classified_bw_images_species', filename: 'Copyright Baensch (2026) - 8608.jpg' },
       'Pomacentridae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6712.jpg' },
       'Labridae': { path: 'classified_bw_images_species', filename: 'Copyright Ianiello (2026) - 7310.jpg' },
       'Apogonidae': { path: 'classified_bw_images_family', filename: 'Copyright Ianiello (2026) - 8486.jpg' },
@@ -239,6 +239,7 @@ export async function GET() {
       'Serranidae': { path: 'classified_bw_images_species', filename: 'Copyright Ianiello (2026) - 7231.jpg' },
       'Nemipteridae': { path: 'Fisher - Cropped', filename: 'Copyright Fisher et al. (2022) - 5685.JPG' },
       'Anthiadidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 7097.jpg' },
+      'Lutjanidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 6999.jpg' },
     };
 
     // Select best valid thumbnail per family:
