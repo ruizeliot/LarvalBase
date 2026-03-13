@@ -83,8 +83,17 @@ export async function GET(request: Request) {
     if (!ecosystem && !habitat) {
       const ecosystems = [...new Set(entries.map(e => e.ecosystem).filter(Boolean))].sort();
       const habitats = [...new Set(entries.map(e => e.habitat).filter(Boolean))].sort();
-      return NextResponse.json({ modalities: { ecosystems, habitats } });
+      return NextResponse.json({ modalities: { ecosystems, habitats } }, {
+        headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+      });
     }
+
+    // Map sidebar shorthand habitat values to actual CSV values
+    // Sidebar sends "Benthic"/"Pelagic" but CSV has "Benthic and/or strictly demersal"/"Pelagic (offshore)"
+    const HABITAT_ALIASES: Record<string, string[]> = {
+      'Benthic': ['Benthic', 'Benthic and/or strictly demersal'],
+      'Pelagic': ['Pelagic', 'Pelagic (offshore)'],
+    };
 
     // Filter by ecosystem and/or habitat
     let filtered = entries;
@@ -94,11 +103,22 @@ export async function GET(request: Request) {
     }
     if (habitat) {
       const habValues = habitat.split(',');
-      filtered = filtered.filter(e => habValues.includes(e.habitat));
+      // Expand shorthand values to include their aliases
+      const expandedHabValues: string[] = [];
+      for (const hv of habValues) {
+        if (HABITAT_ALIASES[hv]) {
+          expandedHabValues.push(...HABITAT_ALIASES[hv]);
+        } else {
+          expandedHabValues.push(hv);
+        }
+      }
+      filtered = filtered.filter(e => expandedHabValues.includes(e.habitat));
     }
 
     const species = filtered.map(e => e.validName);
-    return NextResponse.json({ species });
+    return NextResponse.json({ species }, {
+      headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
+    });
   } catch (error) {
     console.error('Error in ecology API:', error);
     return NextResponse.json({ species: [], error: 'Failed to load ecology data' });

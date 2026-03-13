@@ -238,6 +238,7 @@ export async function GET() {
       'Labrisomidae': { path: 'Guadeloupe', filename: 'Copyright Ruiz et al. (2026) - 5010.JPG' },
       'Serranidae': { path: 'classified_bw_images_species', filename: 'Copyright Ianiello (2026) - 7231.jpg' },
       'Nemipteridae': { path: 'Fisher - Cropped', filename: 'Copyright Fisher et al. (2022) - 5685.JPG' },
+      'Anthiadidae': { path: 'classified_bw_images_species', filename: 'Copyright Minemizu (2026) - 7097.jpg' },
     };
 
     // Select best valid thumbnail per family:

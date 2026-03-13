@@ -99,9 +99,9 @@ export default function Home() {
           <Image
             src="/larvalbase-icon-3.png"
             alt="LarvalBase icon"
-            width={96}
-            height={96}
-            className="h-24 w-auto shrink-0"
+            width={160}
+            height={160}
+            className="h-36 sm:h-40 w-auto shrink-0"
             priority
           />
           <h1 className="text-2xl font-bold leading-tight text-center">
@@ -224,26 +224,26 @@ export default function Home() {
         {/* Affiliations section */}
         <div className="pt-4">
           <h2 className="text-lg font-semibold text-white mb-4 border-b border-border pb-2">Affiliations</h2>
-          <div className="space-y-4">
-            {/* Row 1: MARBEC, IRD, ETHZ, Reefscapers — on one line, no wrapping */}
-            <div className="flex items-center justify-center gap-3 sm:gap-6 flex-nowrap">
+          <div className="space-y-3">
+            {/* Row 1: MARBEC, IRD, ETHZ, Reefscapers — exactly one line, no wrapping */}
+            <div className="flex items-center justify-center gap-2 sm:gap-6 flex-nowrap overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-marbec.webp" alt="MARBEC" className="h-8 sm:h-12 w-auto object-contain shrink-0" />
+              <img src="/logo-marbec.webp" alt="MARBEC" style={{ height: 'clamp(24px, 4vw, 48px)' }} className="w-auto object-contain shrink-0" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-ird.png" alt="IRD" className="h-8 sm:h-12 w-auto object-contain shrink-0" />
+              <img src="/logo-ird.png" alt="IRD" style={{ height: 'clamp(24px, 4vw, 48px)' }} className="w-auto object-contain shrink-0" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-ethz.png" alt="ETH Zürich" className="h-8 sm:h-12 w-auto object-contain shrink-0" />
+              <img src="/logo-ethz.png" alt="ETH Zürich" style={{ height: 'clamp(24px, 4vw, 48px)' }} className="w-auto object-contain shrink-0" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-reefscapers.png" alt="Reefscapers" className="h-8 sm:h-12 w-auto object-contain shrink-0" />
+              <img src="/logo-reefscapers.png" alt="Reefscapers" style={{ height: 'clamp(24px, 4vw, 48px)' }} className="w-auto object-contain shrink-0" />
             </div>
-            {/* Row 2: UM, MNHN, UA — centered, ~twice the height of row 1 */}
-            <div className="flex items-center justify-center gap-4 sm:gap-8">
+            {/* Row 2: UM, MNHN, UA — centered, approximately twice the height of row 1 */}
+            <div className="flex items-center justify-center gap-3 sm:gap-8 flex-nowrap overflow-hidden">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-um.png" alt="Université de Montpellier" className="h-16 sm:h-24 w-auto max-w-[28%] object-contain" />
+              <img src="/logo-um.png" alt="Université de Montpellier" style={{ height: 'clamp(48px, 8vw, 96px)' }} className="w-auto object-contain shrink-0 max-w-[30%]" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-mnhn.png" alt="MNHN" className="h-16 sm:h-24 w-auto max-w-[28%] object-contain" />
+              <img src="/logo-mnhn.png" alt="MNHN" style={{ height: 'clamp(48px, 8vw, 96px)' }} className="w-auto object-contain shrink-0 max-w-[30%]" />
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo-ua.png" alt="Université des Antilles" className="h-16 sm:h-24 w-auto max-w-[28%] object-contain" />
+              <img src="/logo-ua.png" alt="Université des Antilles" style={{ height: 'clamp(48px, 8vw, 96px)' }} className="w-auto object-contain shrink-0 max-w-[30%]" />
             </div>
           </div>
         </div>

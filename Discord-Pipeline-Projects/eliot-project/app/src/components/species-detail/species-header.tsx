@@ -84,8 +84,12 @@ export function SpeciesHeader({
       <div className="flex-1 space-y-2 flex flex-col justify-center min-w-0">
         {/* Scientific name with large family icon */}
         <div className="flex items-center gap-3 md:gap-4">
-          <FamilyIcon family={family} size={72} className="shrink-0 hidden sm:block self-center" />
-          <FamilyIcon family={family} size={48} className="shrink-0 sm:hidden self-center" />
+          <div className="shrink-0 hidden sm:flex items-center">
+            <FamilyIcon family={family} size={72} />
+          </div>
+          <div className="shrink-0 sm:hidden flex items-center">
+            <FamilyIcon family={family} size={48} />
+          </div>
           <div className="space-y-1 min-w-0">
             <h1 className="text-xl md:text-[28px] font-semibold italic break-words">{scientificName}</h1>
             {/* Taxonomy line */}
@@ -185,11 +189,9 @@ export function SpeciesHeader({
             {habitatInfo.habitat && (
               <div>Adult habitat:{' '}
                 <span className="font-medium">
-                  {habitatInfo.habitat === 'Benthic' ? 'Benthic and/or demersal' :
-                   habitatInfo.habitat === 'Pelagic' ? 'Pelagic' :
-                   habitatInfo.habitat}
+                  {habitatInfo.habitat}
                 </span>
-                {habitatInfo.habitat === 'Pelagic' && (
+                {(habitatInfo.habitat === 'Pelagic' || habitatInfo.habitat === 'Pelagic (offshore)') && (
                   <span className="text-xs italic text-muted-foreground ml-1">- settlement and pelagic juvenile sections not showed</span>
                 )}
               </div>

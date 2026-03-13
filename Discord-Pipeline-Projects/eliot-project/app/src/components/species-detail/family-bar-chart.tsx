@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Bar, BarChart, XAxis, YAxis, Cell, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { useState, useEffect, useRef } from 'react';
+import { Bar, BarChart, XAxis, YAxis, Cell, CartesianGrid, Tooltip } from 'recharts';
 import type { FamilyBarChartEntry } from '@/lib/types/species.types';
 import { useI18n } from '@/lib/i18n/i18n-context';
 
@@ -135,8 +135,26 @@ export function FamilyBarChart({
     if (typeof window !== 'undefined' && window.innerWidth < 640) setYAxisWidth(80);
   }, []);
 
+  // Measure container width with a ref instead of ResponsiveContainer
+  // (ResponsiveContainer fails on mobile when parent has 0 width)
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [measuredWidth, setMeasuredWidth] = useState(300);
+  useEffect(() => {
+    function measure() {
+      if (containerRef.current) {
+        const w = containerRef.current.getBoundingClientRect().width;
+        if (w > 0) setMeasuredWidth(w);
+      }
+    }
+    measure();
+    window.addEventListener('resize', measure);
+    // Also re-measure after a short delay (in case parent is still animating/expanding)
+    const timer = setTimeout(measure, 200);
+    return () => { window.removeEventListener('resize', measure); clearTimeout(timer); };
+  }, []);
+
   return (
-    <div className="space-y-2 w-full" data-chart="comparison" style={{ minWidth: 0 }}>
+    <div className="space-y-2 w-full" data-chart="comparison" style={{ minWidth: 0 }} ref={containerRef}>
       {/* Chart title */}
       <div className="text-sm font-medium text-center uppercase tracking-wide"
            style={{ color: otherSpeciesColor }}>
@@ -144,11 +162,12 @@ export function FamilyBarChart({
         {taxonomyName && <span className="font-normal ml-1">({taxonomyName})</span>}
       </div>
 
-      <div style={{ width: '100%', height: `${chartHeight}px`, position: 'relative' }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div style={{ width: '100%', height: `${chartHeight}px`, overflow: 'hidden' }}>
         <BarChart
           data={chartData}
           layout="vertical"
+          width={measuredWidth}
+          height={chartHeight}
           margin={{ top: 5, right: 20, left: yAxisWidth < 150 ? 0 : 10, bottom: 5 }}
         >
           <CartesianGrid
@@ -209,7 +228,6 @@ export function FamilyBarChart({
             ))}
           </Bar>
         </BarChart>
-        </ResponsiveContainer>
       </div>
     </div>
   );

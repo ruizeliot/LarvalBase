@@ -47,8 +47,8 @@ function formatLinkUrl(link: string | null): string | null {
  * Create a unique key for a reference (for deduplication).
  */
 function referenceKey(ref: Reference): string {
-  const source = (ref.source || "").trim().replace(/\s+/g, ' ');
-  const doi = (ref.doi || "").trim();
+  const source = (ref.source || "").trim().replace(/\s+/g, ' ').toLowerCase();
+  const doi = (ref.doi || "").trim().toLowerCase();
   return `${source}|${doi}`;
 }
 

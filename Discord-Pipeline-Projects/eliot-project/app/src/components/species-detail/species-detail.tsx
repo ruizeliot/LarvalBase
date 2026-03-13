@@ -8,12 +8,22 @@ import { CollectionMap } from "./collection-map";
 import { ReferencesSection } from "./references-section";
 import { ImageSourcesSection } from "./image-sources-section";
 import { RawDataModal } from "./raw-data-modal";
-import { SpeciesGrowthChart } from "./species-growth-chart";
+import dynamic from "next/dynamic";
+const SpeciesGrowthChart = dynamic(
+  () => import("./species-growth-chart").then((m) => ({ default: m.SpeciesGrowthChart })),
+  { ssr: false, loading: () => <div className="h-[300px] animate-pulse bg-muted rounded-lg" /> }
+);
 import { EggQualitativePanel } from "./egg-qualitative-panel";
 import { useEggQualitative } from "@/hooks/use-egg-qualitative";
-import { PelagicJuvenilePanel } from "./pelagic-juvenile-panel";
+const PelagicJuvenilePanel = dynamic(
+  () => import("./pelagic-juvenile-panel").then((m) => ({ default: m.PelagicJuvenilePanel })),
+  { ssr: false }
+);
 import { usePelagicJuvenile } from "@/hooks/use-pelagic-juvenile";
-import { RaftingPanel } from "./rafting-panel";
+const RaftingPanel = dynamic(
+  () => import("./rafting-panel").then((m) => ({ default: m.RaftingPanel })),
+  { ssr: false }
+);
 import { useRafting } from "@/hooks/use-rafting";
 import { SectionExportButtons } from "./section-export-buttons";
 import { isAllEggsSpherical } from "./egg-spherical-helper";
@@ -222,7 +232,8 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
   const allEggsSpherical = isAllEggsSpherical(eggQualitativeData ?? null, hasEggWidthData);
 
   // P3: Hide Settlement/Pelagic Juvenile sections for pelagic species
-  const isPelagicSpecies = habitatInfo?.habitat === 'Pelagic';
+  // Habitat API returns full CSV value "Pelagic (offshore)" — match both short and full forms
+  const isPelagicSpecies = habitatInfo?.habitat === 'Pelagic' || habitatInfo?.habitat === 'Pelagic (offshore)';
 
   // Map API traits to display groups
   // Show ALL trait categories, with "No known values" for traits without data
@@ -288,28 +299,8 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
         order={data.species.order}
         recordCount={recordCount}
         studyCount={studyCount}
+        habitatInfo={habitatInfo}
       />
-
-      {/* Adult Ecosystem & Habitat — below the species province map / Source line */}
-      {habitatInfo && (habitatInfo.ecosystem || habitatInfo.habitat) && (
-        <div className="-mt-6 space-y-0.5 text-sm text-white">
-          {habitatInfo.ecosystem && (
-            <div>Adult ecosystem: <span className="font-medium">{habitatInfo.ecosystem === 'Freshwater' ? 'Freshwater (marine larvae)' : habitatInfo.ecosystem}</span></div>
-          )}
-          {habitatInfo.habitat && (
-            <div>Adult habitat:{' '}
-              <span className="font-medium">
-                {habitatInfo.habitat === 'Benthic' ? 'Benthic and/or demersal' :
-                 habitatInfo.habitat === 'Pelagic' ? 'Pelagic' :
-                 habitatInfo.habitat}
-              </span>
-              {habitatInfo.habitat === 'Pelagic' && (
-                <span className="text-xs italic text-muted-foreground ml-1">- settlement and pelagic juvenile sections not showed</span>
-              )}
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Export all traits button */}
       <div className="flex justify-end -mb-4">
@@ -361,11 +352,11 @@ export function SpeciesDetail({ speciesId, onBack, backLabel }: SpeciesDetailPro
                       <div
                         className="flex items-center justify-center rounded-full shrink-0"
                         style={{ width: 56, height: 56, backgroundColor: "#F5F5F5" }}
-                        title="Settlement-stage sampling locations"
+                        title="Settlement-stage sampling locations (click on a point to view data)"
                       >
                         <SettlementSamplingIcon size={44} />
                       </div>
-                      <h2 className="text-lg font-semibold">Settlement-stage sampling locations</h2>
+                      <h2 className="text-lg font-semibold">Settlement-stage sampling locations (click on a point to view data)</h2>
                     </div>
                     <CollectionMap locations={locations} />
                   </div>
